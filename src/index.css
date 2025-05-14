@@ -1,0 +1,176 @@
+/* Import premium fonts */
+@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap");
+@import url("https://api.fontshare.com/v2/css?f[]=clash-display@400,500,600,700&display=swap");
+
+@import "tailwindcss";
+
+:root {
+  /* Light mode colors */
+  --background: #ffffff;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
+  --primary: #0070cc;
+  --primary-foreground: #ffffff;
+  --secondary: #f1f5f9;
+  --secondary-foreground: #0f172a;
+  --accent: #ea526f;
+  --accent-foreground: #ffffff;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --success: #16a34a;
+  --success-foreground: #ffffff;
+  --warning: #f59e0b;
+  --warning-foreground: #ffffff;
+  --danger: #dc2626;
+  --danger-foreground: #ffffff;
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --ring: #0070cc;
+  --radius: 0.5rem;
+}
+
+.dark {
+  /* Dark mode colors - Black and Gold theme */
+  --background: #000000;
+  --foreground: #f8fafc;
+  --card: #111111;
+  --card-foreground: #f8fafc;
+  --popover: #111111;
+  --popover-foreground: #f8fafc;
+  --primary: #f59e0b;
+  --primary-foreground: #000000;
+  --secondary: #1e1e1e;
+  --secondary-foreground: #f8fafc;
+  --accent: #f59e0b;
+  --accent-foreground: #000000;
+  --muted: #1e1e1e;
+  --muted-foreground: #94a3b8;
+  --success: #22c55e;
+  --success-foreground: #000000;
+  --warning: #f59e0b;
+  --warning-foreground: #000000;
+  --danger: #ef4444;
+  --danger-foreground: #000000;
+  --border: #2e2e2e;
+  --input: #2e2e2e;
+  --ring: #f59e0b;
+}
+
+@layer base {
+  body {
+    @apply bg-[var(--background)] text-[var(--foreground)] font-sans;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-sans font-semibold tracking-tight;
+  }
+  h1 {
+    @apply text-3xl md:text-4xl;
+  }
+  h2 {
+    @apply text-2xl md:text-3xl;
+  }
+  h3 {
+    @apply text-xl md:text-2xl;
+  }
+  h4 {
+    @apply text-lg md:text-xl;
+  }
+  code,
+  pre {
+    @apply font-mono;
+  }
+}
+
+@layer components {
+  .premium-text {
+    @apply bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-400 bg-clip-text text-transparent font-bold;
+    text-shadow: 0 0 20px rgba(245, 158, 11, 0.15);
+  }
+
+  .premium-card {
+    @apply bg-gradient-to-br from-gray-900 via-black to-gray-900 shadow-lg rounded-xl border border-amber-500/20 transition-all duration-300 hover:shadow-xl backdrop-blur-sm;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .premium-card::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 200%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(245, 158, 11, 0.1),
+      transparent
+    );
+    transition: 0.8s;
+    z-index: 0;
+  }
+
+  .premium-card:hover::after {
+    left: 100%;
+  }
+
+  .premium-card:hover {
+    @apply border-amber-500/40;
+  }
+
+  .premium-button {
+    @apply bg-gradient-to-r from-gray-900 to-black text-amber-400 font-medium py-2 px-4 rounded-lg shadow-md hover:shadow-xl transition-all duration-300 border border-amber-500/30;
+    position: relative;
+    z-index: 1;
+    overflow: hidden;
+  }
+
+  .premium-button::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(245, 158, 11, 0.15),
+      transparent
+    );
+    transition: 0.5s;
+    z-index: -1;
+  }
+
+  .premium-button:hover::before {
+    left: 100%;
+  }
+
+  .premium-button:hover {
+    @apply text-amber-300 border-amber-400/50;
+  }
+
+  .light-card-effect {
+    @apply bg-white/50 backdrop-blur-sm;
+  }
+
+  .glass-effect {
+    @apply bg-white/10 backdrop-blur-md border border-white/20 shadow-lg;
+  }
+
+  .animate-enter {
+    @apply animate-pulse;
+  }
+}
