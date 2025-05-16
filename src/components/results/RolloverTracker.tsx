@@ -53,73 +53,143 @@ const RolloverTracker: React.FC<RolloverTrackerProps> = ({
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  // Group predictions by date and find combinations that add up to target odds
+  // Group predictions by rollover day or date
   const dailyRolloverCombos = useMemo(() => {
-    // First, group predictions by date
-    const predictionsByDate = new Map<string, Prediction[]>();
+    // Check if we have rollover day information in the predictions
+    const hasRolloverDays = predictions.some(p => p.rolloverDay !== undefined);
 
-    predictions.forEach(prediction => {
-      const gameDate = new Date(prediction.game.startTime);
-      gameDate.setHours(0, 0, 0, 0);
-      const dateKey = gameDate.toISOString().split('T')[0];
+    if (hasRolloverDays) {
+      // Group predictions by rollover day
+      const predictionsByDay = new Map<number, Prediction[]>();
 
-      if (!predictionsByDate.has(dateKey)) {
-        predictionsByDate.set(dateKey, []);
+      // Initialize days 1-10
+      for (let i = 1; i <= 10; i++) {
+        predictionsByDay.set(i, []);
       }
 
-      predictionsByDate.get(dateKey)?.push(prediction);
-    });
-
-    // For each date, find combinations that add up to target odds
-    const combos: DailyRolloverCombo[] = [];
-
-    // Get all dates in the rollover period
-    const startDateObj = new Date(startDate);
-    const endDateObj = new Date(endDate);
-    const dateRange: Date[] = [];
-
-    // Create array of all dates in the rollover period
-    const currentDate = new Date(startDateObj);
-    while (currentDate <= endDateObj) {
-      dateRange.push(new Date(currentDate));
-      currentDate.setDate(currentDate.getDate() + 1);
-    }
-
-    // Process each date in the rollover period
-    dateRange.forEach((date, index) => {
-      const dateKey = date.toISOString().split('T')[0];
-      const isToday = date.getTime() === today.getTime();
-      const datePredictions = predictionsByDate.get(dateKey) || [];
-
-      // Find the best combination for this date
-      const bestCombo = findBestCombination(datePredictions, TARGET_ODDS, ODDS_TOLERANCE);
-
-      // Determine combo status
-      let status: "won" | "lost" | "pending" = "pending";
-      if (bestCombo.predictions.length > 0) {
-        // If all predictions in the combo are won, the combo is won
-        const allWon = bestCombo.predictions.every(p => p.status === "won");
-        // If any prediction in the combo is lost, the combo is lost
-        const anyLost = bestCombo.predictions.some(p => p.status === "lost");
-
-        if (allWon) status = "won";
-        else if (anyLost) status = "lost";
-        else status = "pending";
-      }
-
-      // Add combo to the list (even if empty for dates with no predictions)
-      combos.push({
-        date,
-        predictions: bestCombo.predictions,
-        totalOdds: bestCombo.totalOdds,
-        isToday,
-        day: index + 1, // Day number in sequence (1-10)
-        status
+      // Group predictions by their rollover day
+      predictions.forEach(prediction => {
+        const day = prediction.rolloverDay || 1;
+        predictionsByDay.get(day)?.push(prediction);
       });
-    });
 
-    // Sort by day number (ascending)
-    return combos.sort((a, b) => a.day - b.day);
+      // Create daily combos from the grouped predictions
+      const combos: DailyRolloverCombo[] = [];
+
+      // Get all dates in the rollover period
+      const startDateObj = new Date(startDate);
+      const dateRange: Date[] = [];
+
+      // Create array of all dates in the rollover period
+      for (let i = 0; i < 10; i++) {
+        const date = new Date(startDateObj);
+        date.setDate(date.getDate() + i);
+        dateRange.push(date);
+      }
+
+      // Process each day in the rollover period
+      Array.from(predictionsByDay.entries()).forEach(([day, dayPredictions]) => {
+        const date = dateRange[day - 1] || new Date();
+        const isToday = date.getTime() === today.getTime();
+
+        // Get combined odds from the predictions if available
+        const combinedOdds = dayPredictions.length > 0 && dayPredictions[0].combinedOdds
+          ? dayPredictions[0].combinedOdds
+          : dayPredictions.reduce((total, p) => total * p.odds, 1);
+
+        // Determine combo status
+        let status: "won" | "lost" | "pending" = "pending";
+        if (dayPredictions.length > 0) {
+          // If all predictions in the combo are won, the combo is won
+          const allWon = dayPredictions.every(p => p.status === "won");
+          // If any prediction in the combo is lost, the combo is lost
+          const anyLost = dayPredictions.some(p => p.status === "lost");
+
+          if (allWon) status = "won";
+          else if (anyLost) status = "lost";
+          else status = "pending";
+        }
+
+        // Add combo to the list
+        combos.push({
+          date,
+          predictions: dayPredictions,
+          totalOdds: combinedOdds,
+          isToday,
+          day, // Day number in sequence (1-10)
+          status
+        });
+      });
+
+      // Sort by day number (ascending)
+      return combos.sort((a, b) => a.day - b.day);
+    } else {
+      // Legacy mode: group predictions by date
+      const predictionsByDate = new Map<string, Prediction[]>();
+
+      predictions.forEach(prediction => {
+        const gameDate = new Date(prediction.game.startTime);
+        gameDate.setHours(0, 0, 0, 0);
+        const dateKey = gameDate.toISOString().split('T')[0];
+
+        if (!predictionsByDate.has(dateKey)) {
+          predictionsByDate.set(dateKey, []);
+        }
+
+        predictionsByDate.get(dateKey)?.push(prediction);
+      });
+
+      // For each date, find combinations that add up to target odds
+      const combos: DailyRolloverCombo[] = [];
+
+      // Get all dates in the rollover period
+      const startDateObj = new Date(startDate);
+      const endDateObj = new Date(endDate);
+      const dateRange: Date[] = [];
+
+      // Create array of all dates in the rollover period
+      const currentDate = new Date(startDateObj);
+      while (currentDate <= endDateObj) {
+        dateRange.push(new Date(currentDate));
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+
+      // Process each date in the rollover period
+      dateRange.forEach((date, index) => {
+        const dateKey = date.toISOString().split('T')[0];
+        const isToday = date.getTime() === today.getTime();
+        const datePredictions = predictionsByDate.get(dateKey) || [];
+
+        // Find the best combination for this date
+        const bestCombo = findBestCombination(datePredictions, TARGET_ODDS, ODDS_TOLERANCE);
+
+        // Determine combo status
+        let status: "won" | "lost" | "pending" = "pending";
+        if (bestCombo.predictions.length > 0) {
+          // If all predictions in the combo are won, the combo is won
+          const allWon = bestCombo.predictions.every(p => p.status === "won");
+          // If any prediction in the combo is lost, the combo is lost
+          const anyLost = bestCombo.predictions.some(p => p.status === "lost");
+
+          if (allWon) status = "won";
+          else if (anyLost) status = "lost";
+          else status = "pending";
+        }
+
+        // Add combo to the list (even if empty for dates with no predictions)
+        combos.push({
+          date,
+          predictions: bestCombo.predictions,
+          totalOdds: bestCombo.totalOdds,
+          isToday,
+          day: index + 1, // Day number in sequence (1-10)
+          status
+        });
+      });
+
+      // Sort by day number (ascending)
+      return combos.sort((a, b) => a.day - b.day);
+    }
   }, [predictions, today, startDate, endDate]);
 
   // Get today's combo
@@ -372,12 +442,14 @@ const RolloverTracker: React.FC<RolloverTrackerProps> = ({
               {/* Compact Game Cards */}
               <div className="space-y-2">
                 {todayCombo.predictions.map((prediction, index) => (
-                  <CompactPredictionCard
-                    key={prediction.id}
-                    prediction={prediction}
-                    index={index + 1}
-                    showReason={true}
-                  />
+                  <div key={prediction.id}>
+                    <CompactPredictionCard
+                      prediction={prediction}
+                      index={index + 1}
+                      showReason={true}
+                      isRollover={true}
+                    />
+                  </div>
                 ))}
               </div>
 
@@ -474,12 +546,14 @@ const RolloverTracker: React.FC<RolloverTrackerProps> = ({
                   {/* Compact Game Cards */}
                   <div className="space-y-2">
                     {combo.predictions.map((prediction, index) => (
-                      <CompactPredictionCard
-                        key={prediction.id}
-                        prediction={prediction}
-                        index={index + 1}
-                        showReason={false}
-                      />
+                      <div key={prediction.id}>
+                        <CompactPredictionCard
+                          prediction={prediction}
+                          index={index + 1}
+                          showReason={false}
+                          isRollover={true}
+                        />
+                      </div>
                     ))}
                   </div>
                 </div>

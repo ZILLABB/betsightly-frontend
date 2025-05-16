@@ -11,6 +11,8 @@ import BasePredictionCard, {
   PredictionCardMode,
   PredictionCardVariant
 } from "./BasePredictionCard";
+import { motion } from "framer-motion";
+import { cardVariants } from "../../utils/animations";
 
 interface CompactPredictionCardProps {
   // Data
@@ -71,18 +73,26 @@ const CompactPredictionCard: React.FC<CompactPredictionCardProps> = ({
   }
 
   return (
-    <BasePredictionCard
-      prediction={prediction}
-      mode={PredictionCardMode.COMPACT}
-      variant={variant}
-      showReason={showReason}
-      showStats={false}
-      showActions={false}
-      index={index}
-      onCopy={onCopy}
-      onClick={onClick}
-      className={className}
-    />
+    <motion.div
+      initial="initial"
+      animate="animate"
+      whileHover="hover"
+      whileTap="tap"
+      variants={cardVariants}
+    >
+      <BasePredictionCard
+        prediction={prediction}
+        mode={PredictionCardMode.COMPACT}
+        variant={variant}
+        showReason={showReason}
+        showStats={false}
+        showActions={false}
+        index={index}
+        onCopy={onCopy}
+        onClick={onClick}
+        className={className}
+      />
+    </motion.div>
   );
 };
 

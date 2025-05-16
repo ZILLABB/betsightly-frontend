@@ -1,5 +1,7 @@
 import React, { useEffect, useState, lazy, Suspense } from "react";
 import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
+import { pageVariants, fadeVariants, cardVariants } from "../utils/animations";
 import type {
   Prediction,
   RolloverGame,
@@ -17,7 +19,13 @@ import {
   getStatsOverview,
   getPredictionsByOddsCategory
 } from "../services/unifiedDataService";
-import { getNextPredictionsForCategory } from "../services/enhancedApiService";
+import {
+  getNextPredictionsForCategory,
+  getDailyPredictions as getApiDailyPredictions,
+  checkAPIHealth,
+  getBestPredictionsByCategory,
+  getAllBestPredictions
+} from "../services/enhancedApiService";
 
 // Lazy load heavy components
 const PredictionCard = lazy(() => import("../components/predictions/PredictionCard"));
@@ -122,22 +130,31 @@ const HomePage: React.FC = () => {
       else if (category === '5_odds') setRefreshing5Odds(true);
       else if (category === '10_odds') setRefreshing10Odds(true);
 
-      // Get the next set of predictions for this category
-      const nextPredictions = await getNextPredictionsForCategory(category);
+      // Get the best predictions for this category
+      console.log(`Fetching best predictions for ${category}...`);
+      const bestPredictions = await getBestPredictionsByCategory(category);
 
-      if (nextPredictions.length > 0) {
-        // Find combinations for the new predictions
-        let combos: PredictionCombination[] = [];
+      // Log the raw data for debugging
+      console.log(`Raw data for ${category}:`, bestPredictions);
 
+      if (bestPredictions && bestPredictions.length > 0) {
+        console.log(`Got ${bestPredictions.length} best predictions for ${category}`);
+
+        // Create a combination from the best predictions
+        const combo = {
+          id: `${category}_combo_${Date.now()}`,
+          predictions: bestPredictions,
+          totalOdds: category === '2_odds' ? 2.0 : category === '5_odds' ? 5.0 : 10.0,
+          confidence: category === '2_odds' ? 0.9 : category === '5_odds' ? 0.8 : 0.7
+        };
+
+        // Update the appropriate state based on the category
         if (category === '2_odds') {
-          combos = findCombinations(nextPredictions, 2, 0.3);
-          setTwoOddsCombinations(combos);
+          setTwoOddsCombinations([combo]);
         } else if (category === '5_odds') {
-          combos = findCombinations(nextPredictions, 5, 0.8);
-          setFiveOddsCombinations(combos);
+          setFiveOddsCombinations([combo]);
         } else if (category === '10_odds') {
-          combos = findCombinations(nextPredictions, 10, 1.5);
-          setTenOddsCombinations(combos);
+          setTenOddsCombinations([combo]);
         }
 
         // Update the combined predictions list
@@ -151,8 +168,50 @@ const HomePage: React.FC = () => {
             return true;
           });
 
-          return [...filteredPredictions, ...nextPredictions];
+          return [...filteredPredictions, ...bestPredictions];
         });
+      } else {
+        // Fallback to regular category predictions
+        console.log(`No best predictions found for ${category}, falling back to regular predictions`);
+
+        // Get the next set of predictions for this category directly from the API
+        const response = await getNextPredictionsForCategory(category);
+        console.log(`API response for ${category}:`, response);
+
+        if (response && response.length > 0) {
+          // Process the API response
+          const combos = response.map((combo: any) => ({
+            id: combo.id || Math.random().toString(),
+            predictions: combo.predictions || [],
+            totalOdds: combo.combined_odds || (category === '2_odds' ? 2.0 : category === '5_odds' ? 5.0 : 10.0),
+            confidence: combo.combined_confidence || 0.7
+          }));
+
+          // Update the appropriate state based on the category
+          if (category === '2_odds') {
+            setTwoOddsCombinations(combos);
+          } else if (category === '5_odds') {
+            setFiveOddsCombinations(combos);
+          } else if (category === '10_odds') {
+            setTenOddsCombinations(combos);
+          }
+
+          // Update the combined predictions list
+          const allPredictions = combos.flatMap(combo => combo.predictions);
+
+          setTodayPredictions(prev => {
+            // Remove old predictions for this category and add new ones
+            const filteredPredictions = prev.filter(p => {
+              // Keep predictions that don't match the category's odds range
+              if (category === '2_odds') return p.odds > 2.5;
+              if (category === '5_odds') return p.odds < 2.5 || p.odds > 7.5;
+              if (category === '10_odds') return p.odds < 7.5;
+              return true;
+            });
+
+            return [...filteredPredictions, ...allPredictions];
+          });
+        }
       }
     } catch (error) {
       console.error(`Error refreshing ${category} predictions:`, error);
@@ -170,49 +229,251 @@ const HomePage: React.FC = () => {
         setLoading(true);
         setError(null);
 
-        // Fetch predictions by odds category using the unified data service
+        // First check if the API is healthy
         try {
-          // First try to get predictions by odds category
-          const predictionsByCategory = await getPredictionsByOddsCategory();
+          const healthCheck = await checkAPIHealth();
+          console.log('API health check:', healthCheck);
 
-          // Set data source to API if we got here
-          setDataSource('api');
+          if (healthCheck.status === 'ok') {
+            // API is healthy, fetch predictions directly from the API
+            try {
+              // First try to get all best predictions
+              console.log('Fetching best predictions for all categories...');
+              const bestPredictions = await getAllBestPredictions();
 
-          // Log the predictions by category
-          console.log('Predictions by category from API:', JSON.stringify(predictionsByCategory, null, 2));
+              // Log raw data for debugging
+              console.log('Raw best predictions data:', bestPredictions);
 
-          // Extract and combine all predictions
-          const allPredictions = [
-            ...(predictionsByCategory["2odds"] || []),
-            ...(predictionsByCategory["5odds"] || []),
-            ...(predictionsByCategory["10odds"] || [])
-          ];
+              if (bestPredictions && Object.keys(bestPredictions).length > 0) {
+                console.log('Got best predictions with keys:', Object.keys(bestPredictions));
 
-          // Filter predictions with status "pending"
-          const pendingPredictions = allPredictions.filter(p => p.status === "pending");
-          setTodayPredictions(pendingPredictions);
+                // Set data source to API
+                setDataSource('api');
 
-          // Find combinations for different odds targets
-          const twoCombos = findCombinations(pendingPredictions, 2, 0.3);
-          const fiveCombos = findCombinations(pendingPredictions, 5, 0.8);
-          const tenCombos = findCombinations(pendingPredictions, 10, 1.5);
+                // Process the best predictions - log the keys to debug
+                console.log('Best predictions keys:', Object.keys(bestPredictions));
 
-          setTwoOddsCombinations(twoCombos);
-          setFiveOddsCombinations(fiveCombos);
-          setTenOddsCombinations(tenCombos);
-        } catch (categoryError) {
-          console.error("Error fetching predictions by category:", categoryError);
+                // Check both formats (with and without underscore)
+                const twoPredictions = bestPredictions['2odds'] || bestPredictions['2_odds'] || [];
+                const fivePredictions = bestPredictions['5odds'] || bestPredictions['5_odds'] || [];
+                const tenPredictions = bestPredictions['10odds'] || bestPredictions['10_odds'] || [];
+                const rolloverPredictions = bestPredictions['rollover'] || [];
 
-          // Fall back to getting all predictions for today
+                console.log('Prediction counts:', {
+                  twoPredictions: twoPredictions.length,
+                  fivePredictions: fivePredictions.length,
+                  tenPredictions: tenPredictions.length,
+                  rolloverPredictions: rolloverPredictions.length
+                });
+
+                // Remove duplicate predictions based on fixture_id
+                const uniqueTwoPredictions = twoPredictions.reduce((unique: any[], prediction: any) => {
+                  // Check if we already have a prediction with this fixture_id
+                  const exists = unique.find(p => p.game?.id === prediction.game?.id);
+                  if (!exists) {
+                    // Include all games regardless of start time
+                    unique.push(prediction);
+                  }
+                  return unique;
+                }, []);
+
+                console.log(`Filtered ${twoPredictions.length} predictions to ${uniqueTwoPredictions.length} unique upcoming games`);
+
+                // Create combinations from the best predictions
+                const twoCombos = uniqueTwoPredictions.length > 0 ? [{
+                  id: `2odds_combo_${Date.now()}`,
+                  predictions: uniqueTwoPredictions,
+                  totalOdds: 2.0,
+                  confidence: 0.9
+                }] : [];
+
+                // Remove duplicate predictions for 5 odds
+                const uniqueFivePredictions = fivePredictions.reduce((unique: any[], prediction: any) => {
+                  // Check if we already have a prediction with this fixture_id
+                  const exists = unique.find(p => p.game?.id === prediction.game?.id);
+                  if (!exists) {
+                    // Include all games regardless of start time
+                    unique.push(prediction);
+                  }
+                  return unique;
+                }, []);
+
+                console.log(`Filtered ${fivePredictions.length} predictions to ${uniqueFivePredictions.length} unique upcoming games for 5 odds`);
+
+                const fiveCombos = uniqueFivePredictions.length > 0 ? [{
+                  id: `5odds_combo_${Date.now()}`,
+                  predictions: uniqueFivePredictions,
+                  totalOdds: 5.0,
+                  confidence: 0.8
+                }] : [];
+
+                // Remove duplicate predictions for 10 odds
+                const uniqueTenPredictions = tenPredictions.reduce((unique: any[], prediction: any) => {
+                  // Check if we already have a prediction with this fixture_id
+                  const exists = unique.find(p => p.game?.id === prediction.game?.id);
+                  if (!exists) {
+                    // Include all games regardless of start time
+                    unique.push(prediction);
+                  }
+                  return unique;
+                }, []);
+
+                console.log(`Filtered ${tenPredictions.length} predictions to ${uniqueTenPredictions.length} unique upcoming games for 10 odds`);
+
+                const tenCombos = uniqueTenPredictions.length > 0 ? [{
+                  id: `10odds_combo_${Date.now()}`,
+                  predictions: uniqueTenPredictions,
+                  totalOdds: 10.0,
+                  confidence: 0.7
+                }] : [];
+
+                // Set the combinations
+                setTwoOddsCombinations(twoCombos);
+                setFiveOddsCombinations(fiveCombos);
+                setTenOddsCombinations(tenCombos);
+
+                // Extract all predictions
+                const allPredictions = [
+                  ...twoPredictions,
+                  ...fivePredictions,
+                  ...tenPredictions,
+                  ...rolloverPredictions
+                ];
+
+                // Set today's predictions
+                setTodayPredictions(allPredictions);
+
+                console.log('Processed best predictions:', {
+                  twoCombos,
+                  fiveCombos,
+                  tenCombos,
+                  allPredictions
+                });
+              } else {
+                // Fallback to regular predictions API
+                console.log('No best predictions found, falling back to regular predictions API');
+
+                // Fetch predictions from the API with categorized=true
+                const apiResponse = await getApiDailyPredictions();
+                console.log('API response:', apiResponse);
+
+                // Set data source to API
+                setDataSource('api');
+
+                // Process the API response
+                if (apiResponse && apiResponse.categorized) {
+                  // Extract combinations from the API response
+                  const twoCombos = (apiResponse.categorized['2_odds'] || []).map((combo: any) => ({
+                    id: combo.id,
+                    predictions: combo.predictions,
+                    totalOdds: combo.combined_odds || 2.0,
+                    confidence: combo.combined_confidence || 0.7
+                  }));
+
+                  const fiveCombos = (apiResponse.categorized['5_odds'] || []).map((combo: any) => ({
+                    id: combo.id,
+                    predictions: combo.predictions,
+                    totalOdds: combo.combined_odds || 5.0,
+                    confidence: combo.combined_confidence || 0.7
+                  }));
+
+                  const tenCombos = (apiResponse.categorized['10_odds'] || []).map((combo: any) => ({
+                    id: combo.id,
+                    predictions: combo.predictions,
+                    totalOdds: combo.combined_odds || 10.0,
+                    confidence: combo.combined_confidence || 0.7
+                  }));
+
+                  // Set the combinations
+                  setTwoOddsCombinations(twoCombos);
+                  setFiveOddsCombinations(fiveCombos);
+                  setTenOddsCombinations(tenCombos);
+
+                  // Extract all predictions
+                  const allPredictions = [
+                    ...(apiResponse.predictions || []),
+                    ...(apiResponse.rollover || [])
+                  ];
+
+                  // Set today's predictions
+                  setTodayPredictions(allPredictions);
+                } else {
+                  // Fallback to category-specific endpoints
+                  console.log('No categorized predictions found, falling back to category-specific endpoints');
+
+                  // Get best predictions for each category
+                  const twoPredictions = await getBestPredictionsByCategory('2_odds');
+                  const fivePredictions = await getBestPredictionsByCategory('5_odds');
+                  const tenPredictions = await getBestPredictionsByCategory('10_odds');
+                  // Try to get rollover predictions if available
+                  let rolloverPredictions = [];
+
+                  // Create combinations from the best predictions
+                  const twoCombos = twoPredictions.length > 0 ? [{
+                    id: `2odds_combo_${Date.now()}`,
+                    predictions: twoPredictions,
+                    totalOdds: 2.0,
+                    confidence: 0.9
+                  }] : [];
+
+                  const fiveCombos = fivePredictions.length > 0 ? [{
+                    id: `5odds_combo_${Date.now()}`,
+                    predictions: fivePredictions,
+                    totalOdds: 5.0,
+                    confidence: 0.8
+                  }] : [];
+
+                  const tenCombos = tenPredictions.length > 0 ? [{
+                    id: `10odds_combo_${Date.now()}`,
+                    predictions: tenPredictions,
+                    totalOdds: 10.0,
+                    confidence: 0.7
+                  }] : [];
+
+                  // Set the combinations
+                  setTwoOddsCombinations(twoCombos);
+                  setFiveOddsCombinations(fiveCombos);
+                  setTenOddsCombinations(tenCombos);
+
+                  // Extract all predictions
+                  const allPredictions = [
+                    ...twoPredictions,
+                    ...fivePredictions,
+                    ...tenPredictions,
+                    ...(rolloverPredictions || [])
+                  ];
+
+                  // Set today's predictions
+                  setTodayPredictions(allPredictions);
+                }
+              }
+            } catch (apiError) {
+              console.error("Error fetching predictions from API:", apiError);
+              throw apiError; // Rethrow to trigger fallback
+            }
+          } else {
+            throw new Error('API health check failed');
+          }
+        } catch (healthError) {
+          console.error("API health check failed:", healthError);
+
+          // Fall back to unified data service
           try {
-            const today = new Date();
-            const predictions = await getPredictionsForDay(today);
+            // First try to get predictions by odds category
+            const predictionsByCategory = await getPredictionsByOddsCategory();
 
-            // Set data source to cache if we got here (unified service uses cache)
+            // Set data source to cache
             setDataSource('cache');
 
+            // Extract and combine all predictions
+            const allPredictions = [
+              ...(predictionsByCategory["2odds"] || []),
+              ...(predictionsByCategory["5odds"] || []),
+              ...(predictionsByCategory["10odds"] || [])
+            ];
+
             // Filter predictions with status "pending"
-            const pendingPredictions = predictions.filter(p => p.status === "pending");
+            const pendingPredictions = allPredictions.filter(p => p.status === "pending");
             setTodayPredictions(pendingPredictions);
 
             // Find combinations for different odds targets
@@ -223,10 +484,33 @@ const HomePage: React.FC = () => {
             setTwoOddsCombinations(twoCombos);
             setFiveOddsCombinations(fiveCombos);
             setTenOddsCombinations(tenCombos);
-          } catch (predictionError) {
-            console.error("Error fetching predictions:", predictionError);
-            setError("Failed to load predictions. Please try again later.");
-            // No fallback to mock data
+          } catch (categoryError) {
+            console.error("Error fetching predictions by category:", categoryError);
+
+            // Fall back to getting all predictions for today
+            try {
+              const today = new Date();
+              const predictions = await getPredictionsForDay(today);
+
+              // Set data source to cache
+              setDataSource('cache');
+
+              // Filter predictions with status "pending"
+              const pendingPredictions = predictions.filter(p => p.status === "pending");
+              setTodayPredictions(pendingPredictions);
+
+              // Find combinations for different odds targets
+              const twoCombos = findCombinations(pendingPredictions, 2, 0.3);
+              const fiveCombos = findCombinations(pendingPredictions, 5, 0.8);
+              const tenCombos = findCombinations(pendingPredictions, 10, 1.5);
+
+              setTwoOddsCombinations(twoCombos);
+              setFiveOddsCombinations(fiveCombos);
+              setTenOddsCombinations(tenCombos);
+            } catch (predictionError) {
+              console.error("Error fetching predictions:", predictionError);
+              setError("Failed to load predictions. Please try again later.");
+            }
           }
         }
 
@@ -261,7 +545,13 @@ const HomePage: React.FC = () => {
   }, []);
 
   return (
-    <div className="space-y-10">
+    <motion.div
+      className="space-y-10"
+      initial="initial"
+      animate="animate"
+      exit="exit"
+      variants={pageVariants}
+    >
       {/* Hero Section - More Compact */}
       <section className="relative py-12 md:py-16 -mx-4 px-4 overflow-hidden hero-section">
         <div className="absolute inset-0 bg-gradient-to-b from-[#1A1A27] to-[#121219] opacity-80 -z-10 dark:opacity-80 light:opacity-0"></div>
@@ -360,15 +650,24 @@ const HomePage: React.FC = () => {
                         </Badge>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                        {combo.predictions.map((prediction) => (
-                          <TrackedErrorBoundary key={prediction.id}>
-                            <Suspense fallback={<ComponentLoadingFallback />}>
-                              <PredictionCard
-                                prediction={prediction}
-                                isPremium={false}
-                              />
-                            </Suspense>
-                          </TrackedErrorBoundary>
+                        {combo.predictions.map((prediction, index) => (
+                          <motion.div
+                            key={prediction.id}
+                            custom={index}
+                            initial="initial"
+                            animate="animate"
+                            whileHover="hover"
+                            variants={cardVariants}
+                          >
+                            <TrackedErrorBoundary>
+                              <Suspense fallback={<ComponentLoadingFallback />}>
+                                <PredictionCard
+                                  prediction={prediction}
+                                  isPremium={false}
+                                />
+                              </Suspense>
+                            </TrackedErrorBoundary>
+                          </motion.div>
                         ))}
                       </div>
                     </div>
@@ -430,15 +729,24 @@ const HomePage: React.FC = () => {
                         </Badge>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                        {combo.predictions.map((prediction) => (
-                          <TrackedErrorBoundary key={prediction.id}>
-                            <Suspense fallback={<ComponentLoadingFallback />}>
-                              <PredictionCard
-                                prediction={prediction}
-                                isPremium={prediction.odds > 3.5}
-                              />
-                            </Suspense>
-                          </TrackedErrorBoundary>
+                        {combo.predictions.map((prediction, index) => (
+                          <motion.div
+                            key={prediction.id}
+                            custom={index}
+                            initial="initial"
+                            animate="animate"
+                            whileHover="hover"
+                            variants={cardVariants}
+                          >
+                            <TrackedErrorBoundary>
+                              <Suspense fallback={<ComponentLoadingFallback />}>
+                                <PredictionCard
+                                  prediction={prediction}
+                                  isPremium={prediction.odds > 3.5}
+                                />
+                              </Suspense>
+                            </TrackedErrorBoundary>
+                          </motion.div>
                         ))}
                       </div>
                     </div>
@@ -500,15 +808,24 @@ const HomePage: React.FC = () => {
                         </Badge>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                        {combo.predictions.map((prediction) => (
-                          <TrackedErrorBoundary key={prediction.id}>
-                            <Suspense fallback={<ComponentLoadingFallback />}>
-                              <PredictionCard
-                                prediction={prediction}
-                                isPremium={true}
-                              />
-                            </Suspense>
-                          </TrackedErrorBoundary>
+                        {combo.predictions.map((prediction, index) => (
+                          <motion.div
+                            key={prediction.id}
+                            custom={index}
+                            initial="initial"
+                            animate="animate"
+                            whileHover="hover"
+                            variants={cardVariants}
+                          >
+                            <TrackedErrorBoundary>
+                              <Suspense fallback={<ComponentLoadingFallback />}>
+                                <PredictionCard
+                                  prediction={prediction}
+                                  isPremium={true}
+                                />
+                              </Suspense>
+                            </TrackedErrorBoundary>
+                          </motion.div>
                         ))}
                       </div>
                     </div>
@@ -525,6 +842,104 @@ const HomePage: React.FC = () => {
                     disabled={refreshing10Odds}
                   >
                     {refreshing10Odds ? "Refreshing..." : "Try Different Fixtures"}
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            {/* Rollover Section */}
+            <div className="bg-[#1A1A27]/80 p-4 rounded-xl border border-[#2A2A3C]/20 shadow-lg light-card-effect">
+              <div className="flex justify-between items-center mb-3">
+                <div className="flex items-center">
+                  <div className="bg-[#56CCF2]/10 text-[#56CCF2] p-1.5 rounded-lg mr-2 flex items-center justify-center">
+                    <span className="text-base">🔄</span>
+                  </div>
+                  <h3 className="text-lg font-bold">Rollover <span className="text-xs text-[var(--muted-foreground)]">Challenge</span></h3>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="info" className="text-xs px-1.5 py-0.5">Daily Picks</Badge>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 w-8 p-0 rounded-full"
+                    onClick={() => refreshCategoryPredictions('rollover')}
+                    disabled={refreshing10Odds} // Reuse the same loading state for simplicity
+                  >
+                    {refreshing10Odds ? (
+                      <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-[#56CCF2]"></div>
+                    ) : (
+                      <span className="text-sm">↻</span>
+                    )}
+                  </Button>
+                </div>
+              </div>
+
+              {activeRollover ? (
+                <div className="space-y-4">
+                  <div className="bg-[#1A1A27]/50 p-3 rounded-xl border border-[#56CCF2]/20">
+                    <div className="flex justify-between items-center mb-2">
+                      <h4 className="font-semibold text-[#56CCF2] text-sm">
+                        Day {activeRollover.currentDay || 1} of 10
+                      </h4>
+                      <Badge variant="outline" className="text-xs px-1.5 py-0.5">
+                        Target Odds: 3.0
+                      </Badge>
+                    </div>
+
+                    {/* Progress Bar */}
+                    <div className="w-full h-1.5 bg-[#2A2A3C] rounded-full mb-3">
+                      <div
+                        className="h-1.5 rounded-full bg-gradient-to-r from-[#56CCF2] to-[#2E8BC0]"
+                        style={{ width: `${((activeRollover.currentDay || 1) - 1) * 10}%` }}
+                      ></div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {activeRollover.predictions?.slice(0, 3).map((prediction, index) => (
+                        <motion.div
+                          key={prediction.id}
+                          custom={index}
+                          initial="initial"
+                          animate="animate"
+                          whileHover="hover"
+                          variants={cardVariants}
+                        >
+                          <TrackedErrorBoundary>
+                            <Suspense fallback={<ComponentLoadingFallback />}>
+                              <PredictionCard
+                                prediction={prediction}
+                                isPremium={true}
+                                variant="rollover"
+                              />
+                            </Suspense>
+                          </TrackedErrorBoundary>
+                        </motion.div>
+                      ))}
+                    </div>
+
+                    <div className="mt-3 pt-2 border-t border-[#2A2A3C]/20 flex justify-between items-center">
+                      <div className="text-xs text-[#A1A1AA]">
+                        <span className="font-medium">Initial: $100</span>
+                      </div>
+                      <div className="text-xs text-[#56CCF2]">
+                        <span className="font-medium">Current: ${activeRollover.currentAmount?.toFixed(2) || "100.00"}</span>
+                      </div>
+                      <div className="text-xs text-[#56CCF2]">
+                        <span className="font-medium">Projected: ${activeRollover.projectedAmount?.toFixed(2) || "3000.00"}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-6">
+                  <p className="text-[#A1A1AA]">No active rollover challenge available.</p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-3"
+                    asChild
+                  >
+                    <Link to="/rollover">View Rollover Page</Link>
                   </Button>
                 </div>
               )}
@@ -635,7 +1050,7 @@ const HomePage: React.FC = () => {
           </Button>
         </div>
       </section>
-    </div>
+    </motion.div>
   );
 };
 

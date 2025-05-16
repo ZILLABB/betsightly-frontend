@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { getMultiAPIPredictions, refreshPredictions, mapAPIPredictionsToFrontend } from '../services/apiService';
 import { formatDate } from '../utils/dateUtils';
 import { Spinner, Alert, Button, Card, Badge, ProgressBar, Tabs, Tab } from 'react-bootstrap';
 import { Prediction } from '../types';
+import {
+  getBestPredictionsByCategory,
+  getAllBestPredictions,
+  setForceRefresh
+} from '../services/enhancedApiService';
 
 interface PredictionsListProps {
   date?: string;
@@ -38,22 +42,44 @@ const PredictionsList: React.FC<PredictionsListProps> = ({
       setLoading(true);
       setError(null);
 
-      const predictionsData = await getMultiAPIPredictions(date, forceRefresh);
-      
-      // Convert API predictions to frontend format
-      const formattedPredictions: Record<string, Prediction[]> = {};
-      
-      for (const [cat, preds] of Object.entries(predictionsData)) {
-        formattedPredictions[cat] = mapAPIPredictionsToFrontend(preds);
-        
+      // If a specific category is requested, fetch only that category
+      if (category) {
+        const categoryPredictions = await getBestPredictionsByCategory(category);
+
+        // Create a record with just this category
+        const formattedPredictions: Record<string, Prediction[]> = {
+          [category]: categoryPredictions
+        };
+
         // Limit number of items if specified
-        if (maxItems && formattedPredictions[cat].length > maxItems) {
-          formattedPredictions[cat] = formattedPredictions[cat].slice(0, maxItems);
+        if (maxItems && formattedPredictions[category].length > maxItems) {
+          formattedPredictions[category] = formattedPredictions[category].slice(0, maxItems);
         }
+
+        setPredictions(formattedPredictions);
+      } else {
+        // Otherwise fetch all categories
+        const allPredictions = await getAllBestPredictions();
+
+        // Create a formatted record with all categories
+        const formattedPredictions: Record<string, Prediction[]> = {};
+
+        // Convert category names if needed and apply limits
+        for (const [cat, preds] of Object.entries(allPredictions)) {
+          // Convert frontend category names (2odds) to API format (2_odds) if needed
+          const apiCategory = cat.includes('_') ? cat : cat.replace('odds', '_odds');
+
+          formattedPredictions[apiCategory] = preds;
+
+          // Limit number of items if specified
+          if (maxItems && formattedPredictions[apiCategory].length > maxItems) {
+            formattedPredictions[apiCategory] = formattedPredictions[apiCategory].slice(0, maxItems);
+          }
+        }
+
+        setPredictions(formattedPredictions);
       }
-      
-      setPredictions(formattedPredictions);
-      
+
       // Set active tab if category is specified
       if (category) {
         setActiveTab(category);
@@ -70,16 +96,22 @@ const PredictionsList: React.FC<PredictionsListProps> = ({
   const handleRefresh = async () => {
     try {
       setRefreshing(true);
-      
-      // Refresh predictions
-      await refreshPredictions(date);
-      
-      // Then reload predictions with force refresh
-      await loadPredictions(true);
-      
+
+      // Set force refresh flag to true
+      setForceRefresh(true);
+
+      // Reload predictions
+      await loadPredictions();
+
+      // Reset force refresh flag
+      setForceRefresh(false);
+
     } catch (err) {
       console.error('Error refreshing predictions:', err);
       setError('Failed to refresh predictions. Please try again later.');
+
+      // Make sure to reset force refresh flag even on error
+      setForceRefresh(false);
     } finally {
       setRefreshing(false);
     }
@@ -120,9 +152,9 @@ const PredictionsList: React.FC<PredictionsListProps> = ({
     return (
       <Alert variant="danger">
         {error}
-        <Button 
-          variant="outline-danger" 
-          size="sm" 
+        <Button
+          variant="outline-danger"
+          size="sm"
           className="ms-3"
           onClick={() => loadPredictions()}
         >
@@ -142,15 +174,15 @@ const PredictionsList: React.FC<PredictionsListProps> = ({
     <div className="predictions-list">
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h3>Predictions {date ? `for ${formatDate(new Date(date))}` : 'Today'}</h3>
-        <Button 
-          variant="outline-primary" 
+        <Button
+          variant="outline-primary"
           onClick={handleRefresh}
           disabled={refreshing}
         >
           {refreshing ? 'Refreshing...' : 'Refresh'}
         </Button>
       </div>
-      
+
       <Tabs
         activeKey={activeTab}
         onSelect={(k) => setActiveTab(k || '2_odds')}
@@ -178,8 +210,8 @@ const PredictionsList: React.FC<PredictionsListProps> = ({
       return (
         <div className="text-center my-4">
           <p className="text-muted">No predictions found for {getCategoryDisplayName(categoryName)}.</p>
-          <Button 
-            variant="primary" 
+          <Button
+            variant="primary"
             onClick={handleRefresh}
             disabled={refreshing}
           >
@@ -193,64 +225,64 @@ const PredictionsList: React.FC<PredictionsListProps> = ({
       <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
         {predictionsList.map(prediction => (
           <div key={prediction.id} className="col">
-            <Card 
-              className="h-100 prediction-card" 
+            <Card
+              className="h-100 prediction-card"
               onClick={() => handlePredictionClick(prediction)}
               style={{ cursor: onPredictionSelect ? 'pointer' : 'default' }}
             >
               <Card.Body>
                 <div className="d-flex justify-content-between align-items-center mb-2">
                   <Badge bg="secondary">
-                    {prediction.game.startTime instanceof Date 
+                    {prediction.game.startTime instanceof Date
                       ? prediction.game.startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                       : 'Time N/A'}
                   </Badge>
                   <Badge bg="primary">{prediction.odds.toFixed(2)}</Badge>
                 </div>
-                
+
                 <div className="text-center mb-3">
                   <div className="team home-team mb-1">
-                    {typeof prediction.game.homeTeam === 'string' 
-                      ? prediction.game.homeTeam 
+                    {typeof prediction.game.homeTeam === 'string'
+                      ? prediction.game.homeTeam
                       : prediction.game.homeTeam.name}
                   </div>
                   <div className="versus">vs</div>
                   <div className="team away-team mt-1">
-                    {typeof prediction.game.awayTeam === 'string' 
-                      ? prediction.game.awayTeam 
+                    {typeof prediction.game.awayTeam === 'string'
+                      ? prediction.game.awayTeam
                       : prediction.game.awayTeam.name}
                   </div>
                   <div className="league mt-1 text-muted small">
                     {prediction.game.league}
                   </div>
                 </div>
-                
+
                 <div className="prediction-details">
                   <div className="prediction-type mb-1">
                     <strong>Prediction:</strong> {prediction.predictionType} - {prediction.prediction}
                   </div>
-                  
+
                   <div className="confidence mb-2">
                     <div className="d-flex justify-content-between">
                       <small>Confidence</small>
                       <small>{prediction.confidence}%</small>
                     </div>
-                    <ProgressBar 
-                      now={prediction.confidence} 
-                      variant={getConfidenceColor(prediction.confidence)} 
+                    <ProgressBar
+                      now={prediction.confidence}
+                      variant={getConfidenceColor(prediction.confidence)}
                     />
                   </div>
-                  
+
                   {showExplanation && prediction.explanation && (
                     <div className="explanation mt-3">
                       <small className="text-muted">{prediction.explanation}</small>
                     </div>
                   )}
-                  
+
                   {showGameCode && prediction.gameCode && (
                     <div className="game-code mt-2">
-                      <Badge 
-                        bg="secondary" 
+                      <Badge
+                        bg="secondary"
                         className="w-100 text-monospace"
                         onClick={(e) => copyGameCode(prediction.gameCode || '', e)}
                         style={{ cursor: 'pointer' }}

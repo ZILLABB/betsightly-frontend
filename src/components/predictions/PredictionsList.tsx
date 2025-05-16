@@ -5,6 +5,10 @@ import { Button } from "../common/Button";
 import { Badge } from "../common/Badge";
 import VirtualizedList from "../common/VirtualizedList";
 import { useBreakpoints } from "../../hooks/useMediaQuery";
+import { motion } from "framer-motion";
+import { listItemVariants, fadeVariants } from "../../utils/animations";
+import QualityFilter from "./QualityFilter";
+import SortSelector from "./SortSelector";
 
 interface PredictionsListProps {
   predictions: Prediction[];
@@ -19,6 +23,8 @@ const PredictionsList: React.FC<PredictionsListProps> = ({
 }) => {
   const [sportFilter, setSportFilter] = useState<SportType | "all">("all");
   const [statusFilter, setStatusFilter] = useState<PredictionStatus | "all">("all");
+  const [qualityFilter, setQualityFilter] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<"time" | "odds" | "quality">("time");
   const { isMobile, isTablet, isDesktop } = useBreakpoints();
   const [page, setPage] = useState(1);
   const ITEMS_PER_PAGE = isMobile ? 5 : 10;
@@ -36,11 +42,49 @@ const PredictionsList: React.FC<PredictionsListProps> = ({
     if (statusFilter !== "all" && prediction.status !== statusFilter) {
       return false;
     }
+    // Apply quality filter
+    if (qualityFilter !== null && prediction.quality_rating !== qualityFilter) {
+      return false;
+    }
     return true;
   });
 
-  // Sort predictions by start time with null checks
+  // Sort predictions based on selected sort criteria
   const sortedPredictions = [...filteredPredictions].sort((a, b) => {
+    if (sortBy === "time") {
+      const aTime = a?.game?.startTime ? new Date(a.game.startTime).getTime() : 0;
+      const bTime = b?.game?.startTime ? new Date(b.game.startTime).getTime() : 0;
+      return aTime - bTime;
+    } else if (sortBy === "odds") {
+      const aOdds = a?.odds || 0;
+      const bOdds = b?.odds || 0;
+      return bOdds - aOdds; // Higher odds first
+    } else if (sortBy === "quality") {
+      // Sort by quality rating (A+ > A > B+ > B > C+ > C)
+      const qualityRankMap: Record<string, number> = {
+        "A+": 6, "A": 5, "B+": 4, "B": 3, "C+": 2, "C": 1
+      };
+
+      // Get quality values with fallbacks
+      const aQualityRating = a?.quality_rating || "";
+      const bQualityRating = b?.quality_rating || "";
+
+      // If both have quality ratings, compare them
+      if (aQualityRating && bQualityRating) {
+        return (qualityRankMap[bQualityRating] || 0) - (qualityRankMap[aQualityRating] || 0);
+      }
+
+      // If only one has a quality rating, prioritize it
+      if (aQualityRating && !bQualityRating) return -1;
+      if (!aQualityRating && bQualityRating) return 1;
+
+      // If neither has a quality rating, fall back to prediction quality percentage
+      const aPredictionQuality = a?.prediction_quality || 0;
+      const bPredictionQuality = b?.prediction_quality || 0;
+      return bPredictionQuality - aPredictionQuality; // Higher quality first
+    }
+
+    // Default to time sorting
     const aTime = a?.game?.startTime ? new Date(a.game.startTime).getTime() : 0;
     const bTime = b?.game?.startTime ? new Date(b.game.startTime).getTime() : 0;
     return aTime - bTime;
@@ -69,6 +113,13 @@ const PredictionsList: React.FC<PredictionsListProps> = ({
             <Badge variant="premium">{successRate}% Success</Badge>
           </div>
         </div>
+
+        {/* Sort Selector */}
+        <SortSelector
+          sortBy={sortBy}
+          onSortChange={setSortBy}
+          className="mt-2 md:mt-0"
+        />
 
         {showFilters && (
           <div className="flex flex-wrap gap-2">
@@ -133,6 +184,13 @@ const PredictionsList: React.FC<PredictionsListProps> = ({
                 Pending
               </Button>
             </div>
+
+            <div className="mt-2">
+              <QualityFilter
+                selectedQuality={qualityFilter}
+                onSelectQuality={setQualityFilter}
+              />
+            </div>
           </div>
         )}
       </div>
@@ -144,31 +202,49 @@ const PredictionsList: React.FC<PredictionsListProps> = ({
       ) : (
         <>
           {sortedPredictions.length <= 10 ? (
-            // Regular grid for small number of predictions
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {sortedPredictions.map((prediction) => (
-                <PredictionCard
+            // Regular grid for small number of predictions with modern styling
+            <motion.div
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+              initial="initial"
+              animate="animate"
+              variants={fadeVariants}
+            >
+              {sortedPredictions.map((prediction, index) => (
+                <motion.div
                   key={prediction.id}
-                  prediction={prediction}
-                  isPremium={prediction.odds > 5}
-                />
+                  custom={index}
+                  variants={listItemVariants}
+                >
+                  <PredictionCard
+                    prediction={prediction}
+                    isPremium={prediction.odds > 5}
+                    showReason={true}
+                  />
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
           ) : (
-            // Virtualized list for larger number of predictions
+            // Virtualized list for larger number of predictions with modern styling
             <div className="w-full">
               <VirtualizedList
                 items={sortedPredictions}
                 height={isMobile ? 600 : isTablet ? 800 : 1000}
                 itemHeight={isMobile ? 450 : 350}
-                renderItem={(prediction) => (
-                  <div className="p-2">
+                renderItem={(prediction, index) => (
+                  <motion.div
+                    className="p-2"
+                    custom={index}
+                    initial="initial"
+                    animate="animate"
+                    variants={listItemVariants}
+                  >
                     <PredictionCard
                       key={prediction.id}
                       prediction={prediction}
                       isPremium={prediction.odds > 5}
+                      showReason={true}
                     />
-                  </div>
+                  </motion.div>
                 )}
                 className="w-full"
                 overscan={3}

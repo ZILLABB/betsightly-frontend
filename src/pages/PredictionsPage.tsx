@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
-import type { DailyPredictions } from "../types";
+import type { DailyPredictions, Prediction } from "../types";
 import PredictionsList from "../components/predictions/PredictionsList";
 import { Button } from "../components/common/Button";
 import { Card, CardContent } from "../components/common/Card";
@@ -11,7 +11,13 @@ import { predictionsToCSV, downloadCSV, generatePredictionsPDF, sharePredictions
 import { Download, RefreshCw } from "lucide-react";
 import DatePicker from "../components/common/DatePicker";
 import OfflineStatusBar from "../components/common/OfflineStatusBar";
-// Import unified data service
+// Import enhanced API service
+import {
+  getAllBestPredictions,
+  getBestPredictionsByCategory,
+  checkAPIHealth
+} from "../services/enhancedApiService";
+// Import unified data service as fallback
 import {
   getPredictionsForDay,
   getDailyPredictions
@@ -27,6 +33,7 @@ const PredictionsPage: React.FC = () => {
   const [fetchError, setFetchError] = useState<Error | null>(null);
   const [isStale, setIsStale] = useState<boolean>(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [dataSource, setDataSource] = useState<'api' | 'cache'>('cache');
 
   // Function to check if data is stale (older than 1 hour)
   const checkIfDataIsStale = useCallback(() => {
@@ -51,63 +58,123 @@ const PredictionsPage: React.FC = () => {
     setFetchError(null);
 
     try {
-      // Always try to fetch today's predictions first for the most up-to-date data
-      const today = new Date();
-      console.log("Fetching predictions for today:", formatDate(today));
-
+      // First check if the API is healthy
       try {
-        // Try to get today's predictions directly
-        const todayPredictions = await getPredictionsForDay(today);
+        const healthCheck = await checkAPIHealth();
+        console.log('API health check:', healthCheck);
 
-        // Create a DailyPredictions object for today
-        const dailyPrediction: DailyPredictions = {
-          date: today,
-          predictions: todayPredictions
-        };
+        if (healthCheck.status === 'ok') {
+          // API is healthy, fetch predictions directly from the API
+          try {
+            // Get today's date
+            const today = new Date();
+            console.log("Fetching best predictions for today:", formatDate(today));
 
-        // Set today's predictions
-        setDailyPredictions([dailyPrediction]);
-        const now = new Date();
-        setLastUpdated(now);
-        setIsStale(false);
+            // First try to get all best predictions
+            const bestPredictions = await getAllBestPredictions();
+            console.log('Got best predictions:', bestPredictions);
 
-        // Now try to fetch more days in the background
-        try {
-          const allPredictions = await getDailyPredictions(10);
+            if (bestPredictions && Object.keys(bestPredictions).length > 0) {
+              // Create a DailyPredictions object for today
+              const dailyPrediction: DailyPredictions = {
+                date: today,
+                predictions: Object.values(bestPredictions).flat()
+              };
 
-          // Ensure all dates are Date objects
-          const processedPredictions = allPredictions.map(dp => ({
-            ...dp,
-            date: dp.date instanceof Date ? dp.date : new Date(dp.date)
-          }));
+              // Set today's predictions
+              setDailyPredictions([dailyPrediction]);
+              const now = new Date();
+              setLastUpdated(now);
+              setIsStale(false);
+              setDataSource('api');
 
-          // Only update if we got more predictions than just today
-          if (processedPredictions.length > 1) {
-            setDailyPredictions(processedPredictions);
+              // Now try to fetch more days in the background
+              try {
+                // For now, we only have today's predictions from the API
+                // In the future, we could fetch predictions for other days
+                console.log('Only today\'s predictions are available from the API');
+              } catch (moreError) {
+                console.warn("Could not fetch additional days, but today's data is available:", moreError);
+              }
+            } else {
+              throw new Error('No best predictions found');
+            }
+          } catch (apiError) {
+            console.error("Error fetching predictions from API:", apiError);
+            throw apiError; // Rethrow to trigger fallback
           }
-        } catch (moreError) {
-          console.warn("Could not fetch additional days, but today's data is available:", moreError);
+        } else {
+          throw new Error('API health check failed');
         }
-      } catch (todayError) {
-        console.error("Failed to fetch today's predictions directly:", todayError);
+      } catch (healthError) {
+        console.error("API health check failed:", healthError);
 
-        // Fall back to getting all predictions
+        // Fall back to unified data service
         try {
-          // Try to fetch daily predictions for the last 10 days
-          const predictions = await getDailyPredictions(10);
+          // Always try to fetch today's predictions first for the most up-to-date data
+          const today = new Date();
+          console.log("Falling back to unified data service for today:", formatDate(today));
 
-          // Ensure all dates are Date objects
-          const processedPredictions = predictions.map(dp => ({
-            ...dp,
-            date: dp.date instanceof Date ? dp.date : new Date(dp.date)
-          }));
+          try {
+            // Try to get today's predictions directly
+            const todayPredictions = await getPredictionsForDay(today);
 
-          setDailyPredictions(processedPredictions);
-          const now = new Date();
-          setLastUpdated(now);
-          setIsStale(false);
-        } catch (allError) {
-          console.error("Failed to fetch all predictions:", allError);
+            // Create a DailyPredictions object for today
+            const dailyPrediction: DailyPredictions = {
+              date: today,
+              predictions: todayPredictions
+            };
+
+            // Set today's predictions
+            setDailyPredictions([dailyPrediction]);
+            const now = new Date();
+            setLastUpdated(now);
+            setIsStale(false);
+            setDataSource('cache');
+
+            // Now try to fetch more days in the background
+            try {
+              const allPredictions = await getDailyPredictions(10);
+
+              // Ensure all dates are Date objects
+              const processedPredictions = allPredictions.map(dp => ({
+                ...dp,
+                date: dp.date instanceof Date ? dp.date : new Date(dp.date)
+              }));
+
+              // Only update if we got more predictions than just today
+              if (processedPredictions.length > 1) {
+                setDailyPredictions(processedPredictions);
+              }
+            } catch (moreError) {
+              console.warn("Could not fetch additional days, but today's data is available:", moreError);
+            }
+          } catch (todayError) {
+            console.error("Failed to fetch today's predictions directly:", todayError);
+
+            // Fall back to getting all predictions
+            try {
+              // Try to fetch daily predictions for the last 10 days
+              const predictions = await getDailyPredictions(10);
+
+              // Ensure all dates are Date objects
+              const processedPredictions = predictions.map(dp => ({
+                ...dp,
+                date: dp.date instanceof Date ? dp.date : new Date(dp.date)
+              }));
+
+              setDailyPredictions(processedPredictions);
+              const now = new Date();
+              setLastUpdated(now);
+              setIsStale(false);
+              setDataSource('cache');
+            } catch (allError) {
+              console.error("Failed to fetch all predictions:", allError);
+              setFetchError(new Error("Failed to load predictions. Please try again later."));
+            }
+          }
+        } catch (fallbackError) {
+          console.error("Fallback to unified data service failed:", fallbackError);
           setFetchError(new Error("Failed to load predictions. Please try again later."));
         }
       }
@@ -141,15 +208,12 @@ const PredictionsPage: React.FC = () => {
   // Refresh function - just use fetchPredictions directly
   const refreshData = fetchPredictions;
 
-  // Determine data source based on staleness and errors
-  const getDataSource = (): 'api' | 'cache' => {
+  // Update data source if data is stale
+  useEffect(() => {
     if (isStale || fetchError) {
-      return 'cache';
+      setDataSource('cache');
     }
-    return 'api';
-  };
-
-  const dataSource = getDataSource();
+  }, [isStale, fetchError]);
 
   // Handle export functions
   const handleExportCSV = () => {
@@ -198,14 +262,35 @@ const PredictionsPage: React.FC = () => {
     };
   }, [showExportOptions]);
 
-  // Get predictions for the selected date
-  const selectedPredictions = (dailyPredictions || []).find(
-    (dp) => {
-      // Ensure dp.date is a Date object
-      const dpDate = dp.date instanceof Date ? dp.date : new Date(dp.date);
-      return formatDate(dpDate) === formatDate(selectedDate);
-    }
-  )?.predictions || [];
+  // Get predictions for the selected date and filter out duplicates
+  const selectedPredictions = React.useMemo(() => {
+    // Get all predictions for the selected date
+    const allPredictions = (dailyPredictions || []).find(
+      (dp) => {
+        // Ensure dp.date is a Date object
+        const dpDate = dp.date instanceof Date ? dp.date : new Date(dp.date);
+        return formatDate(dpDate) === formatDate(selectedDate);
+      }
+    )?.predictions || [];
+
+    // Create a map to track unique fixture IDs
+    const uniqueFixtureIds = new Map();
+
+    // Filter out duplicates but keep all games regardless of start time
+    return allPredictions.filter(prediction => {
+      // Check if we've already seen this fixture ID
+      const fixtureId = prediction.game?.id;
+      const isDuplicate = fixtureId && uniqueFixtureIds.has(fixtureId);
+
+      // If it's not a duplicate, add it to our map and keep it
+      if (fixtureId && !isDuplicate) {
+        uniqueFixtureIds.set(fixtureId, true);
+        return true;
+      }
+
+      return false;
+    });
+  }, [dailyPredictions, selectedDate]);
 
   // Get unique dates from daily predictions and ensure they are Date objects
   const dates = (dailyPredictions || []).map((dp) => {

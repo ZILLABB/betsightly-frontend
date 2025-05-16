@@ -18,7 +18,7 @@ import * as apiService from './enhancedApiService';
 import * as extendedSportsService from './extendedSportsService';
 
 // Import API base URL from enhancedApiService
-const API_BASE_URL = apiService.API_BASE_URL || 'http://localhost:8000/api';
+const API_BASE_URL = apiService.API_BASE_URL || 'http://localhost:8002/api';
 
 // API availability state
 let isApiAvailable = true;

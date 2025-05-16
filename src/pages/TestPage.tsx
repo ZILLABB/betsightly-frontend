@@ -18,7 +18,7 @@ const TestPage: React.FC = () => {
   const checkApiHealth = async () => {
     setIsLoadingHealth(true);
     try {
-      const response = await fetch('http://localhost:8000/api/health');
+      const response = await fetch('http://localhost:8002/api/health');
       const data = await response.json();
       setHealthStatus(JSON.stringify(data, null, 2));
     } catch (error) {
@@ -32,7 +32,7 @@ const TestPage: React.FC = () => {
   const loadFixtures = async () => {
     setIsLoadingFixtures(true);
     try {
-      const response = await fetch('http://localhost:8000/api/multi-api/fixtures');
+      const response = await fetch('http://localhost:8002/api/multi-api/fixtures');
       const data = await response.json();
       setFixturesData(JSON.stringify(data, null, 2));
     } catch (error) {
@@ -46,7 +46,7 @@ const TestPage: React.FC = () => {
   const loadPredictions = async () => {
     setIsLoadingPredictions(true);
     try {
-      const response = await fetch('http://localhost:8000/api/multi-api/predictions/daily');
+      const response = await fetch('http://localhost:8002/api/multi-api/predictions/daily');
       const data = await response.json();
       setPredictionsData(JSON.stringify(data, null, 2));
     } catch (error) {
@@ -59,13 +59,13 @@ const TestPage: React.FC = () => {
   return (
     <div className="p-6 max-w-4xl mx-auto">
       <h1 className="text-2xl font-bold mb-6">API Test Page</h1>
-      
+
       {/* Health Check Section */}
       <div className="mb-8 p-4 bg-[#1A1A27]/80 rounded-xl border border-[#2A2A3C]/20">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold">API Health Check</h2>
-          <Button 
-            onClick={checkApiHealth} 
+          <Button
+            onClick={checkApiHealth}
             disabled={isLoadingHealth}
             variant="outline"
           >
@@ -76,13 +76,13 @@ const TestPage: React.FC = () => {
           {healthStatus}
         </pre>
       </div>
-      
+
       {/* Fixtures Section */}
       <div className="mb-8 p-4 bg-[#1A1A27]/80 rounded-xl border border-[#2A2A3C]/20">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold">Fixtures Data</h2>
-          <Button 
-            onClick={loadFixtures} 
+          <Button
+            onClick={loadFixtures}
             disabled={isLoadingFixtures}
             variant="outline"
           >
@@ -93,13 +93,13 @@ const TestPage: React.FC = () => {
           {fixturesData}
         </pre>
       </div>
-      
+
       {/* Predictions Section */}
       <div className="mb-8 p-4 bg-[#1A1A27]/80 rounded-xl border border-[#2A2A3C]/20">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold">Predictions Data</h2>
-          <Button 
-            onClick={loadPredictions} 
+          <Button
+            onClick={loadPredictions}
             disabled={isLoadingPredictions}
             variant="outline"
           >

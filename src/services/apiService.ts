@@ -3,7 +3,7 @@ import type { DailyPredictions, Prediction, Game } from "../types";
 import { getApiKey } from "./settingsService";
 
 // API base URL
-const API_BASE_URL = "http://localhost:8000/api";
+const API_BASE_URL = "http://localhost:8002/api";
 
 // Log API base URL for debugging
 console.log("API Service - Using API base URL:", API_BASE_URL);

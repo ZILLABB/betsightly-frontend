@@ -1,36 +1,199 @@
 import React, { useEffect, useState } from "react";
-import type { RolloverGame } from "../types";
+import type { RolloverGame, Prediction } from "../types";
 import RolloverTracker from "../components/results/RolloverTracker";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/common/Card";
 import { Button } from "../components/common/Button";
-import { getRolloverGames } from "../services/dataService";
+import { Badge } from "../components/common/Badge";
 import { format } from "date-fns";
+// Import enhanced API service
+import {
+  getAllBestPredictions,
+  getBestPredictionsByCategory,
+  checkAPIHealth
+} from "../services/enhancedApiService";
+// Import data service as fallback
+import { getRolloverGames } from "../services/dataService";
+import { formatLocalDateTime } from "../utils/formatters";
 
+// Format date in user's local timezone
 const formatDate = (date: string) => {
-  return format(new Date(date), "MMM d, yyyy");
+  const dateObj = new Date(date);
+  return dateObj.toLocaleDateString(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  });
 };
 
 const RolloverPage: React.FC = () => {
   const [rolloverGames, setRolloverGames] = useState<RolloverGame[]>([]);
   const [selectedRollover, setSelectedRollover] = useState<RolloverGame | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [dataSource, setDataSource] = useState<'api' | 'cache'>('cache');
+  const [rolloverPredictions, setRolloverPredictions] = useState<Prediction[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const games = await getRolloverGames();
-        setRolloverGames(games);
+        setError(null);
 
-        // Set the active rollover as selected by default
-        const activeRollover = games.find(game => game.isActive);
-        if (activeRollover) {
-          setSelectedRollover(activeRollover);
-        } else if (games.length > 0) {
-          setSelectedRollover(games[0]);
+        // First check if the API is healthy
+        try {
+          const healthCheck = await checkAPIHealth();
+          console.log('API health check:', healthCheck);
+
+          if (healthCheck.status === 'ok') {
+            // API is healthy, fetch rollover predictions directly from the API
+            try {
+              // First try to get all best predictions
+              console.log('Fetching best predictions for rollover...');
+              const bestPredictions = await getAllBestPredictions();
+
+              if (bestPredictions && bestPredictions.rollover && bestPredictions.rollover.length > 0) {
+                console.log('Got rollover predictions:', bestPredictions.rollover);
+
+                // Filter out duplicate predictions but keep all games regardless of start time
+                const uniqueFixtureIds = new Map();
+
+                const filteredPredictions = bestPredictions.rollover.filter(prediction => {
+                  // Check if we've already seen this fixture ID
+                  const fixtureId = prediction.game?.id;
+                  const isDuplicate = fixtureId && uniqueFixtureIds.has(fixtureId);
+
+                  // If it's not a duplicate, add it to our map and keep it
+                  if (fixtureId && !isDuplicate) {
+                    uniqueFixtureIds.set(fixtureId, true);
+                    return true;
+                  }
+
+                  return false;
+                });
+
+                console.log(`Filtered ${bestPredictions.rollover.length} predictions to ${filteredPredictions.length} unique upcoming games`);
+
+                setRolloverPredictions(filteredPredictions);
+                setDataSource('api');
+
+                // Create a synthetic rollover game from the predictions
+                const today = new Date();
+                const endDate = new Date();
+                endDate.setDate(today.getDate() + 9); // 10 days including today
+
+                const syntheticGame: RolloverGame = {
+                  id: 'current-rollover',
+                  title: '10-Day Rollover Challenge',
+                  startDate: today,
+                  endDate: endDate,
+                  isActive: true,
+                  startingAmount: 100,
+                  currentAmount: 100,
+                  targetAmount: 100 * Math.pow(3, 10), // 3x for 10 days
+                  days: Array.from({ length: 10 }, (_, i) => ({
+                    day: i + 1,
+                    date: new Date(today.getTime() + i * 24 * 60 * 60 * 1000),
+                    predictions: i === 0 ? bestPredictions.rollover : [],
+                    odds: 3.0,
+                    status: i === 0 ? 'pending' : 'upcoming',
+                    amount: 100 * Math.pow(3, i)
+                  }))
+                };
+
+                setRolloverGames([syntheticGame]);
+                setSelectedRollover(syntheticGame);
+              } else {
+                // Fall back to specific category endpoint
+                console.log('No rollover predictions found in best predictions, trying category endpoint');
+                const rolloverData = await getBestPredictionsByCategory('rollover');
+
+                if (rolloverData && rolloverData.length > 0) {
+                  console.log('Got rollover predictions from category endpoint:', rolloverData);
+
+                  // Filter out duplicate predictions but keep all games regardless of start time
+                  const uniqueFixtureIds = new Map();
+
+                  const filteredPredictions = rolloverData.filter(prediction => {
+                    // Check if we've already seen this fixture ID
+                    const fixtureId = prediction.game?.id;
+                    const isDuplicate = fixtureId && uniqueFixtureIds.has(fixtureId);
+
+                    // If it's not a duplicate, add it to our map and keep it
+                    if (fixtureId && !isDuplicate) {
+                      uniqueFixtureIds.set(fixtureId, true);
+                      return true;
+                    }
+
+                    return false;
+                  });
+
+                  console.log(`Filtered ${rolloverData.length} predictions to ${filteredPredictions.length} unique upcoming games`);
+
+                  setRolloverPredictions(filteredPredictions);
+                  setDataSource('api');
+
+                  // Create a synthetic rollover game from the predictions
+                  const today = new Date();
+                  const endDate = new Date();
+                  endDate.setDate(today.getDate() + 9); // 10 days including today
+
+                  const syntheticGame: RolloverGame = {
+                    id: 'current-rollover',
+                    title: '10-Day Rollover Challenge',
+                    startDate: today,
+                    endDate: endDate,
+                    isActive: true,
+                    startingAmount: 100,
+                    currentAmount: 100,
+                    targetAmount: 100 * Math.pow(3, 10), // 3x for 10 days
+                    days: Array.from({ length: 10 }, (_, i) => ({
+                      day: i + 1,
+                      date: new Date(today.getTime() + i * 24 * 60 * 60 * 1000),
+                      predictions: i === 0 ? rolloverData : [],
+                      odds: 3.0,
+                      status: i === 0 ? 'pending' : 'upcoming',
+                      amount: 100 * Math.pow(3, i)
+                    }))
+                  };
+
+                  setRolloverGames([syntheticGame]);
+                  setSelectedRollover(syntheticGame);
+                } else {
+                  throw new Error('No rollover predictions found');
+                }
+              }
+            } catch (apiError) {
+              console.error("Error fetching rollover predictions from API:", apiError);
+              throw apiError; // Rethrow to trigger fallback
+            }
+          } else {
+            throw new Error('API health check failed');
+          }
+        } catch (healthError) {
+          console.error("API health check failed:", healthError);
+
+          // Fall back to data service
+          try {
+            console.log('Falling back to data service for rollover games');
+            const games = await getRolloverGames();
+            setRolloverGames(games);
+            setDataSource('cache');
+
+            // Set the active rollover as selected by default
+            const activeRollover = games.find(game => game.isActive);
+            if (activeRollover) {
+              setSelectedRollover(activeRollover);
+            } else if (games.length > 0) {
+              setSelectedRollover(games[0]);
+            }
+          } catch (fallbackError) {
+            console.error("Error fetching rollover games from data service:", fallbackError);
+            setError("Failed to load rollover games. Please try again later.");
+          }
         }
       } catch (error) {
-        console.error("Error fetching rollover games:", error);
+        console.error("Unexpected error in fetchData:", error);
+        setError("An unexpected error occurred. Please try again later.");
       } finally {
         setLoading(false);
       }
@@ -74,11 +237,34 @@ const RolloverPage: React.FC = () => {
         </CardContent>
       </Card>
 
+      {/* Data Source Indicator */}
+      <div className="flex justify-end mb-2">
+        <Badge
+          variant={dataSource === 'api' ? 'success' : 'warning'}
+          className="text-xs"
+        >
+          Data Source: {dataSource === 'api' ? 'Live API' : 'Cached Data'}
+        </Badge>
+      </div>
+
       {/* Selected Rollover */}
       {loading ? (
         <div className="text-center py-6 bg-[#1A1A27]/50 rounded-xl border border-[#2A2A3C]/10">
           <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-[#F5A623] mb-2"></div>
           <p className="text-[#A1A1AA]">Loading rollover challenges...</p>
+        </div>
+      ) : error ? (
+        <div className="text-center py-6 bg-[#1A1A27]/50 rounded-xl border border-red-500/20">
+          <p className="text-lg font-semibold mb-1 text-red-500">Error Loading Rollover Challenges</p>
+          <p className="text-sm text-[#A1A1AA]">{error}</p>
+          <Button
+            variant="outline"
+            size="sm"
+            className="mt-3"
+            onClick={() => window.location.reload()}
+          >
+            Retry
+          </Button>
         </div>
       ) : selectedRollover ? (
         <RolloverTracker rolloverGame={selectedRollover} />

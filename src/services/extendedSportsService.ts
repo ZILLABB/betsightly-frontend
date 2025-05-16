@@ -8,7 +8,7 @@ import type {
 } from '../types';
 
 // API configuration
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8002/api';
 const API_TIMEOUT = 10000; // 10 seconds
 const MAX_RETRIES = 2;
 
@@ -116,7 +116,7 @@ export const getFootballLeagues = async (): Promise<Array<{ id: string; name: st
 
   try {
     const data = await fetchWithRetry<{ leagues: Array<{ id: string; name: string; country: string }> }>('/extended-sports/football/leagues');
-    
+
     // Cache the result
     cache.set(cacheKey, data.leagues, CACHE_TTL.VERY_LONG);
     return data.leagues;
@@ -140,7 +140,7 @@ export const getFootballSeasons = async (): Promise<string[]> => {
 
   try {
     const data = await fetchWithRetry<{ seasons: string[] }>('/extended-sports/football/seasons');
-    
+
     // Cache the result
     cache.set(cacheKey, data.seasons, CACHE_TTL.VERY_LONG);
     return data.seasons;
@@ -177,7 +177,7 @@ export const getFootballMatches = async (
 
     const endpoint = `/extended-sports/football/matches?${params.toString()}`;
     const data = await fetchWithRetry<{ matches: any[] }>(endpoint);
-    
+
     // Map to Game interface
     const games: Game[] = data.matches.map(match => ({
       id: match.id,
@@ -196,11 +196,11 @@ export const getFootballMatches = async (
       league: match.league,
       homeScore: match.home_score,
       awayScore: match.away_score,
-      status: match.status.toLowerCase() === 'finished' ? 'finished' : 
+      status: match.status.toLowerCase() === 'finished' ? 'finished' :
               match.status.toLowerCase() === 'live' ? 'live' : 'scheduled',
       source: 'football-data-uk' as DataSourceType
     }));
-    
+
     // Cache the result
     cache.set(cacheKey, games, CACHE_TTL.MEDIUM);
     return games;
@@ -224,14 +224,14 @@ export const getBasketballTeams = async (): Promise<Team[]> => {
 
   try {
     const data = await fetchWithRetry<{ teams: any[] }>('/extended-sports/basketball/teams');
-    
+
     // Map to Team interface
     const teams: Team[] = data.teams.map(team => ({
       id: `nba_${team.id}`,
       name: team.name,
       logo: ''
     }));
-    
+
     // Cache the result
     cache.set(cacheKey, teams, CACHE_TTL.VERY_LONG);
     return teams;
@@ -268,7 +268,7 @@ export const getBasketballGames = async (
 
     const endpoint = `/extended-sports/basketball/games?${params.toString()}`;
     const data = await fetchWithRetry<{ games: any[] }>(endpoint);
-    
+
     // Map to Game interface
     const games: Game[] = data.games.map(game => ({
       id: game.id,
@@ -287,11 +287,11 @@ export const getBasketballGames = async (
       league: game.league,
       homeScore: game.home_score,
       awayScore: game.away_score,
-      status: game.status.toLowerCase() === 'finished' ? 'finished' : 
+      status: game.status.toLowerCase() === 'finished' ? 'finished' :
               game.status.toLowerCase() === 'live' ? 'live' : 'scheduled',
       source: 'balldontlie' as DataSourceType
     }));
-    
+
     // Cache the result
     cache.set(cacheKey, games, CACHE_TTL.MEDIUM);
     return games;

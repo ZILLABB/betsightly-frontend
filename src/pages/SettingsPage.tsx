@@ -1,25 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/common/Card';
-import { Settings, Moon, Sun, DollarSign, Key } from 'lucide-react';
+import { Settings, Moon, Sun, DollarSign, Database } from 'lucide-react';
 import ThemeManager from '../utils/themeManager';
 import { usePreferences } from '../hooks/usePreferences';
 import { CURRENCY_SYMBOLS } from '../utils/currencyUtils';
 import type { Currency } from '../contexts/PreferencesTypes';
 import useCurrency from '../hooks/useCurrency';
-import ApiKeyForm from '../components/settings/ApiKeyForm';
 
 const SettingsPage: React.FC = () => {
   const { preferences, updatePreference } = usePreferences();
   const { formatUSD } = useCurrency();
-  const [apiKey, setApiKey] = useState<string>('');
-
-  // Load API key from localStorage on component mount
-  useEffect(() => {
-    const savedApiKey = localStorage.getItem('football_data_api_key');
-    if (savedApiKey) {
-      setApiKey(savedApiKey);
-    }
-  }, []);
 
   // Simple function to toggle theme
   const setLightTheme = () => {
@@ -35,18 +25,6 @@ const SettingsPage: React.FC = () => {
     updatePreference('currency', currency);
   };
 
-  // Function to save API key
-  const handleSaveApiKey = async (key: string): Promise<boolean> => {
-    try {
-      localStorage.setItem('football_data_api_key', key);
-      setApiKey(key);
-      return true;
-    } catch (error) {
-      console.error('Error saving API key:', error);
-      return false;
-    }
-  };
-
   // Sample amount to demonstrate currency conversion
   const sampleAmount = 100;
 
@@ -57,16 +35,89 @@ const SettingsPage: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 gap-6">
-        {/* API Key Settings Card */}
+        {/* Data Settings Card */}
         <Card className="bg-[var(--card)] border border-[var(--border)] shadow-lg overflow-hidden">
           <CardHeader className="pb-2">
             <CardTitle className="text-lg flex items-center">
-              <Key size={18} className="mr-2 text-[var(--primary)]" />
-              API Configuration
+              <Database size={18} className="mr-2 text-[var(--primary)]" />
+              Prediction Settings
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ApiKeyForm onSave={handleSaveApiKey} initialApiKey={apiKey} />
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Prediction Categories</label>
+                <div className="p-3 bg-[var(--secondary)]/10 rounded-md">
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <span className="text-sm font-medium">2 Odds Predictions</span>
+                      <p className="text-xs text-[var(--muted-foreground)]">Target: 2.0 odds</p>
+                    </div>
+                    <span className="text-xs bg-green-500/20 text-green-500 px-2 py-0.5 rounded-full">Active</span>
+                  </div>
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <span className="text-sm font-medium">5 Odds Predictions</span>
+                      <p className="text-xs text-[var(--muted-foreground)]">Target: 5.0 odds</p>
+                    </div>
+                    <span className="text-xs bg-green-500/20 text-green-500 px-2 py-0.5 rounded-full">Active</span>
+                  </div>
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <span className="text-sm font-medium">10 Odds Predictions</span>
+                      <p className="text-xs text-[var(--muted-foreground)]">Target: 10.0 odds</p>
+                    </div>
+                    <span className="text-xs bg-green-500/20 text-green-500 px-2 py-0.5 rounded-full">Active</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-sm font-medium">10-Day Rollover</span>
+                      <p className="text-xs text-[var(--muted-foreground)]">Target: 3.0 odds per day</p>
+                    </div>
+                    <span className="text-xs bg-green-500/20 text-green-500 px-2 py-0.5 rounded-full">Active</span>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Confidence Threshold</label>
+                <div className="p-3 bg-[var(--secondary)]/10 rounded-md">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm">Minimum Confidence</span>
+                    <span className="text-xs font-semibold">70%</span>
+                  </div>
+                  <div className="w-full bg-[var(--secondary)]/20 rounded-full h-2">
+                    <div
+                      className="h-full bg-[var(--primary)] rounded-full"
+                      style={{ width: '70%' }}
+                    ></div>
+                  </div>
+                  <p className="text-xs text-[var(--muted-foreground)] mt-2">
+                    All predictions have a minimum confidence level of 70% to ensure high-quality selections.
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Data Sources</label>
+                <div className="p-3 bg-[var(--secondary)]/10 rounded-md">
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <span className="text-sm font-medium">API-Football</span>
+                      <p className="text-xs text-[var(--muted-foreground)]">Daily fixtures and match data</p>
+                    </div>
+                    <span className="text-xs bg-green-500/20 text-green-500 px-2 py-0.5 rounded-full">Connected</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-sm font-medium">GitHub Football Dataset</span>
+                      <p className="text-xs text-[var(--muted-foreground)]">Historical data for ML training</p>
+                    </div>
+                    <span className="text-xs bg-green-500/20 text-green-500 px-2 py-0.5 rounded-full">Connected</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
 

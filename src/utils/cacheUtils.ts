@@ -90,10 +90,8 @@ class Cache {
       tags
     });
 
-    // TEMPORARILY DISABLED CACHING - Just log the operation
-    return;
-
-    /* Original implementation
+    // Re-enabled caching
+    // Original implementation
     const cacheKey = this.prefix + key;
     const expiry = Date.now() + (ttl * 1000);
     const cacheItem: CacheItem<T> = { data, expiry, tags };
@@ -121,7 +119,7 @@ class Cache {
         }
       }
     }
-    */
+
   }
 
   /**
@@ -135,10 +133,8 @@ class Cache {
       storageType: this.storageType
     });
 
-    // TEMPORARILY DISABLED CACHING - Always return null to force fresh data fetch
-    return null;
-
-    /* Original implementation
+    // Re-enabled caching
+    // Original implementation
     const cacheKey = this.prefix + key;
 
     // Check memory cache first
@@ -182,7 +178,7 @@ class Cache {
       this.remove(key);
       return null;
     }
-    */
+
   }
 
   /**

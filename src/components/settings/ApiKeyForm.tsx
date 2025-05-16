@@ -9,9 +9,18 @@ import { validateApiKey } from '../../services/settingsService';
 interface ApiKeyFormProps {
   onSave: (apiKey: string) => Promise<boolean>;
   initialApiKey?: string;
+  apiName?: string;
+  apiDescription?: string;
+  apiUrl?: string;
 }
 
-const ApiKeyForm: React.FC<ApiKeyFormProps> = ({ onSave, initialApiKey = '' }) => {
+const ApiKeyForm: React.FC<ApiKeyFormProps> = ({
+  onSave,
+  initialApiKey = '',
+  apiName = 'Football-Data.org',
+  apiDescription = 'Enter your API key to fetch live fixture data',
+  apiUrl = 'https://www.football-data.org/client/register'
+}) => {
   const [apiKey, setApiKey] = useState<string>(initialApiKey);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isValidating, setIsValidating] = useState<boolean>(false);
@@ -107,10 +116,10 @@ const ApiKeyForm: React.FC<ApiKeyFormProps> = ({ onSave, initialApiKey = '' }) =
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Key size={20} />
-          API Key Configuration
+          {apiName} API Key
         </CardTitle>
         <CardDescription>
-          Enter your Football-Data.org API key to fetch live fixture data
+          {apiDescription}
         </CardDescription>
       </CardHeader>
       <CardContent>

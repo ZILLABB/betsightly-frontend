@@ -1,4 +1,4 @@
-export type SportType = "soccer" | "basketball" | "mixed";
+export type SportType = "soccer" | "basketball" | "mixed" | "tennis" | "football" | string;
 export type DataSourceType = "football-data-org" | "football-data-uk" | "balldontlie" | "mock";
 export type BookmakerType = "bet365" | "betway" | "1xbet" | "22bet" | "sportybet";
 export type PredictionStatus = "won" | "lost" | "pending";
@@ -39,10 +39,14 @@ export interface Game {
 }
 
 export interface Prediction {
+  predictions: never[];
+  combined_odds: number;
+  combined_confidence: number;
   id: string;
   gameId?: string;
   game: Game;
   predictionType: string;
+  prediction?: string;
   odds: number;
   status: "won" | "lost" | "pending";
   createdAt: Date;
@@ -50,11 +54,34 @@ export interface Prediction {
   reason?: string;
   explanation?: string;
   confidence?: number;
+  confidencePct?: number;
   gameCode?: string;
   punterId?: string;
   punter?: Punter;
   bookmaker?: BookmakerType;
-  rolloverDay?: number;  
+  rolloverDay?: number;
+  // New fields for combination predictions
+  combinedOdds?: number;
+  combinedConfidence?: number;
+  comboId?: string;
+  value?: number;
+  // Prediction percentages
+  homeWinPct?: number;
+  drawPct?: number;
+  awayWinPct?: number;
+  over25Pct?: number;
+  under25Pct?: number;
+  bttsYesPct?: number;
+  bttsNoPct?: number;
+  // New quality metrics
+  quality_rating?: string;
+  prediction_quality?: number;
+  match_result_confidence?: number;
+  over_under_confidence?: number;
+  btts_confidence?: number;
+  match_result_certainty?: number;
+  over_under_certainty?: number;
+  btts_certainty?: number;
 }
 
 export interface DailyPredictions {
@@ -69,6 +96,16 @@ export interface RolloverGame {
   endDate: Date;
   successRate: number;
   isActive: boolean;
+  // New fields for 10-day rollover
+  targetOdds?: number;
+  dailyCombinations?: {
+    day: number;
+    date: Date;
+    predictions: Prediction[];
+    combinedOdds: number;
+    combinedConfidence: number;
+    status: "won" | "lost" | "pending";
+  }[];
 }
 
 export interface StatsOverview {

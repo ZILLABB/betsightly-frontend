@@ -15,13 +15,15 @@ interface PredictionCardProps {
   isPremium?: boolean;
   showReason?: boolean;
   onClick?: () => void;
+  variant?: 'default' | 'premium' | 'rollover';
 }
 
 const PredictionCard: React.FC<PredictionCardProps> = ({
   prediction,
   isPremium = false,
   showReason = true,
-  onClick
+  onClick,
+  variant
 }) => {
   const [showDetails, setShowDetails] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
@@ -67,13 +69,21 @@ const PredictionCard: React.FC<PredictionCardProps> = ({
     return <div ref={cardRef} className="w-full h-48 bg-[#1A1A27]/50 rounded-lg animate-pulse"></div>;
   }
 
+  // Determine the card variant
+  let cardVariant = PredictionCardVariant.DEFAULT;
+  if (variant === 'premium' || isPremium) {
+    cardVariant = PredictionCardVariant.PREMIUM;
+  } else if (variant === 'rollover') {
+    cardVariant = PredictionCardVariant.ROLLOVER;
+  }
+
   // Use the BasePredictionCard for standard display
   const baseCard = (
     <div ref={cardRef}>
       <BasePredictionCard
         prediction={prediction}
         mode={PredictionCardMode.STANDARD}
-        variant={isPremium ? PredictionCardVariant.PREMIUM : PredictionCardVariant.DEFAULT}
+        variant={cardVariant}
         showReason={showReason}
         onClick={onClick}
       />
@@ -112,7 +122,7 @@ const PredictionCard: React.FC<PredictionCardProps> = ({
         <BasePredictionCard
           prediction={prediction}
           mode={PredictionCardMode.STANDARD}
-          variant={isPremium ? PredictionCardVariant.PREMIUM : PredictionCardVariant.DEFAULT}
+          variant={cardVariant}
           showReason={showReason}
           onClick={onClick}
         />

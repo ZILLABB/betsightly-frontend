@@ -128,8 +128,8 @@ export const formatNumber = (value: number, options: Intl.NumberFormatOptions = 
  * @returns Formatted currency string
  */
 export const formatCurrency = (
-  value: number, 
-  currency: string = 'USD', 
+  value: number,
+  currency: string = 'USD',
   options: Intl.NumberFormatOptions = {}
 ): string => {
   switch (currency.toUpperCase()) {
@@ -145,6 +145,34 @@ export const formatCurrency = (
   }
 };
 
+/**
+ * Format a date with local timezone
+ * @param dateString - The date string to format
+ * @returns Formatted date and time string in local timezone
+ */
+export const formatLocalDateTime = (dateString: string | Date): string => {
+  if (!dateString) return '';
+
+  const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
+
+  // Force display in user's local timezone
+  return `${date.toLocaleDateString()} ${date.toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true // Ensure 12-hour format with AM/PM
+  })}`;
+};
+
+/**
+ * Format odds value
+ * @param odds - The odds value to format
+ * @returns Formatted odds string
+ */
+export const formatOdds = (odds: number): string => {
+  if (!odds) return '0.00';
+  return odds.toFixed(2);
+};
+
 export default {
   formatUSD,
   formatNGN,
@@ -154,5 +182,7 @@ export default {
   formatDate,
   formatTime,
   formatNumber,
-  formatCurrency
+  formatCurrency,
+  formatLocalDateTime,
+  formatOdds
 };

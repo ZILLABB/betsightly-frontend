@@ -1,12 +1,12 @@
 /**
  * API Service
- * 
+ *
  * This file contains the base API configuration and helper functions
  * for making HTTP requests to the backend.
  */
 
 // API Configuration
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
 const FOOTBALL_API_KEY = import.meta.env.VITE_FOOTBALL_API_KEY || 'f9ed94ba8dde4a57b742ce7075057310';
 const FOOTBALL_API_URL = 'https://api.football-data.org/v4';
 
@@ -22,37 +22,37 @@ const cache: Record<string, { data: any; timestamp: number }> = {};
  */
 export async function fetchWithCache(url: string, options: RequestInit = {}): Promise<any> {
   const cacheKey = `${url}-${JSON.stringify(options)}`;
-  
+
   // Check if we have a valid cached response
   if (cache[cacheKey]) {
     const { data, timestamp } = cache[cacheKey];
     const now = Date.now();
-    
+
     // If the cache is still valid, return the cached data
     if (now - timestamp < CACHE_DURATION) {
       console.log(`Using cached data for ${url}`);
       return data;
     }
   }
-  
+
   try {
     // Make the API request
     const response = await fetch(url, options);
-    
+
     // Check if the response is OK
     if (!response.ok) {
       throw new Error(`API error: ${response.status} ${response.statusText}`);
     }
-    
+
     // Parse the response as JSON
     const data = await response.json();
-    
+
     // Cache the response
     cache[cacheKey] = {
       data,
       timestamp: Date.now(),
     };
-    
+
     return data;
   } catch (error) {
     console.error(`Error fetching ${url}:`, error);
@@ -78,14 +78,14 @@ export function clearCache(): void {
  */
 export async function fetchFromBackend(endpoint: string, options: RequestInit = {}): Promise<any> {
   const url = `${API_BASE_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
-  
+
   const defaultOptions: RequestInit = {
     headers: {
       'Content-Type': 'application/json',
       ...options.headers,
     },
   };
-  
+
   return fetchWithCache(url, { ...defaultOptions, ...options });
 }
 
@@ -97,14 +97,14 @@ export async function fetchFromBackend(endpoint: string, options: RequestInit = 
  */
 export async function fetchFootballData(endpoint: string, options: RequestInit = {}): Promise<any> {
   const url = `${FOOTBALL_API_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
-  
+
   const defaultOptions: RequestInit = {
     headers: {
       'X-Auth-Token': FOOTBALL_API_KEY,
       ...options.headers,
     },
   };
-  
+
   return fetchWithCache(url, { ...defaultOptions, ...options });
 }
 
@@ -115,7 +115,7 @@ export async function fetchFootballData(endpoint: string, options: RequestInit =
  */
 export function handleApiError(error: any): { message: string; status?: number; details?: any } {
   console.error('API Error:', error);
-  
+
   if (error.response) {
     // The request was made and the server responded with a status code
     // that falls out of the range of 2xx
