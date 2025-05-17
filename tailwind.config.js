@@ -161,6 +161,52 @@ export default {
       animation: {
         "spin-slow": "spin 3s linear infinite",
         "ping-slow": "ping 3s cubic-bezier(0, 0, 0.2, 1) infinite",
+        "gradient-x": "gradient-x 15s ease infinite",
+        "gradient-y": "gradient-y 15s ease infinite",
+        "gradient-xy": "gradient-xy 15s ease infinite",
+        "pulse-slow": "pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+        "bounce-slow": "bounce 3s infinite",
+        "float": "float 6s ease-in-out infinite",
+      },
+      keyframes: {
+        "gradient-x": {
+          "0%, 100%": {
+            "background-position": "0% 50%",
+          },
+          "50%": {
+            "background-position": "100% 50%",
+          },
+        },
+        "gradient-y": {
+          "0%, 100%": {
+            "background-position": "50% 0%",
+          },
+          "50%": {
+            "background-position": "50% 100%",
+          },
+        },
+        "gradient-xy": {
+          "0%, 100%": {
+            "background-position": "0% 0%",
+          },
+          "25%": {
+            "background-position": "100% 0%",
+          },
+          "50%": {
+            "background-position": "100% 100%",
+          },
+          "75%": {
+            "background-position": "0% 100%",
+          },
+        },
+        "float": {
+          "0%, 100%": {
+            transform: "translateY(0)",
+          },
+          "50%": {
+            transform: "translateY(-10px)",
+          },
+        },
       },
       backgroundImage: {
         "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",

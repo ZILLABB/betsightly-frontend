@@ -173,4 +173,28 @@
   .animate-enter {
     @apply animate-pulse;
   }
+
+  .premium-tabs {
+    @apply border-b border-amber-500/20;
+  }
+
+  .premium-tabs button[role="tab"] {
+    @apply text-white/70 hover:text-amber-400 transition-colors duration-300;
+  }
+
+  .premium-tabs button[role="tab"][aria-selected="true"] {
+    @apply text-amber-400 border-b-2 border-amber-500;
+  }
+
+  .premium-inner-tabs {
+    @apply border-b border-amber-500/10;
+  }
+
+  .premium-inner-tabs button[role="tab"] {
+    @apply text-white/70 hover:text-white transition-colors duration-300 py-2;
+  }
+
+  .premium-inner-tabs button[role="tab"][aria-selected="true"] {
+    @apply text-white bg-black/20 rounded-t-lg border-b-2 border-amber-500/50;
+  }
 }

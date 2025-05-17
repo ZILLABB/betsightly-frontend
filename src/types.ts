@@ -55,6 +55,7 @@ export interface Prediction {
   explanation?: string;
   confidence?: number;
   confidencePct?: number;
+  uncertainty?: number;
   gameCode?: string;
   punterId?: string;
   punter?: Punter;

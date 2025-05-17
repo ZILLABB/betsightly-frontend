@@ -1,8 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { getRolloverPredictions } from '../services/apiService';
 import { formatDate } from '../utils/dateUtils';
-import { Spinner, Alert, Button, Card, Badge, ProgressBar, Accordion } from 'react-bootstrap';
+import {
+  Spinner,
+  Alert,
+  Button,
+  Card,
+  CardContent,
+  Badge,
+  ProgressBar,
+  Accordion,
+  AccordionItem
+} from '../components/ui';
 import { Prediction } from '../types';
+import { Copy, Clock, Calendar } from 'lucide-react';
+import { cn } from '../utils/cn';
 
 interface RolloverPredictionsProps {
   days?: number;
@@ -65,7 +77,7 @@ const RolloverPredictions: React.FC<RolloverPredictionsProps> = ({
   const copyAllGameCodes = (predictions: Prediction[], day: number, event: React.MouseEvent) => {
     event.stopPropagation();
     const gameCodes = predictions.map(p => p.gameCode).filter(Boolean).join('\n');
-    
+
     if (gameCodes) {
       navigator.clipboard.writeText(gameCodes)
         .then(() => {
@@ -82,10 +94,8 @@ const RolloverPredictions: React.FC<RolloverPredictionsProps> = ({
   // Render loading state
   if (loading) {
     return (
-      <div className="d-flex justify-content-center my-5">
-        <Spinner animation="border" role="status">
-          <span className="visually-hidden">Loading...</span>
-        </Spinner>
+      <div className="flex justify-center items-center my-8">
+        <Spinner size="lg" variant="primary" />
       </div>
     );
   }
@@ -93,12 +103,12 @@ const RolloverPredictions: React.FC<RolloverPredictionsProps> = ({
   // Render error state
   if (error) {
     return (
-      <Alert variant="danger">
-        {error}
-        <Button 
-          variant="outline-danger" 
-          size="sm" 
-          className="ms-3"
+      <Alert variant="danger" className="flex flex-col sm:flex-row items-center justify-between p-4">
+        <div>{error}</div>
+        <Button
+          variant="outline"
+          size="sm"
+          className="mt-3 sm:mt-0"
           onClick={() => loadRolloverPredictions()}
         >
           Try Again
@@ -115,7 +125,7 @@ const RolloverPredictions: React.FC<RolloverPredictionsProps> = ({
   // If no predictions found
   if (daysWithPredictions.length === 0) {
     return (
-      <Alert variant="info">
+      <Alert variant="info" className="p-4">
         No rollover predictions available. Please try again later.
       </Alert>
     );
@@ -131,108 +141,150 @@ const RolloverPredictions: React.FC<RolloverPredictionsProps> = ({
   }, {} as Record<number, Date>);
 
   return (
-    <div className="rollover-predictions">
-      <h3 className="mb-4">10-Day Rollover Challenge</h3>
-      
-      <Accordion defaultActiveKey={daysWithPredictions[0].toString()} alwaysOpen>
+    <div className="space-y-6">
+      <Accordion defaultActiveKey={daysWithPredictions[0].toString()} alwaysOpen className="premium-accordion">
         {daysWithPredictions.map(day => (
-          <Accordion.Item key={day} eventKey={day.toString()}>
-            <Accordion.Header>
-              <div className="d-flex justify-content-between w-100 me-3">
-                <span>Day {day}: {formatDate(dayDates[day])}</span>
-                <Badge bg="primary">{rolloverPredictions[day].length} Predictions</Badge>
-              </div>
-            </Accordion.Header>
-            <Accordion.Body>
-              {rolloverPredictions[day].length > 0 && (
-                <div className="mb-3">
-                  <Button 
-                    variant="outline-secondary" 
-                    size="sm"
-                    onClick={(e) => copyAllGameCodes(rolloverPredictions[day], day, e)}
-                  >
-                    Copy All Game Codes
-                  </Button>
-                </div>
-              )}
-              
-              <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
-                {rolloverPredictions[day].map(prediction => (
-                  <div key={prediction.id} className="col">
-                    <Card 
-                      className="h-100 prediction-card" 
-                      onClick={() => handlePredictionClick(prediction)}
-                      style={{ cursor: onPredictionSelect ? 'pointer' : 'default' }}
-                    >
-                      <Card.Body>
-                        <div className="d-flex justify-content-between align-items-center mb-2">
-                          <Badge bg="secondary">
-                            {prediction.game.startTime instanceof Date 
-                              ? prediction.game.startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                              : 'Time N/A'}
-                          </Badge>
-                          <Badge bg="primary">{prediction.odds.toFixed(2)}</Badge>
-                        </div>
-                        
-                        <div className="text-center mb-3">
-                          <div className="team home-team mb-1">
-                            {typeof prediction.game.homeTeam === 'string' 
-                              ? prediction.game.homeTeam 
-                              : prediction.game.homeTeam.name}
-                          </div>
-                          <div className="versus">vs</div>
-                          <div className="team away-team mt-1">
-                            {typeof prediction.game.awayTeam === 'string' 
-                              ? prediction.game.awayTeam 
-                              : prediction.game.awayTeam.name}
-                          </div>
-                          <div className="league mt-1 text-muted small">
-                            {prediction.game.league}
-                          </div>
-                        </div>
-                        
-                        <div className="prediction-details">
-                          <div className="prediction-type mb-1">
-                            <strong>Prediction:</strong> {prediction.predictionType} - {prediction.prediction}
-                          </div>
-                          
-                          <div className="confidence mb-2">
-                            <div className="d-flex justify-content-between">
-                              <small>Confidence</small>
-                              <small>{prediction.confidence}%</small>
-                            </div>
-                            <ProgressBar 
-                              now={prediction.confidence} 
-                              variant={getConfidenceColor(prediction.confidence)} 
-                            />
-                          </div>
-                          
-                          {showExplanation && prediction.explanation && (
-                            <div className="explanation mt-3">
-                              <small className="text-muted">{prediction.explanation}</small>
-                            </div>
-                          )}
-                          
-                          {showGameCode && prediction.gameCode && (
-                            <div className="game-code mt-2">
-                              <Badge 
-                                bg="secondary" 
-                                className="w-100 text-monospace"
-                                onClick={(e) => copyGameCode(prediction.gameCode || '', e)}
-                                style={{ cursor: 'pointer' }}
-                              >
-                                {prediction.gameCode}
-                              </Badge>
-                            </div>
-                          )}
-                        </div>
-                      </Card.Body>
-                    </Card>
+          <AccordionItem
+            key={day}
+            eventKey={day.toString()}
+            title={
+              <div className="flex justify-between items-center w-full pr-2">
+                <div className="flex items-center">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-amber-500/10 mr-3">
+                    <Calendar size={16} className="text-amber-400" />
                   </div>
-                ))}
+                  <span className="font-medium text-white">Day {day}: <span className="text-amber-400">{formatDate(dayDates[day])}</span></span>
+                </div>
+                <Badge className="ml-2 bg-amber-500/20 text-amber-400 border-0">{rolloverPredictions[day].length} Picks</Badge>
               </div>
-            </Accordion.Body>
-          </Accordion.Item>
+            }
+            className="bg-black/20 border border-amber-500/10 rounded-lg mb-4"
+          >
+            {rolloverPredictions[day].length > 0 && (
+              <div className="mb-4 flex justify-between items-center">
+                <div className="text-sm text-white/70">Premium picks for Day {day}</div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={(e) => copyAllGameCodes(rolloverPredictions[day], day, e)}
+                  className="flex items-center border-amber-500/30 text-amber-400 hover:bg-black/20 hover:border-amber-500/50"
+                >
+                  <Copy size={14} className="mr-1.5" />
+                  Copy All Game Codes
+                </Button>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {rolloverPredictions[day].map(prediction => (
+                <Card
+                  key={prediction.id}
+                  className={cn(
+                    "h-full border bg-black/30 shadow-sm hover:shadow-md transition-all duration-300",
+                    prediction.confidence >= 80 ? "border-green-500/30" :
+                    prediction.confidence >= 60 ? "border-blue-500/30" :
+                    prediction.confidence >= 40 ? "border-amber-500/30" : "border-red-500/30"
+                  )}
+                  onClick={() => handlePredictionClick(prediction)}
+                >
+                  <CardContent className="p-5">
+                    {/* Header with time and odds */}
+                    <div className="flex justify-between items-center mb-4">
+                      <Badge variant="outline" className="flex items-center px-2.5 py-1 border-amber-500/20 text-amber-400 bg-black/20">
+                        <Clock size={12} className="mr-1.5" />
+                        {prediction.game.startTime instanceof Date
+                          ? prediction.game.startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                          : 'Time N/A'}
+                      </Badge>
+                      <Badge
+                        className={cn(
+                          "px-2.5 py-1 font-medium border-0",
+                          prediction.odds > 5
+                            ? "bg-amber-500/20 text-amber-400"
+                            : "bg-green-500/20 text-green-400"
+                        )}
+                      >
+                        {prediction.odds.toFixed(2)} Odds
+                      </Badge>
+                    </div>
+
+                    {/* Teams */}
+                    <div className="relative bg-black/20 rounded-lg p-4 mb-4 border border-amber-500/10">
+                      <div className="flex flex-col items-center space-y-2">
+                        <div className="font-medium text-base text-white">
+                          {typeof prediction.game.homeTeam === 'string'
+                            ? prediction.game.homeTeam
+                            : prediction.game.homeTeam.name}
+                        </div>
+                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-amber-500/10 text-xs font-medium text-amber-400">
+                          VS
+                        </div>
+                        <div className="font-medium text-base text-white">
+                          {typeof prediction.game.awayTeam === 'string'
+                            ? prediction.game.awayTeam
+                            : prediction.game.awayTeam.name}
+                        </div>
+                      </div>
+                      <div className="absolute top-2 right-2 text-xs px-2 py-0.5 rounded bg-black/30 text-amber-400 border border-amber-500/10">
+                        {prediction.game.league}
+                      </div>
+                    </div>
+
+                    {/* Prediction details */}
+                    <div className="space-y-4">
+                      <div className="bg-amber-500/5 rounded-lg p-3 border border-amber-500/10">
+                        <div className="text-sm font-medium mb-1 text-amber-400">Prediction</div>
+                        <div className="text-base text-white">{prediction.predictionType} - {prediction.prediction}</div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="font-medium text-white/80">Confidence</span>
+                          <span className={cn(
+                            "font-bold",
+                            prediction.confidence >= 80 ? "text-green-500" :
+                            prediction.confidence >= 60 ? "text-blue-500" :
+                            prediction.confidence >= 40 ? "text-amber-500" : "text-red-500"
+                          )}>
+                            {prediction.confidence}%
+                          </span>
+                        </div>
+                        <ProgressBar
+                          now={prediction.confidence}
+                          variant={getConfidenceColor(prediction.confidence)}
+                          height={8}
+                          className="rounded-full"
+                        />
+                      </div>
+
+                      {showExplanation && prediction.explanation && (
+                        <div className="mt-3 text-sm text-white/70 bg-black/20 p-3 rounded-lg border border-amber-500/10">
+                          <div className="font-medium mb-1 text-xs text-amber-400">Analysis</div>
+                          {prediction.explanation}
+                        </div>
+                      )}
+
+                      {showGameCode && prediction.gameCode && (
+                        <div className="mt-3">
+                          <div className="text-xs text-amber-400 mb-1">Game Code</div>
+                          <Badge
+                            variant="secondary"
+                            className="w-full font-mono text-xs py-2 flex justify-between items-center cursor-pointer bg-black/20 hover:bg-black/30 text-white border border-amber-500/10 transition-colors duration-200"
+                            onClick={(e) => copyGameCode(prediction.gameCode || '', e)}
+                          >
+                            <span>{prediction.gameCode}</span>
+                            <div className="bg-black/30 p-1 rounded border border-amber-500/10">
+                              <Copy size={12} className="text-amber-400" />
+                            </div>
+                          </Badge>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </AccordionItem>
         ))}
       </Accordion>
     </div>

@@ -12,6 +12,7 @@ console.log("API Service - Using API base URL:", API_BASE_URL);
 const MULTI_API_BASE = `${API_BASE_URL}/multi-api`;
 const FOOTBALL_JSON_API_BASE = `${API_BASE_URL}/football-json`;
 const FOOTBALL_JSON_API_V2_BASE = `${API_BASE_URL}/football-json-api`;
+const PREDICTIONS_API_BASE = `${API_BASE_URL}/predictions`;
 
 // Cache TTL constants (in seconds)
 const CACHE_TTL = {
@@ -308,6 +309,7 @@ export const mapAPIPredictionsToFrontend = (predictions: any[]): Prediction[] =>
       prediction: prediction.prediction || "unknown",
       odds: prediction.odds || 1.0,
       confidence: prediction.confidence || 0,
+      uncertainty: prediction.uncertainty || null, // Include uncertainty if available
       status: prediction.status || "pending",
       createdAt: new Date(),
       punterId: "ai-system", // Since these are AI-generated predictions
@@ -352,50 +354,67 @@ export const getPredictionsForDay = async (date?: Date): Promise<Prediction[]> =
     // Format date if provided
     const formattedDate = date ? date.toISOString().split('T')[0] : undefined;
 
-    // Try to use the football.json API endpoint first
+    // Try to use the advanced predictions API endpoint first
     try {
-      const footballJsonData = await getFootballJsonPredictions(formattedDate);
+      const advancedData = await getAdvancedPredictions(formattedDate);
 
       // Combine all categories
       const allPredictions = [
-        ...(footballJsonData["2_odds"] || []),
-        ...(footballJsonData["5_odds"] || []),
-        ...(footballJsonData["10_odds"] || [])
+        ...(advancedData.categories?.["2_odds"] || []),
+        ...(advancedData.categories?.["5_odds"] || []),
+        ...(advancedData.categories?.["10_odds"] || [])
       ];
 
       // Convert to frontend format
       return mapAPIPredictionsToFrontend(allPredictions);
     } catch (error) {
-      console.error("Error using football.json API for daily predictions, falling back to multi-API:", error);
+      console.error("Error using advanced predictions API, falling back to football.json API:", error);
 
-      // Fall back to the multi-API endpoint
+      // Fall back to the football.json API endpoint
       try {
-        const multiApiData = await getMultiAPIPredictions(formattedDate);
+        const footballJsonData = await getFootballJsonPredictions(formattedDate);
 
         // Combine all categories
         const allPredictions = [
-          ...(multiApiData["2_odds"] || []),
-          ...(multiApiData["5_odds"] || []),
-          ...(multiApiData["10_odds"] || [])
+          ...(footballJsonData["2_odds"] || []),
+          ...(footballJsonData["5_odds"] || []),
+          ...(footballJsonData["10_odds"] || [])
         ];
 
         // Convert to frontend format
         return mapAPIPredictionsToFrontend(allPredictions);
-      } catch (multiApiError) {
-        console.error("Error using multi-API for daily predictions, falling back to old API:", multiApiError);
+      } catch (footballJsonError) {
+        console.error("Error using football.json API for daily predictions, falling back to multi-API:", footballJsonError);
 
-        // Fall back to the old API
-        const apiPredictions = await getDailyPredictions();
+        // Fall back to the multi-API endpoint
+        try {
+          const multiApiData = await getMultiAPIPredictions(formattedDate);
 
-        // Combine all categories
-        const allPredictions = [
-          ...(apiPredictions["2_odds"] || []),
-          ...(apiPredictions["5_odds"] || []),
-          ...(apiPredictions["10_odds"] || [])
-        ];
+          // Combine all categories
+          const allPredictions = [
+            ...(multiApiData["2_odds"] || []),
+            ...(multiApiData["5_odds"] || []),
+            ...(multiApiData["10_odds"] || [])
+          ];
 
-        // Convert to frontend format
-        return mapAPIPredictionsToFrontend(allPredictions);
+          // Convert to frontend format
+          return mapAPIPredictionsToFrontend(allPredictions);
+        } catch (multiApiError) {
+          console.error("Error using multi-API for daily predictions, falling back to old API:", multiApiError);
+
+          // Fall back to the old API
+          const apiPredictions = await getDailyPredictions();
+
+          // Combine all categories
+          const allPredictions = [
+            ...(apiPredictions["2_odds"] || []),
+            ...(apiPredictions["5_odds"] || []),
+            ...(apiPredictions["10_odds"] || [])
+          ];
+
+          // Convert to frontend format
+          return mapAPIPredictionsToFrontend(allPredictions);
+        }
       }
     }
   } catch (error) {
@@ -412,38 +431,51 @@ export const getPredictionsByOddsCategory = async (date?: Date): Promise<{ [key:
     // Format date if provided
     const formattedDate = date ? date.toISOString().split('T')[0] : undefined;
 
-    // Try to use the football.json API endpoint first
+    // Try to use the advanced predictions API endpoint first
     try {
-      const footballJsonData = await getFootballJsonPredictions(formattedDate);
+      const advancedData = await getAdvancedPredictions(formattedDate);
 
       return {
-        "2odds": mapAPIPredictionsToFrontend(footballJsonData["2_odds"] || []),
-        "5odds": mapAPIPredictionsToFrontend(footballJsonData["5_odds"] || []),
-        "10odds": mapAPIPredictionsToFrontend(footballJsonData["10_odds"] || [])
+        "2odds": mapAPIPredictionsToFrontend(advancedData.categories?.["2_odds"] || []),
+        "5odds": mapAPIPredictionsToFrontend(advancedData.categories?.["5_odds"] || []),
+        "10odds": mapAPIPredictionsToFrontend(advancedData.categories?.["10_odds"] || [])
       };
     } catch (error) {
-      console.error("Error using football.json API for odds categories, falling back to multi-API:", error);
+      console.error("Error using advanced predictions API, falling back to football.json API:", error);
 
-      // Fall back to the multi-API endpoint
+      // Fall back to the football.json API endpoint
       try {
-        const multiApiData = await getMultiAPIPredictions(formattedDate);
+        const footballJsonData = await getFootballJsonPredictions(formattedDate);
 
         return {
-          "2odds": mapAPIPredictionsToFrontend(multiApiData["2_odds"] || []),
-          "5odds": mapAPIPredictionsToFrontend(multiApiData["5_odds"] || []),
-          "10odds": mapAPIPredictionsToFrontend(multiApiData["10_odds"] || [])
+          "2odds": mapAPIPredictionsToFrontend(footballJsonData["2_odds"] || []),
+          "5odds": mapAPIPredictionsToFrontend(footballJsonData["5_odds"] || []),
+          "10odds": mapAPIPredictionsToFrontend(footballJsonData["10_odds"] || [])
         };
-      } catch (multiApiError) {
-        console.error("Error using multi-API for odds categories, falling back to old API:", multiApiError);
+      } catch (footballJsonError) {
+        console.error("Error using football.json API for odds categories, falling back to multi-API:", footballJsonError);
 
-        // Fall back to the old API
-        const apiPredictions = await getDailyPredictions();
+        // Fall back to the multi-API endpoint
+        try {
+          const multiApiData = await getMultiAPIPredictions(formattedDate);
 
-        return {
-          "2odds": mapAPIPredictionsToFrontend(apiPredictions["2_odds"] || []),
-          "5odds": mapAPIPredictionsToFrontend(apiPredictions["5_odds"] || []),
-          "10odds": mapAPIPredictionsToFrontend(apiPredictions["10_odds"] || [])
-        };
+          return {
+            "2odds": mapAPIPredictionsToFrontend(multiApiData["2_odds"] || []),
+            "5odds": mapAPIPredictionsToFrontend(multiApiData["5_odds"] || []),
+            "10odds": mapAPIPredictionsToFrontend(multiApiData["10_odds"] || [])
+          };
+        } catch (multiApiError) {
+          console.error("Error using multi-API for odds categories, falling back to old API:", multiApiError);
+
+          // Fall back to the old API
+          const apiPredictions = await getDailyPredictions();
+
+          return {
+            "2odds": mapAPIPredictionsToFrontend(apiPredictions["2_odds"] || []),
+            "5odds": mapAPIPredictionsToFrontend(apiPredictions["5_odds"] || []),
+            "10odds": mapAPIPredictionsToFrontend(apiPredictions["10_odds"] || [])
+          };
+        }
       }
     }
   } catch (error) {
@@ -475,6 +507,52 @@ export const getRolloverPredictions = async (days: number = 10): Promise<{ [key:
     console.error("Error fetching rollover predictions:", error);
     throw error;
   }
+};
+
+/**
+ * Get advanced predictions using the more sophisticated ML models
+ */
+export const getAdvancedPredictions = async (date?: string, forceRefresh: boolean = false): Promise<Record<string, any[]>> => {
+  const formattedDate = date || new Date().toISOString().split('T')[0];
+  const cacheKey = `advanced_predictions_${formattedDate}`;
+
+  // Check cache first if not forcing refresh
+  if (!forceRefresh) {
+    const cachedData = cache.get<Record<string, any[]>>(cacheKey);
+    if (cachedData) {
+      console.log(`Cache hit: Advanced predictions for ${formattedDate}`);
+      return cachedData;
+    }
+  }
+
+  // Fetch from API
+  const endpoint = `/advanced?date=${formattedDate}${forceRefresh ? '&force_update=true' : ''}`;
+  const data = await fetchFromAPI<Record<string, any[]>>(`${PREDICTIONS_API_BASE}${endpoint}`);
+
+  // Cache the result
+  cache.set(cacheKey, data, CACHE_TTL.SHORT);
+  return data;
+};
+
+/**
+ * Get advanced predictions by category
+ */
+export const getAdvancedPredictionsByCategory = async (category: string, date?: string): Promise<any[]> => {
+  const formattedDate = date || new Date().toISOString().split('T')[0];
+  const cacheKey = `advanced_predictions_${category}_${formattedDate}`;
+  const cachedData = cache.get<any[]>(cacheKey);
+
+  if (cachedData) {
+    console.log(`Cache hit: Advanced predictions for ${category} on ${formattedDate}`);
+    return cachedData;
+  }
+
+  const endpoint = `/advanced/best/${category}${date ? `?date=${formattedDate}` : ''}`;
+  const data = await fetchFromAPI<any[]>(`${PREDICTIONS_API_BASE}${endpoint}`);
+
+  // Cache the result
+  cache.set(cacheKey, data, CACHE_TTL.SHORT);
+  return data;
 };
 
 /**

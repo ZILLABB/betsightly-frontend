@@ -115,6 +115,17 @@ const BasePredictionCard: React.FC<BasePredictionCardProps> = ({
   // Ensure confidence is never above 100%
   const confidence = Math.min(confidenceValue, 1);
 
+  // Get uncertainty value if available
+  let uncertaintyValue = safeGet(prediction, 'uncertainty', null) as number | null;
+
+  // If uncertainty is greater than 1, assume it's already a percentage and convert to decimal
+  if (uncertaintyValue && uncertaintyValue > 1) {
+    uncertaintyValue = uncertaintyValue / 100;
+  }
+
+  // Ensure uncertainty is never above 100% or below 0%
+  const uncertainty = uncertaintyValue !== null ? Math.min(Math.max(uncertaintyValue, 0), 1) : null;
+
   // Extract quality metrics with null checks
   const qualityRating = safeGet(prediction, 'quality_rating', '') as string;
   const predictionQuality = safeGet(prediction, 'prediction_quality', 0) as number;
@@ -219,6 +230,11 @@ const BasePredictionCard: React.FC<BasePredictionCardProps> = ({
             <div className={`text-sm font-bold px-2 py-1 rounded-md bg-[#2A2A3C]/50 ${oddsClass}`}>
               {formatOdds(odds)}x
             </div>
+            {uncertainty !== null && uncertainty > 0.4 && (
+              <div className="text-xs px-1.5 py-0.5 rounded-md bg-[#F97316]/20 text-[#F97316]">
+                ±{Math.round(uncertainty * 100)}%
+              </div>
+            )}
           </div>
         </div>
 
@@ -329,6 +345,28 @@ const BasePredictionCard: React.FC<BasePredictionCardProps> = ({
               style={{ width: `${Math.round(confidence * 100)}%` }}
             ></div>
           </div>
+
+          {/* Uncertainty indicator (if available) */}
+          {uncertainty !== null && (
+            <div className="mt-2">
+              <div className="flex justify-between items-center mb-1">
+                <p className="text-xs font-medium text-white/70">Uncertainty</p>
+                <p className="text-xs font-medium text-white/70">{Math.round(uncertainty * 100)}%</p>
+              </div>
+              <div className="w-full bg-[#2A2A3C] rounded-full h-1.5">
+                <div
+                  className="h-1.5 rounded-full bg-[#F97316]"
+                  style={{ width: `${Math.round(uncertainty * 100)}%` }}
+                ></div>
+              </div>
+              <p className="text-xs text-white/50 mt-1">
+                {uncertainty < 0.2 ? "High confidence in this prediction" :
+                 uncertainty < 0.4 ? "Good confidence in this prediction" :
+                 uncertainty < 0.6 ? "Moderate uncertainty in this prediction" :
+                 "High uncertainty in this prediction"}
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Quality Rating */}

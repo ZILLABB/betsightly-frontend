@@ -300,29 +300,33 @@ const PredictionsPage: React.FC = () => {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold mb-2">Predictions</h1>
-        <p className="text-muted-foreground">
-          Browse our expert predictions for various sports. Filter by date, sport, and status.
+      <div className="bg-gradient-to-r from-gray-900 to-black border border-amber-500/20 rounded-xl p-6 shadow-lg">
+        <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-amber-500 to-amber-400 bg-clip-text text-transparent">Premium Predictions</h1>
+        <p className="text-amber-100/80">
+          Exclusive AI-powered predictions with unmatched accuracy for serious bettors
         </p>
       </div>
 
-      {/* Date Selector and Export */}
-      <Card>
-        <CardContent className="p-4">
+      {/* Date Selector */}
+      <Card className="bg-gradient-to-r from-gray-900 to-black border border-amber-500/20 shadow-lg">
+        <CardContent className="p-5">
           <div className="flex flex-wrap justify-between items-center">
-            <div className="flex flex-wrap gap-2 items-center">
-              <div className="mr-2">
-                <DatePicker
-                  selectedDate={selectedDate}
-                  onDateChange={setSelectedDate}
-                  minDate={new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)} // 30 days ago
-                  maxDate={new Date()} // Today
-                />
+            <div className="flex flex-wrap gap-3 items-center">
+              <div className="flex items-center space-x-3">
+                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-amber-500/10">
+                  <DatePicker
+                    selectedDate={selectedDate}
+                    onDateChange={setSelectedDate}
+                    minDate={new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)} // 30 days ago
+                    maxDate={new Date()} // Today
+                  />
+                </div>
               </div>
-              <div className="h-6 border-r border-[#2A2A3C] mx-2"></div>
+
+              <div className="h-6 border-r border-amber-500/20 mx-2"></div>
+
               <div className="flex flex-wrap gap-2">
-                {dates.map((date) => (
+                {dates.slice(0, 5).map((date) => (
                   <Button
                     key={date.toISOString()}
                     variant={
@@ -332,6 +336,11 @@ const PredictionsPage: React.FC = () => {
                     }
                     size="sm"
                     onClick={() => setSelectedDate(date)}
+                    className={
+                      formatDate(date) === formatDate(selectedDate)
+                        ? "bg-amber-500/20 text-amber-400 border-amber-500/30 hover:bg-amber-500/30"
+                        : "border-amber-500/20 text-amber-400 hover:bg-black/20 hover:border-amber-500/40"
+                    }
                   >
                     {formatDate(date)}
                   </Button>
@@ -339,134 +348,148 @@ const PredictionsPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Export Options */}
-            <div className="relative ml-auto mt-2 md:mt-0 export-dropdown-container">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowExportOptions(!showExportOptions)}
-                className="text-xs px-3 py-1"
-              >
-                <Download size={14} className="mr-1" />
-                Export
-              </Button>
-
-              {showExportOptions && (
-                <div className="absolute right-0 mt-1 w-40 bg-[#1A1A27] border border-[#2A2A3C] rounded-md shadow-lg z-10">
-                  <div className="py-1">
-                    <button
-                      className="block w-full text-left px-4 py-2 text-xs hover:bg-[#2A2A3C]"
-                      onClick={handleExportCSV}
-                    >
-                      Export as CSV
-                    </button>
-                    <button
-                      className="block w-full text-left px-4 py-2 text-xs hover:bg-[#2A2A3C]"
-                      onClick={handleExportPDF}
-                    >
-                      Export as PDF
-                    </button>
-                    <button
-                      className="block w-full text-left px-4 py-2 text-xs hover:bg-[#2A2A3C]"
-                      onClick={handleShare}
-                    >
-                      Share Predictions
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
+            {/* Refresh Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={loading}
+              className="flex items-center gap-1 border-amber-500/30 text-amber-400 hover:bg-black/20 hover:border-amber-500/50"
+            >
+              <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+              {loading ? "Refreshing..." : "Refresh"}
+            </Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* Offline Status Bar */}
-      <OfflineStatusBar
-        lastUpdated={lastUpdated}
-        isStale={isStale}
-        onRefresh={handleRefresh}
-        isRefreshing={loading}
-      />
-
-      {/* Data Source Indicator */}
-      <div className="flex justify-between items-center mb-4">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleRefresh}
-          disabled={loading}
-          className="flex items-center gap-1"
-        >
-          <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
-          {loading ? "Refreshing..." : "Refresh Data"}
-        </Button>
-        <Badge
-          variant={dataSource === 'api' ? 'success' : 'warning'}
-          className="text-xs"
-        >
-          Data Source: {dataSource === 'api' ? 'Live API' : 'Cached Data'}
-        </Badge>
-      </div>
-
       {/* Predictions List */}
-      {loading ? (
-        <div className="text-center py-12 bg-[#1A1A27]/50 rounded-xl border border-[#2A2A3C]/10">
-          <DataLoadingIndicator
-            isLoading={true}
-            loadingMessage="Loading predictions..."
-            size="lg"
-          />
-        </div>
-      ) : fetchError ? (
-        <div className="text-center py-12 bg-[#1A1A27]/50 rounded-xl border border-red-500/20">
-          <DataLoadingIndicator
-            isLoading={false}
-            error={fetchError.message || "Failed to load predictions. Please try again later."}
-            size="lg"
-          />
-          <Button
-            variant="outline"
-            size="sm"
-            className="mt-4"
-            onClick={handleRefresh}
-          >
-            <RefreshCw size={14} className="mr-1" />
-            Retry
-          </Button>
-        </div>
-      ) : (
-        <TrackedErrorBoundary>
-          <PredictionsList
-            predictions={selectedPredictions}
-            title={`Predictions for ${formatDate(selectedDate)}`}
-            showFilters={true}
-          />
-        </TrackedErrorBoundary>
-      )}
+      <Card className="bg-gradient-to-b from-gray-900 to-black border border-amber-500/20 shadow-xl overflow-hidden">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-amber-400">
+              Premium Picks <span className="text-white/70">• {formatDate(selectedDate)}</span>
+            </h2>
 
-      {/* No Predictions Message */}
-      {!loading && !fetchError && selectedPredictions.length === 0 && (
-        <div className="text-center py-12 border rounded-lg bg-[#1A1A27]/50">
-          <p className="text-xl font-semibold mb-2">No Predictions Available</p>
-          <p className="text-muted-foreground">
-            There are no predictions available for {formatDate(selectedDate)}.
-            Please select another date or check back later.
-          </p>
-        </div>
-      )}
+            <div className="flex items-center space-x-2">
+              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+              <span className="text-sm text-white/70">Live Updates</span>
+            </div>
+          </div>
 
-      {/* Premium Banner */}
-      <div className="premium-card p-8 text-center">
-        <h2 className="text-2xl font-bold premium-text mb-4">
-          Get Premium Predictions
-        </h2>
-        <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
-          Unlock access to our premium predictions with higher accuracy and
-          detailed analysis. Follow our expert picks and improve your success rate.
-        </p>
-        <Button variant="premium" size="lg">
-          Upgrade to Premium
-        </Button>
+          {loading ? (
+            <div className="text-center py-16 bg-black/20 rounded-xl border border-amber-500/10">
+              <div className="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-amber-500 mb-4"></div>
+              <p className="text-white/70 text-lg">Loading premium predictions...</p>
+            </div>
+          ) : fetchError ? (
+            <div className="text-center py-16 bg-black/20 rounded-xl border border-red-500/20">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-500/10 mb-4">
+                <RefreshCw size={28} className="text-red-400" />
+              </div>
+              <p className="text-xl font-semibold mb-2 text-red-400">Error Loading Predictions</p>
+              <p className="text-white/70 mb-6 max-w-md mx-auto">
+                {fetchError.message || "Failed to load predictions. Please try again later."}
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                className="border-red-500/30 text-red-400 hover:bg-red-500/10"
+                onClick={handleRefresh}
+              >
+                <RefreshCw size={14} className="mr-1.5" />
+                Retry
+              </Button>
+            </div>
+          ) : selectedPredictions.length === 0 ? (
+            <div className="text-center py-16 bg-black/20 rounded-xl border border-amber-500/10">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-amber-500/10 mb-4">
+                <RefreshCw size={28} className="text-amber-400" />
+              </div>
+              <p className="text-xl font-semibold mb-2 text-amber-400">No Predictions Available</p>
+              <p className="text-white/70 mb-6">
+                There are no predictions available for {formatDate(selectedDate)}.
+                Please select another date or check back later.
+              </p>
+              <Button
+                variant="outline"
+                className="border-amber-500/30 text-amber-400 hover:bg-black/20 hover:border-amber-500/50"
+                onClick={() => setSelectedDate(new Date())}
+              >
+                View Today's Predictions
+              </Button>
+            </div>
+          ) : (
+            <TrackedErrorBoundary>
+              <div className="bg-black/30 rounded-xl p-6 border border-amber-500/10">
+                <PredictionsList
+                  predictions={selectedPredictions}
+                  title=""
+                  showFilters={false}
+                />
+              </div>
+            </TrackedErrorBoundary>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Premium Features */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="bg-gradient-to-b from-gray-900 to-black border border-amber-500/20 shadow-lg">
+          <CardContent className="p-6 text-center">
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-amber-500/10 mb-4">
+              <RefreshCw size={24} className="text-amber-400" />
+            </div>
+            <h3 className="text-xl font-bold text-amber-400 mb-2">Rollover Challenge</h3>
+            <p className="text-white/70 mb-4">
+              Follow our 10-day rollover challenge to maximize your returns
+            </p>
+            <Button
+              variant="outline"
+              className="border-amber-500/30 text-amber-400 hover:bg-black/20 hover:border-amber-500/50 w-full"
+            >
+              View Challenge
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-b from-gray-900 to-black border border-amber-500/20 shadow-lg">
+          <CardContent className="p-6 text-center">
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-amber-500/10 mb-4">
+              <Download size={24} className="text-amber-400" />
+            </div>
+            <h3 className="text-xl font-bold text-amber-400 mb-2">Export Predictions</h3>
+            <p className="text-white/70 mb-4">
+              Download or share today's premium predictions
+            </p>
+            <Button
+              variant="outline"
+              className="border-amber-500/30 text-amber-400 hover:bg-black/20 hover:border-amber-500/50 w-full"
+              onClick={handleExportCSV}
+            >
+              Export CSV
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-b from-gray-900 to-black border border-amber-500/20 shadow-lg">
+          <CardContent className="p-6 text-center">
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-amber-500/10 mb-4">
+              <RefreshCw size={24} className="text-amber-400" />
+            </div>
+            <h3 className="text-xl font-bold text-amber-400 mb-2">Daily Updates</h3>
+            <p className="text-white/70 mb-4">
+              Get fresh predictions every day with our AI-powered system
+            </p>
+            <Button
+              variant="outline"
+              className="border-amber-500/30 text-amber-400 hover:bg-black/20 hover:border-amber-500/50 w-full"
+              onClick={handleRefresh}
+            >
+              Refresh Now
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

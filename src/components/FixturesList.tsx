@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { getFixtures, refreshPredictions } from '../services/apiService';
 import { formatDate } from '../utils/dateUtils';
-import { Spinner, Alert, Button, Card, Badge } from 'react-bootstrap';
+import { Spinner, Alert, Button, Card, CardContent, Badge } from '../components/ui';
+import { RefreshCw, Clock, AlertCircle } from 'lucide-react';
 
 interface FixturesListProps {
   date?: string;
@@ -10,11 +11,11 @@ interface FixturesListProps {
   onFixtureSelect?: (fixture: any) => void;
 }
 
-const FixturesList: React.FC<FixturesListProps> = ({ 
-  date, 
-  league, 
+const FixturesList: React.FC<FixturesListProps> = ({
+  date,
+  league,
   team,
-  onFixtureSelect 
+  onFixtureSelect
 }) => {
   const [fixtures, setFixtures] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -33,23 +34,23 @@ const FixturesList: React.FC<FixturesListProps> = ({
       setError(null);
 
       const fixturesData = await getFixtures(date, forceRefresh);
-      
+
       // Filter fixtures if league or team is specified
       let filteredFixtures = fixturesData.fixtures || [];
-      
+
       if (league) {
-        filteredFixtures = filteredFixtures.filter((fixture: any) => 
+        filteredFixtures = filteredFixtures.filter((fixture: any) =>
           fixture.league.toLowerCase().includes(league.toLowerCase())
         );
       }
-      
+
       if (team) {
-        filteredFixtures = filteredFixtures.filter((fixture: any) => 
-          fixture.home_team.toLowerCase().includes(team.toLowerCase()) || 
+        filteredFixtures = filteredFixtures.filter((fixture: any) =>
+          fixture.home_team.toLowerCase().includes(team.toLowerCase()) ||
           fixture.away_team.toLowerCase().includes(team.toLowerCase())
         );
       }
-      
+
       setFixtures(filteredFixtures);
     } catch (err) {
       console.error('Error loading fixtures:', err);
@@ -63,13 +64,13 @@ const FixturesList: React.FC<FixturesListProps> = ({
   const handleRefresh = async () => {
     try {
       setRefreshing(true);
-      
+
       // Refresh predictions first
       await refreshPredictions(date);
-      
+
       // Then reload fixtures with force refresh
       await loadFixtures(true);
-      
+
     } catch (err) {
       console.error('Error refreshing data:', err);
       setError('Failed to refresh data. Please try again later.');
@@ -88,10 +89,8 @@ const FixturesList: React.FC<FixturesListProps> = ({
   // Render loading state
   if (loading) {
     return (
-      <div className="d-flex justify-content-center my-5">
-        <Spinner animation="border" role="status">
-          <span className="visually-hidden">Loading...</span>
-        </Spinner>
+      <div className="flex justify-center items-center my-8">
+        <Spinner size="lg" variant="primary" />
       </div>
     );
   }
@@ -99,12 +98,15 @@ const FixturesList: React.FC<FixturesListProps> = ({
   // Render error state
   if (error) {
     return (
-      <Alert variant="danger">
-        {error}
-        <Button 
-          variant="outline-danger" 
-          size="sm" 
-          className="ms-3"
+      <Alert variant="danger" className="flex flex-col sm:flex-row items-center justify-between p-4">
+        <div className="flex items-center">
+          <AlertCircle className="mr-2 h-5 w-5" />
+          <span>{error}</span>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          className="mt-3 sm:mt-0"
           onClick={() => loadFixtures()}
         >
           Try Again
@@ -116,14 +118,25 @@ const FixturesList: React.FC<FixturesListProps> = ({
   // Render empty state
   if (fixtures.length === 0) {
     return (
-      <div className="text-center my-4">
-        <p className="text-muted">No fixtures found for the selected criteria.</p>
-        <Button 
-          variant="primary" 
+      <div className="text-center py-8 space-y-4">
+        <p className="text-[var(--muted-foreground)]">No fixtures found for the selected criteria.</p>
+        <Button
+          variant="default"
+          className="bg-[var(--primary)] text-white hover:bg-[var(--primary)]/90"
           onClick={handleRefresh}
           disabled={refreshing}
         >
-          {refreshing ? 'Refreshing...' : 'Refresh Fixtures'}
+          {refreshing ? (
+            <>
+              <Spinner size="sm" className="mr-2" />
+              Refreshing...
+            </>
+          ) : (
+            <>
+              <RefreshCw size={16} className="mr-2" />
+              Refresh Fixtures
+            </>
+          )}
         </Button>
       </div>
     );
@@ -141,50 +154,62 @@ const FixturesList: React.FC<FixturesListProps> = ({
 
   // Render fixtures grouped by league
   return (
-    <div className="fixtures-list">
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h3>Fixtures {date ? `for ${formatDate(new Date(date))}` : 'Today'}</h3>
-        <Button 
-          variant="outline-primary" 
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
+        <h3 className="text-2xl font-bold">Fixtures {date ? `for ${formatDate(new Date(date))}` : 'Today'}</h3>
+        <Button
+          variant="outline"
           onClick={handleRefresh}
           disabled={refreshing}
+          className="flex items-center"
         >
-          {refreshing ? 'Refreshing...' : 'Refresh'}
+          {refreshing ? (
+            <>
+              <Spinner size="sm" className="mr-2" />
+              Refreshing...
+            </>
+          ) : (
+            <>
+              <RefreshCw size={16} className="mr-2" />
+              Refresh
+            </>
+          )}
         </Button>
       </div>
-      
+
       {Object.entries(fixturesByLeague).map(([leagueName, leagueFixtures]) => (
-        <div key={leagueName} className="mb-4">
-          <h4 className="league-name">{leagueName}</h4>
-          <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
+        <div key={leagueName} className="space-y-4 mb-8">
+          <h4 className="text-xl font-semibold border-b border-[var(--border)] pb-2">{leagueName}</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {leagueFixtures.map(fixture => (
-              <div key={fixture.id} className="col">
-                <Card 
-                  className="h-100 fixture-card" 
-                  onClick={() => handleFixtureClick(fixture)}
-                  style={{ cursor: onFixtureSelect ? 'pointer' : 'default' }}
-                >
-                  <Card.Body>
-                    <div className="d-flex justify-content-between align-items-center mb-2">
-                      <Badge bg="secondary">{formatTime(fixture.match_date)}</Badge>
-                      <Badge 
-                        bg={getStatusBadgeColor(fixture.status)}
-                      >
-                        {fixture.status}
-                      </Badge>
+              <Card
+                key={fixture.id}
+                className={`h-full transition-all duration-300 hover:shadow-md ${onFixtureSelect ? 'cursor-pointer' : ''}`}
+                onClick={() => handleFixtureClick(fixture)}
+              >
+                <CardContent className="p-4">
+                  <div className="flex justify-between items-center mb-3">
+                    <Badge variant="secondary" className="flex items-center">
+                      <Clock size={12} className="mr-1" />
+                      {formatTime(fixture.match_date)}
+                    </Badge>
+                    <Badge
+                      variant={getStatusBadgeVariant(fixture.status)}
+                    >
+                      {fixture.status}
+                    </Badge>
+                  </div>
+                  <div className="text-center space-y-2">
+                    <div className="font-medium">
+                      {fixture.home_team}
                     </div>
-                    <div className="text-center">
-                      <div className="team home-team mb-2">
-                        <strong>{fixture.home_team}</strong>
-                      </div>
-                      <div className="versus">vs</div>
-                      <div className="team away-team mt-2">
-                        <strong>{fixture.away_team}</strong>
-                      </div>
+                    <div className="text-[var(--muted-foreground)] text-sm">vs</div>
+                    <div className="font-medium">
+                      {fixture.away_team}
                     </div>
-                  </Card.Body>
-                </Card>
-              </div>
+                  </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
         </div>
@@ -203,8 +228,8 @@ const formatTime = (dateString: string): string => {
   }
 };
 
-// Helper function to get badge color based on status
-const getStatusBadgeColor = (status: string): string => {
+// Helper function to get badge variant based on status
+const getStatusBadgeVariant = (status: string): string => {
   switch (status.toUpperCase()) {
     case 'SCHEDULED':
       return 'primary';

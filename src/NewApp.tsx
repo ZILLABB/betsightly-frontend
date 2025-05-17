@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { SentryErrorBoundary } from './components/common/ErrorBoundary';
+import { TrackedErrorBoundary } from './components/common/ErrorBoundary';
 import Layout from './components/layout/Layout';
 import { initErrorTracking } from './utils/errorTracking';
 // Initialize theme manager
@@ -24,9 +24,8 @@ import SettingsPage from './pages/SettingsPage';
 import NotFoundPage from './pages/NotFoundPage';
 
 // Import new pages
-import NewHomePage from './pages/NewHomePage';
-import NewPredictionsPage from './pages/NewPredictionsPage';
-import NewRolloverPage from './pages/NewRolloverPage';
+import MainPage from './pages/MainPage';
+import RolloverChallengePage from './pages/RolloverChallengePage';
 
 // Use environment variable to toggle between old and new pages
 const USE_NEW_PAGES = true; // Set to false to use original pages
@@ -43,7 +42,7 @@ function App() {
   }, []);
 
   return (
-    <SentryErrorBoundary>
+    <TrackedErrorBoundary>
       <PreferencesProvider>
         <ThemeProvider>
           <GlobalErrorHandler>
@@ -51,39 +50,39 @@ function App() {
               <Layout>
                 <Routes>
                   <Route path="/" element={
-                    <SentryErrorBoundary>
-                      {USE_NEW_PAGES ? <NewHomePage /> : <HomePage />}
-                    </SentryErrorBoundary>
+                    <TrackedErrorBoundary>
+                      {USE_NEW_PAGES ? <MainPage /> : <HomePage />}
+                    </TrackedErrorBoundary>
                   } />
                   <Route path="/predictions" element={
-                    <SentryErrorBoundary>
-                      {USE_NEW_PAGES ? <NewPredictionsPage /> : <PredictionsPage />}
-                    </SentryErrorBoundary>
+                    <TrackedErrorBoundary>
+                      <PredictionsPage />
+                    </TrackedErrorBoundary>
                   } />
                   <Route path="/results" element={
-                    <SentryErrorBoundary>
+                    <TrackedErrorBoundary>
                       <ResultsPage />
-                    </SentryErrorBoundary>
+                    </TrackedErrorBoundary>
                   } />
                   <Route path="/rollover" element={
-                    <SentryErrorBoundary>
-                      {USE_NEW_PAGES ? <NewRolloverPage /> : <RolloverPage />}
-                    </SentryErrorBoundary>
+                    <TrackedErrorBoundary>
+                      {USE_NEW_PAGES ? <RolloverChallengePage /> : <RolloverPage />}
+                    </TrackedErrorBoundary>
                   } />
                   <Route path="/punters" element={
-                    <SentryErrorBoundary>
+                    <TrackedErrorBoundary>
                       <PuntersPage />
-                    </SentryErrorBoundary>
+                    </TrackedErrorBoundary>
                   } />
                   <Route path="/analytics" element={
-                    <SentryErrorBoundary>
+                    <TrackedErrorBoundary>
                       <AnalyticsPage />
-                    </SentryErrorBoundary>
+                    </TrackedErrorBoundary>
                   } />
                   <Route path="/settings" element={
-                    <SentryErrorBoundary>
+                    <TrackedErrorBoundary>
                       <SettingsPage />
-                    </SentryErrorBoundary>
+                    </TrackedErrorBoundary>
                   } />
                   <Route path="*" element={<NotFoundPage />} />
                 </Routes>
@@ -92,7 +91,7 @@ function App() {
           </GlobalErrorHandler>
         </ThemeProvider>
       </PreferencesProvider>
-    </SentryErrorBoundary>
+    </TrackedErrorBoundary>
   );
 }
 
