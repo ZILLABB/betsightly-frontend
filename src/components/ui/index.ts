@@ -4,6 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Badge } from '../common/Badge';
 import Alert from './Alert.tsx';
 import { Input } from '../common/Input';
+import { Textarea } from '../common/Textarea';
+import { Checkbox } from '../common/Checkbox';
+import { Select, SelectItem } from '../common/Select';
 
 // Import custom Tailwind components
 import { Container } from './Container';
@@ -27,6 +30,10 @@ export {
   Badge,
   Alert,
   Input,
+  Textarea,
+  Checkbox,
+  Select,
+  SelectItem,
 
   // Tailwind components
   Container,
