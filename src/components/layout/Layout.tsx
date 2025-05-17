@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, Home, Target, BarChart2, RefreshCw, Award, PieChart, Settings, Calendar } from "lucide-react";
+import { Menu, X, Home, Target, BarChart2, RefreshCw, Award, PieChart, Settings, Calendar, Shield } from "lucide-react";
 import { useBreakpoints } from "../../hooks/useMediaQuery";
 import OfflineIndicator from "../common/OfflineIndicator";
 
@@ -23,7 +23,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     { path: "/rollover", label: "Rollover", icon: <RefreshCw size={isMobile ? 20 : 16} /> },
     { path: "/punters", label: "Punters", icon: <Award size={isMobile ? 20 : 16} /> },
     { path: "/analytics", label: "Analytics", icon: <PieChart size={isMobile ? 20 : 16} /> },
-    { path: "/settings", label: "Settings", icon: <Settings size={isMobile ? 20 : 16} /> }
+    { path: "/settings", label: "Settings", icon: <Settings size={isMobile ? 20 : 16} /> },
+    { path: "/admin", label: "Admin", icon: <Shield size={isMobile ? 20 : 16} /> }
   ];
 
   // We'll implement real notifications later
