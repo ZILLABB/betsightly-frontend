@@ -1,6 +1,6 @@
 /**
  * Lazy loaded pages for code splitting
- * 
+ *
  * This file exports lazy loaded versions of all pages to reduce the initial bundle size.
  * Each page is loaded only when needed, improving initial load time.
  */

@@ -301,9 +301,9 @@ const PredictionsPage: React.FC = () => {
   return (
     <div className="space-y-8">
       <div className="bg-gradient-to-r from-gray-900 to-black border border-amber-500/20 rounded-xl p-6 shadow-lg">
-        <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-amber-500 to-amber-400 bg-clip-text text-transparent">Premium Predictions</h1>
+        <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-amber-500 to-amber-400 bg-clip-text text-transparent">Advanced ML Predictions</h1>
         <p className="text-amber-100/80">
-          Exclusive AI-powered predictions with unmatched accuracy for serious bettors
+          Exclusive AI-powered predictions using advanced machine learning models (XGBoost, LightGBM, Neural Networks)
         </p>
       </div>
 
@@ -368,7 +368,7 @@ const PredictionsPage: React.FC = () => {
         <CardContent className="p-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-amber-400">
-              Premium Picks <span className="text-white/70">• {formatDate(selectedDate)}</span>
+              Advanced ML Picks <span className="text-white/70">• {formatDate(selectedDate)}</span>
             </h2>
 
             <div className="flex items-center space-x-2">
@@ -433,22 +433,29 @@ const PredictionsPage: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Premium Features */}
+      {/* Advanced ML Features */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="bg-gradient-to-b from-gray-900 to-black border border-amber-500/20 shadow-lg">
           <CardContent className="p-6 text-center">
             <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-amber-500/10 mb-4">
-              <RefreshCw size={24} className="text-amber-400" />
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-400">
+                <path d="M3 9h18v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9Z"></path>
+                <path d="M3 9V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4"></path>
+                <path d="M12 12v5"></path>
+                <path d="M8 12v5"></path>
+                <path d="M16 12v5"></path>
+              </svg>
             </div>
-            <h3 className="text-xl font-bold text-amber-400 mb-2">Rollover Challenge</h3>
+            <h3 className="text-xl font-bold text-amber-400 mb-2">XGBoost Model</h3>
             <p className="text-white/70 mb-4">
-              Follow our 10-day rollover challenge to maximize your returns
+              Our XGBoost model is trained on over 100,000 matches for superior match result predictions
             </p>
             <Button
               variant="outline"
               className="border-amber-500/30 text-amber-400 hover:bg-black/20 hover:border-amber-500/50 w-full"
+              onClick={handleRefresh}
             >
-              View Challenge
+              Refresh Predictions
             </Button>
           </CardContent>
         </Card>
@@ -456,18 +463,26 @@ const PredictionsPage: React.FC = () => {
         <Card className="bg-gradient-to-b from-gray-900 to-black border border-amber-500/20 shadow-lg">
           <CardContent className="p-6 text-center">
             <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-amber-500/10 mb-4">
-              <Download size={24} className="text-amber-400" />
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-400">
+                <path d="M12 2H2v10h10V2Z"></path>
+                <path d="M22 12h-4v4h4v-4Z"></path>
+                <path d="M12 8h4v4h-4V8Z"></path>
+                <path d="M17 16v4h-4v-4h4Z"></path>
+                <path d="M12 12v4"></path>
+                <path d="M7 12v8"></path>
+                <path d="M2 12v8"></path>
+              </svg>
             </div>
-            <h3 className="text-xl font-bold text-amber-400 mb-2">Export Predictions</h3>
+            <h3 className="text-xl font-bold text-amber-400 mb-2">LightGBM Model</h3>
             <p className="text-white/70 mb-4">
-              Download or share today's premium predictions
+              Our LightGBM model specializes in BTTS (Both Teams To Score) predictions with high accuracy
             </p>
             <Button
               variant="outline"
               className="border-amber-500/30 text-amber-400 hover:bg-black/20 hover:border-amber-500/50 w-full"
               onClick={handleExportCSV}
             >
-              Export CSV
+              Export Predictions
             </Button>
           </CardContent>
         </Card>
@@ -475,11 +490,13 @@ const PredictionsPage: React.FC = () => {
         <Card className="bg-gradient-to-b from-gray-900 to-black border border-amber-500/20 shadow-lg">
           <CardContent className="p-6 text-center">
             <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-amber-500/10 mb-4">
-              <RefreshCw size={24} className="text-amber-400" />
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-400">
+                <path d="M18.178 8c5.096 0 5.096 8 0 8-5.095 0-7.133-8-12.739-8-4.585 0-4.585 8 0 8 5.606 0 7.644-8 12.74-8z"></path>
+              </svg>
             </div>
-            <h3 className="text-xl font-bold text-amber-400 mb-2">Daily Updates</h3>
+            <h3 className="text-xl font-bold text-amber-400 mb-2">Neural Networks</h3>
             <p className="text-white/70 mb-4">
-              Get fresh predictions every day with our AI-powered system
+              Our Neural Network models excel at predicting over/under goals with calibrated confidence scores
             </p>
             <Button
               variant="outline"
