@@ -1,33 +1,95 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Card,
   CardContent,
-  Alert,
   Button,
   Input,
-  Badge
+  Badge,
+  LoadingSpinner,
+  ErrorDisplay
 } from '../components/ui';
 import RolloverPredictions from '../components/RolloverPredictions';
 import type { Prediction } from '../types';
-import { Calculator, Info } from 'lucide-react';
+import { Calculator, Info, Filter, RefreshCw } from 'lucide-react';
+import { usePredictions } from '../contexts/PredictionsContext';
+import { useToast } from '../hooks/useToast';
+import PredictionFilters from '../components/predictions/PredictionFilters';
 
 const RolloverChallengePage: React.FC = () => {
+  // Get predictions data from context
+  const {
+    rolloverPredictions,
+    loading,
+    error,
+    loadRolloverPredictions
+  } = usePredictions();
+
+  // Local state
   const [days, setDays] = useState<number>(10);
   const [showExplanations, setShowExplanations] = useState<boolean>(true);
   const [initialStake, setInitialStake] = useState<string>('10');
+  const [showFilters, setShowFilters] = useState<boolean>(false);
+
+  // Toast notifications
+  const { toast } = useToast();
+
+  // Load rollover predictions when days change
+  useEffect(() => {
+    loadRolloverPredictions(days);
+  }, [days, loadRolloverPredictions]);
 
   // Handle days change
   const handleDaysChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseInt(e.target.value);
     if (!isNaN(value) && value >= 1 && value <= 30) {
       setDays(value);
+      toast({
+        title: "Challenge duration updated",
+        description: `Showing predictions for ${value} days`,
+        variant: "info",
+        duration: 2000
+      });
     }
   };
 
   // Handle prediction selection
   const handlePredictionSelect = (prediction: Prediction) => {
     console.log('Selected prediction:', prediction);
-    // You can implement additional functionality here
+    toast({
+      title: "Prediction selected",
+      description: `${prediction.game?.homeTeam?.name || 'Home'} vs ${prediction.game?.awayTeam?.name || 'Away'}`,
+      variant: "info",
+      duration: 2000
+    });
+  };
+
+  // Handle refresh
+  const handleRefresh = async () => {
+    try {
+      toast({
+        title: "Refreshing rollover predictions",
+        description: "Getting the latest data...",
+        variant: "info",
+        duration: 2000
+      });
+
+      await loadRolloverPredictions(days);
+
+      toast({
+        title: "Predictions refreshed",
+        description: `Updated predictions for ${days} days`,
+        variant: "success",
+        duration: 3000
+      });
+    } catch (err) {
+      console.error('Error refreshing predictions:', err);
+      toast({
+        title: "Error refreshing predictions",
+        description: "Please try again later",
+        variant: "error",
+        duration: 5000
+      });
+    }
   };
 
   // Calculate potential return (simplified example)
@@ -142,20 +204,73 @@ const RolloverChallengePage: React.FC = () => {
               {days}-Day Challenge Predictions
             </h2>
 
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-              <span className="text-sm text-white/70">Live Updates</span>
+            <div className="flex items-center space-x-3">
+              {showFilters && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowFilters(!showFilters)}
+                  className="border-amber-500/30 text-amber-400 hover:bg-amber-500/10"
+                >
+                  <Filter size={14} className="mr-1.5" />
+                  Filters
+                </Button>
+              )}
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRefresh}
+                disabled={loading}
+                className="border-amber-500/30 text-amber-400 hover:bg-amber-500/10"
+              >
+                <RefreshCw size={14} className="mr-1.5" />
+                Refresh
+              </Button>
+
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                <span className="text-sm text-white/70">Live Updates</span>
+              </div>
             </div>
           </div>
 
-          <div className="bg-black/30 rounded-xl p-6 border border-amber-500/10">
-            <RolloverPredictions
-              days={days}
-              onPredictionSelect={handlePredictionSelect}
-              showExplanation={showExplanations}
-              showGameCode={true}
+          {/* Show filters if enabled */}
+          {showFilters && (
+            <div className="mb-6">
+              <PredictionFilters showCategories={false} />
+            </div>
+          )}
+
+          {/* Loading State */}
+          {loading && (
+            <div className="flex flex-col items-center justify-center py-12">
+              <LoadingSpinner size="lg" variant="primary" text="Loading rollover predictions..." />
+            </div>
+          )}
+
+          {/* Error State */}
+          {!loading && error && (
+            <ErrorDisplay
+              title="Failed to load predictions"
+              message={error}
+              onRetry={handleRefresh}
+              retryText="Refresh Predictions"
             />
-          </div>
+          )}
+
+          {/* Predictions */}
+          {!loading && !error && (
+            <div className="bg-black/30 rounded-xl p-6 border border-amber-500/10">
+              <RolloverPredictions
+                days={days}
+                onPredictionSelect={handlePredictionSelect}
+                showExplanation={showExplanations}
+                showGameCode={true}
+                predictions={rolloverPredictions || {}}
+              />
+            </div>
+          )}
         </CardContent>
       </Card>
 

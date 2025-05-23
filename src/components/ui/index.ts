@@ -2,7 +2,7 @@
 import { Button, buttonVariants } from '../common/Button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '../common/Card';
 import { Badge } from '../common/Badge';
-import Alert from './Alert.tsx';
+import Alert from './Alert';
 import { Input } from '../common/Input';
 import { Textarea } from '../common/Textarea';
 import { Checkbox } from '../common/Checkbox';
@@ -16,6 +16,11 @@ import { ProgressBar } from './ProgressBar';
 import { Accordion, AccordionItem } from './Accordion';
 import { Tabs, Tab } from './Tabs';
 import { Form, FormGroup, FormLabel, FormControl, FormSelect, FormCheck } from './Form';
+
+// Import new UI components
+import LoadingSpinner from './LoadingSpinner';
+import ErrorDisplay from './ErrorDisplay';
+import Toast from './Toast';
 
 export {
   // Custom components
@@ -52,5 +57,10 @@ export {
   FormLabel,
   FormControl,
   FormSelect,
-  FormCheck
+  FormCheck,
+
+  // New UI components
+  LoadingSpinner,
+  ErrorDisplay,
+  Toast
 };

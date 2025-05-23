@@ -108,11 +108,17 @@ const PredictionCard: React.FC<PredictionCardProps> = ({
   const homeTeamName = typeof homeTeamObj === 'string' ? homeTeamObj : safeGet(homeTeamObj, 'name', 'Home Team');
   const awayTeamName = typeof awayTeamObj === 'string' ? awayTeamObj : safeGet(awayTeamObj, 'name', 'Away Team');
 
-  const historicalSuccess = Math.floor(Math.random() * 40) + 60; // Mock data
+  // Get historical success from prediction data or use confidence as fallback
+  const historicalSuccess = safeGet(prediction, 'historical_success',
+    safeGet(prediction, 'confidence', 0) * 100) as number;
 
-  // Use default team logos instead of placeholder.com
-  const homeTeamLogo = `/teams/default.png`;
-  const awayTeamLogo = `/teams/default.png`;
+  // Get team logos from prediction data or use defaults
+  const homeTeamLogo = typeof homeTeamObj === 'object' && homeTeamObj?.logo
+    ? homeTeamObj.logo
+    : `/teams/default.png`;
+  const awayTeamLogo = typeof awayTeamObj === 'object' && awayTeamObj?.logo
+    ? awayTeamObj.logo
+    : `/teams/default.png`;
 
   // For mobile view with expandable details
   return (
@@ -184,11 +190,17 @@ const PredictionCard: React.FC<PredictionCardProps> = ({
               <div className="bg-[#1A1A27]/50 p-1.5 rounded-md">
                 <div className="flex justify-between items-center mb-1">
                   <span className="text-xs">Similar Predictions:</span>
-                  <span className="text-xs font-medium">{Math.floor(Math.random() * 50) + 20} matches</span>
+                  <span className="text-xs font-medium">
+                    {safeGet(prediction, 'similar_predictions_count', 0) || 'N/A'} matches
+                  </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-xs">Average Odds:</span>
-                  <span className="text-xs font-medium">{(Math.random() * 2 + 1).toFixed(2)}x</span>
+                  <span className="text-xs font-medium">
+                    {safeGet(prediction, 'average_historical_odds', 0)
+                      ? (safeGet(prediction, 'average_historical_odds', 0) as number).toFixed(2) + 'x'
+                      : 'N/A'}
+                  </span>
                 </div>
               </div>
             </div>
@@ -199,7 +211,7 @@ const PredictionCard: React.FC<PredictionCardProps> = ({
                 <div className="bg-[#1A1A27]/50 p-1.5 rounded-md">
                   <p className="text-xs mb-1">{String(homeTeamName)}</p>
                   <div className="flex space-x-1">
-                    {['W', 'L', 'W', 'W', 'D'].map((result, i) => (
+                    {(safeGet(prediction, 'home_team_form', ['W', 'L', 'W', 'W', 'D']) as string[]).map((result, i) => (
                       <span
                         key={i}
                         className={`text-[10px] w-4 h-4 flex items-center justify-center rounded-full
@@ -215,7 +227,7 @@ const PredictionCard: React.FC<PredictionCardProps> = ({
                 <div className="bg-[#1A1A27]/50 p-1.5 rounded-md">
                   <p className="text-xs mb-1">{String(awayTeamName)}</p>
                   <div className="flex space-x-1">
-                    {['L', 'W', 'L', 'D', 'W'].map((result, i) => (
+                    {(safeGet(prediction, 'away_team_form', ['L', 'W', 'L', 'D', 'W']) as string[]).map((result, i) => (
                       <span
                         key={i}
                         className={`text-[10px] w-4 h-4 flex items-center justify-center rounded-full

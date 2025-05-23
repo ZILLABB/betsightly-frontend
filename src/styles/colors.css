@@ -1,0 +1,119 @@
+/* Color Scheme Utility Classes */
+
+/* Primary Colors */
+.bg-primary {
+  background-color: #F59E0B; /* amber-500 */
+}
+
+.text-primary {
+  color: #F59E0B; /* amber-500 */
+}
+
+.border-primary {
+  border-color: #F59E0B; /* amber-500 */
+}
+
+/* Primary Variants */
+.bg-primary-light {
+  background-color: rgba(245, 158, 11, 0.2); /* amber-500/20 */
+}
+
+.text-primary-light {
+  color: #FBBF24; /* amber-400 */
+}
+
+.border-primary-light {
+  border-color: rgba(245, 158, 11, 0.3); /* amber-500/30 */
+}
+
+/* Background Colors */
+.bg-surface {
+  background-color: #1A1A27; /* dark background */
+}
+
+.bg-surface-light {
+  background-color: #2A2A3C; /* slightly lighter background */
+}
+
+.bg-surface-variant {
+  background-color: rgba(42, 42, 60, 0.5); /* #2A2A3C/50 */
+}
+
+/* Text Colors with Consistent Opacity */
+.text-white-high {
+  color: rgba(255, 255, 255, 1); /* white */
+}
+
+.text-white-medium {
+  color: rgba(255, 255, 255, 0.7); /* white/70 */
+}
+
+.text-white-low {
+  color: rgba(255, 255, 255, 0.5); /* white/50 */
+}
+
+.text-white-disabled {
+  color: rgba(255, 255, 255, 0.3); /* white/30 */
+}
+
+/* Status Colors */
+.color-success {
+  color: #10B981; /* green-500 */
+}
+
+.bg-success {
+  background-color: rgba(16, 185, 129, 0.2); /* green-500/20 */
+}
+
+.border-success {
+  border-color: rgba(16, 185, 129, 0.3); /* green-500/30 */
+}
+
+.color-warning {
+  color: #F59E0B; /* amber-500 */
+}
+
+.bg-warning {
+  background-color: rgba(245, 158, 11, 0.2); /* amber-500/20 */
+}
+
+.border-warning {
+  border-color: rgba(245, 158, 11, 0.3); /* amber-500/30 */
+}
+
+.color-error {
+  color: #EF4444; /* red-500 */
+}
+
+.bg-error {
+  background-color: rgba(239, 68, 68, 0.2); /* red-500/20 */
+}
+
+.border-error {
+  border-color: rgba(239, 68, 68, 0.3); /* red-500/30 */
+}
+
+.color-info {
+  color: #3B82F6; /* blue-500 */
+}
+
+.bg-info {
+  background-color: rgba(59, 130, 246, 0.2); /* blue-500/20 */
+}
+
+.border-info {
+  border-color: rgba(59, 130, 246, 0.3); /* blue-500/30 */
+}
+
+/* Gradient Backgrounds */
+.bg-gradient-primary {
+  background: linear-gradient(to right, #F59E0B, #D97706); /* amber-500 to amber-600 */
+}
+
+.bg-gradient-dark {
+  background: linear-gradient(to bottom, #1A1A27, #0F0F1A); /* dark gradient */
+}
+
+.bg-gradient-card {
+  background: linear-gradient(to bottom, rgba(26, 26, 39, 0.9), rgba(26, 26, 39, 0.7)); /* card gradient */
+}

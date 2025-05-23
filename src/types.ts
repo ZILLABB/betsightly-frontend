@@ -28,20 +28,18 @@ export interface Team {
 export interface Game {
   id: string;
   sport: SportType;
-  homeTeam: Team;
-  awayTeam: Team;
-  startTime: Date;
+  homeTeam: Team | string;
+  awayTeam: Team | string;
+  startTime: Date | string;
   league: string;
   venue?: string;
   homeScore?: number;
   awayScore?: number;
-  status: "scheduled" | "live" | "finished" | "cancelled";
+  status?: "scheduled" | "live" | "finished" | "cancelled";
+  score?: { home: number; away: number };
 }
 
 export interface Prediction {
-  predictions: never[];
-  combined_odds: number;
-  combined_confidence: number;
   id: string;
   gameId?: string;
   game: Game;
@@ -49,7 +47,7 @@ export interface Prediction {
   prediction?: string;
   odds: number;
   status: "won" | "lost" | "pending";
-  createdAt: Date;
+  createdAt: Date | string;
   description?: string;
   reason?: string;
   explanation?: string;
@@ -61,7 +59,11 @@ export interface Prediction {
   punter?: Punter;
   bookmaker?: BookmakerType;
   rolloverDay?: number;
-  // New fields for combination predictions
+  // Fields for API compatibility
+  predictions?: any[];
+  combined_odds?: number;
+  combined_confidence?: number;
+  // Fields for combination predictions
   combinedOdds?: number;
   combinedConfidence?: number;
   comboId?: string;
@@ -74,7 +76,7 @@ export interface Prediction {
   under25Pct?: number;
   bttsYesPct?: number;
   bttsNoPct?: number;
-  // New quality metrics
+  // Quality metrics
   quality_rating?: string;
   prediction_quality?: number;
   match_result_confidence?: number;
@@ -83,6 +85,8 @@ export interface Prediction {
   match_result_certainty?: number;
   over_under_certainty?: number;
   btts_certainty?: number;
+  // Any additional fields from the API
+  [key: string]: any;
 }
 
 export interface DailyPredictions {

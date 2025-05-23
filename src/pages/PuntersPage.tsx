@@ -1,881 +1,458 @@
-import React, { useEffect, useState, useRef, useCallback } from "react";
-// import { Link } from "react-router-dom";
-import type { Punter, Prediction, DailyPredictions, BookmakerType, SportType } from "../types";
+import React, { useEffect, useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/common/Card";
 import { Badge } from "../components/common/Badge";
 import { Button } from "../components/common/Button";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "../components/common/Tabs";
-import PredictionCard from "../components/predictions/PredictionCard";
 import CopyButton from "../components/common/CopyButton";
-import GameCodeModal from "../components/predictions/GameCodeModal";
-import GameCodeCard from "../components/punters/GameCodeCard";
-import VirtualizedList from "../components/common/VirtualizedList";
-import GameCodeCardSkeleton from "../components/skeletons/GameCodeCardSkeleton";
-import { getPunters, getDailyPredictionsByPunter } from "../services/dataService";
+import { getLatestBettingCodes, BettingCode } from "../services/bettingCodeService";
 import { formatDate } from "../lib/utils";
-import { Search, Filter, Calendar, Trophy, Bookmark, BookmarkCheck, SlidersHorizontal, Copy, Check, CheckSquare, Square, TrendingUp, TrendingDown, Twitter, Instagram, Send } from "lucide-react";
-import BatchOperationsPanel from "../components/punters/BatchOperationsPanel";
-import { useBreakpoints } from "../hooks/useMediaQuery";
-
-// Helper function to get bookmaker color
-const getBookmakerColor = (bookie?: BookmakerType) => {
-  switch(bookie) {
-    case "bet365": return "text-[#027b5b]";
-    case "betway": return "text-[#00b67a]";
-    case "1xbet": return "text-[#0085ff]";
-    case "22bet": return "text-[#ff4e50]";
-    case "sportybet": return "text-[#ff9900]";
-    default: return "text-[#F5A623]";
-  }
-};
+import {
+  Bookmark,
+  BookmarkCheck,
+  Search,
+  Filter,
+  RefreshCw,
+  AlertCircle,
+  ChevronLeft,
+  ChevronRight,
+  SlidersHorizontal
+} from "lucide-react";
 
 const PuntersPage: React.FC = () => {
-  const [punters, setPunters] = useState<Punter[]>([]);
-  const [selectedPunter, setSelectedPunter] = useState<Punter | null>(null);
-  const [dailyPredictions, setDailyPredictions] = useState<DailyPredictions[]>([]);
+  // State for betting codes and loading
   const [loading, setLoading] = useState<boolean>(true);
-  const [activeTab, setActiveTab] = useState<string>("today");
-  // Remove the unused state variable
+  const [error, setError] = useState<string | null>(null);
+  const [bettingCodes, setBettingCodes] = useState<BettingCode[]>([]);
 
-  // Modal state
-  const [modalOpen, setModalOpen] = useState<boolean>(false);
-  const [selectedGameCode, setSelectedGameCode] = useState<string>("");
-  const [selectedPredictions, setSelectedPredictions] = useState<Prediction[]>([]);
-  const [selectedBookmaker, setSelectedBookmaker] = useState<BookmakerType | undefined>();
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [totalCodes, setTotalCodes] = useState<number>(0);
+  const codesPerPage = 10;
 
   // Filter state
-  const [showFilters, setShowFilters] = useState<boolean>(false);
-  const [filterBookmaker, setFilterBookmaker] = useState<string>("all");
-  const [filterSport, setFilterSport] = useState<string>("all");
-  const [filterMinOdds, setFilterMinOdds] = useState<number>(1);
-  const [filterMaxOdds, setFilterMaxOdds] = useState<number>(100);
-  const [filterMinWinRate, setFilterMinWinRate] = useState<number>(0);
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [showFilters, setShowFilters] = useState<boolean>(false);
+  const [sortBy, setSortBy] = useState<string>("date");
+  const [sortOrder, setSortOrder] = useState<string>("desc");
 
   // Saved codes state
   const [savedCodes, setSavedCodes] = useState<string[]>([]);
   const [showSavedOnly, setShowSavedOnly] = useState<boolean>(false);
 
-  // Batch operations state
-  const [selectedCodes, setSelectedCodes] = useState<string[]>([]);
-  const [showSelectionCheckboxes, setShowSelectionCheckboxes] = useState<boolean>(false);
-
-  // Responsive state
-  const { isMobile } = useBreakpoints();
-
-  // Function to open modal with game code details
-  const openGameCodeModal = (gameCode: string, predictions: Prediction[], bookmaker?: BookmakerType) => {
-    setSelectedGameCode(gameCode);
-    setSelectedPredictions(predictions);
-    setSelectedBookmaker(bookmaker);
-    setModalOpen(true);
-  };
-
-  // Toggle saved status for a game code
+  // Toggle saved status for a betting code
   const toggleSavedCode = useCallback((code: string) => {
     setSavedCodes(prevSavedCodes => {
       const newSavedCodes = prevSavedCodes.includes(code)
         ? prevSavedCodes.filter(c => c !== code)
         : [...prevSavedCodes, code];
 
-      localStorage.setItem("savedGameCodes", JSON.stringify(newSavedCodes));
+      localStorage.setItem("savedBettingCodes", JSON.stringify(newSavedCodes));
       return newSavedCodes;
     });
   }, []);
 
-  // Apply filters to game codes
-  const applyFilters = (gameCodes: Record<string, Prediction[]>) => {
-    let filteredCodes = { ...gameCodes };
-
-    // Filter by bookmaker
-    if (filterBookmaker !== "all") {
-      filteredCodes = Object.entries(filteredCodes).reduce((filtered, [code, predictions]) => {
-        if (predictions[0]?.bookmaker?.toLowerCase() === filterBookmaker.toLowerCase()) {
-          filtered[code] = predictions;
-        }
-        return filtered;
-      }, {} as Record<string, Prediction[]>);
+  // Load saved codes from localStorage
+  useEffect(() => {
+    const savedCodesFromStorage = localStorage.getItem("savedBettingCodes");
+    if (savedCodesFromStorage) {
+      setSavedCodes(JSON.parse(savedCodesFromStorage));
     }
-
-    // Filter by sport
-    if (filterSport !== "all") {
-      filteredCodes = Object.entries(filteredCodes).reduce((filtered, [code, predictions]) => {
-        const hasSport = predictions.some(pred => pred.game.sport === filterSport);
-        if (hasSport) {
-          filtered[code] = predictions;
-        }
-        return filtered;
-      }, {} as Record<string, Prediction[]>);
-    }
-
-    // Filter by odds range
-    filteredCodes = Object.entries(filteredCodes).reduce((filtered, [code, predictions]) => {
-      const totalOdds = predictions.reduce((product, pred) => product * (pred.odds || 1), 1);
-      if (totalOdds >= filterMinOdds && totalOdds <= filterMaxOdds) {
-        filtered[code] = predictions;
-      }
-      return filtered;
-    }, {} as Record<string, Prediction[]>);
-
-    // Filter by win rate
-    if (filterMinWinRate > 0) {
-      filteredCodes = Object.entries(filteredCodes).reduce((filtered, [code, predictions]) => {
-        // Calculate win rate
-        const completedGames = predictions.filter(p => p?.status === "won" || p?.status === "lost");
-        const wonGames = predictions.filter(p => p?.status === "won");
-        const winRate = completedGames.length > 0
-          ? Math.round((wonGames.length / completedGames.length) * 100)
-          : 0;
-
-        if (winRate >= filterMinWinRate) {
-          filtered[code] = predictions;
-        }
-        return filtered;
-      }, {} as Record<string, Prediction[]>);
-    }
-
-    // Filter by search query
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filteredCodes = Object.entries(filteredCodes).reduce((filtered, [code, predictions]) => {
-        if (
-          code.toLowerCase().includes(query) ||
-          predictions.some(pred =>
-            pred.game.homeTeam.name.toLowerCase().includes(query) ||
-            pred.game.awayTeam.name.toLowerCase().includes(query) ||
-            pred.game.league.toLowerCase().includes(query) ||
-            pred.predictionType.toLowerCase().includes(query)
-          )
-        ) {
-          filtered[code] = predictions;
-        }
-        return filtered;
-      }, {} as Record<string, Prediction[]>);
-    }
-
-    // Filter by saved codes
-    if (showSavedOnly) {
-      filteredCodes = Object.entries(filteredCodes).reduce((filtered, [code, predictions]) => {
-        if (savedCodes.includes(code)) {
-          filtered[code] = predictions;
-        }
-        return filtered;
-      }, {} as Record<string, Prediction[]>);
-    }
-
-    return filteredCodes;
-  };
-
-  // Toggle selection for a game code
-  const toggleSelectCode = useCallback((code: string) => {
-    setSelectedCodes(prev =>
-      prev.includes(code)
-        ? prev.filter(c => c !== code)
-        : [...prev, code]
-    );
   }, []);
 
-  // Select all game codes
-  const selectAllCodes = () => {
-    const allCodes = Object.keys(groupedByGameCode);
-    setSelectedCodes(allCodes);
-  };
+  // Fetch betting codes with pagination
+  const fetchBettingCodes = useCallback(async (page: number = 1) => {
+    try {
+      setLoading(true);
+      setError(null);
 
-  // Clear all selections
-  const clearSelections = () => {
-    setSelectedCodes([]);
-  };
+      const skip = (page - 1) * codesPerPage;
+      const limit = codesPerPage;
 
-  // Toggle selection mode
-  const toggleSelectionMode = () => {
-    setShowSelectionCheckboxes(prev => !prev);
-    if (showSelectionCheckboxes) {
-      clearSelections();
+      console.log(`Fetching betting codes: page ${page}, skip ${skip}, limit ${limit}`);
+      const codes = await getLatestBettingCodes(limit, skip);
+
+      console.log('Fetched betting codes:', codes);
+      setBettingCodes(codes);
+
+      // For now, we'll just set a placeholder total since the API might not return a total count
+      setTotalCodes(Math.max(codes.length + skip, totalCodes));
+    } catch (err) {
+      console.error("Error fetching betting codes:", err);
+      setError("Failed to load betting codes. Please try again.");
+    } finally {
+      setLoading(false);
     }
+  }, [codesPerPage, totalCodes]);
+
+  // Fetch betting codes when page changes
+  useEffect(() => {
+    fetchBettingCodes(currentPage);
+  }, [currentPage, fetchBettingCodes]);
+
+  // Filter and sort betting codes
+  const filteredCodes = bettingCodes
+    .filter(code => {
+      // Apply search filter
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        return (
+          code.code.toLowerCase().includes(query) ||
+          code.punter_name.toLowerCase().includes(query) ||
+          (code.bookmaker_name && code.bookmaker_name.toLowerCase().includes(query))
+        );
+      }
+      return true;
+    })
+    .filter(code => {
+      // Apply status filter
+      if (filterStatus !== "all") {
+        return code.status === filterStatus;
+      }
+      return true;
+    })
+    .filter(code => {
+      // Apply saved filter
+      if (showSavedOnly) {
+        return savedCodes.includes(code.code);
+      }
+      return true;
+    })
+    .sort((a, b) => {
+      // Apply sorting
+      if (sortBy === "date") {
+        const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
+        return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
+      } else if (sortBy === "odds") {
+        const oddsA = a.odds || 0;
+        const oddsB = b.odds || 0;
+        return sortOrder === "asc" ? oddsA - oddsB : oddsB - oddsA;
+      }
+      return 0;
+    });
+
+  // Calculate total pages
+  const totalPages = Math.ceil(totalCodes / codesPerPage);
+
+  // Handle page change
+  const handlePageChange = (page: number) => {
+    if (page < 1 || page > totalPages) return;
+    setCurrentPage(page);
   };
 
-  // Render function for virtualized list
-  const renderGameCodeCard = useCallback((item: {
-    gameCode: string;
-    predictions: Prediction[];
-    bookmaker: string;
-    isSaved: boolean;
-    isSelected: boolean;
-  }) => {
-    const { gameCode, predictions, bookmaker, isSaved, isSelected } = item;
-
-    // Win rate is calculated inside the GameCodeCard component
-
-    return (
-      <div className="p-1">
-        <GameCodeCard
-          key={gameCode}
-          gameCode={gameCode}
-          predictions={predictions}
-          bookmaker={bookmaker}
-          date={new Date()}
-          isSaved={isSaved}
-          isSelected={isSelected}
-          onToggleSave={toggleSavedCode}
-          onToggleSelect={toggleSelectCode}
-          showSuccessRate={true}
-          showSelectionCheckbox={showSelectionCheckboxes}
-        />
-      </div>
-    );
-  }, [toggleSavedCode, toggleSelectCode, showSelectionCheckboxes]);
-
-  // Reset all filters
+  // Reset filters
   const resetFilters = () => {
-    setFilterBookmaker("all");
-    setFilterSport("all");
-    setFilterMinOdds(1);
-    setFilterMaxOdds(100);
-    setFilterMinWinRate(0);
     setSearchQuery("");
+    setFilterStatus("all");
     setShowSavedOnly(false);
+    setSortBy("date");
+    setSortOrder("desc");
   };
 
-  useEffect(() => {
-    const fetchPunters = async () => {
-      try {
-        setLoading(true);
-        const fetchedPunters = await getPunters();
-        setPunters(fetchedPunters);
-
-        // Select the first punter by default
-        if (fetchedPunters.length > 0 && !selectedPunter) {
-          setSelectedPunter(fetchedPunters[0]);
-        }
-
-        // Load saved codes from localStorage
-        const savedCodesFromStorage = localStorage.getItem("savedGameCodes");
-        if (savedCodesFromStorage) {
-          setSavedCodes(JSON.parse(savedCodesFromStorage));
-        }
-      } catch (error) {
-        console.error("Error fetching punters:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPunters();
-  }, [selectedPunter]);
-
-  useEffect(() => {
-    const fetchPunterPredictions = async () => {
-      if (!selectedPunter) return;
-
-      try {
-        setLoading(true);
-        const predictions = await getDailyPredictionsByPunter(selectedPunter.id, 7);
-        setDailyPredictions(predictions);
-      } catch (error) {
-        console.error("Error fetching punter predictions:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPunterPredictions();
-  }, [selectedPunter]);
-
-  // Get today's predictions
-  const todayPredictions = dailyPredictions.length > 0 ? dailyPredictions[0].predictions : [];
-
-  // Group predictions by game code
-  const groupedByGameCode = todayPredictions.reduce((acc, prediction) => {
-    if (prediction.gameCode) {
-      if (!acc[prediction.gameCode]) {
-        acc[prediction.gameCode] = [];
-      }
-      acc[prediction.gameCode].push(prediction);
+  // Get status badge variant
+  const getStatusVariant = (status: string) => {
+    switch (status) {
+      case "won": return "success";
+      case "lost": return "error";
+      case "void": return "outline";
+      default: return "warning";
     }
-    return acc;
-  }, {} as Record<string, Prediction[]>);
+  };
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl md:text-3xl font-bold mb-1">Best Punters</h1>
-        <p className="text-sm text-[#A1A1AA]">
-          Follow our top punters and their daily predictions with game codes for easy reference.
-        </p>
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold mb-1">Betting Codes</h1>
+          <p className="text-sm text-[#A1A1AA]">
+            View and manage betting codes from our top punters
+          </p>
+        </div>
+
+        {/* Search and filter controls */}
+        <div className="flex flex-wrap gap-2 items-center">
+          {/* Search input */}
+          <div className="relative">
+            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-[#A1A1AA]" size={16} />
+            <input
+              type="text"
+              placeholder="Search codes..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-8 pr-3 py-2 bg-[#1A1A27] border border-[#2A2A3C] rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#F5A623] focus:border-[#F5A623] w-full md:w-auto"
+            />
+          </div>
+
+          {/* Filter toggle */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowFilters(!showFilters)}
+            className="flex items-center gap-1"
+          >
+            <Filter size={16} />
+            Filters
+          </Button>
+
+          {/* Saved toggle */}
+          <Button
+            variant={showSavedOnly ? "default" : "outline"}
+            size="sm"
+            onClick={() => setShowSavedOnly(!showSavedOnly)}
+            className="flex items-center gap-1"
+          >
+            {showSavedOnly ? <BookmarkCheck size={16} /> : <Bookmark size={16} />}
+            Saved
+          </Button>
+
+          {/* Refresh button */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => fetchBettingCodes(currentPage)}
+            disabled={loading}
+            className="flex items-center gap-1"
+          >
+            <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
+            Refresh
+          </Button>
+        </div>
       </div>
 
-      {/* Punter Selection */}
-      <Card className="bg-[#1A1A27]/80 border border-[#2A2A3C]/20 shadow-lg">
-        <CardHeader className="p-3">
-          <CardTitle className="text-base">Select Punter</CardTitle>
-        </CardHeader>
-        <CardContent className="p-3 pt-0">
-          <div className="flex flex-wrap gap-2">
-            {punters.map((punter) => (
-              <Button
-                key={punter.id}
-                variant={selectedPunter?.id === punter.id ? "premium" : "outline"}
-                size="sm"
-                onClick={() => setSelectedPunter(punter)}
-                className="text-xs px-2 py-1"
-              >
-                {punter.name}
-                {punter.verified && " ✓"}
-              </Button>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Punter Details */}
-      {selectedPunter && (
+      {/* Filters panel */}
+      {showFilters && (
         <Card className="bg-[#1A1A27]/80 border border-[#2A2A3C]/20 shadow-lg">
-          <CardHeader className="p-3">
-            <div className="flex justify-between items-center">
-              <CardTitle className="text-base flex items-center">
-                {selectedPunter.name}
-                {selectedPunter.verified && (
-                  <Badge variant="premium" className="ml-2 text-xs px-1.5 py-0.5">Verified</Badge>
-                )}
-              </CardTitle>
-              <div className="flex items-center space-x-2">
-                <Badge variant="success" className="text-xs px-1.5 py-0.5">
-                  {selectedPunter.winRate.toFixed(1)}% Win Rate
-                </Badge>
-                <Badge variant="outline" className="text-xs px-1.5 py-0.5">
-                  {selectedPunter.totalPredictions} Predictions
-                </Badge>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="p-3 pt-0">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4">
-              <div className="text-center p-2 bg-[#1A1A27]/50 rounded-lg">
-                <p className="text-xs font-medium text-[#A1A1AA]">Win Rate</p>
-                <p className="text-lg font-bold premium-text">{selectedPunter.winRate.toFixed(1)}%</p>
-              </div>
-              <div className="text-center p-2 bg-[#1A1A27]/50 rounded-lg">
-                <p className="text-xs font-medium text-[#A1A1AA]">Total Picks</p>
-                <p className="text-lg font-bold">{selectedPunter.totalPredictions}</p>
-              </div>
-              <div className="text-center p-2 bg-[#1A1A27]/50 rounded-lg">
-                <p className="text-xs font-medium text-[#A1A1AA]">Won Picks</p>
-                <p className="text-lg font-bold text-[#10B981]">{selectedPunter.wonPredictions}</p>
-              </div>
-              <div className="text-center p-2 bg-[#1A1A27]/50 rounded-lg">
-                <p className="text-xs font-medium text-[#A1A1AA]">Avg. Odds</p>
-                <p className="text-lg font-bold">{selectedPunter.averageOdds.toFixed(2)}x</p>
-              </div>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <SlidersHorizontal size={18} className="text-[#F5A623]" />
+                Filter Options
+              </h3>
+              <Button variant="outline" size="sm" onClick={resetFilters}>
+                Reset Filters
+              </Button>
             </div>
 
-            <div className="flex flex-wrap gap-2 mb-4">
-              <p className="text-xs font-medium text-[#A1A1AA]">Specialties:</p>
-              {selectedPunter.specialties.map((specialty) => (
-                <Badge key={specialty} variant="outline" className="text-xs px-1.5 py-0.5 capitalize">
-                  {specialty}
-                </Badge>
-              ))}
-            </div>
-
-            {/* Social Media Links */}
-            {selectedPunter.socialMedia && (
-              <div className="flex items-center gap-3">
-                <p className="text-xs font-medium text-[#A1A1AA]">Follow:</p>
-                <div className="flex gap-2">
-                  {selectedPunter.socialMedia.twitter && (
-                    <a
-                      href={selectedPunter.socialMedia.twitter}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="p-1.5 bg-[#1DA1F2]/10 hover:bg-[#1DA1F2]/20 text-[#1DA1F2] rounded-full transition-colors"
-                      title="Twitter"
-                    >
-                      <Twitter size={16} />
-                    </a>
-                  )}
-                  {selectedPunter.socialMedia.instagram && (
-                    <a
-                      href={selectedPunter.socialMedia.instagram}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="p-1.5 bg-[#E1306C]/10 hover:bg-[#E1306C]/20 text-[#E1306C] rounded-full transition-colors"
-                      title="Instagram"
-                    >
-                      <Instagram size={16} />
-                    </a>
-                  )}
-                  {selectedPunter.socialMedia.telegram && (
-                    <a
-                      href={selectedPunter.socialMedia.telegram}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="p-1.5 bg-[#0088cc]/10 hover:bg-[#0088cc]/20 text-[#0088cc] rounded-full transition-colors"
-                      title="Telegram"
-                    >
-                      <Send size={16} />
-                    </a>
-                  )}
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Status filter */}
+              <div>
+                <label className="block text-sm font-medium mb-1">Status</label>
+                <select
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value)}
+                  className="w-full bg-[#1A1A27] border border-[#2A2A3C] rounded-lg p-2 text-sm"
+                >
+                  <option value="all">All Statuses</option>
+                  <option value="pending">Pending</option>
+                  <option value="won">Won</option>
+                  <option value="lost">Lost</option>
+                  <option value="void">Void</option>
+                </select>
               </div>
-            )}
+
+              {/* Sort by */}
+              <div>
+                <label className="block text-sm font-medium mb-1">Sort By</label>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="w-full bg-[#1A1A27] border border-[#2A2A3C] rounded-lg p-2 text-sm"
+                >
+                  <option value="date">Date</option>
+                  <option value="odds">Odds</option>
+                </select>
+              </div>
+
+              {/* Sort order */}
+              <div>
+                <label className="block text-sm font-medium mb-1">Sort Order</label>
+                <select
+                  value={sortOrder}
+                  onChange={(e) => setSortOrder(e.target.value)}
+                  className="w-full bg-[#1A1A27] border border-[#2A2A3C] rounded-lg p-2 text-sm"
+                >
+                  <option value="desc">Descending</option>
+                  <option value="asc">Ascending</option>
+                </select>
+              </div>
+            </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Predictions Tabs */}
-      {selectedPunter && (
-        <Tabs defaultValue="today" className="w-full" onValueChange={setActiveTab}>
-          <div className="flex justify-between items-center mb-4">
-            <TabsList className="bg-[#2A2A3C]/30 p-1 rounded-lg">
-              <TabsTrigger
-                value="today"
-                className="px-4 py-2 rounded-md data-[state=active]:bg-[#F5A623] data-[state=active]:text-black"
-              >
-                Today's Picks
-              </TabsTrigger>
-              <TabsTrigger
-                value="codes"
-                className="px-4 py-2 rounded-md data-[state=active]:bg-[#F5A623] data-[state=active]:text-black"
-              >
-                Game Codes
-              </TabsTrigger>
-              <TabsTrigger
-                value="history"
-                className="px-4 py-2 rounded-md data-[state=active]:bg-[#F5A623] data-[state=active]:text-black"
-              >
-                History
-              </TabsTrigger>
-            </TabsList>
+      {/* Error message */}
+      {error && (
+        <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 flex items-start gap-3">
+          <AlertCircle size={20} className="text-red-500 mt-0.5 flex-shrink-0" />
+          <div>
+            <h3 className="font-semibold text-red-500">Error Loading Data</h3>
+            <p className="text-sm text-[#A1A1AA]">{error}</p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => fetchBettingCodes(currentPage)}
+              className="mt-2"
+            >
+              Try Again
+            </Button>
           </div>
-
-          {loading ? (
-            <div className="text-center py-16 bg-[#1A1A27]/50 rounded-xl border border-[#2A2A3C]/10">
-              <div className="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-[#F5A623] mb-4"></div>
-              <p className="text-[#A1A1AA]">Loading predictions...</p>
-            </div>
-          ) : (
-            <>
-              {/* Today's Picks Tab */}
-              <TabsContent value="today" className="mt-2">
-                <div className="bg-[#1A1A27]/80 p-4 rounded-xl border border-[#2A2A3C]/20 shadow-lg">
-                  <h3 className="text-lg font-semibold mb-4 flex items-center">
-                    <span className="bg-[#F5A623]/10 text-[#F5A623] p-1 rounded-md mr-2 text-sm">📅</span>
-                    Today's Picks by {selectedPunter.name}
-                  </h3>
-
-                  {todayPredictions.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                      {todayPredictions.map((prediction) => {
-
-                        return (
-                          <div key={prediction.id} className="bg-[#1A1A27]/30 p-2 rounded-xl border border-[#2A2A3C]/10">
-                            <div className="flex justify-between items-center mb-2">
-                              <div className="flex items-center">
-                                <Badge variant="outline" className="text-xs px-1.5 py-0.5 mr-1">
-                                  {prediction.gameCode}
-                                </Badge>
-                                <CopyButton
-                                  text={prediction.gameCode || ""}
-                                  successMessage="Code copied!"
-                                  className="text-xs"
-                                />
-                              </div>
-                              {prediction.bookmaker && (
-                                <span className={`text-xs font-medium capitalize ${getBookmakerColor(prediction.bookmaker)}`}>
-                                  {prediction.bookmaker}
-                                </span>
-                              )}
-                            </div>
-                            <PredictionCard
-                              prediction={prediction}
-                              isPremium={true}
-                            />
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8 bg-[#1A1A27]/30 rounded-xl border border-[#2A2A3C]/10">
-                      <p className="text-[#A1A1AA]">No predictions available for today.</p>
-                    </div>
-                  )}
-                </div>
-              </TabsContent>
-
-              {/* Game Codes Tab */}
-              <TabsContent value="codes" className="mt-2">
-                <div className="bg-[#1A1A27]/80 p-4 rounded-xl border border-[#2A2A3C]/20 shadow-lg">
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-semibold flex items-center">
-                      <span className="bg-[#F5A623]/10 text-[#F5A623] p-1 rounded-md mr-2 text-sm">🎮</span>
-                      Game Codes for Today
-                    </h3>
-
-                    <div className="flex items-center gap-2">
-                      {/* Search Input */}
-                      <div className="relative">
-                        <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-[#A1A1AA]" size={14} />
-                        <input
-                          type="text"
-                          placeholder="Search codes..."
-                          className="w-full pl-8 pr-2 py-1 bg-[#1A1A27] border border-[#2A2A3C] rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-[#F5A623] focus:border-[#F5A623]"
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                        />
-                      </div>
-
-                      {/* Filter Toggle Button */}
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowFilters(!showFilters)}
-                        className="text-xs px-2 py-1 h-auto"
-                      >
-                        <Filter size={14} className="mr-1" />
-                        Filters
-                      </Button>
-
-                      {/* Saved Codes Toggle */}
-                      <Button
-                        variant={showSavedOnly ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setShowSavedOnly(!showSavedOnly)}
-                        className="text-xs px-2 py-1 h-auto"
-                      >
-                        {showSavedOnly ? (
-                          <BookmarkCheck size={14} className="mr-1 text-white" />
-                        ) : (
-                          <Bookmark size={14} className="mr-1" />
-                        )}
-                        Saved
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Filters Panel */}
-                  {showFilters && (
-                    <div className="mb-4 p-3 bg-[#1A1A27]/50 rounded-lg border border-[#2A2A3C]/20">
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        {/* Bookmaker Filter */}
-                        <div>
-                          <label className="block text-xs font-medium mb-1">Bookmaker</label>
-                          <select
-                            className="w-full bg-[#1A1A27] border border-[#2A2A3C] rounded-lg p-1.5 text-xs"
-                            value={filterBookmaker}
-                            onChange={(e) => setFilterBookmaker(e.target.value)}
-                          >
-                            <option value="all">All Bookmakers</option>
-                            <option value="bet365">Bet365</option>
-                            <option value="betway">Betway</option>
-                            <option value="1xbet">1xBet</option>
-                            <option value="22bet">22Bet</option>
-                            <option value="sportybet">SportyBet</option>
-                          </select>
-                        </div>
-
-                        {/* Sport Filter */}
-                        <div>
-                          <label className="block text-xs font-medium mb-1">Sport</label>
-                          <select
-                            className="w-full bg-[#1A1A27] border border-[#2A2A3C] rounded-lg p-1.5 text-xs"
-                            value={filterSport}
-                            onChange={(e) => setFilterSport(e.target.value)}
-                          >
-                            <option value="all">All Sports</option>
-                            <option value="soccer">Soccer</option>
-                            <option value="basketball">Basketball</option>
-                            <option value="mixed">Mixed</option>
-                          </select>
-                        </div>
-
-                        {/* Odds Range Filter */}
-                        <div>
-                          <label className="block text-xs font-medium mb-1">Total Odds Range</label>
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="number"
-                              min="1"
-                              max="100"
-                              className="w-full bg-[#1A1A27] border border-[#2A2A3C] rounded-lg p-1.5 text-xs"
-                              value={filterMinOdds}
-                              onChange={(e) => setFilterMinOdds(Number(e.target.value))}
-                            />
-                            <span className="text-xs">to</span>
-                            <input
-                              type="number"
-                              min="1"
-                              max="100"
-                              className="w-full bg-[#1A1A27] border border-[#2A2A3C] rounded-lg p-1.5 text-xs"
-                              value={filterMaxOdds}
-                              onChange={(e) => setFilterMaxOdds(Number(e.target.value))}
-                            />
-                          </div>
-                        </div>
-
-                        {/* Win Rate Filter */}
-                        <div className="md:col-span-3 mt-2">
-                          <label className="block text-xs font-medium mb-1">
-                            Minimum Win Rate: {filterMinWinRate}%
-                          </label>
-                          <input
-                            type="range"
-                            min="0"
-                            max="100"
-                            step="5"
-                            className="w-full h-2 bg-[#1A1A27] rounded-lg appearance-none cursor-pointer accent-[#F5A623]"
-                            value={filterMinWinRate}
-                            onChange={(e) => setFilterMinWinRate(Number(e.target.value))}
-                          />
-                          <div className="flex justify-between text-xs text-[#A1A1AA] mt-1">
-                            <span>0%</span>
-                            <span>25%</span>
-                            <span>50%</span>
-                            <span>75%</span>
-                            <span>100%</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex justify-end mt-3">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={resetFilters}
-                          className="text-xs px-2 py-1 h-auto mr-2"
-                        >
-                          Reset Filters
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Batch Operations Toggle */}
-                  <div className="flex justify-end mb-4">
-                    <Button
-                      variant={showSelectionCheckboxes ? "default" : "outline"}
-                      size="sm"
-                      onClick={toggleSelectionMode}
-                      className="text-xs px-3 py-1 h-auto"
-                    >
-                      {showSelectionCheckboxes ? (
-                        <>
-                          <Check size={14} className="mr-1.5" />
-                          Exit Selection Mode
-                        </>
-                      ) : (
-                        <>
-                          <CheckSquare size={14} className="mr-1.5" />
-                          Select Multiple Codes
-                        </>
-                      )}
-                    </Button>
-                  </div>
-
-                  {/* Batch Operations Panel */}
-                  {showSelectionCheckboxes && (
-                    <BatchOperationsPanel
-                      selectedCodes={selectedCodes}
-                      allGameCodes={groupedByGameCode}
-                      onClearSelection={clearSelections}
-                      onSelectAll={selectAllCodes}
-                      totalCodes={Object.keys(groupedByGameCode).length}
-                    />
-                  )}
-
-                  {loading ? (
-                    // Skeleton loading state
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                      {Array.from({ length: 6 }).map((_, index) => (
-                        <GameCodeCardSkeleton
-                          key={index}
-                          animation="pulse"
-                          gameCount={3}
-                        />
-                      ))}
-                    </div>
-                  ) : Object.keys(groupedByGameCode).length > 0 ? (
-                    <>
-                      {/* Apply filters to game codes */}
-                      {(() => {
-                        const filteredGameCodes = applyFilters(groupedByGameCode);
-                        const filteredEntries = Object.entries(filteredGameCodes);
-
-                        if (filteredEntries.length === 0) {
-                          return (
-                            <div className="text-center py-8 bg-[#1A1A27]/30 rounded-xl border border-[#2A2A3C]/10">
-                              <p className="text-[#A1A1AA]">No game codes match your current filters.</p>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={resetFilters}
-                                className="mt-3 text-xs"
-                              >
-                                Reset Filters
-                              </Button>
-                            </div>
-                          );
-                        }
-
-                        // Prepare data for virtualized list
-                        const gameCodeItems = filteredEntries.map(([gameCode, predictions]) => {
-                          return {
-                            gameCode,
-                            predictions,
-                            bookmaker: predictions[0]?.bookmaker || "unknown",
-                            isSaved: savedCodes.includes(gameCode),
-                            isSelected: selectedCodes.includes(gameCode)
-                          };
-                        });
-
-                        // Determine grid layout based on screen size
-                        const gridClass = isMobile
-                          ? "grid-cols-1"
-                          : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3";
-
-                        return (
-                          <div className={`grid ${gridClass} gap-3`}>
-                            {gameCodeItems.length <= 20 ? (
-                              // Regular rendering for small lists
-                              gameCodeItems.map((item) => (
-                                <div key={item.gameCode} className="p-1">
-                                  <GameCodeCard
-                                    gameCode={item.gameCode}
-                                    predictions={item.predictions}
-                                    bookmaker={item.bookmaker}
-                                    date={new Date()}
-                                    isSaved={item.isSaved}
-                                    isSelected={item.isSelected}
-                                    onToggleSave={toggleSavedCode}
-                                    onToggleSelect={toggleSelectCode}
-                                    showSuccessRate={true}
-                                    showSelectionCheckbox={showSelectionCheckboxes}
-                                  />
-                                </div>
-                              ))
-                            ) : (
-                              // Virtualized rendering for large lists
-                              <div className="col-span-full">
-                                <VirtualizedList
-                                  items={gameCodeItems}
-                                  height={800}
-                                  itemHeight={350}
-                                  renderItem={renderGameCodeCard}
-                                  className="w-full"
-                                  overscan={3}
-                                  loading={loading}
-                                  loadingComponent={
-                                    <div className="p-4 text-center">
-                                      <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#F5A623]"></div>
-                                      <p className="mt-2 text-sm text-[#A1A1AA]">Loading more game codes...</p>
-                                    </div>
-                                  }
-                                />
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })()}
-                    </>
-                  ) : (
-                    <div className="text-center py-8 bg-[#1A1A27]/30 rounded-xl border border-[#2A2A3C]/10">
-                      <p className="text-[#A1A1AA]">No game codes available for today.</p>
-                    </div>
-                  )}
-                </div>
-              </TabsContent>
-
-              {/* History Tab */}
-              <TabsContent value="history" className="mt-2">
-                <div className="bg-[#1A1A27]/80 p-4 rounded-xl border border-[#2A2A3C]/20 shadow-lg">
-                  <h3 className="text-lg font-semibold mb-4 flex items-center">
-                    <span className="bg-[#F5A623]/10 text-[#F5A623] p-1 rounded-md mr-2 text-sm">📜</span>
-                    Prediction History
-                  </h3>
-
-                  {dailyPredictions.length > 0 ? (
-                    <div className="space-y-6">
-                      {dailyPredictions.slice(1).map((daily, index) => (
-                        <div key={index} className="bg-[#1A1A27]/30 p-3 rounded-xl border border-[#2A2A3C]/10">
-                          <div className="flex justify-between items-center mb-3">
-                            <h4 className="text-base font-semibold">{formatDate(daily.date)}</h4>
-                            <Badge variant="outline" className="text-xs px-1.5 py-0.5">
-                              {daily.predictions.length} Picks
-                            </Badge>
-                          </div>
-
-                          {daily.predictions.length > 0 ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                              {daily.predictions.map((prediction) => {
-
-                                return (
-                                  <div key={prediction.id} className="bg-[#1A1A27]/50 p-2 rounded-lg border border-[#2A2A3C]/10">
-                                    <div className="flex justify-between items-center mb-1">
-                                      <p className="text-xs font-medium">
-                                        {prediction.game.homeTeam.name} vs {prediction.game.awayTeam.name}
-                                      </p>
-                                      <Badge
-                                        variant={
-                                          prediction.status === "won" ? "success" :
-                                          prediction.status === "lost" ? "danger" :
-                                          "warning"
-                                        }
-                                        className="text-xs px-1.5 py-0.5 uppercase"
-                                      >
-                                        {prediction.status}
-                                      </Badge>
-                                    </div>
-                                    <div className="flex justify-between items-center mb-1">
-                                      <p className="text-xs">{prediction.predictionType}</p>
-                                      <p className="text-xs font-bold">{prediction.odds.toFixed(2)}x</p>
-                                    </div>
-                                    {prediction.gameCode && (
-                                      <div className="flex justify-between items-center mt-2 pt-2 border-t border-[#2A2A3C]/10">
-                                        <div className="flex items-center">
-                                          <span className="text-xs text-[#A1A1AA] mr-1">Code:</span>
-                                          <span className="text-xs font-medium mr-1">{prediction.gameCode}</span>
-                                          <CopyButton
-                                            text={prediction.gameCode}
-                                            successMessage="Copied!"
-                                            className="text-xs"
-                                          />
-                                        </div>
-                                        {prediction.bookmaker && (
-                                          <span className={`text-xs font-medium capitalize ${getBookmakerColor(prediction.bookmaker)}`}>
-                                            {prediction.bookmaker}
-                                          </span>
-                                        )}
-                                      </div>
-                                    )}
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          ) : (
-                            <p className="text-center text-sm text-[#A1A1AA]">No predictions for this day.</p>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8 bg-[#1A1A27]/30 rounded-xl border border-[#2A2A3C]/10">
-                      <p className="text-[#A1A1AA]">No prediction history available.</p>
-                    </div>
-                  )}
-                </div>
-              </TabsContent>
-            </>
-          )}
-        </Tabs>
+        </div>
       )}
 
-      {/* Game Code Modal */}
-      <GameCodeModal
-        gameCode={selectedGameCode}
-        predictions={selectedPredictions}
-        bookmaker={selectedBookmaker}
-        isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
-      />
+      {/* Betting Codes Card */}
+      <Card className="bg-[#1A1A27]/80 border border-[#2A2A3C]/20 shadow-lg">
+        <CardHeader className="p-4">
+          <CardTitle className="text-xl flex items-center">
+            <span className="bg-[#F5A623]/10 text-[#F5A623] p-1 rounded-md mr-2 text-sm">🎫</span>
+            Betting Codes
+            {filteredCodes.length > 0 && (
+              <Badge variant="outline" className="ml-2">
+                {filteredCodes.length} {filteredCodes.length === 1 ? 'code' : 'codes'}
+              </Badge>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-4 pt-0">
+          {loading ? (
+            <div className="text-center py-16">
+              <div className="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-[#F5A623] mb-4"></div>
+              <p className="text-[#A1A1AA]">Loading betting codes...</p>
+            </div>
+          ) : filteredCodes.length > 0 ? (
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="bg-[#2A2A3C]/30 text-left">
+                      <th className="p-2 text-sm font-medium">Code</th>
+                      <th className="p-2 text-sm font-medium">Punter</th>
+                      <th className="p-2 text-sm font-medium">Bookmaker</th>
+                      <th className="p-2 text-sm font-medium">Odds</th>
+                      <th className="p-2 text-sm font-medium">Event Date</th>
+                      <th className="p-2 text-sm font-medium">Status</th>
+                      <th className="p-2 text-sm font-medium">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredCodes.map((code) => (
+                      <tr key={code.id} className="border-b border-[#2A2A3C]/10 hover:bg-[#2A2A3C]/10">
+                        <td className="p-2 text-sm">
+                          <div className="flex items-center">
+                            <span className="font-medium mr-1">{code.code}</span>
+                            <CopyButton
+                              text={code.code}
+                              successMessage="Copied!"
+                              className="text-xs"
+                            />
+                          </div>
+                        </td>
+                        <td className="p-2 text-sm">{code.punter_name}</td>
+                        <td className="p-2 text-sm">{code.bookmaker_name || 'N/A'}</td>
+                        <td className="p-2 text-sm">{code.odds ? code.odds.toFixed(2) : 'N/A'}</td>
+                        <td className="p-2 text-sm">{code.event_date ? formatDate(new Date(code.event_date)) : 'N/A'}</td>
+                        <td className="p-2 text-sm">
+                          <Badge
+                            variant={getStatusVariant(code.status)}
+                            className="text-xs px-1.5 py-0.5 uppercase"
+                          >
+                            {code.status}
+                          </Badge>
+                        </td>
+                        <td className="p-2 text-sm">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-xs px-2 py-1 h-auto"
+                            onClick={() => toggleSavedCode(code.code)}
+                          >
+                            {savedCodes.includes(code.code) ? (
+                              <BookmarkCheck size={14} className="mr-1 text-[#F5A623]" />
+                            ) : (
+                              <Bookmark size={14} className="mr-1" />
+                            )}
+                            {savedCodes.includes(code.code) ? 'Saved' : 'Save'}
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between mt-4 pt-4 border-t border-[#2A2A3C]/20">
+                  <div className="text-sm text-[#A1A1AA]">
+                    Showing {(currentPage - 1) * codesPerPage + 1} to {Math.min(currentPage * codesPerPage, totalCodes)} of {totalCodes} codes
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      className="p-1 h-8 w-8"
+                    >
+                      <ChevronLeft size={16} />
+                    </Button>
+
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      // Show pages around current page
+                      let pageNum;
+                      if (totalPages <= 5) {
+                        pageNum = i + 1;
+                      } else if (currentPage <= 3) {
+                        pageNum = i + 1;
+                      } else if (currentPage >= totalPages - 2) {
+                        pageNum = totalPages - 4 + i;
+                      } else {
+                        pageNum = currentPage - 2 + i;
+                      }
+
+                      return (
+                        <Button
+                          key={pageNum}
+                          variant={currentPage === pageNum ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => handlePageChange(pageNum)}
+                          className="h-8 w-8"
+                        >
+                          {pageNum}
+                        </Button>
+                      );
+                    })}
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                      className="p-1 h-8 w-8"
+                    >
+                      <ChevronRight size={16} />
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="text-center py-8 bg-[#1A1A27]/30 rounded-xl border border-[#2A2A3C]/10">
+              <p className="text-[#A1A1AA]">No betting codes available.</p>
+              {(searchQuery || filterStatus !== "all" || showSavedOnly) && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={resetFilters}
+                  className="mt-4"
+                >
+                  Clear Filters
+                </Button>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };

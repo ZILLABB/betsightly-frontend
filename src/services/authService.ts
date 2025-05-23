@@ -51,7 +51,7 @@ export const login = async (username: string, password: string): Promise<{ user:
       formData.append('password', password);
 
       // Make API request
-      const response = await fetch(`${API_BASE_URL}/auth/login`, {
+      const response = await fetch(`${API_BASE_URL}/auth/login/`, {
         method: 'POST',
         body: formData,
       });
@@ -99,7 +99,7 @@ export const getCurrentUser = async (token: string): Promise<User> => {
     // If not our hardcoded token, try the API
     try {
       // Make API request
-      const response = await fetch(`${API_BASE_URL}/auth/me`, {
+      const response = await fetch(`${API_BASE_URL}/auth/me/`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -147,7 +147,7 @@ export const verifyToken = async (token: string): Promise<boolean> => {
     // If not our hardcoded token, try the API
     try {
       // Make API request
-      const response = await fetch(`${API_BASE_URL}/auth/verify-token`, {
+      const response = await fetch(`${API_BASE_URL}/auth/verify-token/`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

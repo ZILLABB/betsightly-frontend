@@ -121,6 +121,7 @@ const ResultsPage: React.FC = () => {
           }
         } catch (statsError) {
           console.error("Error fetching stats overview:", statsError);
+          // Don't set error here, continue with other data fetching
         }
 
         // Get sport-specific stats
@@ -133,6 +134,7 @@ const ResultsPage: React.FC = () => {
           }
         } catch (sportStatsError) {
           console.error("Error fetching sport stats:", sportStatsError);
+          // Don't set error here, continue with other data fetching
         }
 
         // Reset pagination when filters change
@@ -177,48 +179,62 @@ const ResultsPage: React.FC = () => {
           filters.status = statusFilter;
         }
 
-        // Get predictions by odds category if selected
-        if (oddsCategory !== "all") {
-          const categorizedPredictions = await getPredictionsByOddsCategory(filters);
-          const predictions = categorizedPredictions[oddsCategory] || [];
+        try {
+          // Get predictions by odds category if selected
+          if (oddsCategory !== "all") {
+            const categorizedPredictions = await getPredictionsByOddsCategory(filters);
 
-          // Sort by date (newest first)
-          const sortedPredictions = [...predictions].sort((a, b) => {
-            return new Date(b.game.startTime).getTime() - new Date(a.game.startTime).getTime();
-          });
+            if (!categorizedPredictions) {
+              throw new Error("Failed to fetch categorized predictions");
+            }
 
-          setCompletedPredictions(sortedPredictions.slice(0, ITEMS_PER_PAGE));
-          setHasMore(sortedPredictions.length > ITEMS_PER_PAGE);
-        } else {
-          // Get all predictions with filters
-          let allPredictions: Prediction[] = [];
+            const predictions = categorizedPredictions[oddsCategory] || [];
 
-          if (statusFilter === "all") {
-            // Get won predictions
-            const wonPredictions = await getPredictionsWithFilters({
-              ...filters,
-              status: "won",
+            // Sort by date (newest first)
+            const sortedPredictions = [...predictions].sort((a, b) => {
+              const dateA = a.game?.startTime ? new Date(a.game.startTime).getTime() : 0;
+              const dateB = b.game?.startTime ? new Date(b.game.startTime).getTime() : 0;
+              return dateB - dateA;
             });
 
-            // Get lost predictions
-            const lostPredictions = await getPredictionsWithFilters({
-              ...filters,
-              status: "lost",
-            });
-
-            allPredictions = [...wonPredictions, ...lostPredictions];
+            setCompletedPredictions(sortedPredictions.slice(0, ITEMS_PER_PAGE));
+            setHasMore(sortedPredictions.length > ITEMS_PER_PAGE);
           } else {
-            // Status filter is already applied
-            allPredictions = await getPredictionsWithFilters(filters);
+            // Get all predictions with filters
+            let allPredictions: Prediction[] = [];
+
+            if (statusFilter === "all") {
+              // Get won predictions
+              const wonPredictions = await getPredictionsWithFilters({
+                ...filters,
+                status: "won",
+              });
+
+              // Get lost predictions
+              const lostPredictions = await getPredictionsWithFilters({
+                ...filters,
+                status: "lost",
+              });
+
+              allPredictions = [...wonPredictions, ...lostPredictions];
+            } else {
+              // Status filter is already applied
+              allPredictions = await getPredictionsWithFilters(filters);
+            }
+
+            // Sort by date (newest first)
+            const sortedPredictions = allPredictions.sort((a, b) => {
+              const dateA = a.game?.startTime ? new Date(a.game.startTime).getTime() : 0;
+              const dateB = b.game?.startTime ? new Date(b.game.startTime).getTime() : 0;
+              return dateB - dateA;
+            });
+
+            setCompletedPredictions(sortedPredictions.slice(0, ITEMS_PER_PAGE));
+            setHasMore(sortedPredictions.length > ITEMS_PER_PAGE);
           }
-
-          // Sort by date (newest first)
-          const sortedPredictions = allPredictions.sort((a, b) => {
-            return new Date(b.game.startTime).getTime() - new Date(a.game.startTime).getTime();
-          });
-
-          setCompletedPredictions(sortedPredictions.slice(0, ITEMS_PER_PAGE));
-          setHasMore(sortedPredictions.length > ITEMS_PER_PAGE);
+        } catch (predictionError) {
+          console.error("Error fetching predictions:", predictionError);
+          setError("Failed to load prediction data. Please try again.");
         }
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -229,7 +245,7 @@ const ResultsPage: React.FC = () => {
     };
 
     fetchData();
-  }, [timeframe, sportFilter, statusFilter, oddsCategory, customStartDate, customEndDate]);
+  }, [timeframe, sportFilter, statusFilter, oddsCategory, customStartDate, customEndDate, ITEMS_PER_PAGE]);
 
   // Load more results
   const handleLoadMore = async () => {
@@ -276,61 +292,75 @@ const ResultsPage: React.FC = () => {
 
       let newPredictions: Prediction[] = [];
 
-      // Get predictions by odds category if selected
-      if (oddsCategory !== "all") {
-        const categorizedPredictions = await getPredictionsByOddsCategory(filters);
-        const predictions = categorizedPredictions[oddsCategory] || [];
+      try {
+        // Get predictions by odds category if selected
+        if (oddsCategory !== "all") {
+          const categorizedPredictions = await getPredictionsByOddsCategory(filters);
 
-        // Sort by date (newest first)
-        const sortedPredictions = [...predictions].sort((a, b) => {
-          return new Date(b.game.startTime).getTime() - new Date(a.game.startTime).getTime();
-        });
+          if (!categorizedPredictions) {
+            throw new Error("Failed to fetch categorized predictions");
+          }
 
-        const nextPage = page + 1;
-        const startIndex = (nextPage - 1) * ITEMS_PER_PAGE;
-        const endIndex = startIndex + ITEMS_PER_PAGE;
+          const predictions = categorizedPredictions[oddsCategory] || [];
 
-        newPredictions = sortedPredictions.slice(startIndex, endIndex);
-        setHasMore(endIndex < sortedPredictions.length);
-      } else {
-        // Get all predictions with filters
-        let allPredictions: Prediction[] = [];
-
-        if (statusFilter === "all") {
-          // Get won predictions
-          const wonPredictions = await getPredictionsWithFilters({
-            ...filters,
-            status: "won",
+          // Sort by date (newest first)
+          const sortedPredictions = [...predictions].sort((a, b) => {
+            const dateA = a.game?.startTime ? new Date(a.game.startTime).getTime() : 0;
+            const dateB = b.game?.startTime ? new Date(b.game.startTime).getTime() : 0;
+            return dateB - dateA;
           });
 
-          // Get lost predictions
-          const lostPredictions = await getPredictionsWithFilters({
-            ...filters,
-            status: "lost",
-          });
+          const nextPage = page + 1;
+          const startIndex = (nextPage - 1) * ITEMS_PER_PAGE;
+          const endIndex = startIndex + ITEMS_PER_PAGE;
 
-          allPredictions = [...wonPredictions, ...lostPredictions];
+          newPredictions = sortedPredictions.slice(startIndex, endIndex);
+          setHasMore(endIndex < sortedPredictions.length);
         } else {
-          // Status filter is already applied
-          allPredictions = await getPredictionsWithFilters(filters);
+          // Get all predictions with filters
+          let allPredictions: Prediction[] = [];
+
+          if (statusFilter === "all") {
+            // Get won predictions
+            const wonPredictions = await getPredictionsWithFilters({
+              ...filters,
+              status: "won",
+            });
+
+            // Get lost predictions
+            const lostPredictions = await getPredictionsWithFilters({
+              ...filters,
+              status: "lost",
+            });
+
+            allPredictions = [...wonPredictions, ...lostPredictions];
+          } else {
+            // Status filter is already applied
+            allPredictions = await getPredictionsWithFilters(filters);
+          }
+
+          // Sort by date (newest first)
+          const sortedPredictions = allPredictions.sort((a, b) => {
+            const dateA = a.game?.startTime ? new Date(a.game.startTime).getTime() : 0;
+            const dateB = b.game?.startTime ? new Date(b.game.startTime).getTime() : 0;
+            return dateB - dateA;
+          });
+
+          const nextPage = page + 1;
+          const startIndex = (nextPage - 1) * ITEMS_PER_PAGE;
+          const endIndex = startIndex + ITEMS_PER_PAGE;
+
+          newPredictions = sortedPredictions.slice(startIndex, endIndex);
+          setHasMore(endIndex < sortedPredictions.length);
         }
 
-        // Sort by date (newest first)
-        const sortedPredictions = allPredictions.sort((a, b) => {
-          return new Date(b.game.startTime).getTime() - new Date(a.game.startTime).getTime();
-        });
-
-        const nextPage = page + 1;
-        const startIndex = (nextPage - 1) * ITEMS_PER_PAGE;
-        const endIndex = startIndex + ITEMS_PER_PAGE;
-
-        newPredictions = sortedPredictions.slice(startIndex, endIndex);
-        setHasMore(endIndex < sortedPredictions.length);
+        // Add new predictions to existing ones
+        setCompletedPredictions(prev => [...prev, ...newPredictions]);
+        setPage(prev => prev + 1);
+      } catch (predictionError) {
+        console.error("Error fetching more predictions:", predictionError);
+        setError("Failed to load more prediction data. Please try again.");
       }
-
-      // Add new predictions to existing ones
-      setCompletedPredictions(prev => [...prev, ...newPredictions]);
-      setPage(prev => prev + 1);
     } catch (error) {
       console.error("Error loading more data:", error);
       setError("Failed to load more data. Please try again.");
@@ -340,14 +370,14 @@ const ResultsPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold mb-1 flex items-center">
-            <TrendingUp size={24} className="mr-2 text-[#F5A623]" />
+          <h1 className="heading-2 text-2xl md:text-3xl font-bold mb-2 flex items-center font-clash">
+            <TrendingUp size={24} className="mr-2 text-amber-500" />
             Results & Performance
           </h1>
-          <p className="text-sm text-[#A1A1AA]">
+          <p className="text-sm text-white/70 font-jakarta">
             Track the performance of our predictions over time and see detailed statistics.
           </p>
         </div>
@@ -358,7 +388,7 @@ const ResultsPage: React.FC = () => {
             variant={activeTab === "results" ? "premium" : "outline"}
             size="sm"
             onClick={() => setActiveTab("results")}
-            className="text-sm px-4 py-1"
+            className="font-jakarta"
           >
             Results
           </Button>
@@ -366,7 +396,7 @@ const ResultsPage: React.FC = () => {
             variant={activeTab === "punterGames" ? "premium" : "outline"}
             size="sm"
             onClick={() => setActiveTab("punterGames")}
-            className="text-sm px-4 py-1"
+            className="font-jakarta"
           >
             Best Punter Games
           </Button>
@@ -376,99 +406,103 @@ const ResultsPage: React.FC = () => {
       {activeTab === "results" && (
         <>
           {/* Timeframe Selector */}
-          <div className="bg-[#1A1A27]/50 p-3 rounded-lg border border-[#2A2A3C]/10 flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center">
-              <Clock size={18} className="mr-2 text-[#F5A623]" />
-              <span className="text-sm font-medium">Time Period:</span>
-            </div>
+          <Card variant="surface" hover="none" className="overflow-hidden">
+            <CardContent className="p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center">
+                  <Clock size={18} className="mr-2 text-amber-500" />
+                  <span className="text-sm font-medium font-jakarta">Time Period:</span>
+                </div>
 
-            <div className="flex flex-wrap gap-2">
-              <div className="flex space-x-2">
-                <Button
-                  variant={timeframe === "week" ? "premium" : "outline"}
-                  size="sm"
-                  onClick={() => setTimeframe("week")}
-                  className="text-xs px-3 py-1"
-                >
-                  <Calendar size={14} className="mr-1" />
-                  Last Week
-                </Button>
-                <Button
-                  variant={timeframe === "month" ? "premium" : "outline"}
-                  size="sm"
-                  onClick={() => setTimeframe("month")}
-                  className="text-xs px-3 py-1"
-                >
-                  <Calendar size={14} className="mr-1" />
-                  Last Month
-                </Button>
-                <Button
-                  variant={timeframe === "all" ? "premium" : "outline"}
-                  size="sm"
-                  onClick={() => setTimeframe("all")}
-                  className="text-xs px-3 py-1"
-                >
-                  <Calendar size={14} className="mr-1" />
-                  All Time
-                </Button>
-                <Button
-                  variant={timeframe === "custom" ? "premium" : "outline"}
-                  size="sm"
-                  onClick={() => setTimeframe("custom")}
-                  className="text-xs px-3 py-1"
-                >
-                  <Calendar size={14} className="mr-1" />
-                  Custom Range
-                </Button>
-              </div>
-
-              {timeframe === "custom" && (
-                <DateRangePicker
-                  startDate={customStartDate}
-                  endDate={customEndDate}
-                  onRangeChange={handleDateRangeChange}
-                />
-              )}
-
-              {/* Export Options */}
-              <div className="relative ml-auto">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowExportOptions(!showExportOptions)}
-                  className="text-xs px-3 py-1"
-                >
-                  <Download size={14} className="mr-1" />
-                  Export
-                </Button>
-
-                {showExportOptions && (
-                  <div className="absolute right-0 mt-1 w-40 bg-[#1A1A27] border border-[#2A2A3C] rounded-md shadow-lg z-10">
-                    <div className="py-1">
-                      <button
-                        className="block w-full text-left px-4 py-2 text-xs hover:bg-[#2A2A3C]"
-                        onClick={handleExportCSV}
-                      >
-                        Export as CSV
-                      </button>
-                      <button
-                        className="block w-full text-left px-4 py-2 text-xs hover:bg-[#2A2A3C]"
-                        onClick={handleExportPDF}
-                      >
-                        Export as PDF
-                      </button>
-                      <button
-                        className="block w-full text-left px-4 py-2 text-xs hover:bg-[#2A2A3C]"
-                        onClick={handleShare}
-                      >
-                        Share Results
-                      </button>
-                    </div>
+                <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      variant={timeframe === "week" ? "premium" : "outline"}
+                      size="sm"
+                      onClick={() => setTimeframe("week")}
+                      className="font-jakarta"
+                    >
+                      <Calendar size={14} className="mr-1.5" />
+                      Last Week
+                    </Button>
+                    <Button
+                      variant={timeframe === "month" ? "premium" : "outline"}
+                      size="sm"
+                      onClick={() => setTimeframe("month")}
+                      className="font-jakarta"
+                    >
+                      <Calendar size={14} className="mr-1.5" />
+                      Last Month
+                    </Button>
+                    <Button
+                      variant={timeframe === "all" ? "premium" : "outline"}
+                      size="sm"
+                      onClick={() => setTimeframe("all")}
+                      className="font-jakarta"
+                    >
+                      <Calendar size={14} className="mr-1.5" />
+                      All Time
+                    </Button>
+                    <Button
+                      variant={timeframe === "custom" ? "premium" : "outline"}
+                      size="sm"
+                      onClick={() => setTimeframe("custom")}
+                      className="font-jakarta"
+                    >
+                      <Calendar size={14} className="mr-1.5" />
+                      Custom Range
+                    </Button>
                   </div>
-                )}
+
+                  {timeframe === "custom" && (
+                    <DateRangePicker
+                      startDate={customStartDate}
+                      endDate={customEndDate}
+                      onRangeChange={handleDateRangeChange}
+                    />
+                  )}
+
+                  {/* Export Options */}
+                  <div className="relative ml-auto">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowExportOptions(!showExportOptions)}
+                      className="font-jakarta"
+                    >
+                      <Download size={14} className="mr-1.5" />
+                      Export
+                    </Button>
+
+                    {showExportOptions && (
+                      <div className="absolute right-0 mt-1 w-40 bg-[#1A1A27] border border-amber-500/20 rounded-md shadow-lg z-10">
+                        <div className="py-1">
+                          <button
+                            className="block w-full text-left px-4 py-2 text-xs font-jakarta hover:bg-amber-500/10 transition-colors"
+                            onClick={handleExportCSV}
+                          >
+                            Export as CSV
+                          </button>
+                          <button
+                            className="block w-full text-left px-4 py-2 text-xs font-jakarta hover:bg-amber-500/10 transition-colors"
+                            onClick={handleExportPDF}
+                          >
+                            Export as PDF
+                          </button>
+                          <button
+                            className="block w-full text-left px-4 py-2 text-xs font-jakarta hover:bg-amber-500/10 transition-colors"
+                            onClick={handleShare}
+                          >
+                            Share Results
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         </>
       )}
 
@@ -476,29 +510,43 @@ const ResultsPage: React.FC = () => {
         <>
           {/* Stats Overview */}
           {loading ? (
-            <div className="text-center py-16 bg-[#1A1A27]/50 rounded-xl border border-[#2A2A3C]/10">
-              <div className="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-[#F5A623] mb-4"></div>
-              <p className="text-[#A1A1AA]">Loading statistics...</p>
-            </div>
+            <Card variant="surface" hover="none" className="overflow-hidden">
+              <CardContent className="text-center py-16">
+                <div className="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-amber-500 mb-4"></div>
+                <p className="text-white/70 font-jakarta">Loading statistics...</p>
+              </CardContent>
+            </Card>
           ) : stats ? (
             <div className="space-y-6">
               {/* Stats Tabs */}
-              <div className="mb-4 flex justify-center">
-                <div className="inline-flex bg-[#1A1A27]/50 rounded-lg p-1">
+              <div className="mb-6 flex justify-center">
+                <div className="inline-flex bg-black/50 rounded-lg p-1 border border-amber-500/20">
                   <button
-                    className={`px-4 py-2 text-sm rounded-md ${activeStatsTab === "overview" ? "bg-[#F5A623] text-black" : "text-white"}`}
+                    className={`px-4 py-2 text-sm rounded-md font-jakarta transition-colors ${
+                      activeStatsTab === "overview"
+                        ? "bg-gradient-to-r from-amber-500 to-amber-600 text-black font-medium"
+                        : "text-white hover:bg-black/30"
+                    }`}
                     onClick={() => setActiveStatsTab("overview")}
                   >
                     Overview
                   </button>
                   <button
-                    className={`px-4 py-2 text-sm rounded-md ${activeStatsTab === "trends" ? "bg-[#F5A623] text-black" : "text-white"}`}
+                    className={`px-4 py-2 text-sm rounded-md font-jakarta transition-colors ${
+                      activeStatsTab === "trends"
+                        ? "bg-gradient-to-r from-amber-500 to-amber-600 text-black font-medium"
+                        : "text-white hover:bg-black/30"
+                    }`}
                     onClick={() => setActiveStatsTab("trends")}
                   >
                     Trends
                   </button>
                   <button
-                    className={`px-4 py-2 text-sm rounded-md ${activeStatsTab === "analysis" ? "bg-[#F5A623] text-black" : "text-white"}`}
+                    className={`px-4 py-2 text-sm rounded-md font-jakarta transition-colors ${
+                      activeStatsTab === "analysis"
+                        ? "bg-gradient-to-r from-amber-500 to-amber-600 text-black font-medium"
+                        : "text-white hover:bg-black/30"
+                    }`}
                     onClick={() => setActiveStatsTab("analysis")}
                   >
                     Analysis
@@ -537,9 +585,11 @@ const ResultsPage: React.FC = () => {
               )}
             </div>
           ) : (
-            <div className="text-center py-12 bg-[#1A1A27]/50 rounded-xl border border-[#2A2A3C]/10">
-              <p className="text-[#A1A1AA]">No statistics available.</p>
-            </div>
+            <Card variant="surface" hover="none" className="overflow-hidden">
+              <CardContent className="text-center py-12">
+                <p className="text-white/70 font-jakarta">No statistics available.</p>
+              </CardContent>
+            </Card>
           )}
         </>
       ) : (
@@ -548,20 +598,20 @@ const ResultsPage: React.FC = () => {
 
       {/* Recent Results - Only show in results tab */}
       {activeTab === "results" && (
-        <div className="mt-8">
-          <div className="flex items-center justify-between mb-4">
+        <div className="mt-10">
+          <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
             <div className="flex items-center">
-              <BarChart2 size={20} className="mr-2 text-[#F5A623]" />
-              <h2 className="text-xl font-bold">Recent Results</h2>
+              <BarChart2 size={20} className="mr-2 text-amber-500" />
+              <h2 className="text-xl font-bold font-clash">Recent Results</h2>
             </div>
 
             {/* Odds Category Tabs */}
-            <div className="flex space-x-2">
+            <div className="flex flex-wrap gap-2">
               <Button
                 variant={oddsCategory === "all" ? "premium" : "outline"}
                 size="sm"
                 onClick={() => setOddsCategory("all")}
-                className="text-xs px-3 py-1"
+                className="font-jakarta"
               >
                 All Odds
               </Button>
@@ -569,7 +619,7 @@ const ResultsPage: React.FC = () => {
                 variant={oddsCategory === "2odds" ? "premium" : "outline"}
                 size="sm"
                 onClick={() => setOddsCategory("2odds")}
-                className="text-xs px-3 py-1"
+                className="font-jakarta"
               >
                 2 Odds
               </Button>
@@ -577,7 +627,7 @@ const ResultsPage: React.FC = () => {
                 variant={oddsCategory === "5odds" ? "premium" : "outline"}
                 size="sm"
                 onClick={() => setOddsCategory("5odds")}
-                className="text-xs px-3 py-1"
+                className="font-jakarta"
               >
                 5 Odds
               </Button>
@@ -585,7 +635,7 @@ const ResultsPage: React.FC = () => {
                 variant={oddsCategory === "10odds" ? "premium" : "outline"}
                 size="sm"
                 onClick={() => setOddsCategory("10odds")}
-                className="text-xs px-3 py-1"
+                className="font-jakarta"
               >
                 10 Odds
               </Button>
@@ -593,61 +643,65 @@ const ResultsPage: React.FC = () => {
           </div>
 
         {error ? (
-          <div className="text-center py-12 bg-[#1A1A27]/50 rounded-xl border border-[#2A2A3C]/10">
-            <div className="flex items-center justify-center mb-3 text-[#EF4444]">
-              <AlertCircle size={20} className="mr-2" />
-              <p>{error}</p>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => window.location.reload()}
-              className="mt-2"
-            >
-              Try Again
-            </Button>
-          </div>
+          <Card variant="surface" hover="none" className="overflow-hidden">
+            <CardContent className="text-center py-12">
+              <div className="flex items-center justify-center mb-3 text-red-500">
+                <AlertCircle size={20} className="mr-2" />
+                <p className="font-jakarta">{error}</p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => window.location.reload()}
+                className="mt-2 font-jakarta"
+              >
+                Try Again
+              </Button>
+            </CardContent>
+          </Card>
         ) : loading && completedPredictions.length === 0 ? (
-          <div className="text-center py-12 bg-[#1A1A27]/50 rounded-xl border border-[#2A2A3C]/10">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#F5A623] mb-3"></div>
-            <p className="text-[#A1A1AA]">Loading results...</p>
-          </div>
+          <Card variant="surface" hover="none" className="overflow-hidden">
+            <CardContent className="text-center py-12">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500 mb-3"></div>
+              <p className="text-white/70 font-jakarta">Loading results...</p>
+            </CardContent>
+          </Card>
         ) : completedPredictions.length > 0 ? (
-          <Card className="bg-[#1A1A27]/80 border border-[#2A2A3C]/20 shadow-lg overflow-hidden">
+          <Card variant="surface" hover="none" className="overflow-hidden border border-amber-500/10">
             <CardContent className="p-4">
-              <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-                <div className="flex gap-2">
-                  <Badge variant="outline" className="text-xs px-2 py-0.5">
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant="outline" className="text-xs px-3 py-1 font-jakarta">
                     {completedPredictions.length} Predictions
                   </Badge>
-                  <Badge variant="success" className="text-xs px-2 py-0.5">
+                  <Badge variant="success" className="text-xs px-3 py-1 font-jakarta">
                     {completedPredictions.filter(p => p.status === "won").length} Won
                   </Badge>
-                  <Badge variant="danger" className="text-xs px-2 py-0.5">
+                  <Badge variant="danger" className="text-xs px-3 py-1 font-jakarta">
                     {completedPredictions.filter(p => p.status === "lost").length} Lost
                   </Badge>
                 </div>
 
                 <div className="flex items-center">
-                  <Filter size={14} className="mr-1 text-[#A1A1AA]" />
-                  <span className="text-xs text-[#A1A1AA] mr-2">Filter:</span>
-                  <div className="flex space-x-1">
+                  <Filter size={14} className="mr-1.5 text-amber-500/80" />
+                  <span className="text-xs text-white/70 mr-2 font-jakarta">Filter:</span>
+                  <div className="flex flex-wrap gap-2">
                     <div className="relative">
                       <Button
                         size="sm"
                         variant="outline"
-                        className="text-xs px-2 py-0.5 h-auto"
+                        className="text-xs font-jakarta"
                         onClick={() => document.getElementById('sportDropdown')?.classList.toggle('hidden')}
                       >
                         {sportFilter === "all" ? "All Sports" :
                           sportFilter === "soccer" ? "Soccer" :
                           sportFilter === "basketball" ? "Basketball" : "Mixed"}
-                        <ChevronDown size={12} className="ml-1" />
+                        <ChevronDown size={12} className="ml-1.5" />
                       </Button>
-                      <div id="sportDropdown" className="hidden absolute z-10 mt-1 w-32 bg-[#1A1A27] border border-[#2A2A3C] rounded-md shadow-lg">
+                      <div id="sportDropdown" className="hidden absolute z-10 mt-1 w-36 bg-black border border-amber-500/20 rounded-md shadow-lg">
                         <div className="py-1">
                           <button
-                            className={`block px-4 py-2 text-xs w-full text-left hover:bg-[#2A2A3C] ${sportFilter === "all" ? "bg-[#2A2A3C]" : ""}`}
+                            className={`block px-4 py-2 text-xs w-full text-left font-jakarta hover:bg-amber-500/10 transition-colors ${sportFilter === "all" ? "bg-amber-500/10 text-amber-500" : ""}`}
                             onClick={() => {
                               setSportFilter("all");
                               document.getElementById('sportDropdown')?.classList.add('hidden');
@@ -656,7 +710,7 @@ const ResultsPage: React.FC = () => {
                             All Sports
                           </button>
                           <button
-                            className={`block px-4 py-2 text-xs w-full text-left hover:bg-[#2A2A3C] ${sportFilter === "soccer" ? "bg-[#2A2A3C]" : ""}`}
+                            className={`block px-4 py-2 text-xs w-full text-left font-jakarta hover:bg-amber-500/10 transition-colors ${sportFilter === "soccer" ? "bg-amber-500/10 text-amber-500" : ""}`}
                             onClick={() => {
                               setSportFilter("soccer");
                               document.getElementById('sportDropdown')?.classList.add('hidden');
@@ -665,7 +719,7 @@ const ResultsPage: React.FC = () => {
                             Soccer
                           </button>
                           <button
-                            className={`block px-4 py-2 text-xs w-full text-left hover:bg-[#2A2A3C] ${sportFilter === "basketball" ? "bg-[#2A2A3C]" : ""}`}
+                            className={`block px-4 py-2 text-xs w-full text-left font-jakarta hover:bg-amber-500/10 transition-colors ${sportFilter === "basketball" ? "bg-amber-500/10 text-amber-500" : ""}`}
                             onClick={() => {
                               setSportFilter("basketball");
                               document.getElementById('sportDropdown')?.classList.add('hidden');
@@ -674,7 +728,7 @@ const ResultsPage: React.FC = () => {
                             Basketball
                           </button>
                           <button
-                            className={`block px-4 py-2 text-xs w-full text-left hover:bg-[#2A2A3C] ${sportFilter === "mixed" ? "bg-[#2A2A3C]" : ""}`}
+                            className={`block px-4 py-2 text-xs w-full text-left font-jakarta hover:bg-amber-500/10 transition-colors ${sportFilter === "mixed" ? "bg-amber-500/10 text-amber-500" : ""}`}
                             onClick={() => {
                               setSportFilter("mixed");
                               document.getElementById('sportDropdown')?.classList.add('hidden');
@@ -690,18 +744,18 @@ const ResultsPage: React.FC = () => {
                       <Button
                         size="sm"
                         variant="outline"
-                        className="text-xs px-2 py-0.5 h-auto"
+                        className="text-xs font-jakarta"
                         onClick={() => document.getElementById('statusDropdown')?.classList.toggle('hidden')}
                       >
                         {statusFilter === "all" ? "All Status" :
                           statusFilter === "won" ? "Won" :
                           statusFilter === "lost" ? "Lost" : "Pending"}
-                        <ChevronDown size={12} className="ml-1" />
+                        <ChevronDown size={12} className="ml-1.5" />
                       </Button>
-                      <div id="statusDropdown" className="hidden absolute z-10 mt-1 w-32 bg-[#1A1A27] border border-[#2A2A3C] rounded-md shadow-lg">
+                      <div id="statusDropdown" className="hidden absolute z-10 mt-1 w-36 bg-black border border-amber-500/20 rounded-md shadow-lg">
                         <div className="py-1">
                           <button
-                            className={`block px-4 py-2 text-xs w-full text-left hover:bg-[#2A2A3C] ${statusFilter === "all" ? "bg-[#2A2A3C]" : ""}`}
+                            className={`block px-4 py-2 text-xs w-full text-left font-jakarta hover:bg-amber-500/10 transition-colors ${statusFilter === "all" ? "bg-amber-500/10 text-amber-500" : ""}`}
                             onClick={() => {
                               setStatusFilter("all");
                               document.getElementById('statusDropdown')?.classList.add('hidden');
@@ -710,7 +764,7 @@ const ResultsPage: React.FC = () => {
                             All Status
                           </button>
                           <button
-                            className={`block px-4 py-2 text-xs w-full text-left hover:bg-[#2A2A3C] ${statusFilter === "won" ? "bg-[#2A2A3C]" : ""}`}
+                            className={`block px-4 py-2 text-xs w-full text-left font-jakarta hover:bg-amber-500/10 transition-colors ${statusFilter === "won" ? "bg-amber-500/10 text-amber-500" : ""}`}
                             onClick={() => {
                               setStatusFilter("won");
                               document.getElementById('statusDropdown')?.classList.add('hidden');
@@ -719,7 +773,7 @@ const ResultsPage: React.FC = () => {
                             Won
                           </button>
                           <button
-                            className={`block px-4 py-2 text-xs w-full text-left hover:bg-[#2A2A3C] ${statusFilter === "lost" ? "bg-[#2A2A3C]" : ""}`}
+                            className={`block px-4 py-2 text-xs w-full text-left font-jakarta hover:bg-amber-500/10 transition-colors ${statusFilter === "lost" ? "bg-amber-500/10 text-amber-500" : ""}`}
                             onClick={() => {
                               setStatusFilter("lost");
                               document.getElementById('statusDropdown')?.classList.add('hidden');
@@ -771,17 +825,17 @@ const ResultsPage: React.FC = () => {
               )}
 
               {hasMore && (
-                <div className="mt-4 text-center">
+                <div className="mt-6 text-center">
                   <Button
                     variant="outline"
                     size="sm"
-                    className="text-xs px-3 py-1"
+                    className="font-jakarta"
                     onClick={handleLoadMore}
                     disabled={loading}
                   >
                     {loading ? (
                       <>
-                        <div className="inline-block animate-spin rounded-full h-3 w-3 border-b-2 border-[#F5A623] mr-2"></div>
+                        <div className="inline-block animate-spin rounded-full h-3 w-3 border-b-2 border-amber-500 mr-2"></div>
                         Loading...
                       </>
                     ) : (
@@ -793,9 +847,11 @@ const ResultsPage: React.FC = () => {
             </CardContent>
           </Card>
         ) : (
-          <div className="text-center py-12 bg-[#1A1A27]/50 rounded-xl border border-[#2A2A3C]/10">
-            <p className="text-[#A1A1AA]">No predictions found for the selected time period.</p>
-          </div>
+          <Card variant="surface" hover="none" className="overflow-hidden">
+            <CardContent className="text-center py-12">
+              <p className="text-white/70 font-jakarta">No predictions found for the selected time period.</p>
+            </CardContent>
+          </Card>
         )}
       </div>
       )}

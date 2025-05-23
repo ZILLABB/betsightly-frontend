@@ -128,7 +128,7 @@ const GameCodeModal: React.FC<GameCodeModalProps> = ({
                       {prediction.game.homeTeam.name} vs {prediction.game.awayTeam.name}
                     </h4>
                   </div>
-                  <p className="text-sm font-bold">{prediction.odds.toFixed(2)}x</p>
+                  <p className="text-sm font-bold px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-400 border border-amber-500/30">{prediction.odds.toFixed(2)}x</p>
                 </div>
 
                 <div className="flex justify-between items-center mb-2">

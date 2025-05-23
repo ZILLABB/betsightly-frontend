@@ -407,10 +407,10 @@ Shared from BetSightly - Your Trusted Prediction Platform
                           </td>
                           <td className="py-1.5 px-2 truncate max-w-[80px]">{predType}</td>
                           <td className="py-1.5 px-2 text-right font-medium">
-                            <span className={`${
-                              status === "won" ? "text-green-500" :
-                              status === "lost" ? "text-red-500" :
-                              "text-[#F5A623]"
+                            <span className={`px-2 py-0.5 rounded-md inline-block min-w-[50px] text-center ${
+                              status === "won" ? "bg-green-500/20 text-green-500 border border-green-500/30" :
+                              status === "lost" ? "bg-red-500/20 text-red-500 border border-red-500/30" :
+                              "bg-amber-500/20 text-amber-400 border border-amber-500/30"
                             }`}>
                               {odds}x
                             </span>
@@ -460,10 +460,10 @@ Shared from BetSightly - Your Trusted Prediction Platform
                           <span className="text-[#A1A1AA] text-xs mr-2">{index + 1}.</span>
                           <span className="font-medium text-xs">{homeTeam} vs {awayTeam}</span>
                         </div>
-                        <div className={`text-xs font-medium ${
-                          status === "won" ? "text-green-500" :
-                          status === "lost" ? "text-red-500" :
-                          "text-[#F5A623]"
+                        <div className={`text-xs font-medium px-2 py-0.5 rounded-md ${
+                          status === "won" ? "bg-green-500/20 text-green-500 border border-green-500/30" :
+                          status === "lost" ? "bg-red-500/20 text-red-500 border border-red-500/30" :
+                          "bg-amber-500/20 text-amber-400 border border-amber-500/30"
                         }`}>
                           {odds}x
                         </div>

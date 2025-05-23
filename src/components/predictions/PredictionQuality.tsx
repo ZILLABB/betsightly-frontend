@@ -39,24 +39,24 @@ const PredictionQuality: React.FC<PredictionQualityProps> = ({
   const getQualityColor = () => {
     if (qualityRating) {
       switch (qualityRating) {
-        case 'A+': return 'bg-green-500/20 text-green-500';
-        case 'A': return 'bg-green-400/20 text-green-400';
-        case 'B+': return 'bg-blue-500/20 text-blue-500';
-        case 'B': return 'bg-blue-400/20 text-blue-400';
-        case 'C+': return 'bg-yellow-500/20 text-yellow-500';
+        case 'A+': return 'bg-green-500/20 text-green-500 border border-green-500/30';
+        case 'A': return 'bg-green-400/20 text-green-400 border border-green-400/30';
+        case 'B+': return 'bg-blue-500/20 text-blue-500 border border-blue-500/30';
+        case 'B': return 'bg-blue-400/20 text-blue-400 border border-blue-400/30';
+        case 'C+': return 'bg-yellow-500/20 text-yellow-500 border border-yellow-500/30';
         case 'C':
-        default: return 'bg-yellow-400/20 text-yellow-400';
+        default: return 'bg-yellow-400/20 text-yellow-400 border border-yellow-400/30';
       }
     } else if (predictionQuality > 0) {
-      if (predictionQuality >= 85) return 'bg-green-500/20 text-green-500';
-      if (predictionQuality >= 80) return 'bg-green-400/20 text-green-400';
-      if (predictionQuality >= 75) return 'bg-blue-500/20 text-blue-500';
-      if (predictionQuality >= 70) return 'bg-blue-400/20 text-blue-400';
-      if (predictionQuality >= 65) return 'bg-yellow-500/20 text-yellow-500';
-      return 'bg-yellow-400/20 text-yellow-400';
+      if (predictionQuality >= 85) return 'bg-green-500/20 text-green-500 border border-green-500/30';
+      if (predictionQuality >= 80) return 'bg-green-400/20 text-green-400 border border-green-400/30';
+      if (predictionQuality >= 75) return 'bg-blue-500/20 text-blue-500 border border-blue-500/30';
+      if (predictionQuality >= 70) return 'bg-blue-400/20 text-blue-400 border border-blue-400/30';
+      if (predictionQuality >= 65) return 'bg-yellow-500/20 text-yellow-500 border border-yellow-500/30';
+      return 'bg-yellow-400/20 text-yellow-400 border border-yellow-400/30';
     }
 
-    return 'bg-gray-500/20 text-gray-400';
+    return 'bg-gray-500/20 text-gray-400 border border-gray-500/30';
   };
 
   // If no quality metrics are available, return null
@@ -71,7 +71,7 @@ const PredictionQuality: React.FC<PredictionQualityProps> = ({
       <Badge
         className={`${getQualityColor()} ${className}`}
       >
-        {qualityRating || (predictionQuality > 0 ? `${Math.round(predictionQuality)}%` : 'N/A')}
+        {qualityRating || (predictionQuality > 0 ? `${predictionQuality.toFixed(1)}%` : 'N/A')}
       </Badge>
     );
   }
@@ -82,7 +82,7 @@ const PredictionQuality: React.FC<PredictionQualityProps> = ({
       <div className="flex items-center justify-between">
         <span className="text-xs font-medium text-white/70">Quality Rating:</span>
         <Badge className={getQualityColor()}>
-          {qualityRating || (predictionQuality > 0 ? `${Math.round(predictionQuality)}%` : 'N/A')}
+          {qualityRating || (predictionQuality > 0 ? `${predictionQuality.toFixed(1)}%` : 'N/A')}
         </Badge>
       </div>
 
@@ -90,7 +90,7 @@ const PredictionQuality: React.FC<PredictionQualityProps> = ({
         <div className="w-full bg-[#2A2A3C] rounded-full h-1.5 mb-2">
           <div
             className={`h-1.5 rounded-full ${getQualityColor().split(' ')[1]}`}
-            style={{ width: `${Math.min(100, predictionQuality)}%` }}
+            style={{ width: `${Math.min(100, parseFloat(predictionQuality.toFixed(1)))}%` }}
           ></div>
         </div>
       )}
@@ -106,21 +106,21 @@ const PredictionQuality: React.FC<PredictionQualityProps> = ({
               {matchResultCertainty > 0 && (
                 <div className="flex justify-between items-center">
                   <span className="text-xs">Match Result:</span>
-                  <span className="text-xs font-medium">{(matchResultCertainty * 100).toFixed(1)}%</span>
+                  <span className="text-xs font-medium text-green-400">{(matchResultCertainty * 100).toFixed(1)}%</span>
                 </div>
               )}
 
               {overUnderCertainty > 0 && (
                 <div className="flex justify-between items-center">
                   <span className="text-xs">Over/Under:</span>
-                  <span className="text-xs font-medium">{(overUnderCertainty * 100).toFixed(1)}%</span>
+                  <span className="text-xs font-medium text-blue-400">{(overUnderCertainty * 100).toFixed(1)}%</span>
                 </div>
               )}
 
               {bttsCertainty > 0 && (
                 <div className="flex justify-between items-center">
                   <span className="text-xs">BTTS:</span>
-                  <span className="text-xs font-medium">{(bttsCertainty * 100).toFixed(1)}%</span>
+                  <span className="text-xs font-medium text-amber-400">{(bttsCertainty * 100).toFixed(1)}%</span>
                 </div>
               )}
             </div>
@@ -134,21 +134,21 @@ const PredictionQuality: React.FC<PredictionQualityProps> = ({
               {matchResultConfidence > 0 && (
                 <div className="flex justify-between items-center">
                   <span className="text-xs">Match Result:</span>
-                  <span className="text-xs font-medium">{(matchResultConfidence * 100).toFixed(1)}%</span>
+                  <span className="text-xs font-medium text-green-400">{(matchResultConfidence * 100).toFixed(1)}%</span>
                 </div>
               )}
 
               {overUnderConfidence > 0 && (
                 <div className="flex justify-between items-center">
                   <span className="text-xs">Over/Under:</span>
-                  <span className="text-xs font-medium">{(overUnderConfidence * 100).toFixed(1)}%</span>
+                  <span className="text-xs font-medium text-blue-400">{(overUnderConfidence * 100).toFixed(1)}%</span>
                 </div>
               )}
 
               {bttsConfidence > 0 && (
                 <div className="flex justify-between items-center">
                   <span className="text-xs">BTTS:</span>
-                  <span className="text-xs font-medium">{(bttsConfidence * 100).toFixed(1)}%</span>
+                  <span className="text-xs font-medium text-amber-400">{(bttsConfidence * 100).toFixed(1)}%</span>
                 </div>
               )}
             </div>

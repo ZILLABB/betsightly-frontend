@@ -9,6 +9,8 @@ import ThemeManager from './utils/themeManager';
 import { PreferencesProvider } from './contexts/PreferencesContext';
 import { AuthProvider } from './contexts/AuthContext';
 import ThemeProvider from './components/common/ThemeProvider';
+import { ToastProvider } from './hooks/useToast';
+import { PredictionsProvider } from './contexts/PredictionsContext';
 // Import cache utility
 import cache from './utils/cacheUtils';
 // Import GlobalErrorHandler
@@ -25,12 +27,10 @@ import { initResourcePreloading } from './utils/resourcePreloader';
 
 // Import lazy loaded pages
 import {
-  LazyHomePage,
   LazyMainPage,
   LazyPredictionsPage,
   LazyFixturesPage,
   LazyResultsPage,
-  LazyRolloverPage,
   LazyRolloverChallengePage,
   LazyPuntersPage,
   LazyAnalyticsPage,
@@ -39,9 +39,6 @@ import {
   LazyLoginPage,
   LazyNotFoundPage
 } from './pages/LazyPages';
-
-// Use environment variable to toggle between old and new pages
-const USE_NEW_PAGES = true; // Set to false to use original pages
 
 function App() {
   // Initialize error tracking, theme, performance monitoring, and clear cache
@@ -67,21 +64,23 @@ function App() {
       <PreferencesProvider>
         <AuthProvider>
           <ThemeProvider>
-            <GlobalErrorHandler>
-              <Router>
-                <Routes>
-                  <Route path="/login" element={
-                    <TrackedErrorBoundary>
-                      <LazyLoginPage />
-                    </TrackedErrorBoundary>
-                  } />
-                  <Route path="/" element={
-                    <TrackedErrorBoundary>
-                      <Layout>
-                        {USE_NEW_PAGES ? <LazyMainPage /> : <LazyHomePage />}
-                      </Layout>
-                    </TrackedErrorBoundary>
-                  } />
+            <ToastProvider>
+              <PredictionsProvider>
+                <GlobalErrorHandler>
+                <Router>
+                  <Routes>
+                    <Route path="/login" element={
+                      <TrackedErrorBoundary>
+                        <LazyLoginPage />
+                      </TrackedErrorBoundary>
+                    } />
+                    <Route path="/" element={
+                      <TrackedErrorBoundary>
+                        <Layout>
+                          <LazyMainPage />
+                        </Layout>
+                      </TrackedErrorBoundary>
+                    } />
                   <Route path="/predictions" element={
                     <TrackedErrorBoundary>
                       <Layout>
@@ -106,7 +105,7 @@ function App() {
                   <Route path="/rollover" element={
                     <TrackedErrorBoundary>
                       <Layout>
-                        {USE_NEW_PAGES ? <LazyRolloverChallengePage /> : <LazyRolloverPage />}
+                        <LazyRolloverChallengePage />
                       </Layout>
                     </TrackedErrorBoundary>
                   } />
@@ -156,6 +155,8 @@ function App() {
               {/* Update Notification */}
               <UpdateNotification />
             </GlobalErrorHandler>
+            </PredictionsProvider>
+            </ToastProvider>
           </ThemeProvider>
         </AuthProvider>
       </PreferencesProvider>

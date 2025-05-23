@@ -1,520 +1,356 @@
-import React, { useEffect, useState, useCallback } from "react";
-import type { DailyPredictions, Prediction } from "../types";
-import PredictionsList from "../components/predictions/PredictionsList";
+import React, { useEffect, useState } from "react";
 import { Button } from "../components/common/Button";
-import { Card, CardContent } from "../components/common/Card";
+import { Card, CardContent, CardHeader, CardTitle } from "../components/common/Card";
 import { Badge } from "../components/common/Badge";
-import DataLoadingIndicator from "../components/common/DataLoadingIndicator";
-import { TrackedErrorBoundary } from "../components/common/ErrorBoundary";
-import { formatDate } from "../lib/utils";
-import { predictionsToCSV, downloadCSV, generatePredictionsPDF, sharePredictions } from "../utils/exportUtils";
-import { Download, RefreshCw } from "lucide-react";
-import DatePicker from "../components/common/DatePicker";
-import OfflineStatusBar from "../components/common/OfflineStatusBar";
-// Import enhanced API service
 import {
-  getAllBestPredictions,
-  getBestPredictionsByCategory,
-  checkAPIHealth
-} from "../services/enhancedApiService";
-// Import unified data service as fallback
-import {
-  getPredictionsForDay,
-  getDailyPredictions
-} from "../services/unifiedDataService";
+  Calendar,
+  RefreshCw,
+  Clock,
+  AlertCircle,
+  CheckCircle,
+  XCircle,
+  TrendingUp
+} from "lucide-react";
+import { usePredictions } from "../contexts/PredictionsContext";
+import type { Prediction } from "../types";
+import PredictionFilters from "../components/predictions/PredictionFilters";
+import { formatLocalDateTime } from "../utils/formatters";
+
+// Helper function to safely format date/time
+const safeFormatDateTime = (date: string | Date | null | undefined): string => {
+  if (!date) return 'Time N/A';
+  try {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    // Check if date is valid
+    if (isNaN(dateObj.getTime())) return 'Time N/A';
+    return typeof date === 'string' ? formatLocalDateTime(date) : dateObj.toLocaleString();
+  } catch (error) {
+    console.error('Error formatting date:', error);
+    return 'Time N/A';
+  }
+};
 
 const PredictionsPage: React.FC = () => {
+  // Initialize with today's date
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [showExportOptions, setShowExportOptions] = useState<boolean>(false);
+  const [activeCategory, setActiveCategory] = useState<string>("all");
 
-  // Use offline-first data fetching with error handling
-  const [dailyPredictions, setDailyPredictions] = useState<DailyPredictions[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [fetchError, setFetchError] = useState<Error | null>(null);
-  const [isStale, setIsStale] = useState<boolean>(false);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  const [dataSource, setDataSource] = useState<'api' | 'cache'>('cache');
+  // Use the predictions context
+  const {
+    bestPredictions: predictions,
+    loading,
+    refreshing,
+    error,
+    refreshPredictions,
+    loadBestPredictions
+  } = usePredictions();
 
-  // Function to check if data is stale (older than 1 hour)
-  const checkIfDataIsStale = useCallback(() => {
-    if (!lastUpdated) return true;
-
-    const now = new Date();
-    const oneHour = 60 * 60 * 1000; // 1 hour in milliseconds
-    const timeDiff = now.getTime() - lastUpdated.getTime();
-
-    if (timeDiff > oneHour) {
-      setIsStale(true);
-      return true;
-    }
-
-    setIsStale(false);
-    return false;
-  }, [lastUpdated]);
-
-  // Function to fetch predictions
-  const fetchPredictions = useCallback(async () => {
-    setLoading(true);
-    setFetchError(null);
-
-    try {
-      // First check if the API is healthy
-      try {
-        const healthCheck = await checkAPIHealth();
-        console.log('API health check:', healthCheck);
-
-        if (healthCheck.status === 'ok') {
-          // API is healthy, fetch predictions directly from the API
-          try {
-            // Get today's date
-            const today = new Date();
-            console.log("Fetching best predictions for today:", formatDate(today));
-
-            // First try to get all best predictions
-            const bestPredictions = await getAllBestPredictions();
-            console.log('Got best predictions:', bestPredictions);
-
-            if (bestPredictions && Object.keys(bestPredictions).length > 0) {
-              // Create a DailyPredictions object for today
-              const dailyPrediction: DailyPredictions = {
-                date: today,
-                predictions: Object.values(bestPredictions).flat()
-              };
-
-              // Set today's predictions
-              setDailyPredictions([dailyPrediction]);
-              const now = new Date();
-              setLastUpdated(now);
-              setIsStale(false);
-              setDataSource('api');
-
-              // Now try to fetch more days in the background
-              try {
-                // For now, we only have today's predictions from the API
-                // In the future, we could fetch predictions for other days
-                console.log('Only today\'s predictions are available from the API');
-              } catch (moreError) {
-                console.warn("Could not fetch additional days, but today's data is available:", moreError);
-              }
-            } else {
-              throw new Error('No best predictions found');
-            }
-          } catch (apiError) {
-            console.error("Error fetching predictions from API:", apiError);
-            throw apiError; // Rethrow to trigger fallback
-          }
-        } else {
-          throw new Error('API health check failed');
-        }
-      } catch (healthError) {
-        console.error("API health check failed:", healthError);
-
-        // Fall back to unified data service
-        try {
-          // Always try to fetch today's predictions first for the most up-to-date data
-          const today = new Date();
-          console.log("Falling back to unified data service for today:", formatDate(today));
-
-          try {
-            // Try to get today's predictions directly
-            const todayPredictions = await getPredictionsForDay(today);
-
-            // Create a DailyPredictions object for today
-            const dailyPrediction: DailyPredictions = {
-              date: today,
-              predictions: todayPredictions
-            };
-
-            // Set today's predictions
-            setDailyPredictions([dailyPrediction]);
-            const now = new Date();
-            setLastUpdated(now);
-            setIsStale(false);
-            setDataSource('cache');
-
-            // Now try to fetch more days in the background
-            try {
-              const allPredictions = await getDailyPredictions(10);
-
-              // Ensure all dates are Date objects
-              const processedPredictions = allPredictions.map(dp => ({
-                ...dp,
-                date: dp.date instanceof Date ? dp.date : new Date(dp.date)
-              }));
-
-              // Only update if we got more predictions than just today
-              if (processedPredictions.length > 1) {
-                setDailyPredictions(processedPredictions);
-              }
-            } catch (moreError) {
-              console.warn("Could not fetch additional days, but today's data is available:", moreError);
-            }
-          } catch (todayError) {
-            console.error("Failed to fetch today's predictions directly:", todayError);
-
-            // Fall back to getting all predictions
-            try {
-              // Try to fetch daily predictions for the last 10 days
-              const predictions = await getDailyPredictions(10);
-
-              // Ensure all dates are Date objects
-              const processedPredictions = predictions.map(dp => ({
-                ...dp,
-                date: dp.date instanceof Date ? dp.date : new Date(dp.date)
-              }));
-
-              setDailyPredictions(processedPredictions);
-              const now = new Date();
-              setLastUpdated(now);
-              setIsStale(false);
-              setDataSource('cache');
-            } catch (allError) {
-              console.error("Failed to fetch all predictions:", allError);
-              setFetchError(new Error("Failed to load predictions. Please try again later."));
-            }
-          }
-        } catch (fallbackError) {
-          console.error("Fallback to unified data service failed:", fallbackError);
-          setFetchError(new Error("Failed to load predictions. Please try again later."));
-        }
-      }
-    } catch (error) {
-      console.error("Unexpected error in fetchPredictions:", error);
-      setFetchError(new Error("An unexpected error occurred. Please try again later."));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  // Initial data loading
+  // Load predictions on component mount
   useEffect(() => {
-    fetchPredictions();
-  }, [fetchPredictions]);
+    loadBestPredictions();
+  }, [loadBestPredictions]);
 
-  // Check if data is stale periodically
+  // Log predictions and active category for debugging
   useEffect(() => {
-    // Check initially
-    checkIfDataIsStale();
+    console.log('Active Category:', activeCategory);
+    console.log('Available Predictions:', predictions);
+  }, [activeCategory, predictions]);
 
-    // Set up interval to check every minute
-    const intervalId = setInterval(() => {
-      checkIfDataIsStale();
-    }, 60000); // 1 minute
-
-    // Clean up interval on unmount
-    return () => clearInterval(intervalId);
-  }, [lastUpdated, checkIfDataIsStale]);
-
-  // Refresh function - just use fetchPredictions directly
-  const refreshData = fetchPredictions;
-
-  // Update data source if data is stale
-  useEffect(() => {
-    if (isStale || fetchError) {
-      setDataSource('cache');
-    }
-  }, [isStale, fetchError]);
-
-  // Handle export functions
-  const handleExportCSV = () => {
-    if (selectedPredictions.length === 0) return;
-
-    const csvData = predictionsToCSV(selectedPredictions);
-    downloadCSV(csvData, `betsightly-predictions-${formatDate(selectedDate)}.csv`);
+  // Handle date change
+  const handleDateChange = (date: Date) => {
+    setSelectedDate(date);
+    // Note: In a real implementation, we would fetch predictions for the selected date
+    // For now, we'll just use the current predictions
   };
 
-  const handleExportPDF = () => {
-    if (selectedPredictions.length === 0) return;
-
-    generatePredictionsPDF(selectedPredictions);
-  };
-
-  const handleShare = async () => {
-    if (selectedPredictions.length === 0) return;
-
-    const success = await sharePredictions(
-      selectedPredictions,
-      `BetSightly Predictions - ${formatDate(selectedDate)}`
-    );
-
-    if (!success) {
-      alert("Sharing is not supported on this device or browser.");
-    }
-  };
-
-  // Handle refresh
+  // Handle refresh button click
   const handleRefresh = () => {
-    refreshData();
+    refreshPredictions();
   };
 
-  // Handle clicks outside the export dropdown to close it
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      if (showExportOptions && !target.closest('.export-dropdown-container')) {
-        setShowExportOptions(false);
-      }
-    };
+  // Define category display names
+  const categoryNames: Record<string, string> = {
+    '2_odds': 'Safe Bets (2-3x)',
+    '5_odds': 'Balanced Risk (4-6x)',
+    '10_odds': 'High Reward (7-12x)',
+    'rollover': 'Daily Rollover',
+    // Add API response format keys as well
+    '2odds': 'Safe Bets (2-3x)',
+    '5odds': 'Balanced Risk (4-6x)',
+    '10odds': 'High Reward (7-12x)'
+  };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showExportOptions]);
-
-  // Get predictions for the selected date and filter out duplicates
-  const selectedPredictions = React.useMemo(() => {
-    // Get all predictions for the selected date
-    const allPredictions = (dailyPredictions || []).find(
-      (dp) => {
-        // Ensure dp.date is a Date object
-        const dpDate = dp.date instanceof Date ? dp.date : new Date(dp.date);
-        return formatDate(dpDate) === formatDate(selectedDate);
-      }
-    )?.predictions || [];
-
-    // Create a map to track unique fixture IDs
-    const uniqueFixtureIds = new Map();
-
-    // Filter out duplicates but keep all games regardless of start time
-    return allPredictions.filter(prediction => {
-      // Check if we've already seen this fixture ID
-      const fixtureId = prediction.game?.id;
-      const isDuplicate = fixtureId && uniqueFixtureIds.has(fixtureId);
-
-      // If it's not a duplicate, add it to our map and keep it
-      if (fixtureId && !isDuplicate) {
-        uniqueFixtureIds.set(fixtureId, true);
-        return true;
-      }
-
-      return false;
-    });
-  }, [dailyPredictions, selectedDate]);
-
-  // Get unique dates from daily predictions and ensure they are Date objects
-  const dates = (dailyPredictions || []).map((dp) => {
-    // Ensure date is a Date object
-    return dp.date instanceof Date ? dp.date : new Date(dp.date);
-  });
+  // Function to get status badge
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "won":
+        return (
+          <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+            <CheckCircle size={12} className="mr-1" />
+            Won
+          </Badge>
+        );
+      case "lost":
+        return (
+          <Badge className="bg-red-500/20 text-red-400 border-red-500/30">
+            <XCircle size={12} className="mr-1" />
+            Lost
+          </Badge>
+        );
+      default:
+        return (
+          <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30">
+            <Clock size={12} className="mr-1" />
+            Pending
+          </Badge>
+        );
+    }
+  };
 
   return (
     <div className="space-y-8">
-      <div className="bg-gradient-to-r from-gray-900 to-black border border-amber-500/20 rounded-xl p-6 shadow-lg">
-        <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-amber-500 to-amber-400 bg-clip-text text-transparent">Advanced ML Predictions</h1>
-        <p className="text-amber-100/80">
-          Exclusive AI-powered predictions using advanced machine learning models (XGBoost, LightGBM, Neural Networks)
-        </p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold mb-2 flex items-center font-clash">
+            <TrendingUp size={24} className="mr-2 text-amber-500" />
+            AI Predictions
+          </h1>
+          <p className="text-sm text-white/70 font-jakarta">
+            Advanced machine learning predictions with high accuracy rates
+          </p>
+        </div>
       </div>
 
-      {/* Date Selector */}
-      <Card className="bg-gradient-to-r from-gray-900 to-black border border-amber-500/20 shadow-lg">
-        <CardContent className="p-5">
-          <div className="flex flex-wrap justify-between items-center">
-            <div className="flex flex-wrap gap-3 items-center">
+      {/* Date and Filter Bar */}
+      <Card variant="surface" hover="none" className="overflow-hidden">
+        <CardContent className="p-4">
+          <div className="flex flex-wrap justify-between items-center gap-4">
+            <div className="flex flex-wrap gap-4 items-center">
               <div className="flex items-center space-x-3">
                 <div className="flex items-center justify-center w-10 h-10 rounded-full bg-amber-500/10">
-                  <DatePicker
-                    selectedDate={selectedDate}
-                    onDateChange={setSelectedDate}
-                    minDate={new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)} // 30 days ago
-                    maxDate={new Date()} // Today
-                  />
+                  <Calendar className="h-5 w-5 text-amber-400" />
                 </div>
-              </div>
-
-              <div className="h-6 border-r border-amber-500/20 mx-2"></div>
-
-              <div className="flex flex-wrap gap-2">
-                {dates.slice(0, 5).map((date) => (
-                  <Button
-                    key={date.toISOString()}
-                    variant={
-                      formatDate(date) === formatDate(selectedDate)
-                        ? "default"
-                        : "outline"
-                    }
-                    size="sm"
-                    onClick={() => setSelectedDate(date)}
-                    className={
-                      formatDate(date) === formatDate(selectedDate)
-                        ? "bg-amber-500/20 text-amber-400 border-amber-500/30 hover:bg-amber-500/30"
-                        : "border-amber-500/20 text-amber-400 hover:bg-black/20 hover:border-amber-500/40"
-                    }
-                  >
-                    {formatDate(date)}
-                  </Button>
-                ))}
+                <div>
+                  <h3 className="text-sm font-medium text-white font-jakarta">Date</h3>
+                  <p className="text-xs text-white/70 font-jakarta">Select prediction date</p>
+                </div>
               </div>
             </div>
 
             {/* Refresh Button */}
             <Button
               variant="outline"
-              size="sm"
+              className="font-jakarta"
               onClick={handleRefresh}
-              disabled={loading}
-              className="flex items-center gap-1 border-amber-500/30 text-amber-400 hover:bg-black/20 hover:border-amber-500/50"
+              disabled={refreshing}
             >
-              <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
-              {loading ? "Refreshing..." : "Refresh"}
+              {refreshing ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  Refreshing...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Refresh
+                </>
+              )}
             </Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* Predictions List */}
-      <Card className="bg-gradient-to-b from-gray-900 to-black border border-amber-500/20 shadow-xl overflow-hidden">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-amber-400">
-              Advanced ML Picks <span className="text-white/70">• {formatDate(selectedDate)}</span>
-            </h2>
+      {/* Category Filters */}
+      <PredictionFilters
+        showCategories={true}
+        onCategoryChange={setActiveCategory}
+        selectedCategory={activeCategory}
+      />
+
+      {/* Predictions Content */}
+      <Card variant="surface" hover="none" className="overflow-hidden">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle size="md" font="clash" className="text-amber-400">
+              {categoryNames[activeCategory] || 'All Predictions'}
+            </CardTitle>
 
             <div className="flex items-center space-x-2">
               <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-              <span className="text-sm text-white/70">Live Updates</span>
+              <span className="text-sm text-white/70 font-jakarta">Live Updates</span>
             </div>
           </div>
-
+        </CardHeader>
+        <CardContent>
           {loading ? (
-            <div className="text-center py-16 bg-black/20 rounded-xl border border-amber-500/10">
-              <div className="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-amber-500 mb-4"></div>
-              <p className="text-white/70 text-lg">Loading premium predictions...</p>
+            <div className="flex flex-col items-center justify-center py-12">
+              <div className="w-12 h-12 border-4 border-amber-500/30 border-t-amber-500 rounded-full animate-spin mb-4"></div>
+              <p className="text-white/70 text-sm font-jakarta">Loading predictions...</p>
             </div>
-          ) : fetchError ? (
-            <div className="text-center py-16 bg-black/20 rounded-xl border border-red-500/20">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-500/10 mb-4">
-                <RefreshCw size={28} className="text-red-400" />
+          ) : error ? (
+            <div className="flex flex-col items-center justify-center py-12">
+              <div className="flex items-center justify-center w-16 h-16 rounded-full bg-red-500/10 mb-4">
+                <AlertCircle className="h-8 w-8 text-red-400" />
               </div>
-              <p className="text-xl font-semibold mb-2 text-red-400">Error Loading Predictions</p>
-              <p className="text-white/70 mb-6 max-w-md mx-auto">
-                {fetchError.message || "Failed to load predictions. Please try again later."}
-              </p>
+              <p className="text-red-400 text-center mb-2 font-jakarta">{error}</p>
               <Button
                 variant="outline"
-                size="sm"
-                className="border-red-500/30 text-red-400 hover:bg-red-500/10"
+                className="font-jakarta"
                 onClick={handleRefresh}
               >
-                <RefreshCw size={14} className="mr-1.5" />
-                Retry
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Try Again
               </Button>
             </div>
-          ) : selectedPredictions.length === 0 ? (
-            <div className="text-center py-16 bg-black/20 rounded-xl border border-amber-500/10">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-amber-500/10 mb-4">
-                <RefreshCw size={28} className="text-amber-400" />
-              </div>
-              <p className="text-xl font-semibold mb-2 text-amber-400">No Predictions Available</p>
-              <p className="text-white/70 mb-6">
-                There are no predictions available for {formatDate(selectedDate)}.
-                Please select another date or check back later.
-              </p>
-              <Button
-                variant="outline"
-                className="border-amber-500/30 text-amber-400 hover:bg-black/20 hover:border-amber-500/50"
-                onClick={() => setSelectedDate(new Date())}
-              >
-                View Today's Predictions
-              </Button>
+          ) : Object.keys(predictions).length === 0 ? (
+            <div className="text-center py-12 border border-amber-500/20 rounded-lg">
+              <p className="text-white/70 font-jakarta">No predictions available for the selected date.</p>
             </div>
           ) : (
-            <TrackedErrorBoundary>
-              <div className="bg-black/30 rounded-xl p-6 border border-amber-500/10">
-                <PredictionsList
-                  predictions={selectedPredictions}
-                  title=""
-                  showFilters={false}
-                />
-              </div>
-            </TrackedErrorBoundary>
+            <div className="space-y-8">
+              {Object.entries(predictions)
+                .filter(([category]) => {
+                  // Convert activeCategory to match the API response format
+                  const formattedActiveCategory = activeCategory === '2_odds' ? '2_odds' :
+                                                 activeCategory === '5_odds' ? '5_odds' :
+                                                 activeCategory === '10_odds' ? '10_odds' :
+                                                 activeCategory === 'rollover' ? 'rollover' : 'all';
+
+                  return formattedActiveCategory === 'all' || category === formattedActiveCategory;
+                })
+                .map(([categoryKey, categoryPredictions]) => (
+                <div key={categoryKey} className="bg-black/20 border border-amber-500/20 rounded-lg overflow-hidden">
+                  <div className="bg-black/30 p-4 border-b border-amber-500/20">
+                    <h3 className="text-xl font-bold text-amber-400">{categoryNames[categoryKey as keyof typeof categoryNames] || categoryKey}</h3>
+                    {categoryPredictions.length > 0 && categoryPredictions[0].combined_odds && (
+                      <div className="flex items-center space-x-4 mt-2">
+                        <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30">
+                          Combined Odds: {categoryPredictions[0].combined_odds.toFixed(2)}
+                        </Badge>
+                        <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+                          Confidence: {(categoryPredictions[0].combined_confidence || 0) * 100}%
+                        </Badge>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-collapse">
+                      <thead>
+                        <tr className="border-b border-amber-500/20">
+                          <th className="text-left py-3 px-4 text-amber-400 font-medium">Match</th>
+                          <th className="text-left py-3 px-4 text-amber-400 font-medium">Prediction</th>
+                          <th className="text-left py-3 px-4 text-amber-400 font-medium">League</th>
+                          <th className="text-center py-3 px-4 text-amber-400 font-medium">Odds</th>
+                          <th className="text-center py-3 px-4 text-amber-400 font-medium">Confidence</th>
+                          <th className="text-center py-3 px-4 text-amber-400 font-medium">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {categoryPredictions.length > 0 && categoryPredictions[0].predictions ? (
+                          // New API format with nested predictions
+                          categoryPredictions[0].predictions.map((prediction: any, index: number) => {
+                            const fixture = prediction.fixture;
+
+                            // Format prediction text
+                            let predictionText = '';
+                            if (prediction.prediction_type === 'match_result') {
+                              if (prediction.match_result_pred === 'home') {
+                                predictionText = `${fixture.home_team} to win`;
+                              } else if (prediction.match_result_pred === 'draw') {
+                                predictionText = 'Draw';
+                              } else {
+                                predictionText = `${fixture.away_team} to win`;
+                              }
+                            } else if (prediction.prediction_type === 'over_under') {
+                              predictionText = `${prediction.over_under_pred === 'over' ? 'Over' : 'Under'} 2.5 goals`;
+                            } else if (prediction.prediction_type === 'btts') {
+                              predictionText = `BTTS: ${prediction.btts_pred === 'yes' ? 'Yes' : 'No'}`;
+                            }
+
+                            return (
+                              <tr key={index} className="border-b border-amber-500/10 hover:bg-black/30">
+                                <td className="py-3 px-4">
+                                  <div className="flex flex-col">
+                                    <span className="font-medium text-white">{fixture.home_team}</span>
+                                    <span className="font-medium text-white">{fixture.away_team}</span>
+                                    <span className="text-xs text-white/50">
+                                      {fixture.start_time || 'Time N/A'}
+                                    </span>
+                                  </div>
+                                </td>
+                                <td className="py-3 px-4 text-white">{predictionText}</td>
+                                <td className="py-3 px-4 text-white/70">{fixture.league_name}</td>
+                                <td className="py-3 px-4 text-center">
+                                  <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30">
+                                    {prediction.odds.toFixed(2)}
+                                  </Badge>
+                                </td>
+                                <td className="py-3 px-4 text-center">
+                                  <div className="w-full bg-gray-700/30 rounded-full h-2.5">
+                                    <div
+                                      className="bg-amber-500 h-2.5 rounded-full"
+                                      style={{ width: `${(prediction.confidence * 100).toFixed(0)}%` }}
+                                    ></div>
+                                  </div>
+                                  <span className="text-xs text-white/50 mt-1 block">
+                                    {(prediction.confidence * 100).toFixed(0)}%
+                                  </span>
+                                </td>
+                                <td className="py-3 px-4 text-center">
+                                  {getStatusBadge(prediction.status || 'pending')}
+                                </td>
+                              </tr>
+                            );
+                          })
+                        ) : (
+                          // Old API format
+                          categoryPredictions.map((prediction: any) => (
+                            <tr key={prediction.id} className="border-b border-amber-500/10 hover:bg-black/30">
+                              <td className="py-3 px-4">
+                                <div className="flex flex-col">
+                                  <span className="font-medium text-white">{prediction.game?.homeTeam?.name || 'Home Team'}</span>
+                                  <span className="font-medium text-white">{prediction.game?.awayTeam?.name || 'Away Team'}</span>
+                                  <span className="text-xs text-white/50">
+                                    {prediction.game?.startTime ? safeFormatDateTime(prediction.game.startTime) : 'Time N/A'}
+                                  </span>
+                                </div>
+                              </td>
+                              <td className="py-3 px-4 text-white">{prediction.predictionType}</td>
+                              <td className="py-3 px-4 text-white/70">{prediction.game?.league || 'Unknown League'}</td>
+                              <td className="py-3 px-4 text-center">
+                                <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30">
+                                  {prediction.odds?.toFixed(2) || '0.00'}
+                                </Badge>
+                              </td>
+                              <td className="py-3 px-4 text-center">
+                                <div className="w-full bg-gray-700/30 rounded-full h-2.5">
+                                  <div
+                                    className="bg-amber-500 h-2.5 rounded-full"
+                                    style={{ width: `${prediction.confidence || prediction.confidencePct || 0}%` }}
+                                  ></div>
+                                </div>
+                                <span className="text-xs text-white/50 mt-1 block">
+                                  {(prediction.confidence || prediction.confidencePct || 0).toFixed(0)}%
+                                </span>
+                              </td>
+                              <td className="py-3 px-4 text-center">
+                                {getStatusBadge(prediction.status)}
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
         </CardContent>
       </Card>
-
-      {/* Advanced ML Features */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="bg-gradient-to-b from-gray-900 to-black border border-amber-500/20 shadow-lg">
-          <CardContent className="p-6 text-center">
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-amber-500/10 mb-4">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-400">
-                <path d="M3 9h18v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9Z"></path>
-                <path d="M3 9V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4"></path>
-                <path d="M12 12v5"></path>
-                <path d="M8 12v5"></path>
-                <path d="M16 12v5"></path>
-              </svg>
-            </div>
-            <h3 className="text-xl font-bold text-amber-400 mb-2">XGBoost Model</h3>
-            <p className="text-white/70 mb-4">
-              Our XGBoost model is trained on over 100,000 matches for superior match result predictions
-            </p>
-            <Button
-              variant="outline"
-              className="border-amber-500/30 text-amber-400 hover:bg-black/20 hover:border-amber-500/50 w-full"
-              onClick={handleRefresh}
-            >
-              Refresh Predictions
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-b from-gray-900 to-black border border-amber-500/20 shadow-lg">
-          <CardContent className="p-6 text-center">
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-amber-500/10 mb-4">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-400">
-                <path d="M12 2H2v10h10V2Z"></path>
-                <path d="M22 12h-4v4h4v-4Z"></path>
-                <path d="M12 8h4v4h-4V8Z"></path>
-                <path d="M17 16v4h-4v-4h4Z"></path>
-                <path d="M12 12v4"></path>
-                <path d="M7 12v8"></path>
-                <path d="M2 12v8"></path>
-              </svg>
-            </div>
-            <h3 className="text-xl font-bold text-amber-400 mb-2">LightGBM Model</h3>
-            <p className="text-white/70 mb-4">
-              Our LightGBM model specializes in BTTS (Both Teams To Score) predictions with high accuracy
-            </p>
-            <Button
-              variant="outline"
-              className="border-amber-500/30 text-amber-400 hover:bg-black/20 hover:border-amber-500/50 w-full"
-              onClick={handleExportCSV}
-            >
-              Export Predictions
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-b from-gray-900 to-black border border-amber-500/20 shadow-lg">
-          <CardContent className="p-6 text-center">
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-amber-500/10 mb-4">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-400">
-                <path d="M18.178 8c5.096 0 5.096 8 0 8-5.095 0-7.133-8-12.739-8-4.585 0-4.585 8 0 8 5.606 0 7.644-8 12.74-8z"></path>
-              </svg>
-            </div>
-            <h3 className="text-xl font-bold text-amber-400 mb-2">Neural Networks</h3>
-            <p className="text-white/70 mb-4">
-              Our Neural Network models excel at predicting over/under goals with calibrated confidence scores
-            </p>
-            <Button
-              variant="outline"
-              className="border-amber-500/30 text-amber-400 hover:bg-black/20 hover:border-amber-500/50 w-full"
-              onClick={handleRefresh}
-            >
-              Refresh Now
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
     </div>
   );
 };
 
 export default PredictionsPage;
-
-
-
-
-

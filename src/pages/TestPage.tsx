@@ -18,7 +18,7 @@ const TestPage: React.FC = () => {
   const checkApiHealth = async () => {
     setIsLoadingHealth(true);
     try {
-      const response = await fetch('http://localhost:8002/api/health');
+      const response = await fetch('http://localhost:8000/api/health');
       const data = await response.json();
       setHealthStatus(JSON.stringify(data, null, 2));
     } catch (error) {
@@ -32,7 +32,7 @@ const TestPage: React.FC = () => {
   const loadFixtures = async () => {
     setIsLoadingFixtures(true);
     try {
-      const response = await fetch('http://localhost:8002/api/multi-api/fixtures');
+      const response = await fetch('http://localhost:8000/api/multi-api/fixtures');
       const data = await response.json();
       setFixturesData(JSON.stringify(data, null, 2));
     } catch (error) {
@@ -46,7 +46,7 @@ const TestPage: React.FC = () => {
   const loadPredictions = async () => {
     setIsLoadingPredictions(true);
     try {
-      const response = await fetch('http://localhost:8002/api/multi-api/predictions/daily');
+      const response = await fetch('http://localhost:8000/api/multi-api/predictions/daily');
       const data = await response.json();
       setPredictionsData(JSON.stringify(data, null, 2));
     } catch (error) {

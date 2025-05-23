@@ -18,7 +18,6 @@ import { formatLocalDateTime } from "../../utils/formatters";
 import {
   PredictionCardMode,
   PredictionCardVariant,
-  getOddsClass,
   formatOdds,
   generateReason
 } from "../../utils/predictionUtils";
@@ -70,42 +69,255 @@ const BasePredictionCard: React.FC<BasePredictionCardProps> = ({
   // Styling
   className = ""
 }) => {
-  // Safely extract prediction data with null checks
+  // First, log the entire prediction object to see its structure
+  console.log('Full prediction object:', prediction);
+
+  // Check if this prediction has nested predictions (common in API response)
+  const nestedPredictions = safeGet(prediction, 'predictions', null) as any[] | null;
+
+  // If we have nested predictions, use the first one for additional data
+  const firstNestedPrediction = nestedPredictions && nestedPredictions.length > 0
+    ? nestedPredictions[0]
+    : null;
+
+  // Extract fixture data from the nested prediction
+  const fixture = firstNestedPrediction
+    ? safeGet(firstNestedPrediction, 'fixture', null)
+    : safeGet(prediction, 'fixture', null);
+
+  // Extract game data (legacy format)
   const game = safeGet(prediction, 'game', {}) as Record<string, unknown>;
 
-  // Extract team objects and handle them properly
-  const homeTeamObj = safeGet(game, 'homeTeam', { name: 'Home Team' });
-  const awayTeamObj = safeGet(game, 'awayTeam', { name: 'Away Team' });
+  // Log fixture data for debugging
+  console.log('Fixture data:', fixture);
 
-  // Extract team names safely - check for both object and string formats
-  let homeTeam = 'Home Team';
-  if (typeof homeTeamObj === 'string') {
-    homeTeam = homeTeamObj;
-  } else if (homeTeamObj && typeof homeTeamObj === 'object') {
-    homeTeam = safeGet(homeTeamObj, 'name', 'Home Team') as string;
+  // Home team extraction - prioritize fixture data based on API example
+  let homeTeam: string | null = null;
+
+  if (fixture) {
+    // Get from fixture (primary source based on API example)
+    homeTeam = safeGet(fixture, 'home_team', null) as string | null;
   }
 
-  let awayTeam = 'Away Team';
-  if (typeof awayTeamObj === 'string') {
-    awayTeam = awayTeamObj;
-  } else if (awayTeamObj && typeof awayTeamObj === 'object') {
-    awayTeam = safeGet(awayTeamObj, 'name', 'Away Team') as string;
+  // Fallbacks if not found in fixture
+  if (!homeTeam) {
+    // Try direct from prediction
+    homeTeam = safeGet(prediction, 'home_team',
+      safeGet(prediction, 'homeTeam', null)) as string | null;
+
+    // Try from nested prediction
+    if (!homeTeam && firstNestedPrediction) {
+      homeTeam = safeGet(firstNestedPrediction, 'home_team',
+        safeGet(firstNestedPrediction, 'homeTeam', null)) as string | null;
+    }
+
+    // Try from game object (legacy format)
+    if (!homeTeam) {
+      const homeTeamObj = safeGet(game, 'homeTeam', null);
+      if (typeof homeTeamObj === 'string') {
+        homeTeam = homeTeamObj;
+      } else if (homeTeamObj && typeof homeTeamObj === 'object') {
+        homeTeam = safeGet(homeTeamObj, 'name', null) as string | null;
+      }
+    }
   }
 
-  // Log team names for debugging
-  console.log('Team names:', { homeTeam, awayTeam, homeTeamObj, awayTeamObj });
+  // Away team extraction - prioritize fixture data based on API example
+  let awayTeam: string | null = null;
 
-  const league = safeGet(game, 'league', 'Unknown League') as string;
-  const sport = safeGet(game, 'sport', 'mixed') as string;
-  const startTime = safeGet(game, 'startTime', null) as Date | string | null;
-  const predictionType = safeGet(prediction, 'predictionType', '') as string;
-  const odds = safeGet(prediction, 'odds', 0) as number;
-  const status = safeGet(prediction, 'status', 'pending') as string;
-  const createdAt = safeGet(prediction, 'createdAt', null) as Date | string | null;
-  const explanation = safeGet(prediction, 'explanation', '') as string;
-  const description = safeGet(prediction, 'description', '') as string;
-  // Get confidence and normalize it to be between 0 and 1
-  let confidenceValue = safeGet(prediction, 'confidence', 0) as number;
+  if (fixture) {
+    // Get from fixture (primary source based on API example)
+    awayTeam = safeGet(fixture, 'away_team', null) as string | null;
+  }
+
+  // Fallbacks if not found in fixture
+  if (!awayTeam) {
+    // Try direct from prediction
+    awayTeam = safeGet(prediction, 'away_team',
+      safeGet(prediction, 'awayTeam', null)) as string | null;
+
+    // Try from nested prediction
+    if (!awayTeam && firstNestedPrediction) {
+      awayTeam = safeGet(firstNestedPrediction, 'away_team',
+        safeGet(firstNestedPrediction, 'awayTeam', null)) as string | null;
+    }
+
+    // Try from game object (legacy format)
+    if (!awayTeam) {
+      const awayTeamObj = safeGet(game, 'awayTeam', null);
+      if (typeof awayTeamObj === 'string') {
+        awayTeam = awayTeamObj;
+      } else if (awayTeamObj && typeof awayTeamObj === 'object') {
+        awayTeam = safeGet(awayTeamObj, 'name', null) as string | null;
+      }
+    }
+  }
+
+  // If still not found, use default values
+  homeTeam = homeTeam || 'Home Team';
+  awayTeam = awayTeam || 'Away Team';
+
+  // Extract team form data from fixture
+  const homeForm = fixture ? safeGet(fixture, 'home_form', null) : null;
+  const awayForm = fixture ? safeGet(fixture, 'away_form', null) : null;
+
+  // Log team data for debugging
+  console.log('Team data from API:', {
+    homeTeam,
+    awayTeam,
+    homeForm,
+    awayForm
+  });
+
+  // Get league with priority order - prioritize fixture data based on API example
+  let league = 'Unknown League';
+
+  if (fixture) {
+    // Get from fixture (primary source based on API example)
+    league = safeGet(fixture, 'league_name', null) as string || league;
+  }
+
+  // Fallbacks if not found in fixture
+  if (league === 'Unknown League') {
+    league = safeGet(prediction, 'league',
+      safeGet(prediction, 'competition',
+        safeGet(firstNestedPrediction, 'league',
+          safeGet(firstNestedPrediction, 'competition',
+            safeGet(game, 'league',
+              safeGet(game, 'competition', 'Unknown League')))))) as string;
+  }
+
+  // Get prediction type with priority order - prioritize nested prediction based on API example
+  let predictionType = '';
+
+  if (firstNestedPrediction) {
+    // Get from nested prediction (primary source based on API example)
+    predictionType = safeGet(firstNestedPrediction, 'prediction_type', null) as string || predictionType;
+  }
+
+  // Fallbacks if not found in nested prediction
+  if (!predictionType) {
+    predictionType = safeGet(prediction, 'predictionType',
+      safeGet(prediction, 'prediction_type',
+        safeGet(prediction, 'bet_type', ''))) as string;
+  }
+
+  // Format prediction type for display
+  if (predictionType === 'match_result') {
+    predictionType = 'Match Result';
+  } else if (predictionType === 'over_under') {
+    predictionType = 'Over/Under 2.5';
+  } else if (predictionType === 'btts') {
+    predictionType = 'Both Teams To Score';
+  }
+
+  // Get prediction text based on prediction type and nested prediction data
+  let predictionText = '';
+
+  if (firstNestedPrediction) {
+    if (predictionType === 'Match Result') {
+      const matchResultPred = safeGet(firstNestedPrediction, 'match_result_pred', null);
+      if (matchResultPred === 'home') {
+        predictionText = `${homeTeam} to win`;
+      } else if (matchResultPred === 'draw') {
+        predictionText = 'Draw';
+      } else if (matchResultPred === 'away') {
+        predictionText = `${awayTeam} to win`;
+      }
+    } else if (predictionType === 'Over/Under 2.5') {
+      const overUnderPred = safeGet(firstNestedPrediction, 'over_under_pred', null);
+      predictionText = `${overUnderPred === 'over' ? 'Over' : 'Under'} 2.5 goals`;
+    } else if (predictionType === 'Both Teams To Score') {
+      const bttsPred = safeGet(firstNestedPrediction, 'btts_pred', null);
+      predictionText = `BTTS: ${bttsPred === 'yes' ? 'Yes' : 'No'}`;
+    }
+  }
+
+  // Get odds with priority order - ensure we get the correct odds for each prediction
+  let odds = 0;
+
+  // For nested predictions (like in 5_odds and 10_odds categories)
+  if (firstNestedPrediction) {
+    // If this is a nested prediction from the predictions array, use its own odds
+    odds = safeGet(firstNestedPrediction, 'odds', 0) as number;
+
+    // If the prediction has its own odds (it might be a nested prediction passed directly)
+    const predictionOdds = safeGet(prediction, 'odds', 0) as number;
+    if (odds === 0 && predictionOdds > 0) {
+      odds = predictionOdds;
+    }
+
+    // If still no odds, try combined odds from parent
+    if (odds === 0) {
+      odds = safeGet(prediction, 'combined_odds', 0) as number;
+    }
+  } else {
+    // For regular predictions, try direct odds first
+    odds = safeGet(prediction, 'odds', 0) as number;
+
+    // If not found, try combined odds
+    if (odds === 0) {
+      odds = safeGet(prediction, 'combined_odds', 0) as number;
+    }
+
+    // Last fallback to value field
+    if (odds === 0) {
+      odds = safeGet(prediction, 'value', 0) as number;
+    }
+  }
+
+  // Log the odds data for debugging
+  console.log('Odds data:', {
+    finalOdds: odds,
+    predictionOdds: safeGet(prediction, 'odds', null),
+    predictionCombinedOdds: safeGet(prediction, 'combined_odds', null),
+    nestedPredictionOdds: firstNestedPrediction ? safeGet(firstNestedPrediction, 'odds', null) : null
+  });
+
+  // Get match odds from fixture
+  const homeOdds = fixture ? safeGet(fixture, 'home_odds', null) : null;
+  const drawOdds = fixture ? safeGet(fixture, 'draw_odds', null) : null;
+  const awayOdds = fixture ? safeGet(fixture, 'away_odds', null) : null;
+
+  // Get explanation with priority order
+  const explanation = safeGet(prediction, 'explanation',
+    safeGet(prediction, 'reason',
+      safeGet(firstNestedPrediction, 'explanation',
+        safeGet(firstNestedPrediction, 'reason', '')))) as string;
+
+  // Get description with priority order
+  const description = safeGet(prediction, 'description',
+    safeGet(prediction, 'summary',
+      safeGet(firstNestedPrediction, 'description',
+        safeGet(firstNestedPrediction, 'summary', '')))) as string;
+
+  // Log prediction data for debugging
+  console.log('Prediction data:', {
+    league,
+    predictionType,
+    predictionText,
+    odds,
+    homeOdds,
+    drawOdds,
+    awayOdds
+  });
+  // Get confidence with priority order based on API example
+  let confidenceValue = 0;
+
+  // First try combined_confidence from main prediction (based on API example)
+  confidenceValue = safeGet(prediction, 'combined_confidence', 0) as number;
+
+  // If not found, try confidence from nested prediction
+  if (confidenceValue === 0 && firstNestedPrediction) {
+    confidenceValue = safeGet(firstNestedPrediction, 'confidence', 0) as number;
+  }
+
+  // Fallbacks if still not found
+  if (confidenceValue === 0) {
+    confidenceValue = safeGet(prediction, 'confidence',
+      safeGet(prediction, 'confidence_pct',
+        safeGet(prediction, 'confidencePct', 0))) as number;
+  }
 
   // If confidence is greater than 1, assume it's already a percentage and convert to decimal
   if (confidenceValue > 1) {
@@ -115,8 +327,19 @@ const BasePredictionCard: React.FC<BasePredictionCardProps> = ({
   // Ensure confidence is never above 100%
   const confidence = Math.min(confidenceValue, 1);
 
-  // Get uncertainty value if available
-  let uncertaintyValue = safeGet(prediction, 'uncertainty', null) as number | null;
+  // Log confidence data for debugging
+  console.log('Confidence data:', {
+    confidenceValue,
+    confidence,
+    predictionCombinedConfidence: safeGet(prediction, 'combined_confidence', null),
+    nestedPredictionConfidence: firstNestedPrediction ? safeGet(firstNestedPrediction, 'confidence', null) : null
+  });
+
+  // Get uncertainty with priority order
+  let uncertaintyValue = safeGet(prediction, 'uncertainty',
+    safeGet(prediction, 'uncertainty_pct',
+      safeGet(firstNestedPrediction, 'uncertainty',
+        safeGet(firstNestedPrediction, 'uncertainty_pct', null)))) as number | null;
 
   // If uncertainty is greater than 1, assume it's already a percentage and convert to decimal
   if (uncertaintyValue && uncertaintyValue > 1) {
@@ -126,34 +349,69 @@ const BasePredictionCard: React.FC<BasePredictionCardProps> = ({
   // Ensure uncertainty is never above 100% or below 0%
   const uncertainty = uncertaintyValue !== null ? Math.min(Math.max(uncertaintyValue, 0), 1) : null;
 
-  // Extract quality metrics with null checks
-  const qualityRating = safeGet(prediction, 'quality_rating', '') as string;
-  const predictionQuality = safeGet(prediction, 'prediction_quality', 0) as number;
-  const matchResultCertainty = safeGet(prediction, 'match_result_certainty', 0) as number;
-  const overUnderCertainty = safeGet(prediction, 'over_under_certainty', 0) as number;
-  const bttsCertainty = safeGet(prediction, 'btts_certainty', 0) as number;
-
-  // Extract prediction percentages with null checks
-  const homeWinPct = safeGet(prediction, 'homeWinPct', 0) as number;
-  const drawPct = safeGet(prediction, 'drawPct', 0) as number;
-  const awayWinPct = safeGet(prediction, 'awayWinPct', 0) as number;
-  const over25Pct = safeGet(prediction, 'over25Pct', 0) as number;
-  const under25Pct = safeGet(prediction, 'under25Pct', 0) as number;
-  const bttsYesPct = safeGet(prediction, 'bttsYesPct', 0) as number;
-  const bttsNoPct = safeGet(prediction, 'bttsNoPct', 0) as number;
-
-  const gameCode = safeGet(prediction, 'gameCode', '') as string;
-  const bookmaker = safeGet(prediction, 'bookmaker', '') as string;
+  // Get prediction quality with priority order
+  const predictionQuality = safeGet(prediction, 'prediction_quality',
+    safeGet(prediction, 'quality',
+      safeGet(prediction, 'quality_rating',
+        safeGet(firstNestedPrediction, 'prediction_quality',
+          safeGet(firstNestedPrediction, 'quality',
+            safeGet(firstNestedPrediction, 'quality_rating', 0)))))) as number;
 
   // Generate a reason if none exists
   const reason = explanation || description || generateReason(predictionType, homeTeam, awayTeam, odds);
 
-  // Get game status
-  const gameStatus = safeGet(prediction, 'game.status', '') as string;
+  // Get game status with priority order
+  const gameStatus = safeGet(prediction, 'game_status',
+    safeGet(prediction, 'match_status',
+      safeGet(game, 'status',
+        safeGet(game, 'match_status',
+          safeGet(prediction, 'status',
+            safeGet(prediction, 'result', '')))))) as string;
 
-  // Get game start time and convert to local time
-  const gameTimeStr = safeGet(prediction, 'game.startTime', '');
-  const gameTime = gameTimeStr ? new Date(gameTimeStr) : new Date();
+  // Get game start time from fixture based on API example
+  let gameTimeStr = '';
+
+  if (fixture) {
+    // Get from fixture (primary source based on API example)
+    gameTimeStr = safeGet(fixture, 'date', null) as string || gameTimeStr;
+  }
+
+  // Fallbacks if not found in fixture
+  if (!gameTimeStr) {
+    gameTimeStr = safeGet(prediction, 'game_time',
+      safeGet(prediction, 'match_time',
+        safeGet(prediction, 'startTime',
+          safeGet(prediction, 'start_time',
+            safeGet(prediction, 'date',
+              safeGet(game, 'startTime',
+                safeGet(game, 'start_time',
+                  safeGet(game, 'date',
+                    safeGet(firstNestedPrediction, 'startTime',
+                      safeGet(firstNestedPrediction, 'start_time',
+                        safeGet(firstNestedPrediction, 'date', ''))))))))))) as string;
+  }
+
+  // Get start time for fallback display
+  const startTime = gameTimeStr || '';
+
+  // Convert to local time (with type safety)
+  const gameTime = gameTimeStr && typeof gameTimeStr === 'string' && gameTimeStr.length > 0
+    ? new Date(gameTimeStr)
+    : new Date();
+
+  // Format date and time for display
+  const dateString = gameTime.toLocaleDateString();
+  const timeString = gameTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  // Log the game time for debugging
+  console.log('Game time data:', {
+    gameTimeStr,
+    startTime,
+    gameTime,
+    dateString,
+    timeString,
+    fixtureDate: fixture ? safeGet(fixture, 'date', null) : null
+  });
 
   // Get current time in user's local timezone
   const now = new Date();
@@ -189,31 +447,47 @@ const BasePredictionCard: React.FC<BasePredictionCardProps> = ({
     isToday ? `TODAY ${formattedGameTime}` : // Later today
     'UPCOMING';
 
-  // Calculate derived values
-  const statusVariant =
-    status === "won" ? "success" :
-    status === "lost" ? "destructive" :
-    "warning";
+  // Calculate value rating based on confidence and odds
+  // This is a common formula used in betting: higher confidence and higher odds = better value
+  let valueRating = 1; // Default to 1 star
 
-  const oddsClass = getOddsClass(odds);
+  if (confidence > 0 && odds > 0) {
+    // Calculate value rating based on confidence and odds
+    // Higher confidence and higher odds = better value
+    // Scale to 1-5 stars
+    valueRating = Math.min(5, Math.max(1, Math.floor((confidence * odds) / 2)));
+  } else {
+    // Fallbacks if confidence or odds are missing
+    valueRating = safeGet(prediction, 'value_rating',
+      safeGet(prediction, 'value',
+        safeGet(firstNestedPrediction, 'value_rating',
+          safeGet(firstNestedPrediction, 'value',
+            predictionQuality > 0
+              ? Math.floor(predictionQuality)
+              : Math.floor((confidence / 20) + 1)
+          )
+        )
+      )
+    ) as number;
+  }
 
-  // Mock data for stats (in a real app, this would come from the prediction)
-  const valueRating = Math.floor((confidence / 20) + 1); // 1-5 scale based on confidence
-  const valueStars = "★".repeat(valueRating) + "☆".repeat(5 - valueRating);
-  // Unused variable commented out
-  // const historicalSuccess = Math.floor(confidence);
+  // Generate star rating display
+  const valueStars = "★".repeat(Math.min(valueRating, 5)) + "☆".repeat(Math.max(0, 5 - valueRating));
 
-  // Determine card variant class
-  const variantClass =
-    variant === PredictionCardVariant.PREMIUM ? "border-[#F5A623]/30 bg-gradient-to-b from-[#1A1A27] to-[#1A1A27]/80" :
-    variant === PredictionCardVariant.ROLLOVER ? "border-[#56CCF2]/30 bg-gradient-to-b from-[#1A1A27] to-[#1A1A27]/80" :
-    "";
+  // Log value rating data for debugging
+  console.log('Value rating data:', {
+    valueRating,
+    valueStars,
+    confidence,
+    odds,
+    calculatedValue: confidence * odds
+  });
 
   // Render different layouts based on mode
   if (mode === PredictionCardMode.COMPACT) {
     return (
       <motion.div
-        className={`p-3 border border-[#2A2A3C]/30 rounded-xl bg-gradient-to-b from-[#1A1A27]/90 to-[#1A1A27]/70 shadow-sm ${className}`}
+        className={`relative overflow-hidden p-3 border border-[#2A2A3C]/40 rounded-lg bg-gradient-to-b from-[#1A1A27] to-[#131320] shadow-md hover:shadow-lg transition-all duration-300 ${className}`}
         onClick={onClick}
         initial="initial"
         animate="animate"
@@ -221,48 +495,66 @@ const BasePredictionCard: React.FC<BasePredictionCardProps> = ({
         whileTap="tap"
         variants={cardVariants}
       >
-        <div className="flex justify-between items-center mb-2">
-          <div className="text-sm font-semibold truncate mr-2 text-white">
-            {homeTeam} vs {awayTeam}
-          </div>
-          <div className="flex items-center gap-1">
-            <PredictionQuality prediction={prediction} showDetails={false} />
-            <div className={`text-sm font-bold px-2 py-1 rounded-md bg-[#2A2A3C]/50 ${oddsClass}`}>
-              {formatOdds(odds)}x
-            </div>
-            {uncertainty !== null && uncertainty > 0.4 && (
-              <div className="text-xs px-1.5 py-0.5 rounded-md bg-[#F97316]/20 text-[#F97316]">
-                ±{Math.round(uncertainty * 100)}%
-              </div>
-            )}
+        {/* Decorative accent */}
+        <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-amber-500/80 to-amber-600/50"></div>
+
+        {/* Status indicator */}
+        <div className="absolute top-2 right-2">
+          <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
+            derivedGameStatus.includes('LIVE') ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
+            derivedGameStatus.includes('ENDED') ? 'bg-gray-500/20 text-gray-400 border border-gray-500/30' :
+            derivedGameStatus.includes('IN PLAY') ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
+            derivedGameStatus.includes('STARTS') ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' :
+            derivedGameStatus.includes('TODAY') ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' :
+            'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+          }`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${
+              derivedGameStatus.includes('LIVE') ? 'bg-red-400 animate-pulse' :
+              derivedGameStatus.includes('IN PLAY') ? 'bg-green-400 animate-pulse' :
+              'bg-current'
+            }`}></span>
+            <span>{derivedGameStatus}</span>
           </div>
         </div>
 
-        <div className="flex justify-between items-center mb-1">
-          <div className="flex items-center">
-            <div className="bg-[#2A2A3C]/50 text-xs px-2 py-1 rounded-md text-white">
+        {/* Main content with padding for the status indicator */}
+        <div className="pt-6">
+          {/* Teams */}
+          <div className="mb-3">
+            <div className="flex items-center mb-1">
+              <div className="w-3 h-3 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 mr-2"></div>
+              <h3 className="text-sm font-semibold text-white">{homeTeam}</h3>
+            </div>
+            <div className="flex items-center">
+              <div className="w-3 h-3 rounded-full bg-gradient-to-r from-blue-400 to-blue-500 mr-2"></div>
+              <h3 className="text-sm font-semibold text-white">{awayTeam}</h3>
+            </div>
+          </div>
+
+          {/* Middle section with prediction type and odds */}
+          <div className="flex justify-between items-center mb-3">
+            <div className="bg-[#2A2A3C]/60 text-xs px-2 py-1 rounded-md text-white font-medium">
               {predictionType}
             </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className={`text-xs px-2 py-0.5 rounded-md ${
-              derivedGameStatus.includes('LIVE') ? 'bg-red-500/20 text-red-400' :
-              derivedGameStatus.includes('ENDED') ? 'bg-gray-500/20 text-gray-400' :
-              derivedGameStatus.includes('IN PLAY') ? 'bg-green-500/20 text-green-400' :
-              derivedGameStatus.includes('STARTS') ? 'bg-yellow-500/20 text-yellow-400' :
-              derivedGameStatus.includes('TODAY') ? 'bg-purple-500/20 text-purple-400' :
-              'bg-blue-500/20 text-blue-400'
-            }`}>
-              {derivedGameStatus}
-            </div>
-            <div className="text-xs text-[#A1A1AA]">
-              {gameTimeStr ? formatLocalDateTime(gameTimeStr).split(' ')[0] : safeFormatDate(startTime)}
+            <div className="flex items-center">
+              <div className="text-xs font-bold px-2 py-1 rounded-md bg-amber-500/20 border border-amber-500/40 text-amber-400">
+                {formatOdds(odds)}x
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="flex items-center text-xs text-[#A1A1AA] mt-2">
-          <div className="bg-[#2A2A3C]/30 px-2 py-0.5 rounded-md">{league}</div>
+          {/* Bottom section with league, time and confidence */}
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <div className="text-xs text-white/70 bg-[#2A2A3C]/40 px-2 py-0.5 rounded-md">
+                {league}
+              </div>
+              <div className="text-xs text-white/60">
+                {gameTimeStr ? formatLocalDateTime(gameTimeStr).split(' ')[0] : safeFormatDate(startTime)}
+              </div>
+            </div>
+            <PredictionQuality prediction={prediction} showDetails={false} />
+          </div>
         </div>
       </motion.div>
     );
@@ -314,7 +606,11 @@ const BasePredictionCard: React.FC<BasePredictionCardProps> = ({
                 </div>
               </div>
             </div>
-            <div className={`px-3 py-2 rounded-lg ${variant === PredictionCardVariant.PREMIUM ? 'bg-[#F5A623]/20 text-[#F5A623]' : 'bg-white/10 text-white'} font-bold`}>
+            <div className={`px-3 py-2 rounded-lg flex items-center justify-center min-w-[60px] ${
+              variant === PredictionCardVariant.PREMIUM
+                ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+            } font-bold`}>
               {formatOdds(odds)}x
             </div>
           </div>
@@ -337,33 +633,45 @@ const BasePredictionCard: React.FC<BasePredictionCardProps> = ({
         <div className="mb-4">
           <div className="flex justify-between items-center mb-1">
             <p className="text-xs font-medium text-white/70">Confidence</p>
-            <p className="text-xs font-medium text-white/70">{Math.round(confidence * 100)}%</p>
+            <p className="text-xs font-medium text-white/70">
+              {safeGet(prediction, 'confidence_display',
+                (confidence * 100).toFixed(1) + '%')}
+            </p>
           </div>
           <div className="w-full bg-[#2A2A3C] rounded-full h-1.5">
             <div
               className={`h-1.5 rounded-full ${variant === PredictionCardVariant.PREMIUM ? 'bg-[#F5A623]' : 'bg-[#56CCF2]'}`}
-              style={{ width: `${Math.round(confidence * 100)}%` }}
+              style={{ width: `${safeGet(prediction, 'confidence_pct', confidence * 100)}%` }}
             ></div>
           </div>
 
           {/* Uncertainty indicator (if available) */}
-          {uncertainty !== null && (
+          {(uncertainty !== null || safeGet(prediction, 'uncertainty', null) !== null) && (
             <div className="mt-2">
               <div className="flex justify-between items-center mb-1">
                 <p className="text-xs font-medium text-white/70">Uncertainty</p>
-                <p className="text-xs font-medium text-white/70">{Math.round(uncertainty * 100)}%</p>
+                <p className="text-xs font-medium text-white/70">
+                  {safeGet(prediction, 'uncertainty_display',
+                    (safeGet(prediction, 'uncertainty', uncertainty) as number * 100).toFixed(1) + '%')}
+                </p>
               </div>
               <div className="w-full bg-[#2A2A3C] rounded-full h-1.5">
                 <div
                   className="h-1.5 rounded-full bg-[#F97316]"
-                  style={{ width: `${Math.round(uncertainty * 100)}%` }}
+                  style={{ width: `${safeGet(prediction, 'uncertainty_pct',
+                    (safeGet(prediction, 'uncertainty', uncertainty) as number * 100))}%` }}
                 ></div>
               </div>
               <p className="text-xs text-white/50 mt-1">
-                {uncertainty < 0.2 ? "High confidence in this prediction" :
-                 uncertainty < 0.4 ? "Good confidence in this prediction" :
-                 uncertainty < 0.6 ? "Moderate uncertainty in this prediction" :
-                 "High uncertainty in this prediction"}
+                {safeGet(prediction, 'uncertainty_message',
+                  (safeGet(prediction, 'uncertainty', uncertainty) as number) < 0.2
+                    ? "High confidence in this prediction"
+                    : (safeGet(prediction, 'uncertainty', uncertainty) as number) < 0.4
+                    ? "Good confidence in this prediction"
+                    : (safeGet(prediction, 'uncertainty', uncertainty) as number) < 0.6
+                    ? "Moderate uncertainty in this prediction"
+                    : "High uncertainty in this prediction"
+                )}
               </p>
             </div>
           )}

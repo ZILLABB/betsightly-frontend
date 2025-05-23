@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { getRolloverPredictions } from '../services/apiService';
 import { formatDate } from '../utils/dateUtils';
 import {
   Spinner,
@@ -10,48 +9,70 @@ import {
   Badge,
   ProgressBar,
   Accordion,
-  AccordionItem
+  AccordionItem,
+  LoadingSpinner
 } from '../components/ui';
 import { Prediction } from '../types';
 import { Copy, Clock, Calendar } from 'lucide-react';
 import { cn } from '../utils/cn';
+import { useToast } from '../hooks/useToast';
+import { usePredictions } from '../contexts/PredictionsContext';
 
 interface RolloverPredictionsProps {
   days?: number;
   onPredictionSelect?: (prediction: Prediction) => void;
   showExplanation?: boolean;
   showGameCode?: boolean;
+  predictions?: Record<number, Prediction[]>;
 }
 
 const RolloverPredictions: React.FC<RolloverPredictionsProps> = ({
   days = 10,
   onPredictionSelect,
   showExplanation = false,
-  showGameCode = true
+  showGameCode = true,
+  predictions = {}
 }) => {
-  const [rolloverPredictions, setRolloverPredictions] = useState<Record<number, Prediction[]>>({});
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  // Get predictions from context
+  const {
+    rolloverPredictions: contextPredictions,
+    loading: contextLoading,
+    error: contextError,
+    loadRolloverPredictions: contextLoadRolloverPredictions
+  } = usePredictions();
 
-  // Load rollover predictions on component mount
+  const [usingSampleData, setUsingSampleData] = useState<boolean>(false);
+
+  // Determine which predictions to use - props take precedence, then context
+  const rolloverPredictions = Object.keys(predictions).length > 0
+    ? predictions
+    : contextPredictions;
+
+  // Load rollover predictions on component mount or when days changes if no predictions provided
   useEffect(() => {
-    loadRolloverPredictions();
-  }, [days]);
-
-  // Function to load rollover predictions
-  const loadRolloverPredictions = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const predictionsData = await getRolloverPredictions(days);
-      setRolloverPredictions(predictionsData);
-    } catch (err) {
-      console.error('Error loading rollover predictions:', err);
-      setError('Failed to load rollover predictions. Please try again later.');
-    } finally {
-      setLoading(false);
+    if (Object.keys(predictions).length === 0 && Object.keys(contextPredictions).length === 0) {
+      contextLoadRolloverPredictions(days);
     }
+  }, [days, predictions, contextPredictions, contextLoadRolloverPredictions]);
+
+  // Check if we're using sample data
+  useEffect(() => {
+    if (Object.keys(rolloverPredictions).length > 0) {
+      const firstDay = Object.keys(rolloverPredictions)[0];
+      const firstPrediction = rolloverPredictions[Number(firstDay)]?.[0];
+      if (firstPrediction &&
+          typeof firstPrediction.id === 'string' &&
+          firstPrediction.id.startsWith('sample-')) {
+        setUsingSampleData(true);
+      } else {
+        setUsingSampleData(false);
+      }
+    }
+  }, [rolloverPredictions]);
+
+  // Function to load rollover predictions - now just calls the context function
+  const loadRolloverPredictions = () => {
+    contextLoadRolloverPredictions(days);
   };
 
   // Function to handle prediction selection
@@ -61,15 +82,29 @@ const RolloverPredictions: React.FC<RolloverPredictionsProps> = ({
     }
   };
 
+  // Get toast notification function
+  const { toast } = useToast();
+
   // Function to copy game code to clipboard
   const copyGameCode = (gameCode: string, event: React.MouseEvent) => {
     event.stopPropagation();
     navigator.clipboard.writeText(gameCode)
       .then(() => {
-        alert(`Game code copied: ${gameCode}`);
+        toast({
+          title: "Game code copied",
+          description: gameCode,
+          variant: "success",
+          duration: 2000
+        });
       })
       .catch(err => {
         console.error('Failed to copy game code:', err);
+        toast({
+          title: "Failed to copy",
+          description: "Please try again",
+          variant: "error",
+          duration: 2000
+        });
       });
   };
 
@@ -81,30 +116,51 @@ const RolloverPredictions: React.FC<RolloverPredictionsProps> = ({
     if (gameCodes) {
       navigator.clipboard.writeText(gameCodes)
         .then(() => {
-          alert(`All game codes for Day ${day} copied!`);
+          toast({
+            title: "All game codes copied",
+            description: `Day ${day} game codes copied to clipboard`,
+            variant: "success",
+            duration: 2000
+          });
         })
         .catch(err => {
           console.error('Failed to copy game codes:', err);
+          toast({
+            title: "Failed to copy",
+            description: "Please try again",
+            variant: "error",
+            duration: 2000
+          });
         });
     } else {
-      alert('No game codes available to copy.');
+      toast({
+        title: "No game codes available",
+        description: "There are no game codes to copy",
+        variant: "warning",
+        duration: 2000
+      });
     }
   };
 
   // Render loading state
-  if (loading) {
+  if (contextLoading) {
     return (
       <div className="flex justify-center items-center my-8">
-        <Spinner size="lg" variant="primary" />
+        <LoadingSpinner size="lg" variant="primary" text="Loading rollover predictions..." />
       </div>
     );
   }
 
-  // Render error state
-  if (error) {
+  // Get days with predictions
+  const daysWithPredictions = Object.keys(rolloverPredictions)
+    .map(Number)
+    .sort((a, b) => a - b);
+
+  // If no predictions found
+  if (daysWithPredictions.length === 0) {
     return (
-      <Alert variant="danger" className="flex flex-col sm:flex-row items-center justify-between p-4">
-        <div>{error}</div>
+      <Alert variant="info" className="p-4 flex flex-col sm:flex-row items-center justify-between">
+        <div>No rollover predictions available. Please try again later.</div>
         <Button
           variant="outline"
           size="sm"
@@ -117,16 +173,19 @@ const RolloverPredictions: React.FC<RolloverPredictionsProps> = ({
     );
   }
 
-  // Get days with predictions
-  const daysWithPredictions = Object.keys(rolloverPredictions)
-    .map(Number)
-    .sort((a, b) => a - b);
-
-  // If no predictions found
-  if (daysWithPredictions.length === 0) {
+  // Render error state
+  if (contextError) {
     return (
-      <Alert variant="info" className="p-4">
-        No rollover predictions available. Please try again later.
+      <Alert variant="danger" className="flex flex-col sm:flex-row items-center justify-between p-4">
+        <div>{contextError}</div>
+        <Button
+          variant="outline"
+          size="sm"
+          className="mt-3 sm:mt-0"
+          onClick={() => loadRolloverPredictions()}
+        >
+          Try Again
+        </Button>
       </Alert>
     );
   }
@@ -142,6 +201,21 @@ const RolloverPredictions: React.FC<RolloverPredictionsProps> = ({
 
   return (
     <div className="space-y-6">
+      {usingSampleData && (
+        <Alert variant="warning" className="p-4 flex items-center">
+          <div className="flex-1">
+            <strong>Note:</strong> Using sample data for demonstration purposes. The API did not return actual rollover predictions.
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => loadRolloverPredictions()}
+            className="ml-4"
+          >
+            Try Again
+          </Button>
+        </Alert>
+      )}
       <Accordion defaultActiveKey={daysWithPredictions[0].toString()} alwaysOpen className="premium-accordion">
         {daysWithPredictions.map(day => (
           <AccordionItem
@@ -178,12 +252,12 @@ const RolloverPredictions: React.FC<RolloverPredictionsProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {rolloverPredictions[day].map(prediction => (
                 <Card
-                  key={prediction.id}
+                  key={typeof prediction.id === 'string' ? prediction.id : `prediction-${Math.random()}`}
                   className={cn(
                     "h-full border bg-black/30 shadow-sm hover:shadow-md transition-all duration-300",
-                    prediction.confidence >= 80 ? "border-green-500/30" :
-                    prediction.confidence >= 60 ? "border-blue-500/30" :
-                    prediction.confidence >= 40 ? "border-amber-500/30" : "border-red-500/30"
+                    (prediction.confidence || 0) >= 80 ? "border-green-500/30" :
+                    (prediction.confidence || 0) >= 60 ? "border-blue-500/30" :
+                    (prediction.confidence || 0) >= 40 ? "border-amber-500/30" : "border-red-500/30"
                   )}
                   onClick={() => handlePredictionClick(prediction)}
                 >
@@ -192,19 +266,19 @@ const RolloverPredictions: React.FC<RolloverPredictionsProps> = ({
                     <div className="flex justify-between items-center mb-4">
                       <Badge variant="outline" className="flex items-center px-2.5 py-1 border-amber-500/20 text-amber-400 bg-black/20">
                         <Clock size={12} className="mr-1.5" />
-                        {prediction.game.startTime instanceof Date
+                        {prediction.game && prediction.game.startTime instanceof Date
                           ? prediction.game.startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                           : 'Time N/A'}
                       </Badge>
                       <Badge
                         className={cn(
-                          "px-2.5 py-1 font-medium border-0",
-                          prediction.odds > 5
-                            ? "bg-amber-500/20 text-amber-400"
-                            : "bg-green-500/20 text-green-400"
+                          "px-2.5 py-1 font-medium flex items-center justify-center min-w-[80px]",
+                          (prediction.odds || 0) > 5
+                            ? "bg-amber-500/20 text-amber-400 border border-amber-500/30"
+                            : "bg-green-500/20 text-green-400 border border-green-500/30"
                         )}
                       >
-                        {prediction.odds.toFixed(2)} Odds
+                        {(prediction.odds || 0).toFixed(2)}x
                       </Badge>
                     </div>
 
@@ -212,21 +286,21 @@ const RolloverPredictions: React.FC<RolloverPredictionsProps> = ({
                     <div className="relative bg-black/20 rounded-lg p-4 mb-4 border border-amber-500/10">
                       <div className="flex flex-col items-center space-y-2">
                         <div className="font-medium text-base text-white">
-                          {typeof prediction.game.homeTeam === 'string'
+                          {prediction.game && typeof prediction.game.homeTeam === 'string'
                             ? prediction.game.homeTeam
-                            : prediction.game.homeTeam.name}
+                            : prediction.game?.homeTeam?.name || 'Home Team'}
                         </div>
                         <div className="flex items-center justify-center w-8 h-8 rounded-full bg-amber-500/10 text-xs font-medium text-amber-400">
                           VS
                         </div>
                         <div className="font-medium text-base text-white">
-                          {typeof prediction.game.awayTeam === 'string'
+                          {prediction.game && typeof prediction.game.awayTeam === 'string'
                             ? prediction.game.awayTeam
-                            : prediction.game.awayTeam.name}
+                            : prediction.game?.awayTeam?.name || 'Away Team'}
                         </div>
                       </div>
                       <div className="absolute top-2 right-2 text-xs px-2 py-0.5 rounded bg-black/30 text-amber-400 border border-amber-500/10">
-                        {prediction.game.league}
+                        {prediction.game?.league || 'Unknown League'}
                       </div>
                     </div>
 
@@ -234,7 +308,7 @@ const RolloverPredictions: React.FC<RolloverPredictionsProps> = ({
                     <div className="space-y-4">
                       <div className="bg-amber-500/5 rounded-lg p-3 border border-amber-500/10">
                         <div className="text-sm font-medium mb-1 text-amber-400">Prediction</div>
-                        <div className="text-base text-white">{prediction.predictionType} - {prediction.prediction}</div>
+                        <div className="text-base text-white">{prediction.predictionType || 'Match Result'} {prediction.prediction ? `- ${prediction.prediction}` : ''}</div>
                       </div>
 
                       <div className="space-y-2">
@@ -242,16 +316,16 @@ const RolloverPredictions: React.FC<RolloverPredictionsProps> = ({
                           <span className="font-medium text-white/80">Confidence</span>
                           <span className={cn(
                             "font-bold",
-                            prediction.confidence >= 80 ? "text-green-500" :
-                            prediction.confidence >= 60 ? "text-blue-500" :
-                            prediction.confidence >= 40 ? "text-amber-500" : "text-red-500"
+                            (prediction.confidence || 0) >= 80 ? "text-green-500" :
+                            (prediction.confidence || 0) >= 60 ? "text-blue-500" :
+                            (prediction.confidence || 0) >= 40 ? "text-amber-500" : "text-red-500"
                           )}>
-                            {prediction.confidence}%
+                            {(prediction.confidence || 0).toFixed(1)}%
                           </span>
                         </div>
                         <ProgressBar
-                          now={prediction.confidence}
-                          variant={getConfidenceColor(prediction.confidence)}
+                          now={parseFloat((prediction.confidence || 0).toFixed(1))}
+                          variant={getConfidenceColor(prediction.confidence || 0)}
                           height={8}
                           className="rounded-full"
                         />

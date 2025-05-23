@@ -28,18 +28,18 @@ const FixtureList: React.FC<FixtureListProps> = ({ initialDate = new Date() }) =
   const fetchFixturesForDate = async (selectedDate: Date, forceRefresh: boolean = false) => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const formattedDate = format(selectedDate, 'yyyy-MM-dd');
       const fixtureList = await getFixtures(formattedDate, forceRefresh);
-      
+
       setFixtures(fixtureList.fixtures);
       setDataSource(fixtureList.source);
-      
+
       // Extract unique leagues for filtering
       const uniqueLeagues = Array.from(new Set(fixtureList.fixtures.map(fixture => fixture.league)));
       setLeagues(uniqueLeagues);
-      
+
       if (fixtureList.fixtures.length === 0) {
         setError(`No fixtures found for ${formattedDate}`);
       }
@@ -67,13 +67,13 @@ const FixtureList: React.FC<FixtureListProps> = ({ initialDate = new Date() }) =
 
   // Filter fixtures based on search query and league filter
   const filteredFixtures = fixtures.filter(fixture => {
-    const matchesSearch = searchQuery === '' || 
+    const matchesSearch = searchQuery === '' ||
       fixture.homeTeam.toLowerCase().includes(searchQuery.toLowerCase()) ||
       fixture.awayTeam.toLowerCase().includes(searchQuery.toLowerCase()) ||
       fixture.league.toLowerCase().includes(searchQuery.toLowerCase());
-    
+
     const matchesLeague = filterLeague === '' || fixture.league === filterLeague;
-    
+
     return matchesSearch && matchesLeague;
   });
 
@@ -95,7 +95,7 @@ const FixtureList: React.FC<FixtureListProps> = ({ initialDate = new Date() }) =
             Browse fixtures for {format(date, 'MMMM d, yyyy')}
           </p>
         </div>
-        
+
         <div className="flex flex-wrap gap-2">
           <Popover>
             <PopoverTrigger asChild>
@@ -116,7 +116,7 @@ const FixtureList: React.FC<FixtureListProps> = ({ initialDate = new Date() }) =
               />
             </PopoverContent>
           </Popover>
-          
+
           <Button
             variant="outline"
             onClick={handleRefresh}
@@ -128,7 +128,7 @@ const FixtureList: React.FC<FixtureListProps> = ({ initialDate = new Date() }) =
           </Button>
         </div>
       </div>
-      
+
       {/* Search and filter */}
       <div className="flex flex-col sm:flex-row gap-2">
         <div className="relative flex-1">
@@ -140,7 +140,7 @@ const FixtureList: React.FC<FixtureListProps> = ({ initialDate = new Date() }) =
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        
+
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="outline" className="flex items-center gap-2">
@@ -150,14 +150,14 @@ const FixtureList: React.FC<FixtureListProps> = ({ initialDate = new Date() }) =
           </PopoverTrigger>
           <PopoverContent className="w-[200px] p-0">
             <div className="p-2">
-              <div 
+              <div
                 className={`px-2 py-1.5 rounded-md cursor-pointer hover:bg-[var(--accent)] ${filterLeague === '' ? 'bg-[var(--accent)]' : ''}`}
                 onClick={() => setFilterLeague('')}
               >
                 All Leagues
               </div>
               {leagues.map(league => (
-                <div 
+                <div
                   key={league}
                   className={`px-2 py-1.5 rounded-md cursor-pointer hover:bg-[var(--accent)] ${filterLeague === league ? 'bg-[var(--accent)]' : ''}`}
                   onClick={() => setFilterLeague(league)}
@@ -169,7 +169,7 @@ const FixtureList: React.FC<FixtureListProps> = ({ initialDate = new Date() }) =
           </PopoverContent>
         </Popover>
       </div>
-      
+
       {/* Data source badge */}
       {dataSource && (
         <div className="flex justify-end">
@@ -178,7 +178,7 @@ const FixtureList: React.FC<FixtureListProps> = ({ initialDate = new Date() }) =
           </Badge>
         </div>
       )}
-      
+
       {/* Fixtures content */}
       {loading ? (
         <div className="flex justify-center items-center h-64">
@@ -202,15 +202,44 @@ const FixtureList: React.FC<FixtureListProps> = ({ initialDate = new Date() }) =
               <CardContent>
                 <div className="space-y-2">
                   {leagueFixtures.map(fixture => (
-                    <div 
+                    <div
                       key={fixture.id}
-                      className="flex justify-between items-center p-3 rounded-lg bg-[var(--secondary)]/10 hover:bg-[var(--secondary)]/20 transition-colors"
+                      className="flex flex-col p-3 rounded-lg bg-[var(--secondary)]/10 hover:bg-[var(--secondary)]/20 transition-colors"
                     >
-                      <div className="flex-1 text-right pr-3">{fixture.homeTeam}</div>
-                      <div className="px-3 py-1 rounded bg-[var(--card)] text-center min-w-[80px]">
-                        {new Date(fixture.matchDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {/* Match details */}
+                      <div className="flex justify-between items-center mb-2">
+                        <div className="flex-1 text-right pr-3 font-medium">{fixture.homeTeam.name}</div>
+                        <div className="px-3 py-1 rounded bg-[var(--card)] text-center min-w-[80px]">
+                          {new Date(fixture.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                        <div className="flex-1 pl-3 font-medium">{fixture.awayTeam.name}</div>
                       </div>
-                      <div className="flex-1 pl-3">{fixture.awayTeam}</div>
+
+                      {/* Predictions for this fixture */}
+                      {fixture.predictions && fixture.predictions.length > 0 ? (
+                        <div className="mt-2 space-y-2">
+                          <div className="text-xs font-medium text-[var(--muted-foreground)] mb-1">Predictions:</div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            {fixture.predictions.map((prediction, index) => (
+                              <div
+                                key={`${fixture.id}-pred-${index}`}
+                                className="flex justify-between items-center p-2 rounded bg-[var(--background)]/50 border border-[var(--border)]"
+                              >
+                                <div className="flex items-center">
+                                  <div className="w-2 h-2 rounded-full bg-amber-500 mr-2"></div>
+                                  <div className="text-xs">
+                                    <div className="font-medium">{prediction.predictionType}: {prediction.prediction}</div>
+                                    <div className="text-[var(--muted-foreground)]">Confidence: {prediction.confidence}%</div>
+                                  </div>
+                                </div>
+                                <div className="text-amber-500 font-bold text-sm">{prediction.odds}x</div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="mt-2 text-xs text-[var(--muted-foreground)] italic">No predictions available</div>
+                      )}
                     </div>
                   ))}
                 </div>
