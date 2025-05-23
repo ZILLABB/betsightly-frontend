@@ -14,11 +14,9 @@ import { Button } from "../components/common/Button";
 import { Badge } from "../components/common/Badge";
 import { Calendar, ChevronDown, Filter, BarChart2, TrendingUp, Clock, AlertCircle, Download, Share2, PieChart } from "lucide-react";
 import {
-  getPredictionsWithFilters,
-  getStatsOverview,
-  getSportStats,
-  getPredictionsByOddsCategory
-} from "../services/dataService";
+  getAllBestPredictions,
+  getAllCategoryPredictions
+} from "../services/unifiedApiService";
 import { predictionsToCSV, downloadCSV, generatePredictionsPDF, sharePredictions } from "../utils/exportUtils";
 import { formatDate } from "../lib/utils";
 
@@ -111,30 +109,33 @@ const ResultsPage: React.FC = () => {
         setLoading(true);
         setError(null);
 
-        // Get stats overview
+        // Get stats overview (using mock data for now)
         try {
-          const statsData = await getStatsOverview();
-          if (statsData) {
-            setStats(statsData);
-          } else {
-            console.error("Stats data is null or undefined");
-          }
+          const mockStats: StatsOverviewType = {
+            totalPredictions: 250,
+            successRate: 68.5,
+            averageOdds: 1.95,
+            sportStats: [
+              { sport: 'soccer', totalPredictions: 120, successRate: 72.5, averageOdds: 1.85 },
+              { sport: 'basketball', totalPredictions: 85, successRate: 65.2, averageOdds: 2.15 },
+              { sport: 'mixed', totalPredictions: 45, successRate: 58.8, averageOdds: 2.45 }
+            ]
+          };
+          setStats(mockStats);
         } catch (statsError) {
-          console.error("Error fetching stats overview:", statsError);
-          // Don't set error here, continue with other data fetching
+          console.error("Error setting stats overview:", statsError);
         }
 
-        // Get sport-specific stats
+        // Get sport-specific stats (using mock data for now)
         try {
-          const sportStatsData = await getSportStats();
-          if (sportStatsData && Array.isArray(sportStatsData)) {
-            setSportStats(sportStatsData);
-          } else {
-            console.error("Sport stats data is null, undefined, or not an array");
-          }
+          const mockSportStats: SportStats[] = [
+            { sport: 'soccer', totalPredictions: 120, successRate: 72.5, averageOdds: 1.85 },
+            { sport: 'basketball', totalPredictions: 85, successRate: 65.2, averageOdds: 2.15 },
+            { sport: 'mixed', totalPredictions: 45, successRate: 58.8, averageOdds: 2.45 }
+          ];
+          setSportStats(mockSportStats);
         } catch (sportStatsError) {
-          console.error("Error fetching sport stats:", sportStatsError);
-          // Don't set error here, continue with other data fetching
+          console.error("Error setting sport stats:", sportStatsError);
         }
 
         // Reset pagination when filters change
@@ -180,58 +181,41 @@ const ResultsPage: React.FC = () => {
         }
 
         try {
-          // Get predictions by odds category if selected
+          // Get predictions from the unified API
+          const allPredictions = await getAllBestPredictions();
+
+          // Convert the categorized predictions to a flat array
+          let flatPredictions: Prediction[] = [];
+
           if (oddsCategory !== "all") {
-            const categorizedPredictions = await getPredictionsByOddsCategory(filters);
-
-            if (!categorizedPredictions) {
-              throw new Error("Failed to fetch categorized predictions");
-            }
-
-            const predictions = categorizedPredictions[oddsCategory] || [];
-
-            // Sort by date (newest first)
-            const sortedPredictions = [...predictions].sort((a, b) => {
-              const dateA = a.game?.startTime ? new Date(a.game.startTime).getTime() : 0;
-              const dateB = b.game?.startTime ? new Date(b.game.startTime).getTime() : 0;
-              return dateB - dateA;
-            });
-
-            setCompletedPredictions(sortedPredictions.slice(0, ITEMS_PER_PAGE));
-            setHasMore(sortedPredictions.length > ITEMS_PER_PAGE);
+            // Get predictions for specific category
+            const categoryKey = oddsCategory === "2odds" ? "2_odds" :
+                               oddsCategory === "5odds" ? "5_odds" :
+                               oddsCategory === "10odds" ? "10_odds" : oddsCategory;
+            flatPredictions = allPredictions[categoryKey] || [];
           } else {
-            // Get all predictions with filters
-            let allPredictions: Prediction[] = [];
-
-            if (statusFilter === "all") {
-              // Get won predictions
-              const wonPredictions = await getPredictionsWithFilters({
-                ...filters,
-                status: "won",
-              });
-
-              // Get lost predictions
-              const lostPredictions = await getPredictionsWithFilters({
-                ...filters,
-                status: "lost",
-              });
-
-              allPredictions = [...wonPredictions, ...lostPredictions];
-            } else {
-              // Status filter is already applied
-              allPredictions = await getPredictionsWithFilters(filters);
-            }
-
-            // Sort by date (newest first)
-            const sortedPredictions = allPredictions.sort((a, b) => {
-              const dateA = a.game?.startTime ? new Date(a.game.startTime).getTime() : 0;
-              const dateB = b.game?.startTime ? new Date(b.game.startTime).getTime() : 0;
-              return dateB - dateA;
+            // Get all predictions from all categories
+            Object.values(allPredictions).forEach(categoryPredictions => {
+              if (Array.isArray(categoryPredictions)) {
+                flatPredictions.push(...categoryPredictions);
+              }
             });
-
-            setCompletedPredictions(sortedPredictions.slice(0, ITEMS_PER_PAGE));
-            setHasMore(sortedPredictions.length > ITEMS_PER_PAGE);
           }
+
+          // Apply status filter if needed
+          if (statusFilter !== "all") {
+            flatPredictions = flatPredictions.filter(pred => pred.status === statusFilter);
+          }
+
+          // Sort by date (newest first)
+          const sortedPredictions = flatPredictions.sort((a, b) => {
+            const dateA = a.game?.startTime ? new Date(a.game.startTime).getTime() : 0;
+            const dateB = b.game?.startTime ? new Date(b.game.startTime).getTime() : 0;
+            return dateB - dateA;
+          });
+
+          setCompletedPredictions(sortedPredictions.slice(0, ITEMS_PER_PAGE));
+          setHasMore(sortedPredictions.length > ITEMS_PER_PAGE);
         } catch (predictionError) {
           console.error("Error fetching predictions:", predictionError);
           setError("Failed to load prediction data. Please try again.");
@@ -293,66 +277,45 @@ const ResultsPage: React.FC = () => {
       let newPredictions: Prediction[] = [];
 
       try {
-        // Get predictions by odds category if selected
+        // Get predictions from the unified API
+        const allPredictions = await getAllBestPredictions();
+
+        // Convert the categorized predictions to a flat array
+        let flatPredictions: Prediction[] = [];
+
         if (oddsCategory !== "all") {
-          const categorizedPredictions = await getPredictionsByOddsCategory(filters);
-
-          if (!categorizedPredictions) {
-            throw new Error("Failed to fetch categorized predictions");
-          }
-
-          const predictions = categorizedPredictions[oddsCategory] || [];
-
-          // Sort by date (newest first)
-          const sortedPredictions = [...predictions].sort((a, b) => {
-            const dateA = a.game?.startTime ? new Date(a.game.startTime).getTime() : 0;
-            const dateB = b.game?.startTime ? new Date(b.game.startTime).getTime() : 0;
-            return dateB - dateA;
-          });
-
-          const nextPage = page + 1;
-          const startIndex = (nextPage - 1) * ITEMS_PER_PAGE;
-          const endIndex = startIndex + ITEMS_PER_PAGE;
-
-          newPredictions = sortedPredictions.slice(startIndex, endIndex);
-          setHasMore(endIndex < sortedPredictions.length);
+          // Get predictions for specific category
+          const categoryKey = oddsCategory === "2odds" ? "2_odds" :
+                             oddsCategory === "5odds" ? "5_odds" :
+                             oddsCategory === "10odds" ? "10_odds" : oddsCategory;
+          flatPredictions = allPredictions[categoryKey] || [];
         } else {
-          // Get all predictions with filters
-          let allPredictions: Prediction[] = [];
-
-          if (statusFilter === "all") {
-            // Get won predictions
-            const wonPredictions = await getPredictionsWithFilters({
-              ...filters,
-              status: "won",
-            });
-
-            // Get lost predictions
-            const lostPredictions = await getPredictionsWithFilters({
-              ...filters,
-              status: "lost",
-            });
-
-            allPredictions = [...wonPredictions, ...lostPredictions];
-          } else {
-            // Status filter is already applied
-            allPredictions = await getPredictionsWithFilters(filters);
-          }
-
-          // Sort by date (newest first)
-          const sortedPredictions = allPredictions.sort((a, b) => {
-            const dateA = a.game?.startTime ? new Date(a.game.startTime).getTime() : 0;
-            const dateB = b.game?.startTime ? new Date(b.game.startTime).getTime() : 0;
-            return dateB - dateA;
+          // Get all predictions from all categories
+          Object.values(allPredictions).forEach(categoryPredictions => {
+            if (Array.isArray(categoryPredictions)) {
+              flatPredictions.push(...categoryPredictions);
+            }
           });
-
-          const nextPage = page + 1;
-          const startIndex = (nextPage - 1) * ITEMS_PER_PAGE;
-          const endIndex = startIndex + ITEMS_PER_PAGE;
-
-          newPredictions = sortedPredictions.slice(startIndex, endIndex);
-          setHasMore(endIndex < sortedPredictions.length);
         }
+
+        // Apply status filter if needed
+        if (statusFilter !== "all") {
+          flatPredictions = flatPredictions.filter(pred => pred.status === statusFilter);
+        }
+
+        // Sort by date (newest first)
+        const sortedPredictions = flatPredictions.sort((a, b) => {
+          const dateA = a.game?.startTime ? new Date(a.game.startTime).getTime() : 0;
+          const dateB = b.game?.startTime ? new Date(b.game.startTime).getTime() : 0;
+          return dateB - dateA;
+        });
+
+        const nextPage = page + 1;
+        const startIndex = (nextPage - 1) * ITEMS_PER_PAGE;
+        const endIndex = startIndex + ITEMS_PER_PAGE;
+
+        newPredictions = sortedPredictions.slice(startIndex, endIndex);
+        setHasMore(endIndex < sortedPredictions.length);
 
         // Add new predictions to existing ones
         setCompletedPredictions(prev => [...prev, ...newPredictions]);

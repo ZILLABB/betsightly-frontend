@@ -4,7 +4,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "../common/Tabs";
 import { Trophy, Calendar, Filter, Search, X, BookOpen, AlertTriangle } from "lucide-react";
 import GameCodeCard from "./GameCodeCard";
 import type { Prediction } from "../../types";
-import { getPredictions } from "../../services/dataService";
+import { getAllBestPredictions } from "../../services/unifiedApiService";
 import { Button } from "../common/Button";
 import { Badge } from "../common/Badge";
 
@@ -38,8 +38,16 @@ const BestPunterGames: React.FC<BestPunterGamesProps> = ({ className = "" }) => 
         setLoading(true);
         setError(null);
 
-        // Get all predictions
-        const predictions = await getPredictions();
+        // Get all predictions from the unified API
+        const allPredictions = await getAllBestPredictions();
+
+        // Convert the categorized predictions to a flat array
+        let predictions: Prediction[] = [];
+        Object.values(allPredictions).forEach(categoryPredictions => {
+          if (Array.isArray(categoryPredictions)) {
+            predictions.push(...categoryPredictions);
+          }
+        });
 
         // Add null checks
         if (!predictions || !Array.isArray(predictions)) {
