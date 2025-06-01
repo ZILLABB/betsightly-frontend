@@ -66,19 +66,19 @@ const LoginPage: React.FC = () => {
         variants={fadeVariants}
       >
         <div className="text-center mb-8">
-          <motion.h1 
+          <motion.h1
             className="text-3xl font-bold bg-gradient-to-r from-[var(--primary)] to-[var(--primary)]/70 bg-clip-text text-transparent"
             variants={fadeVariants}
             custom={1}
           >
-            Admin Login
+            BetSightly Login
           </motion.h1>
-          <motion.p 
+          <motion.p
             className="text-[var(--muted-foreground)] mt-2"
             variants={fadeVariants}
             custom={2}
           >
-            Sign in to access the admin dashboard
+            Sign in to access your predictions dashboard
           </motion.p>
         </div>
         

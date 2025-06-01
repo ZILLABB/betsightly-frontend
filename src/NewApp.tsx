@@ -15,8 +15,7 @@ import { PredictionsProvider } from './contexts/PredictionsContext';
 import cache from './utils/cacheUtils';
 // Import GlobalErrorHandler
 import GlobalErrorHandler from './components/common/GlobalErrorHandler';
-// Import ProtectedRoute
-import ProtectedRoute from './components/auth/ProtectedRoute';
+
 // Import performance monitoring
 import { initPerformanceMonitoring } from './utils/performanceMonitoring';
 import PerformanceMonitor from './components/dev/PerformanceMonitor';
@@ -29,26 +28,24 @@ import { initResourcePreloading } from './utils/resourcePreloader';
 import {
   LazyMainPage,
   LazyPredictionsPage,
+  LazyBasketballPage,
+  LazyBasketballModelsPage,
   LazyFixturesPage,
   LazyResultsPage,
   LazyRolloverChallengePage,
   LazyPuntersPage,
   LazyAnalyticsPage,
   LazySettingsPage,
-  LazyAdminPage,
   LazyLoginPage,
   LazyNotFoundPage
 } from './pages/LazyPages';
 
 function App() {
-  // Initialize error tracking, theme, performance monitoring, and clear cache
+  // Initialize error tracking, theme, and performance monitoring
   useEffect(() => {
     initErrorTracking();
     // Initialize theme manager
     ThemeManager.getInstance();
-    // Clear cache to ensure fresh data
-    cache.clear();
-    console.log("Cache cleared on application start");
 
     // Initialize performance monitoring in development
     if (import.meta.env.DEV) {
@@ -85,6 +82,20 @@ function App() {
                     <TrackedErrorBoundary>
                       <Layout>
                         <LazyPredictionsPage />
+                      </Layout>
+                    </TrackedErrorBoundary>
+                  } />
+                  <Route path="/basketball" element={
+                    <TrackedErrorBoundary>
+                      <Layout>
+                        <LazyBasketballPage />
+                      </Layout>
+                    </TrackedErrorBoundary>
+                  } />
+                  <Route path="/basketball/models" element={
+                    <TrackedErrorBoundary>
+                      <Layout>
+                        <LazyBasketballModelsPage />
                       </Layout>
                     </TrackedErrorBoundary>
                   } />
@@ -130,15 +141,7 @@ function App() {
                       </Layout>
                     </TrackedErrorBoundary>
                   } />
-                  <Route path="/admin" element={
-                    <TrackedErrorBoundary>
-                      <Layout>
-                        <ProtectedRoute requiredRole="admin">
-                          <LazyAdminPage />
-                        </ProtectedRoute>
-                      </Layout>
-                    </TrackedErrorBoundary>
-                  } />
+
                   <Route path="*" element={
                     <TrackedErrorBoundary>
                       <Layout>

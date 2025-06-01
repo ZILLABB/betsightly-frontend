@@ -44,8 +44,12 @@ export const LazySettingsPage = lazyLoad(() => import('./SettingsPage') as Promi
   loadingMessage: 'Loading Settings...'
 });
 
-export const LazyAdminPage = lazyLoad(() => import('./AdminPage') as Promise<{ default: React.ComponentType<any> }>, {
-  loadingMessage: 'Loading Admin Dashboard...'
+export const LazyBasketballPage = lazyLoad(() => import('./BasketballPage') as Promise<{ default: React.ComponentType<any> }>, {
+  loadingMessage: 'Loading Basketball...'
+});
+
+export const LazyBasketballModelsPage = lazyLoad(() => import('./BasketballModelsPage') as Promise<{ default: React.ComponentType<any> }>, {
+  loadingMessage: 'Loading Basketball Models...'
 });
 
 export const LazyLoginPage = lazyLoad(() => import('./LoginPage') as Promise<{ default: React.ComponentType<any> }>, {

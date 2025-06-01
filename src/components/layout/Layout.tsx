@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, Home, Target, BarChart2, RefreshCw, Award, PieChart, Settings, Calendar, Shield } from "lucide-react";
+import { Menu, X, Home, Target, BarChart2, RefreshCw, Award, PieChart, Settings, Calendar, Zap } from "lucide-react";
 import { useBreakpoints } from "../../hooks/useMediaQuery";
 import OfflineIndicator from "../common/OfflineIndicator";
 
@@ -17,14 +17,15 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   // Navigation items with Lucide icons
   const navItems = [
     { path: "/", label: "Home", icon: <Home size={isMobile ? 20 : 16} /> },
-    { path: "/predictions", label: "Predictions", icon: <Target size={isMobile ? 20 : 16} /> },
+    { path: "/predictions", label: "Football", icon: <Target size={isMobile ? 20 : 16} /> },
+    { path: "/basketball", label: "Basketball", icon: <Zap size={isMobile ? 20 : 16} /> },
     { path: "/fixtures", label: "Fixtures", icon: <Calendar size={isMobile ? 20 : 16} /> },
     { path: "/results", label: "Results", icon: <BarChart2 size={isMobile ? 20 : 16} /> },
     { path: "/rollover", label: "Rollover", icon: <RefreshCw size={isMobile ? 20 : 16} /> },
     { path: "/punters", label: "Punters", icon: <Award size={isMobile ? 20 : 16} /> },
     { path: "/analytics", label: "Analytics", icon: <PieChart size={isMobile ? 20 : 16} /> },
     { path: "/settings", label: "Settings", icon: <Settings size={isMobile ? 20 : 16} /> },
-    { path: "/admin", label: "Admin", icon: <Shield size={isMobile ? 20 : 16} /> }
+
   ];
 
   // We'll implement real notifications later

@@ -11,7 +11,7 @@ import PredictionSorter, { SortField, SortOrder } from './PredictionSorter';
 import { Button } from '../ui';
 import { PredictionCardMode } from '../../utils/predictionUtils';
 
-interface PredictionGridProps {
+interface SmartPredictionGridProps {
   title: string;
   description?: string;
   predictions: Prediction[];
@@ -49,7 +49,7 @@ const itemVariants = {
   }
 };
 
-const PredictionGrid: React.FC<PredictionGridProps> = ({
+const SmartPredictionGrid: React.FC<SmartPredictionGridProps> = ({
   title,
   description,
   predictions,
@@ -64,15 +64,29 @@ const PredictionGrid: React.FC<PredictionGridProps> = ({
   showSorting = false,
   className = ''
 }) => {
+
   // State for filtered and sorted predictions
   const [filteredPredictions, setFilteredPredictions] = useState<Prediction[]>(predictions);
   const [showFiltersPanel, setShowFiltersPanel] = useState(false);
   const [sortField, setSortField] = useState<SortField>('time');
-  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('asc'); // Default to ascending (earliest first)
 
-  // Update filtered predictions when props change
+  // Sort predictions by time function
+  const sortPredictionsByTime = (preds: Prediction[]): Prediction[] => {
+    return [...preds].sort((a, b) => {
+      // Get start times, fallback to current time if not available
+      const timeA = a.game?.startTime ? new Date(a.game.startTime).getTime() : Date.now();
+      const timeB = b.game?.startTime ? new Date(b.game.startTime).getTime() : Date.now();
+
+      // Sort ascending (earliest first)
+      return timeA - timeB;
+    });
+  };
+
+  // Update filtered predictions when props change and sort by time
   useEffect(() => {
-    setFilteredPredictions(predictions);
+    const sortedPredictions = sortPredictionsByTime(predictions);
+    setFilteredPredictions(sortedPredictions);
   }, [predictions]);
 
   // Handle sorting
@@ -96,15 +110,19 @@ const PredictionGrid: React.FC<PredictionGridProps> = ({
           valueB = b.confidence || 0;
           break;
         case 'time':
-          valueA = a.game?.startTime ? new Date(a.game.startTime).getTime() : 0;
-          valueB = b.game?.startTime ? new Date(b.game.startTime).getTime() : 0;
+          valueA = a.game?.startTime ? new Date(a.game.startTime).getTime() : Date.now();
+          valueB = b.game?.startTime ? new Date(b.game.startTime).getTime() : Date.now();
           break;
         default:
           return 0;
       }
 
       // Apply sort order
-      return order === 'asc' ? valueA - valueB : valueB - valueA;
+      if (order === 'asc') {
+        return valueA - valueB;
+      } else {
+        return valueB - valueA;
+      }
     });
 
     setFilteredPredictions(sorted);
@@ -272,4 +290,7 @@ const PredictionGrid: React.FC<PredictionGridProps> = ({
   );
 };
 
-export default PredictionGrid;
+export default SmartPredictionGrid;
+
+// Export with legacy name for backward compatibility
+export { SmartPredictionGrid as PredictionGrid };
