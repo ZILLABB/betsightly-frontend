@@ -82,13 +82,15 @@ class Cache {
    * @param tags Optional tags for cache invalidation
    */
   set<T>(key: string, data: T, ttl: number = CACHE_TTL.LONG, tags?: string[]): void {
-    // Log cache operation
-    console.log(`[CACHE] SET: ${key} (TTL: ${ttl}s)`, {
-      storageType: this.storageType,
-      dataSize: JSON.stringify(data).length,
-      ttl,
-      tags
-    });
+    // Log cache operation in development only
+    if (import.meta.env.DEV) {
+      console.log(`[CACHE] SET: ${key} (TTL: ${ttl}s)`, {
+        storageType: this.storageType,
+        dataSize: JSON.stringify(data).length,
+        ttl,
+        tags
+      });
+    }
 
     // Re-enabled caching
     // Original implementation
@@ -128,10 +130,12 @@ class Cache {
    * @returns Cached data or null if not found or expired
    */
   get<T>(key: string): T | null {
-    // Log cache operation
-    console.log(`[CACHE] GET: ${key}`, {
-      storageType: this.storageType
-    });
+    // Log cache operation in development only
+    if (import.meta.env.DEV) {
+      console.log(`[CACHE] GET: ${key}`, {
+        storageType: this.storageType
+      });
+    }
 
     // Re-enabled caching
     // Original implementation

@@ -2,3 +2,4 @@
 // to maintain backward compatibility with existing imports
 
 export * from '../types';
+export * from './basketball';

@@ -212,115 +212,19 @@ export async function getRolloverPredictions(days: number = 10): Promise<Record<
 
     console.log('Processed rollover predictions for', Object.keys(result).length, 'days');
 
-    // If no predictions were found, provide sample data for testing
-    if (Object.keys(result).length === 0) {
-      console.log('No rollover predictions found in API response, using sample data');
-      return generateSampleRolloverData(days);
-    }
-
     return result;
   } catch (error) {
     console.error('Error fetching rollover predictions:', error);
-    console.log('Using sample rollover data as fallback');
-    return generateSampleRolloverData(days);
-  }
-}
-
-/**
- * Generate sample rollover prediction data for testing
- * @param days Number of days to generate data for
- * @returns Sample rollover prediction data
- */
-function generateSampleRolloverData(days: number = 10): Record<number, Prediction[]> {
-  console.log(`Generating sample rollover data for ${days} days`);
-  const result: Record<number, Prediction[]> = {};
-
-  // Sample teams for generating predictions
-  const teams = [
-    { home: 'Manchester United', away: 'Liverpool' },
-    { home: 'Arsenal', away: 'Chelsea' },
-    { home: 'Barcelona', away: 'Real Madrid' },
-    { home: 'Bayern Munich', away: 'Borussia Dortmund' },
-    { home: 'PSG', away: 'Marseille' },
-    { home: 'Juventus', away: 'AC Milan' },
-    { home: 'Ajax', away: 'PSV' },
-    { home: 'Celtic', away: 'Rangers' }
-  ];
-
-  // Sample prediction types
-  const predictionTypes = ['Match Result', 'Over/Under', 'Both Teams to Score', 'Correct Score'];
-
-  // Generate data for each day
-  for (let day = 1; day <= days; day++) {
-    // Generate 1-3 predictions per day
-    const numPredictions = Math.floor(Math.random() * 3) + 1;
-    const predictions: Prediction[] = [];
-
-    for (let i = 0; i < numPredictions; i++) {
-      // Pick a random team matchup
-      const teamIndex = Math.floor(Math.random() * teams.length);
-      const team = teams[teamIndex];
-
-      // Pick a random prediction type
-      const predTypeIndex = Math.floor(Math.random() * predictionTypes.length);
-      const predictionType = predictionTypes[predTypeIndex];
-
-      // Generate a prediction value based on the type
-      let predictionValue = '';
-      if (predictionType === 'Match Result') {
-        predictionValue = Math.random() > 0.5 ? team.home : team.away;
-      } else if (predictionType === 'Over/Under') {
-        predictionValue = Math.random() > 0.5 ? 'Over 2.5' : 'Under 2.5';
-      } else if (predictionType === 'Both Teams to Score') {
-        predictionValue = Math.random() > 0.5 ? 'Yes' : 'No';
-      } else {
-        predictionValue = `${Math.floor(Math.random() * 3)}-${Math.floor(Math.random() * 3)}`;
-      }
-
-      // Generate a random odds value between 1.5 and 3.0
-      const odds = 1.5 + Math.random() * 1.5;
-
-      // Generate a random confidence value between 60 and 90
-      const confidence = 60 + Math.floor(Math.random() * 30);
-
-      // Create the prediction object
-      predictions.push({
-        id: `sample-${day}-${i}`,
-        gameId: `game-${day}-${i}`,
-        game: {
-          id: `game-${day}-${i}`,
-          homeTeam: { id: `team-home-${day}-${i}`, name: team.home, logo: 'https://via.placeholder.com/30' },
-          awayTeam: { id: `team-away-${day}-${i}`, name: team.away, logo: 'https://via.placeholder.com/30' },
-          startTime: new Date(new Date().getTime() + day * 24 * 60 * 60 * 1000),
-          league: 'Sample League',
-          status: 'scheduled',
-          sport: 'football'
-        },
-        predictionType,
-        prediction: predictionValue,
-        odds,
-        status: 'pending',
-        createdAt: new Date(),
-        description: `${team.home} vs ${team.away} - ${predictionType}: ${predictionValue}`,
-        explanation: `This is a sample prediction for testing purposes.`,
-        confidence,
-        confidencePct: confidence / 100,
-        gameCode: `SAMPLE${day}${i}`,
-        rolloverDay: day,
-        combinedOdds: odds,
-        // Add required properties from Prediction type
-        predictions: [],
-        combined_odds: odds,
-        combined_confidence: confidence / 100
-      });
+    // Return empty object on error - no mock data fallback
+    const emptyDays: Record<number, Prediction[]> = {};
+    for (let i = 1; i <= days; i++) {
+      emptyDays[i] = [];
     }
-
-    result[day] = predictions;
+    return emptyDays;
   }
-
-  console.log(`Generated sample data with ${Object.keys(result).length} days`);
-  return result;
 }
+
+
 
 export default {
   getAllCategoryPredictions,

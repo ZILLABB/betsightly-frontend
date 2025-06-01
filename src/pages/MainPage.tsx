@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   Button,
@@ -30,18 +30,14 @@ const MainPage: React.FC = () => {
     loading,
     refreshing,
     error,
-    refreshPredictions,
-    loadBestPredictions
+    refreshPredictions
   } = usePredictions();
 
   // Local state for UI controls
   const [showFilters, setShowFilters] = useState(false);
 
-  // Load best predictions on component mount
-  useEffect(() => {
-    console.log("Loading best predictions from MainPage");
-    loadBestPredictions();
-  }, [loadBestPredictions]);
+  // Note: Initial data loading is handled by PredictionsContext
+  // No need to load data here as it's already loaded by the context
 
 
   // Helper functions moved to TabbedPredictionsCard component
@@ -146,7 +142,7 @@ const MainPage: React.FC = () => {
         {/* Loading State */}
         {loading && (
           <div className="flex flex-col items-center justify-center py-20">
-            <LoadingSpinner size="lg" variant="primary" text="Loading predictions from the API..." />
+            <LoadingSpinner size="lg" variant="primary" text="Loading predictions... ML models are processing data, this may take up to 30 seconds" />
           </div>
         )}
 

@@ -1,25 +1,6 @@
 import { API_BASE_URL } from '../config/apiConfig';
 import { User } from '../contexts/AuthContext';
-
-// Hardcoded admin credentials for immediate use
-const ADMIN_USERNAME = 'admin';
-const ADMIN_PASSWORD = 'admin123';
-const ADMIN_USER: User = {
-  id: 1,
-  username: ADMIN_USERNAME,
-  email: 'admin@betsightly.com',
-  role: 'admin'
-};
-
-// Generate a simple token (in a real app, this would be a JWT)
-const generateToken = (user: User): string => {
-  return btoa(JSON.stringify({
-    id: user.id,
-    username: user.username,
-    role: user.role,
-    exp: Date.now() + 24 * 60 * 60 * 1000 // 24 hours from now
-  }));
-};
+import { sanitizeString, isValidEmail, isValidUsername, validateApiResponse } from '../utils/validation';
 
 /**
  * Login user
@@ -28,48 +9,59 @@ const generateToken = (user: User): string => {
  * @returns User data and token
  */
 export const login = async (username: string, password: string): Promise<{ user: User; access_token: string }> => {
+  // Input validation and sanitization
+  if (!username?.trim()) {
+    throw new Error('Username is required');
+  }
+
+  if (!password?.trim()) {
+    throw new Error('Password is required');
+  }
+
+  // Sanitize username input
+  const sanitizedUsername = sanitizeString(username.trim());
+
+  // Validate username format
+  if (!isValidUsername(sanitizedUsername)) {
+    throw new Error('Invalid username format');
+  }
+
   try {
-    // Check if using hardcoded admin credentials
-    if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
-      console.log('Logging in with hardcoded admin credentials');
-      const token = generateToken(ADMIN_USER);
+    // Create form data
+    const formData = new FormData();
+    formData.append('username', sanitizedUsername);
+    formData.append('password', password);
 
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 500));
+    // Make API request
+    const response = await fetch(`${API_BASE_URL}/auth/login/`, {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'Accept': 'application/json',
+      },
+    });
 
-      return {
-        user: ADMIN_USER,
-        access_token: token
-      };
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.detail || 'Login failed. Please check your credentials.');
     }
 
-    // If not using hardcoded credentials, try the API
-    try {
-      // Create form data
-      const formData = new FormData();
-      formData.append('username', username);
-      formData.append('password', password);
+    const data = await response.json();
 
-      // Make API request
-      const response = await fetch(`${API_BASE_URL}/auth/login/`, {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || 'Login failed. Please check your credentials.');
-      }
-
-      const data = await response.json();
-      return data;
-    } catch (apiError) {
-      console.error('API login error:', apiError);
-      throw new Error('Login failed. Please check your credentials.');
+    // Validate response structure
+    if (!validateApiResponse(data, ['user', 'access_token'])) {
+      throw new Error('Invalid response from server');
     }
+
+    // Validate user data structure
+    if (!validateApiResponse(data.user, ['id', 'username', 'email'])) {
+      throw new Error('Invalid user data received');
+    }
+
+    return data;
   } catch (error) {
     console.error('Login error:', error);
-    throw error;
+    throw error instanceof Error ? error : new Error('An unexpected error occurred');
   }
 };
 
@@ -79,47 +71,39 @@ export const login = async (username: string, password: string): Promise<{ user:
  * @returns User data
  */
 export const getCurrentUser = async (token: string): Promise<User> => {
+  if (!token?.trim()) {
+    throw new Error('Token is required');
+  }
+
   try {
-    // First, check if it's our hardcoded admin token
-    try {
-      const decodedData = JSON.parse(atob(token));
+    // Make API request
+    const response = await fetch(`${API_BASE_URL}/auth/me/`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/json',
+      },
+    });
 
-      // Check if it's an admin token
-      if (decodedData.role === 'admin') {
-        console.log('Retrieved hardcoded admin user');
-
-        // Return the admin user
-        return ADMIN_USER;
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error('Invalid or expired token');
       }
-    } catch (decodeError) {
-      // Not our hardcoded token, continue to API
-      console.log('Not a hardcoded token, trying API');
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.detail || 'Failed to get user data');
     }
 
-    // If not our hardcoded token, try the API
-    try {
-      // Make API request
-      const response = await fetch(`${API_BASE_URL}/auth/me/`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+    const data = await response.json();
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || 'Failed to get user data.');
-      }
-
-      const data = await response.json();
-      return data;
-    } catch (apiError) {
-      console.error('API get current user error:', apiError);
-      throw new Error('Failed to get user data.');
+    // Validate response structure
+    if (!validateApiResponse(data, ['id', 'username', 'email'])) {
+      throw new Error('Invalid user data received');
     }
+
+    return data;
   } catch (error) {
     console.error('Get current user error:', error);
-    throw error;
+    throw error instanceof Error ? error : new Error('Failed to get user data');
   }
 };
 
@@ -129,43 +113,28 @@ export const getCurrentUser = async (token: string): Promise<User> => {
  * @returns Whether token is valid
  */
 export const verifyToken = async (token: string): Promise<boolean> => {
+  if (!token?.trim()) {
+    return false;
+  }
+
   try {
-    // First, check if it's our hardcoded admin token
-    try {
-      const decodedData = JSON.parse(atob(token));
+    // Make API request
+    const response = await fetch(`${API_BASE_URL}/auth/verify-token/`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/json',
+      },
+    });
 
-      // Check if it's an admin token and not expired
-      if (decodedData.role === 'admin' && decodedData.exp > Date.now()) {
-        console.log('Verified hardcoded admin token');
-        return true;
-      }
-    } catch (decodeError) {
-      // Not our hardcoded token, continue to API verification
-      console.log('Not a hardcoded token, trying API verification');
-    }
-
-    // If not our hardcoded token, try the API
-    try {
-      // Make API request
-      const response = await fetch(`${API_BASE_URL}/auth/verify-token/`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        return false;
-      }
-
-      const data = await response.json();
-      return data.valid;
-    } catch (apiError) {
-      console.error('API token verification error:', apiError);
+    if (!response.ok) {
       return false;
     }
+
+    const data = await response.json();
+    return Boolean(data.valid);
   } catch (error) {
-    console.error('Verify token error:', error);
+    console.error('Token verification error:', error);
     return false;
   }
 };

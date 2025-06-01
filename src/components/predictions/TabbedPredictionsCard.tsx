@@ -19,19 +19,22 @@ const tabContentVariants = {
   exit: { opacity: 0, x: -10, transition: { duration: 0.2 } }
 };
 
-interface TabbedPredictionsCardProps {
+interface EnhancedPredictionsDisplayProps {
   predictions: Record<string, any[]>;
   onPredictionSelect?: (prediction: any) => void;
   showFilters?: boolean;
+  initialCategory?: string;
 }
 
-const TabbedPredictionsCard: React.FC<TabbedPredictionsCardProps> = ({
+const EnhancedPredictionsDisplay: React.FC<EnhancedPredictionsDisplayProps> = ({
   predictions,
   onPredictionSelect,
   showFilters = false,
+  initialCategory = '2_odds',
 }) => {
+
   // State to track the active tab
-  const [activeCategory, setActiveCategory] = useState<string>('2_odds');
+  const [activeCategory, setActiveCategory] = useState<string>(initialCategory);
 
   // Helper function to get category icon
   const getCategoryIcon = (category: string) => {
@@ -82,9 +85,14 @@ const TabbedPredictionsCard: React.FC<TabbedPredictionsCardProps> = ({
   };
 
   // Get the available categories from the predictions object
+  // Show all categories even if they're empty, but ensure they're arrays
   const categories = Object.keys(predictions).filter(
-    (category) => Array.isArray(predictions[category]) && predictions[category].length > 0
+    (category) => Array.isArray(predictions[category])
   );
+
+  // If no categories from API, show default categories
+  const defaultCategories = ['2_odds', '5_odds', '10_odds', 'rollover'];
+  const finalCategories = categories.length > 0 ? categories : defaultCategories;
 
   return (
     <motion.div
@@ -96,7 +104,7 @@ const TabbedPredictionsCard: React.FC<TabbedPredictionsCardProps> = ({
       <Card className="border border-amber-500/20 bg-gradient-to-b from-gray-900 to-black shadow-xl overflow-hidden rounded-xl">
         {/* Tabs Navigation */}
         <div className="flex overflow-x-auto scrollbar-hide border-b border-amber-500/20 bg-black/40">
-          {categories.map((category) => (
+          {finalCategories.map((category) => (
             <Button
               key={category}
               variant="ghost"
@@ -160,7 +168,7 @@ const TabbedPredictionsCard: React.FC<TabbedPredictionsCardProps> = ({
         {/* Active Category Content with AnimatePresence for smooth transitions */}
         <CardContent className="p-3 md:p-6 bg-black/20">
           <AnimatePresence mode="wait">
-            {categories.includes(activeCategory) && (
+            {finalCategories.includes(activeCategory) && (
               <motion.div
                 key={activeCategory}
                 initial="hidden"
@@ -187,4 +195,7 @@ const TabbedPredictionsCard: React.FC<TabbedPredictionsCardProps> = ({
   );
 };
 
-export default TabbedPredictionsCard;
+export default EnhancedPredictionsDisplay;
+
+// Export with legacy name for backward compatibility
+export { EnhancedPredictionsDisplay as TabbedPredictionsCard };

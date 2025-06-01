@@ -6,7 +6,7 @@ export interface User {
   id: number;
   username: string;
   email: string;
-  role: 'admin' | 'user';
+  role: 'user';
 }
 
 // Define auth context type

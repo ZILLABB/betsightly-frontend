@@ -29,17 +29,17 @@ export function initPerformanceMonitoring(): void {
     console.log(`Web Vital: ${name} - ${value}`);
   });
 
-  // Set up performance observer for long tasks
-  if ('PerformanceObserver' in window) {
+  // Set up performance observer for long tasks (only in development)
+  if ('PerformanceObserver' in window && import.meta.env.DEV) {
     try {
       const observer = new PerformanceObserver((list) => {
         list.getEntries().forEach((entry) => {
-          if (entry.duration > 50) { // Tasks longer than 50ms
-            console.warn(`Long task detected: ${entry.duration.toFixed(2)}ms`, entry);
+          if (entry.duration > 100) { // Only warn for tasks longer than 100ms
+            console.warn(`Long task detected: ${entry.duration.toFixed(2)}ms`);
           }
         });
       });
-      
+
       observer.observe({ entryTypes: ['longtask'] });
     } catch (e) {
       console.error('Performance observer not supported', e);

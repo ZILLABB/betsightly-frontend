@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '../common/Button';
 import { ArrowRight, TrendingUp, CheckCircle, BarChart3, Zap } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 // Animation variants
 const containerVariants = {
@@ -21,7 +21,21 @@ const itemVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } }
 };
 
-const HeroSection: React.FC = () => {
+const PremiumHeroSection: React.FC = () => {
+  const navigate = useNavigate();
+
+  const handleViewAllPredictions = () => {
+    navigate('/predictions');
+  };
+
+  const handleHowItWorks = () => {
+    // Scroll to how it works section or navigate to a dedicated page
+    const element = document.getElementById('how-it-works');
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
     <motion.div
       className="relative w-full overflow-hidden bg-gradient-to-b from-black to-gray-900 rounded-2xl border border-amber-500/20"
@@ -52,6 +66,7 @@ const HeroSection: React.FC = () => {
             <div className="flex flex-wrap gap-4 pt-4">
               <Button
                 size="lg"
+                onClick={handleViewAllPredictions}
                 className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-black font-medium"
               >
                 View All Predictions <ArrowRight className="ml-2 h-4 w-4" />
@@ -60,6 +75,7 @@ const HeroSection: React.FC = () => {
               <Button
                 variant="outline"
                 size="lg"
+                onClick={handleHowItWorks}
                 className="border-amber-500/30 text-amber-400 hover:bg-amber-500/10"
               >
                 How It Works
@@ -74,7 +90,8 @@ const HeroSection: React.FC = () => {
               title="2 Odds Predictions"
               description="Safe bets with higher confidence"
               color="green"
-              link="/predictions/2_odds"
+              link="/predictions"
+              category="2_odds"
             />
 
             <FeatureCard
@@ -82,7 +99,8 @@ const HeroSection: React.FC = () => {
               title="5 Odds Predictions"
               description="Balanced risk and reward"
               color="blue"
-              link="/predictions/5_odds"
+              link="/predictions"
+              category="5_odds"
             />
 
             <FeatureCard
@@ -90,7 +108,8 @@ const HeroSection: React.FC = () => {
               title="10 Odds Predictions"
               description="High reward opportunities"
               color="amber"
-              link="/predictions/10_odds"
+              link="/predictions"
+              category="10_odds"
             />
 
             <FeatureCard
@@ -113,9 +132,21 @@ interface FeatureCardProps {
   description: string;
   color: 'green' | 'blue' | 'amber' | 'purple';
   link: string;
+  category?: string;
 }
 
-const FeatureCard: React.FC<FeatureCardProps> = ({ icon, title, description, color, link }) => {
+const FeatureCard: React.FC<FeatureCardProps> = ({ icon, title, description, color, link, category }) => {
+  const navigate = useNavigate();
+
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (category) {
+      // Navigate to predictions page with category state
+      navigate(link, { state: { activeCategory: category } });
+    } else {
+      navigate(link);
+    }
+  };
   // Define color classes based on the color prop
   const colorClasses = {
     green: 'bg-green-500/10 border-green-500/30 hover:bg-green-500/20',
@@ -125,21 +156,23 @@ const FeatureCard: React.FC<FeatureCardProps> = ({ icon, title, description, col
   };
 
   return (
-    <Link to={link}>
-      <motion.div
-        className={`p-4 md:p-5 rounded-xl border ${colorClasses[color]} transition-all duration-300 hover:shadow-lg`}
-        whileHover={{ y: -5, transition: { duration: 0.2 } }}
-      >
-        <div className="flex items-start">
-          <div className="mr-3 md:mr-4 mt-0.5">{icon}</div>
-          <div>
-            <h3 className="text-white font-semibold text-base md:text-lg mb-1">{title}</h3>
-            <p className="text-white/60 text-xs md:text-sm">{description}</p>
-          </div>
+    <motion.div
+      className={`p-4 md:p-5 rounded-xl border ${colorClasses[color]} transition-all duration-300 hover:shadow-lg cursor-pointer`}
+      whileHover={{ y: -5, transition: { duration: 0.2 } }}
+      onClick={handleClick}
+    >
+      <div className="flex items-start">
+        <div className="mr-3 md:mr-4 mt-0.5">{icon}</div>
+        <div>
+          <h3 className="text-white font-semibold text-base md:text-lg mb-1">{title}</h3>
+          <p className="text-white/60 text-xs md:text-sm">{description}</p>
         </div>
-      </motion.div>
-    </Link>
+      </div>
+    </motion.div>
   );
 };
 
-export default HeroSection;
+export default PremiumHeroSection;
+
+// Export with legacy name for backward compatibility
+export { PremiumHeroSection as HeroSection };
