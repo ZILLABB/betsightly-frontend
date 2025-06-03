@@ -1,19 +1,34 @@
 /**
- * Unified API Service
+ * Unified API Service for BetSightly Backend Integration
  *
  * This service provides a centralized interface for all API interactions.
- * It standardizes error handling, caching, and response formatting.
+ * It standardizes error handling, caching, response formatting, and integrates
+ * with the BetSightly backend API structure.
  */
 
-import type { Prediction } from '../types';
+import type {
+  Prediction,
+  BettingCode,
+  Punter,
+  Bookmaker,
+  HealthResponse,
+  PredictionCategoriesResponse,
+  BettingCodesResponse,
+  ApiResponse,
+  PaginatedResponse
+} from '../types';
+import {
+  API_BASE_URL,
+  API_TIMEOUT,
+  DEFAULT_HEADERS,
+  API_ENDPOINTS,
+  API_CACHE_CONFIG
+} from '../config/apiConfig';
 import { logApiResponse } from '../utils/logUtils';
-
-// API base URL - try to get from environment or use default
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
+import { adaptPredictionData } from './dataAdapter';
 
 // Cache configuration
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
-const cache: Record<string, { data: any; timestamp: number }> = {};
+const cache: Record<string, { data: any; timestamp: number; headers?: Headers }> = {};
 
 // Force refresh flag to bypass cache
 let FORCE_REFRESH = false;
@@ -69,17 +84,41 @@ export function getForceRefresh(): boolean {
 }
 
 /**
+ * Check if cached data is still valid
+ * @param cacheKey Cache key to check
+ * @param customTTL Custom TTL to use instead of default
+ * @returns Whether the cached data is valid
+ */
+function isCacheValid(cacheKey: string, customTTL?: number): boolean {
+  if (!cache[cacheKey] || FORCE_REFRESH) return false;
+
+  const ttl = customTTL || API_CACHE_CONFIG.TTL;
+  const isValid = (Date.now() - cache[cacheKey].timestamp) < ttl;
+
+  if (!isValid) {
+    delete cache[cacheKey];
+  }
+
+  return isValid;
+}
+
+/**
  * Generic API fetch function with caching and error handling
  * @param endpoint API endpoint to fetch
  * @param options Fetch options
+ * @param customTTL Custom cache TTL
  * @returns Promise with the API response data
  */
-export async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+export async function fetchFromApi<T>(
+  endpoint: string,
+  options: RequestInit = {},
+  customTTL?: number
+): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
   const cacheKey = `${url}:${JSON.stringify(options)}`;
 
   // Check cache if force refresh is not enabled
-  if (!FORCE_REFRESH && cache[cacheKey] && (Date.now() - cache[cacheKey].timestamp) < CACHE_DURATION) {
+  if (isCacheValid(cacheKey, customTTL)) {
     console.log(`Using cached data for ${endpoint}`);
     return cache[cacheKey].data as T;
   }
@@ -87,19 +126,15 @@ export async function fetchFromApi<T>(endpoint: string, options: RequestInit = {
   try {
     console.log(`Fetching from ${url}`);
 
-    // Get auth token if available
-    const token = localStorage.getItem('auth_token');
-
-    // Add timeout and proper headers
+    // Prepare fetch options with proper headers and timeout
     const fetchOptions: RequestInit = {
       method: 'GET',
       headers: {
-        'Content-Type': 'application/json',
+        ...DEFAULT_HEADERS,
         'Accept': 'application/json',
-        ...(token && { 'Authorization': `Bearer ${token}` }),
         ...options.headers,
       },
-      signal: AbortSignal.timeout(10000), // 10 second timeout
+      signal: AbortSignal.timeout(API_TIMEOUT),
       ...options,
     };
 
@@ -109,11 +144,19 @@ export async function fetchFromApi<T>(endpoint: string, options: RequestInit = {
       // Handle different error types
       if (response.status === 404) {
         throw new Error(`Endpoint not found: ${endpoint}`);
+      } else if (response.status === 429) {
+        throw new Error(`Rate limit exceeded for: ${endpoint}`);
       } else if (response.status === 500) {
         throw new Error(`Server error: ${endpoint}`);
-      } else if (response.status === 0) {
-        throw new Error(`CORS or network error: ${endpoint}`);
+      } else if (response.status === 502) {
+        throw new Error(`External API error: ${endpoint}`);
+      } else if (response.status === 503) {
+        throw new Error(`Service unavailable (ML models may be down): ${endpoint}`);
       } else {
+        // Log additional context for 500 errors
+        if (response.status === 500) {
+          console.warn(`Server error on ${endpoint} - this endpoint may not have data yet or have database issues`);
+        }
         throw new Error(`API returned status ${response.status}: ${response.statusText}`);
       }
     }
@@ -123,10 +166,11 @@ export async function fetchFromApi<T>(endpoint: string, options: RequestInit = {
     // Log the API response
     logApiResponse(`fetchFromApi:${endpoint}`, data);
 
-    // Cache the response
+    // Cache the response with headers
     cache[cacheKey] = {
       data,
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      headers: response.headers
     };
 
     return data as T;
@@ -136,8 +180,10 @@ export async function fetchFromApi<T>(endpoint: string, options: RequestInit = {
       console.error(`Network/CORS error for ${endpoint}:`, error);
       console.error('This usually means:');
       console.error('1. Backend is not running on port 8000');
-      console.error('2. Backend CORS is not configured for origin http://localhost:5182');
+      console.error('2. Backend CORS is not configured for this origin');
       console.error('3. Network connectivity issue');
+    } else if (error instanceof DOMException && error.name === 'AbortError') {
+      console.error(`Request timeout for ${endpoint}:`, error);
     } else {
       console.error(`Error fetching from ${endpoint}:`, error);
     }
@@ -155,23 +201,25 @@ export function clearCache(): void {
 
 /**
  * Check API health
- * @returns Whether the API is healthy
+ * @returns Health response from the API
  */
-export async function checkAPIHealth(): Promise<boolean> {
+export async function checkAPIHealth(): Promise<HealthResponse | null> {
   try {
-    const response = await fetch(`${API_BASE_URL}/health/`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      // Add timeout to prevent hanging
-      signal: AbortSignal.timeout(5000),
-    });
-    return response.ok;
+    const response = await fetchFromApi<HealthResponse>(API_ENDPOINTS.HEALTH, {}, 60000); // 1 minute cache
+    return response;
   } catch (error) {
     console.error('API health check failed:', error);
-    return false;
+    return null;
   }
+}
+
+/**
+ * Check if API is available (simple boolean check)
+ * @returns Whether the API is healthy
+ */
+export async function isAPIHealthy(): Promise<boolean> {
+  const health = await checkAPIHealth();
+  return health?.status === 'healthy';
 }
 
 /**
@@ -182,17 +230,29 @@ export async function getAllCategoryPredictions(): Promise<Record<string, Predic
   try {
     console.log('Fetching all category predictions from unified endpoint');
 
-    // Use the /api/predictions/categories endpoint as specified
+    // Use the /api/predictions/categories/ endpoint as specified
     // This is the sole data source for all prediction sections as per requirements
-    const data = await fetchFromApi<any>('/predictions/categories/');
-    console.log('API Data received from /predictions/categories');
+    const rawData = await fetchFromApi<any>(
+      API_ENDPOINTS.PREDICTIONS.CATEGORIES,
+      {},
+      API_CACHE_CONFIG.PREDICTIONS_TTL
+    );
+    console.log('Raw API Data received from /predictions/categories/', rawData);
 
-    // Return the categories data directly from the API
-    return data.categories || {};
+    // Transform backend data to frontend format using adapter
+    const categories = adaptPredictionData(rawData);
+
+    console.log('Processed categories:', Object.keys(categories).map(key => `${key}: ${categories[key].length} predictions`));
+    return categories;
   } catch (error) {
     console.error('Error fetching all category predictions:', error);
     // Return empty object on error
-    return {};
+    return {
+      '2_odds': [],
+      '5_odds': [],
+      '10_odds': [],
+      'rollover': []
+    };
   }
 }
 
@@ -204,17 +264,29 @@ export async function getAllBestPredictions(): Promise<Record<string, Prediction
   try {
     console.log('Fetching all best predictions from unified endpoint');
 
-    // Use the /api/predictions/best endpoint as specified
+    // Use the /api/predictions/best/ endpoint as specified
     // This endpoint should be used for the main page as per requirements
-    const data = await fetchFromApi<Record<string, Prediction[]>>('/predictions/best/');
-    console.log('API Data received from /predictions/best');
+    const rawData = await fetchFromApi<any>(
+      API_ENDPOINTS.PREDICTIONS.BEST,
+      {},
+      API_CACHE_CONFIG.PREDICTIONS_TTL
+    );
+    console.log('Raw API Data received from /predictions/best/', rawData);
 
-    // Simply return the data as is from the API
-    return data || {};
+    // Transform backend data to frontend format using adapter
+    const categories = adaptPredictionData(rawData);
+
+    console.log('Processed best predictions:', Object.keys(categories).map(key => `${key}: ${categories[key].length} predictions`));
+    return categories;
   } catch (error) {
     console.error('Error fetching all best predictions:', error);
     // Return empty object on error
-    return {};
+    return {
+      '2_odds': [],
+      '5_odds': [],
+      '10_odds': [],
+      'rollover': []
+    };
   }
 }
 
@@ -227,19 +299,20 @@ export async function getCategoryBestPredictions(category: string): Promise<Pred
   try {
     console.log(`Fetching best predictions for category: ${category}`);
 
-    // Convert category format if needed (e.g., "2odds" to "2_odds")
+    // Ensure category format is correct (e.g., "2_odds")
     const apiCategory = category.includes('_') ? category : category.replace('odds', '_odds');
 
-    // Use the /api/predictions/best/{category} endpoint
-    // This endpoint is used for category-specific predictions
-    const data = await fetchFromApi<any>(`/predictions/best/${apiCategory}/`);
-    console.log(`API Data received for category: ${apiCategory}`);
+    // Use the /api/predictions/best/{category}/ endpoint
+    const data = await fetchFromApi<Prediction[]>(
+      API_ENDPOINTS.PREDICTIONS.BEST_CATEGORY(apiCategory),
+      {},
+      API_CACHE_CONFIG.PREDICTIONS_TTL
+    );
+    console.log(`API Data received for category: ${apiCategory}`, data);
 
-    // Handle different response formats
+    // Backend should return an array of predictions directly
     if (Array.isArray(data)) {
       return data;
-    } else if (data && Array.isArray(data.predictions)) {
-      return data.predictions;
     } else {
       console.warn(`Unexpected data format for category ${apiCategory}:`, data);
       return [];
@@ -262,65 +335,38 @@ export async function getRolloverPredictions(days: number = 10): Promise<Record<
 
     // Get data from the categories endpoint as specified in the requirements
     // This is the sole data source for all prediction sections including rollover
-    const data = await fetchFromApi<any>('/predictions/categories/');
-    console.log('API Data received for rollover predictions');
+    const rawData = await fetchFromApi<any>(
+      API_ENDPOINTS.PREDICTIONS.CATEGORIES,
+      {},
+      API_CACHE_CONFIG.PREDICTIONS_TTL
+    );
+    console.log('Raw API Data received for rollover predictions', rawData);
 
-    // Check if rollover data exists in the response
-    if (data && data.categories && data.categories.rollover) {
-      // Get the rollover days data
-      const rolloverData = data.categories.rollover as { days: RolloverDay[] };
+    // Transform backend data to frontend format using adapter
+    const categories = adaptPredictionData(rawData);
 
-      // Log the structure for debugging
-      console.log('Rollover data structure:', JSON.stringify(rolloverData).substring(0, 200) + '...');
+    // Get rollover predictions from the transformed response
+    const rolloverPredictions = categories.rollover || [];
+    console.log(`Found ${rolloverPredictions.length} rollover predictions`);
 
-      // Check if days property exists and is an array
-      if (rolloverData.days && Array.isArray(rolloverData.days)) {
-        console.log(`Found ${rolloverData.days.length} rollover days`);
-        const formattedDays: Record<number, Prediction[]> = {};
+    // For now, organize predictions by day (this may need adjustment based on actual backend structure)
+    const formattedDays: Record<number, Prediction[]> = {};
 
-        // Process each day in the rollover data
-        rolloverData.days.forEach((day: RolloverDay) => {
-          if (day && typeof day.day === 'number' && Array.isArray(day.predictions)) {
-            // Map each prediction to ensure it has the correct structure
-            const mappedPredictions = day.predictions.map((pred: RolloverPrediction) => {
-              // Ensure each prediction has the required fields with proper types
-              const predictionId = typeof pred.id === 'string'
-                ? pred.id
-                : `rollover-${day.day}-${Math.random().toString(36).substring(2, 9)}`;
-
-              return {
-                ...pred,
-                id: predictionId,
-                game: {
-                  homeTeam: pred.home_team || 'Home Team',
-                  awayTeam: pred.away_team || 'Away Team',
-                  league: pred.league_name || 'Unknown League',
-                  startTime: pred.start_time || new Date(),
-                  ...pred.fixture
-                },
-                odds: pred.odds || 1.0,
-                confidence: pred.confidence || 0,
-                predictionType: pred.prediction_text || pred.prediction_type || 'Unknown',
-                status: pred.status || 'pending'
-              } as Prediction;
-            });
-
-            formattedDays[day.day] = mappedPredictions;
-          }
-        });
-
-        console.log(`Processed ${Object.keys(formattedDays).length} rollover days`);
-        return formattedDays;
-      }
-    }
-
-    // Return empty object with default days if no rollover data found
-    console.log('No valid rollover data found, returning empty object');
-    const emptyDays: Record<number, Prediction[]> = {};
+    // Initialize empty days
     for (let i = 1; i <= days; i++) {
-      emptyDays[i] = [];
+      formattedDays[i] = [];
     }
-    return emptyDays;
+
+    // If we have rollover predictions, distribute them across days
+    if (rolloverPredictions.length > 0) {
+      rolloverPredictions.forEach((prediction, index) => {
+        const dayNumber = (index % days) + 1;
+        formattedDays[dayNumber].push(prediction);
+      });
+    }
+
+    console.log(`Processed rollover predictions across ${days} days`);
+    return formattedDays;
   } catch (error) {
     console.error('Error fetching rollover predictions:', error);
     // Return empty object with default days on error
@@ -332,14 +378,151 @@ export async function getRolloverPredictions(days: number = 10): Promise<Record<
   }
 }
 
+/**
+ * Get betting codes with pagination
+ * @param limit Maximum number of codes to return
+ * @param skip Number of codes to skip
+ * @param filters Optional filters
+ * @returns Paginated betting codes response
+ */
+export async function getBettingCodes(
+  limit: number = 100,
+  skip: number = 0,
+  filters?: Record<string, any>
+): Promise<BettingCodesResponse> {
+  try {
+    console.log(`Fetching betting codes: limit=${limit}, skip=${skip}`);
+
+    // Build query parameters
+    const params = new URLSearchParams({
+      limit: limit.toString(),
+      skip: skip.toString(),
+      ...filters
+    });
+
+    const data = await fetchFromApi<BettingCodesResponse>(
+      `${API_ENDPOINTS.BETTING_CODES.LIST}?${params}`,
+      {},
+      API_CACHE_CONFIG.BETTING_CODES_TTL
+    );
+    console.log('API Data received for betting codes', data);
+
+    return data;
+  } catch (error) {
+    console.error('Error fetching betting codes:', error);
+    // Return empty response on error
+    return {
+      betting_codes: [],
+      total: 0,
+      skip,
+      limit,
+      has_more: false
+    };
+  }
+}
+
+/**
+ * Get latest betting codes (convenience function)
+ * @param limit Maximum number of codes to return
+ * @param skip Number of codes to skip
+ * @returns Array of betting codes
+ */
+export async function getLatestBettingCodes(limit: number = 100, skip: number = 0): Promise<BettingCode[]> {
+  try {
+    console.log(`Getting latest betting codes: limit=${limit}, skip=${skip}`);
+    const response = await getBettingCodes(limit, skip);
+    console.log(`Latest betting codes response:`, response);
+    return response.betting_codes || [];
+  } catch (error) {
+    console.error('Error fetching latest betting codes:', error);
+    // Don't silently fail - let the error bubble up so the UI can show it
+    throw error;
+  }
+}
+
+/**
+ * Get punters list
+ * @param limit Maximum number of punters to return
+ * @param skip Number of punters to skip
+ * @returns Paginated punters response
+ */
+export async function getPunters(limit: number = 100, skip: number = 0): Promise<PaginatedResponse<Punter>> {
+  try {
+    console.log(`Fetching punters: limit=${limit}, skip=${skip}`);
+
+    const params = new URLSearchParams({
+      limit: limit.toString(),
+      skip: skip.toString()
+    });
+
+    const data = await fetchFromApi<PaginatedResponse<Punter>>(
+      `${API_ENDPOINTS.PUNTERS.LIST}?${params}`,
+      {},
+      API_CACHE_CONFIG.PUNTERS_TTL
+    );
+    console.log('API Data received for punters', data);
+
+    return data;
+  } catch (error) {
+    console.error('Error fetching punters:', error);
+    return {
+      items: [],
+      total: 0,
+      skip,
+      limit,
+      has_more: false
+    };
+  }
+}
+
+/**
+ * Get bookmakers list
+ * @param limit Maximum number of bookmakers to return
+ * @param skip Number of bookmakers to skip
+ * @returns Paginated bookmakers response
+ */
+export async function getBookmakers(limit: number = 100, skip: number = 0): Promise<PaginatedResponse<Bookmaker>> {
+  try {
+    console.log(`Fetching bookmakers: limit=${limit}, skip=${skip}`);
+
+    const params = new URLSearchParams({
+      limit: limit.toString(),
+      skip: skip.toString()
+    });
+
+    const data = await fetchFromApi<PaginatedResponse<Bookmaker>>(
+      `${API_ENDPOINTS.BOOKMAKERS.LIST}?${params}`,
+      {},
+      API_CACHE_CONFIG.BOOKMAKERS_TTL
+    );
+    console.log('API Data received for bookmakers', data);
+
+    return data;
+  } catch (error) {
+    console.error('Error fetching bookmakers:', error);
+    return {
+      items: [],
+      total: 0,
+      skip,
+      limit,
+      has_more: false
+    };
+  }
+}
+
 export default {
   setForceRefresh,
   getForceRefresh,
   clearCache,
   checkAPIHealth,
+  isAPIHealthy,
   fetchFromApi,
   getAllCategoryPredictions,
   getAllBestPredictions,
   getCategoryBestPredictions,
-  getRolloverPredictions
+  getRolloverPredictions,
+  getBettingCodes,
+  getLatestBettingCodes,
+  getPunters,
+  getBookmakers
 };

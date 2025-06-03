@@ -72,13 +72,21 @@ const PuntersPage: React.FC = () => {
       const codes = await getLatestBettingCodes(limit, skip);
 
       console.log('Fetched betting codes:', codes);
+      console.log(`API returned ${codes.length} betting codes`);
       setBettingCodes(codes);
 
       // For now, we'll just set a placeholder total since the API might not return a total count
       setTotalCodes(Math.max(codes.length + skip, totalCodes));
+
+      // Log success for debugging
+      if (codes.length === 0) {
+        console.log('✅ API call successful but no betting codes found in database');
+      } else {
+        console.log(`✅ API call successful - loaded ${codes.length} betting codes`);
+      }
     } catch (err) {
       console.error("Error fetching betting codes:", err);
-      setError("Failed to load betting codes. Please try again.");
+      setError(`Failed to load betting codes: ${err instanceof Error ? err.message : 'Unknown error'}`);
     } finally {
       setLoading(false);
     }
@@ -438,16 +446,38 @@ const PuntersPage: React.FC = () => {
             </>
           ) : (
             <div className="text-center py-8 bg-[#1A1A27]/30 rounded-xl border border-[#2A2A3C]/10">
-              <p className="text-[#A1A1AA]">No betting codes available.</p>
-              {(searchQuery || filterStatus !== "all" || showSavedOnly) && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={resetFilters}
-                  className="mt-4"
-                >
-                  Clear Filters
-                </Button>
+              {(searchQuery || filterStatus !== "all" || showSavedOnly) ? (
+                <>
+                  <p className="text-[#A1A1AA]">No betting codes match your current filters.</p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={resetFilters}
+                    className="mt-4"
+                  >
+                    Clear Filters
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <div className="text-6xl mb-4">🎫</div>
+                  <h3 className="text-lg font-semibold mb-2">No Betting Codes Yet</h3>
+                  <p className="text-[#A1A1AA] mb-4">
+                    Betting codes from our punters will appear here once they start sharing their tips.
+                  </p>
+                  <p className="text-sm text-[#A1A1AA]">
+                    The backend is connected and working - we're just waiting for punter data to be added.
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fetchBettingCodes(currentPage)}
+                    className="mt-4"
+                  >
+                    <RefreshCw size={16} className="mr-2" />
+                    Check Again
+                  </Button>
+                </>
               )}
             </div>
           )}
