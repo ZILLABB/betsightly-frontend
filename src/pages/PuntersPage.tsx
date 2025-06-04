@@ -2,145 +2,157 @@ import React, { useEffect, useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/common/Card";
 import { Badge } from "../components/common/Badge";
 import { Button } from "../components/common/Button";
-import CopyButton from "../components/common/CopyButton";
-import { getLatestBettingCodes, BettingCode } from "../services/bettingCodeService";
+import { getPuntersList, Punter } from "../services/punterService";
 import { formatDate } from "../lib/utils";
 import {
-  Bookmark,
-  BookmarkCheck,
+  Star,
   Search,
   Filter,
   RefreshCw,
   AlertCircle,
   ChevronLeft,
   ChevronRight,
-  SlidersHorizontal
+  SlidersHorizontal,
+  Award,
+  MapPin,
+  TrendingUp,
+  User,
+  ExternalLink
 } from "lucide-react";
 
 const PuntersPage: React.FC = () => {
-  // State for betting codes and loading
+  // State for punters and loading
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [bettingCodes, setBettingCodes] = useState<BettingCode[]>([]);
+  const [punters, setPunters] = useState<Punter[]>([]);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [totalCodes, setTotalCodes] = useState<number>(0);
-  const codesPerPage = 10;
+  const [totalPunters, setTotalPunters] = useState<number>(0);
+  const puntersPerPage = 12;
 
   // Filter state
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [filterCountry, setFilterCountry] = useState<string>("all");
+  const [filterVerified, setFilterVerified] = useState<string>("all");
   const [showFilters, setShowFilters] = useState<boolean>(false);
-  const [sortBy, setSortBy] = useState<string>("date");
+  const [sortBy, setSortBy] = useState<string>("popularity");
   const [sortOrder, setSortOrder] = useState<string>("desc");
 
-  // Saved codes state
-  const [savedCodes, setSavedCodes] = useState<string[]>([]);
-  const [showSavedOnly, setShowSavedOnly] = useState<boolean>(false);
+  // Favorite punters state
+  const [favoritePunters, setFavoritePunters] = useState<number[]>([]);
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState<boolean>(false);
 
-  // Toggle saved status for a betting code
-  const toggleSavedCode = useCallback((code: string) => {
-    setSavedCodes(prevSavedCodes => {
-      const newSavedCodes = prevSavedCodes.includes(code)
-        ? prevSavedCodes.filter(c => c !== code)
-        : [...prevSavedCodes, code];
+  // Toggle favorite status for a punter
+  const toggleFavoritePunter = useCallback((punterId: number) => {
+    setFavoritePunters(prevFavorites => {
+      const newFavorites = prevFavorites.includes(punterId)
+        ? prevFavorites.filter(id => id !== punterId)
+        : [...prevFavorites, punterId];
 
-      localStorage.setItem("savedBettingCodes", JSON.stringify(newSavedCodes));
-      return newSavedCodes;
+      localStorage.setItem("favoritePunters", JSON.stringify(newFavorites));
+      return newFavorites;
     });
   }, []);
 
-  // Load saved codes from localStorage
+  // Load favorite punters from localStorage
   useEffect(() => {
-    const savedCodesFromStorage = localStorage.getItem("savedBettingCodes");
-    if (savedCodesFromStorage) {
-      setSavedCodes(JSON.parse(savedCodesFromStorage));
+    const favoritesFromStorage = localStorage.getItem("favoritePunters");
+    if (favoritesFromStorage) {
+      setFavoritePunters(JSON.parse(favoritesFromStorage));
     }
   }, []);
 
-  // Fetch betting codes with pagination
-  const fetchBettingCodes = useCallback(async (page: number = 1) => {
+  // Fetch punters with pagination
+  const fetchPunters = useCallback(async (page: number = 1) => {
     try {
       setLoading(true);
       setError(null);
 
-      const skip = (page - 1) * codesPerPage;
-      const limit = codesPerPage;
+      const skip = (page - 1) * puntersPerPage;
+      const limit = puntersPerPage;
 
-      console.log(`Fetching betting codes: page ${page}, skip ${skip}, limit ${limit}`);
-      const codes = await getLatestBettingCodes(limit, skip);
+      console.log(`Fetching punters: page ${page}, skip ${skip}, limit ${limit}`);
+      const response = await getPuntersList(limit, skip);
 
-      console.log('Fetched betting codes:', codes);
-      console.log(`API returned ${codes.length} betting codes`);
-      setBettingCodes(codes);
-
-      // For now, we'll just set a placeholder total since the API might not return a total count
-      setTotalCodes(Math.max(codes.length + skip, totalCodes));
+      console.log('Fetched punters response:', response);
+      console.log(`API returned ${response.items.length} punters`);
+      setPunters(response.items);
+      setTotalPunters(response.total);
 
       // Log success for debugging
-      if (codes.length === 0) {
-        console.log('✅ API call successful but no betting codes found in database');
+      if (response.items.length === 0) {
+        console.log('✅ API call successful but no punters found in database');
       } else {
-        console.log(`✅ API call successful - loaded ${codes.length} betting codes`);
+        console.log(`✅ API call successful - loaded ${response.items.length} punters`);
       }
     } catch (err) {
-      console.error("Error fetching betting codes:", err);
-      setError(`Failed to load betting codes: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      console.error("Error fetching punters:", err);
+      setError(`Failed to load punters: ${err instanceof Error ? err.message : 'Unknown error'}`);
     } finally {
       setLoading(false);
     }
-  }, [codesPerPage, totalCodes]);
+  }, [puntersPerPage]);
 
-  // Fetch betting codes when page changes
+  // Fetch punters when page changes
   useEffect(() => {
-    fetchBettingCodes(currentPage);
-  }, [currentPage, fetchBettingCodes]);
+    fetchPunters(currentPage);
+  }, [currentPage, fetchPunters]);
 
-  // Filter and sort betting codes
-  const filteredCodes = bettingCodes
-    .filter(code => {
+  // Filter and sort punters
+  const filteredPunters = punters
+    .filter(punter => {
       // Apply search filter
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
         return (
-          code.code.toLowerCase().includes(query) ||
-          code.punter_name.toLowerCase().includes(query) ||
-          (code.bookmaker_name && code.bookmaker_name.toLowerCase().includes(query))
+          punter.name.toLowerCase().includes(query) ||
+          (punter.nickname && punter.nickname.toLowerCase().includes(query)) ||
+          punter.country.toLowerCase().includes(query) ||
+          (punter.specialty && punter.specialty.toLowerCase().includes(query))
         );
       }
       return true;
     })
-    .filter(code => {
-      // Apply status filter
-      if (filterStatus !== "all") {
-        return code.status === filterStatus;
+    .filter(punter => {
+      // Apply country filter
+      if (filterCountry !== "all") {
+        return punter.country.toLowerCase() === filterCountry.toLowerCase();
       }
       return true;
     })
-    .filter(code => {
-      // Apply saved filter
-      if (showSavedOnly) {
-        return savedCodes.includes(code.code);
+    .filter(punter => {
+      // Apply verified filter
+      if (filterVerified !== "all") {
+        return filterVerified === "verified" ? punter.verified : !punter.verified;
+      }
+      return true;
+    })
+    .filter(punter => {
+      // Apply favorites filter
+      if (showFavoritesOnly) {
+        return favoritePunters.includes(punter.id);
       }
       return true;
     })
     .sort((a, b) => {
       // Apply sorting
-      if (sortBy === "date") {
-        const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
-        const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
-        return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
-      } else if (sortBy === "odds") {
-        const oddsA = a.odds || 0;
-        const oddsB = b.odds || 0;
-        return sortOrder === "asc" ? oddsA - oddsB : oddsB - oddsA;
+      if (sortBy === "popularity") {
+        const popularityA = a.popularity || 0;
+        const popularityB = b.popularity || 0;
+        return sortOrder === "asc" ? popularityA - popularityB : popularityB - popularityA;
+      } else if (sortBy === "success_rate") {
+        const successA = a.success_rate || 0;
+        const successB = b.success_rate || 0;
+        return sortOrder === "asc" ? successA - successB : successB - successA;
+      } else if (sortBy === "name") {
+        return sortOrder === "asc" ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
       }
       return 0;
     });
 
   // Calculate total pages
-  const totalPages = Math.ceil(totalCodes / codesPerPage);
+  const totalPages = Math.ceil(totalPunters / puntersPerPage);
 
   // Handle page change
   const handlePageChange = (page: number) => {
@@ -151,20 +163,17 @@ const PuntersPage: React.FC = () => {
   // Reset filters
   const resetFilters = () => {
     setSearchQuery("");
-    setFilterStatus("all");
-    setShowSavedOnly(false);
-    setSortBy("date");
+    setFilterCountry("all");
+    setFilterVerified("all");
+    setShowFavoritesOnly(false);
+    setSortBy("popularity");
     setSortOrder("desc");
   };
 
-  // Get status badge variant
-  const getStatusVariant = (status: string) => {
-    switch (status) {
-      case "won": return "success";
-      case "lost": return "error";
-      case "void": return "outline";
-      default: return "warning";
-    }
+  // Get unique countries from punters
+  const getUniqueCountries = () => {
+    const countries = punters.map(punter => punter.country).filter(Boolean);
+    return [...new Set(countries)].sort();
   };
 
   return (
@@ -172,9 +181,9 @@ const PuntersPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold mb-1">Betting Codes</h1>
+          <h1 className="text-2xl md:text-3xl font-bold mb-1">Expert Punters</h1>
           <p className="text-sm text-[#A1A1AA]">
-            View and manage betting codes from our top punters
+            Discover and follow our verified betting experts from around the world
           </p>
         </div>
 
@@ -185,7 +194,7 @@ const PuntersPage: React.FC = () => {
             <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-[#A1A1AA]" size={16} />
             <input
               type="text"
-              placeholder="Search codes..."
+              placeholder="Search punters..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-8 pr-3 py-2 bg-[#1A1A27] border border-[#2A2A3C] rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#F5A623] focus:border-[#F5A623] w-full md:w-auto"
@@ -203,22 +212,22 @@ const PuntersPage: React.FC = () => {
             Filters
           </Button>
 
-          {/* Saved toggle */}
+          {/* Favorites toggle */}
           <Button
-            variant={showSavedOnly ? "default" : "outline"}
+            variant={showFavoritesOnly ? "default" : "outline"}
             size="sm"
-            onClick={() => setShowSavedOnly(!showSavedOnly)}
+            onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
             className="flex items-center gap-1"
           >
-            {showSavedOnly ? <BookmarkCheck size={16} /> : <Bookmark size={16} />}
-            Saved
+            <Star size={16} className={showFavoritesOnly ? "fill-current" : ""} />
+            Favorites
           </Button>
 
           {/* Refresh button */}
           <Button
             variant="outline"
             size="sm"
-            onClick={() => fetchBettingCodes(currentPage)}
+            onClick={() => fetchPunters(currentPage)}
             disabled={loading}
             className="flex items-center gap-1"
           >
@@ -242,20 +251,33 @@ const PuntersPage: React.FC = () => {
               </Button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Status filter */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              {/* Country filter */}
               <div>
-                <label className="block text-sm font-medium mb-1">Status</label>
+                <label className="block text-sm font-medium mb-1">Country</label>
                 <select
-                  value={filterStatus}
-                  onChange={(e) => setFilterStatus(e.target.value)}
+                  value={filterCountry}
+                  onChange={(e) => setFilterCountry(e.target.value)}
                   className="w-full bg-[#1A1A27] border border-[#2A2A3C] rounded-lg p-2 text-sm"
                 >
-                  <option value="all">All Statuses</option>
-                  <option value="pending">Pending</option>
-                  <option value="won">Won</option>
-                  <option value="lost">Lost</option>
-                  <option value="void">Void</option>
+                  <option value="all">All Countries</option>
+                  {getUniqueCountries().map(country => (
+                    <option key={country} value={country}>{country}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Verified filter */}
+              <div>
+                <label className="block text-sm font-medium mb-1">Verification</label>
+                <select
+                  value={filterVerified}
+                  onChange={(e) => setFilterVerified(e.target.value)}
+                  className="w-full bg-[#1A1A27] border border-[#2A2A3C] rounded-lg p-2 text-sm"
+                >
+                  <option value="all">All Punters</option>
+                  <option value="verified">Verified Only</option>
+                  <option value="unverified">Unverified Only</option>
                 </select>
               </div>
 
@@ -267,8 +289,9 @@ const PuntersPage: React.FC = () => {
                   onChange={(e) => setSortBy(e.target.value)}
                   className="w-full bg-[#1A1A27] border border-[#2A2A3C] rounded-lg p-2 text-sm"
                 >
-                  <option value="date">Date</option>
-                  <option value="odds">Odds</option>
+                  <option value="popularity">Popularity</option>
+                  <option value="success_rate">Success Rate</option>
+                  <option value="name">Name</option>
                 </select>
               </div>
 
@@ -299,7 +322,7 @@ const PuntersPage: React.FC = () => {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => fetchBettingCodes(currentPage)}
+              onClick={() => fetchPunters(currentPage)}
               className="mt-2"
             >
               Try Again
@@ -308,15 +331,15 @@ const PuntersPage: React.FC = () => {
         </div>
       )}
 
-      {/* Betting Codes Card */}
+      {/* Punters Card */}
       <Card className="bg-[#1A1A27]/80 border border-[#2A2A3C]/20 shadow-lg">
         <CardHeader className="p-4">
           <CardTitle className="text-xl flex items-center">
-            <span className="bg-[#F5A623]/10 text-[#F5A623] p-1 rounded-md mr-2 text-sm">🎫</span>
-            Betting Codes
-            {filteredCodes.length > 0 && (
+            <span className="bg-[#F5A623]/10 text-[#F5A623] p-1 rounded-md mr-2 text-sm">👑</span>
+            Expert Punters
+            {filteredPunters.length > 0 && (
               <Badge variant="outline" className="ml-2">
-                {filteredCodes.length} {filteredCodes.length === 1 ? 'code' : 'codes'}
+                {filteredPunters.length} {filteredPunters.length === 1 ? 'punter' : 'punters'}
               </Badge>
             )}
           </CardTitle>
@@ -325,74 +348,128 @@ const PuntersPage: React.FC = () => {
           {loading ? (
             <div className="text-center py-16">
               <div className="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-[#F5A623] mb-4"></div>
-              <p className="text-[#A1A1AA]">Loading betting codes...</p>
+              <p className="text-[#A1A1AA]">Loading punters...</p>
             </div>
-          ) : filteredCodes.length > 0 ? (
+          ) : filteredPunters.length > 0 ? (
             <>
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse">
-                  <thead>
-                    <tr className="bg-[#2A2A3C]/30 text-left">
-                      <th className="p-2 text-sm font-medium">Code</th>
-                      <th className="p-2 text-sm font-medium">Punter</th>
-                      <th className="p-2 text-sm font-medium">Bookmaker</th>
-                      <th className="p-2 text-sm font-medium">Odds</th>
-                      <th className="p-2 text-sm font-medium">Event Date</th>
-                      <th className="p-2 text-sm font-medium">Status</th>
-                      <th className="p-2 text-sm font-medium">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredCodes.map((code) => (
-                      <tr key={code.id} className="border-b border-[#2A2A3C]/10 hover:bg-[#2A2A3C]/10">
-                        <td className="p-2 text-sm">
-                          <div className="flex items-center">
-                            <span className="font-medium mr-1">{code.code}</span>
-                            <CopyButton
-                              text={code.code}
-                              successMessage="Copied!"
-                              className="text-xs"
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {filteredPunters.map((punter) => (
+                  <div key={punter.id} className="bg-[#2A2A3C]/20 rounded-lg p-4 border border-[#2A2A3C]/30 hover:border-[#F5A623]/30 transition-all duration-200">
+                    {/* Punter Header */}
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        {/* Avatar */}
+                        <div className="w-12 h-12 bg-[#F5A623]/10 rounded-full flex items-center justify-center">
+                          {punter.image_url ? (
+                            <img
+                              src={punter.image_url}
+                              alt={punter.name}
+                              className="w-12 h-12 rounded-full object-cover"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                                e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                              }}
                             />
-                          </div>
-                        </td>
-                        <td className="p-2 text-sm">{code.punter_name}</td>
-                        <td className="p-2 text-sm">{code.bookmaker_name || 'N/A'}</td>
-                        <td className="p-2 text-sm">{code.odds ? code.odds.toFixed(2) : 'N/A'}</td>
-                        <td className="p-2 text-sm">{code.event_date ? formatDate(new Date(code.event_date)) : 'N/A'}</td>
-                        <td className="p-2 text-sm">
-                          <Badge
-                            variant={getStatusVariant(code.status)}
-                            className="text-xs px-1.5 py-0.5 uppercase"
-                          >
-                            {code.status}
-                          </Badge>
-                        </td>
-                        <td className="p-2 text-sm">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-xs px-2 py-1 h-auto"
-                            onClick={() => toggleSavedCode(code.code)}
-                          >
-                            {savedCodes.includes(code.code) ? (
-                              <BookmarkCheck size={14} className="mr-1 text-[#F5A623]" />
-                            ) : (
-                              <Bookmark size={14} className="mr-1" />
+                          ) : null}
+                          <User size={20} className={`text-[#F5A623] ${punter.image_url ? 'hidden' : ''}`} />
+                        </div>
+
+                        {/* Name and verification */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1">
+                            <h3 className="font-semibold text-sm truncate">{punter.name}</h3>
+                            {punter.verified && (
+                              <Award size={14} className="text-[#F5A623] flex-shrink-0" />
                             )}
-                            {savedCodes.includes(code.code) ? 'Saved' : 'Save'}
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                          </div>
+                          {punter.nickname && (
+                            <p className="text-xs text-[#A1A1AA] truncate">@{punter.nickname}</p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Favorite button */}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="p-1 h-auto"
+                        onClick={() => toggleFavoritePunter(punter.id)}
+                      >
+                        <Star
+                          size={16}
+                          className={`${favoritePunters.includes(punter.id) ? 'fill-[#F5A623] text-[#F5A623]' : 'text-[#A1A1AA]'}`}
+                        />
+                      </Button>
+                    </div>
+
+                    {/* Punter Info */}
+                    <div className="space-y-2 mb-3">
+                      {/* Country */}
+                      <div className="flex items-center gap-1 text-xs text-[#A1A1AA]">
+                        <MapPin size={12} />
+                        <span>{punter.country}</span>
+                      </div>
+
+                      {/* Specialty */}
+                      {punter.specialty && (
+                        <div className="flex items-center gap-1 text-xs">
+                          <TrendingUp size={12} className="text-[#F5A623]" />
+                          <span className="text-[#A1A1AA]">{punter.specialty}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Stats */}
+                    <div className="grid grid-cols-2 gap-2 mb-3">
+                      {/* Success Rate */}
+                      <div className="text-center">
+                        <div className="text-lg font-bold text-[#F5A623]">
+                          {punter.success_rate ? `${punter.success_rate.toFixed(1)}%` : 'N/A'}
+                        </div>
+                        <div className="text-xs text-[#A1A1AA]">Success Rate</div>
+                      </div>
+
+                      {/* Popularity */}
+                      <div className="text-center">
+                        <div className="text-lg font-bold text-[#F5A623]">
+                          {punter.popularity || 0}
+                        </div>
+                        <div className="text-xs text-[#A1A1AA]">Popularity</div>
+                      </div>
+                    </div>
+
+                    {/* Bio */}
+                    {punter.bio && (
+                      <p className="text-xs text-[#A1A1AA] line-clamp-2 mb-3">
+                        {punter.bio}
+                      </p>
+                    )}
+
+                    {/* Social Media Links */}
+                    {punter.social_media && Object.keys(punter.social_media).length > 0 && (
+                      <div className="flex gap-2 justify-center">
+                        {Object.entries(punter.social_media).map(([platform, url]) => (
+                          <a
+                            key={platform}
+                            href={url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[#A1A1AA] hover:text-[#F5A623] transition-colors"
+                          >
+                            <ExternalLink size={14} />
+                          </a>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
 
               {/* Pagination */}
               {totalPages > 1 && (
                 <div className="flex items-center justify-between mt-4 pt-4 border-t border-[#2A2A3C]/20">
                   <div className="text-sm text-[#A1A1AA]">
-                    Showing {(currentPage - 1) * codesPerPage + 1} to {Math.min(currentPage * codesPerPage, totalCodes)} of {totalCodes} codes
+                    Showing {(currentPage - 1) * puntersPerPage + 1} to {Math.min(currentPage * puntersPerPage, totalPunters)} of {totalPunters} punters
                   </div>
                   <div className="flex items-center gap-1">
                     <Button
@@ -446,9 +523,9 @@ const PuntersPage: React.FC = () => {
             </>
           ) : (
             <div className="text-center py-8 bg-[#1A1A27]/30 rounded-xl border border-[#2A2A3C]/10">
-              {(searchQuery || filterStatus !== "all" || showSavedOnly) ? (
+              {(searchQuery || filterCountry !== "all" || filterVerified !== "all" || showFavoritesOnly) ? (
                 <>
-                  <p className="text-[#A1A1AA]">No betting codes match your current filters.</p>
+                  <p className="text-[#A1A1AA]">No punters match your current filters.</p>
                   <Button
                     variant="outline"
                     size="sm"
@@ -460,10 +537,10 @@ const PuntersPage: React.FC = () => {
                 </>
               ) : (
                 <>
-                  <div className="text-6xl mb-4">🎫</div>
-                  <h3 className="text-lg font-semibold mb-2">No Betting Codes Yet</h3>
+                  <div className="text-6xl mb-4">👑</div>
+                  <h3 className="text-lg font-semibold mb-2">No Punters Yet</h3>
                   <p className="text-[#A1A1AA] mb-4">
-                    Betting codes from our punters will appear here once they start sharing their tips.
+                    Expert punters will appear here once they join our platform and start sharing their expertise.
                   </p>
                   <p className="text-sm text-[#A1A1AA]">
                     The backend is connected and working - we're just waiting for punter data to be added.
@@ -471,7 +548,7 @@ const PuntersPage: React.FC = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => fetchBettingCodes(currentPage)}
+                    onClick={() => fetchPunters(currentPage)}
                     className="mt-4"
                   >
                     <RefreshCw size={16} className="mr-2" />

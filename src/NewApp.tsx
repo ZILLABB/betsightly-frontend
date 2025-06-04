@@ -29,9 +29,9 @@ import { initResourcePreloading } from './utils/resourcePreloader';
 import {
   LazyMainPage,
   LazyPredictionsPage,
-  LazyFixturesPage,
   LazyResultsPage,
   LazyRolloverChallengePage,
+  LazyExpertsPage,
   LazyPuntersPage,
   LazyAnalyticsPage,
   LazySettingsPage,
@@ -88,13 +88,6 @@ function App() {
                       </Layout>
                     </TrackedErrorBoundary>
                   } />
-                  <Route path="/fixtures" element={
-                    <TrackedErrorBoundary>
-                      <Layout>
-                        <LazyFixturesPage />
-                      </Layout>
-                    </TrackedErrorBoundary>
-                  } />
                   <Route path="/results" element={
                     <TrackedErrorBoundary>
                       <Layout>
@@ -109,10 +102,10 @@ function App() {
                       </Layout>
                     </TrackedErrorBoundary>
                   } />
-                  <Route path="/punters" element={
+                  <Route path="/experts" element={
                     <TrackedErrorBoundary>
                       <Layout>
-                        <LazyPuntersPage />
+                        <LazyExpertsPage />
                       </Layout>
                     </TrackedErrorBoundary>
                   } />

@@ -36,6 +36,10 @@ export const LazyPuntersPage = lazyLoad(() => import('./PuntersPage') as Promise
   loadingMessage: 'Loading Punters...'
 });
 
+export const LazyExpertsPage = lazyLoad(() => import('./ExpertsPage') as Promise<{ default: React.ComponentType<any> }>, {
+  loadingMessage: 'Loading Experts Hub...'
+});
+
 export const LazyAnalyticsPage = lazyLoad(() => import('./AnalyticsPage') as Promise<{ default: React.ComponentType<any> }>, {
   loadingMessage: 'Loading Analytics...'
 });
