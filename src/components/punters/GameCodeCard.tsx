@@ -163,7 +163,7 @@ Shared from BetSightly - Your Trusted Prediction Platform
                     {selected ? (
                       <CheckSquare size={16} className="text-[#F5A623]" />
                     ) : (
-                      <Square size={16} className="text-[#A1A1AA] hover:text-[#F5A623]" />
+                      <Square size={16} className="text-[var(--muted-foreground)] hover:text-primary-500" />
                     )}
                   </button>
                 )}

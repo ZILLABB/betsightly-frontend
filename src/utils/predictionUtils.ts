@@ -24,10 +24,10 @@ export enum PredictionCardVariant {
  * Helper function to get the appropriate CSS class for odds
  */
 export const getOddsClass = (odds: number): string => {
-  if (odds >= 5) return "text-[#F5A623]";
-  if (odds >= 3) return "text-[#6FCF97]";
-  if (odds >= 1.5) return "text-[#56CCF2]";
-  return "text-[#A1A1AA]";
+  if (odds >= 5) return "text-primary-500";
+  if (odds >= 3) return "text-green-500";
+  if (odds >= 1.5) return "text-blue-500";
+  return "text-[var(--muted-foreground)]";
 };
 
 /**

@@ -24,7 +24,7 @@ const QualityFilter: React.FC<QualityFilterProps> = ({
     { value: "B", label: "B", color: "bg-blue-400/20 text-blue-400" },
     { value: "C+", label: "C+", color: "bg-yellow-500/20 text-yellow-500" },
     { value: "C", label: "C", color: "bg-yellow-400/20 text-yellow-400" },
-    { value: null, label: "All", color: "bg-gray-500/20 text-gray-400" }
+    { value: null, label: "All", color: "bg-primary-500/20 text-primary-400" }
   ];
 
   return (

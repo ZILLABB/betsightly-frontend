@@ -3,6 +3,8 @@ import { Link, useLocation } from "react-router-dom";
 import { Menu, X, Home, Target, BarChart2, RefreshCw, Award, PieChart, Settings, Shield, Ticket, Building2 } from "lucide-react";
 import { useBreakpoints } from "../../hooks/useMediaQuery";
 import OfflineIndicator from "../common/OfflineIndicator";
+import BottomNavigation from "../navigation/BottomNavigation";
+import MockDataToggle from "../common/MockDataToggle";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -88,7 +90,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             </nav>
 
             {/* Right side actions */}
-            <div className="flex items-center z-20 flex-1 justify-end">
+            <div className="flex items-center z-20 flex-1 justify-end gap-3">
+              {/* Mock Data Toggle - Desktop */}
+              <div className="hidden md:block">
+                <MockDataToggle size="sm" showLabel={true} />
+              </div>
+
               {/* Mobile menu button */}
               <button
                 className="p-2.5 rounded-lg md:hidden hover:bg-gray-800 transition-colors"
@@ -97,9 +104,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               >
                 {mobileMenuOpen ? <X size={24} className="text-amber-400" /> : <Menu size={24} className="text-amber-400" />}
               </button>
-
-              {/* Empty space for visual balance on desktop */}
-              <div className="hidden md:block w-[100px]"></div>
             </div>
           </div>
         </div>
@@ -128,7 +132,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 </Link>
               ))}
 
-
+              {/* Mock Data Toggle - Mobile */}
+              <div className="pt-4 mt-4 border-t border-[var(--border)]">
+                <MockDataToggle size="md" showLabel={true} className="w-full justify-center" />
+              </div>
             </nav>
           </div>
         </div>
@@ -228,6 +235,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           </div>
         </div>
       </footer>
+
+      {/* Bottom Navigation for Mobile */}
+      <BottomNavigation />
     </div>
   );
 };

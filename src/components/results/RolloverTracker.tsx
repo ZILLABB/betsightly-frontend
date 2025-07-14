@@ -500,12 +500,12 @@ const RolloverTracker: React.FC<RolloverTrackerProps> = ({
               {previousCombos.map((combo) => (
                 <div
                   key={combo.date.toISOString()}
-                  className={`bg-[#1A1A27]/30 p-3 rounded-xl border dark:bg-[#1A1A27]/30 light:bg-white light:shadow-sm ${
+                  className={`bg-[var(--card)] p-3 rounded-xl border ${
                     combo.status === "won"
                       ? "border-green-500/20"
                       : combo.status === "lost"
                         ? "border-red-500/20"
-                        : "border-[#2A2A3C]/10 light:border-[#E2E8F0]/50"
+                        : "border-[var(--border)]"
                   }`}
                 >
                   <div className="flex justify-between items-center mb-2">
@@ -560,7 +560,7 @@ const RolloverTracker: React.FC<RolloverTrackerProps> = ({
               ))}
             </div>
           ) : (
-            <div className="text-center py-4 bg-[#1A1A27]/30 rounded-xl border border-[#2A2A3C]/10 dark:bg-[#1A1A27]/30 light:bg-white light:border-[#E2E8F0]/50 light:shadow-sm">
+            <div className="text-center py-4 bg-[var(--card)] rounded-xl border border-[var(--border)]">
               <Clock size={24} className="mx-auto mb-2 text-[var(--muted-foreground)]" />
               <p className="text-sm text-[var(--muted-foreground)]">No previous days in this rollover challenge yet.</p>
               <p className="text-xs text-[var(--muted-foreground)] mt-1">This is the first day of the challenge.</p>
@@ -620,14 +620,14 @@ const RolloverTracker: React.FC<RolloverTrackerProps> = ({
           )}
         </div>
 
-        <div className="mt-4 p-3 border border-[#F5A623]/20 rounded-lg bg-[#F5A623]/5 dark:bg-[#F5A623]/5 light:bg-[#FFFAF0]/80">
+        <div className="mt-4 p-3 border border-primary-500/20 rounded-lg bg-primary-500/5 dark:bg-primary-500/5 light:bg-primary-50/80">
           <h4 className="text-sm font-semibold mb-2 flex items-center">
-            <DollarSign size={16} className="mr-1.5 text-[#F5A623]" />
+            <DollarSign size={16} className="mr-1.5 text-primary-500" />
             How the 10-Day Rollover Challenge Works
           </h4>
           <div className="space-y-2">
             <div className="flex items-start">
-              <div className="w-5 h-5 rounded-full bg-[#F5A623]/20 text-[#F5A623] flex items-center justify-center text-xs mr-2 mt-0.5">1</div>
+              <div className="w-5 h-5 rounded-full bg-primary-500/20 text-primary-500 flex items-center justify-center text-xs mr-2 mt-0.5">1</div>
               <p className="text-xs text-[var(--muted-foreground)]">
                 We start with <CurrencyDisplay amount={INITIAL_AMOUNT} originalCurrency="USD" /> and select games each day that combine to approximately {TARGET_ODDS.toFixed(1)}x odds.
               </p>

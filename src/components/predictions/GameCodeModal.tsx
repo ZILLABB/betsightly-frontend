@@ -21,7 +21,7 @@ const getBookmakerColor = (bookie?: BookmakerType) => {
     case "1xbet": return "text-[#0085ff]";
     case "22bet": return "text-[#ff4e50]";
     case "sportybet": return "text-[#ff9900]";
-    default: return "text-[#F5A623]";
+    default: return "text-primary-500";
   }
 };
 
@@ -72,12 +72,12 @@ const GameCodeModal: React.FC<GameCodeModalProps> = ({
         <div className="p-4 border-b border-[#2A2A3C]/20">
           <div className="flex flex-wrap gap-3 justify-between items-center">
             <div>
-              <p className="text-sm text-[#A1A1AA] mb-1">
+              <p className="text-sm text-[var(--muted-foreground)] mb-1">
                 Multi-game code with {predictions.length} games
               </p>
               {bookmaker && (
                 <div className="flex items-center">
-                  <span className="text-xs text-[#A1A1AA] mr-1">Bookmaker:</span>
+                  <span className="text-xs text-[var(--muted-foreground)] mr-1">Bookmaker:</span>
                   <span className={`text-sm font-medium capitalize ${getBookmakerColor(bookmaker)}`}>
                     {bookmaker}
                   </span>

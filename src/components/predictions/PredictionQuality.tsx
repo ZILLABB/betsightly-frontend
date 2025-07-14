@@ -52,11 +52,11 @@ const PredictionQuality: React.FC<PredictionQualityProps> = ({
       if (predictionQuality >= 80) return 'bg-green-400/20 text-green-400 border border-green-400/30';
       if (predictionQuality >= 75) return 'bg-blue-500/20 text-blue-500 border border-blue-500/30';
       if (predictionQuality >= 70) return 'bg-blue-400/20 text-blue-400 border border-blue-400/30';
-      if (predictionQuality >= 65) return 'bg-yellow-500/20 text-yellow-500 border border-yellow-500/30';
-      return 'bg-yellow-400/20 text-yellow-400 border border-yellow-400/30';
+      if (predictionQuality >= 65) return 'bg-primary-500/20 text-primary-500 border border-primary-500/30';
+      return 'bg-primary-400/20 text-primary-400 border border-primary-400/30';
     }
 
-    return 'bg-gray-500/20 text-gray-400 border border-gray-500/30';
+    return 'bg-[var(--muted)]/20 text-[var(--muted-foreground)] border border-[var(--border)]';
   };
 
   // If no quality metrics are available, return null

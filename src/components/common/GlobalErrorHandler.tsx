@@ -133,7 +133,7 @@ const GlobalErrorHandler: React.FC<GlobalErrorHandlerProps> = ({ children }) => 
   if (isOnline && !isApiAvailable) {
     return (
       <>
-        <div className="fixed top-0 inset-x-0 bg-yellow-500 text-black py-2 px-4 z-50 flex items-center justify-between">
+        <div className="fixed top-0 inset-x-0 bg-primary-500 text-black py-2 px-4 z-50 flex items-center justify-between">
           <div className="flex items-center">
             <AlertTriangle size={16} className="mr-2" />
             <span>API is currently unavailable. Using cached data.</span>

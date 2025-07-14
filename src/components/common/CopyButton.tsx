@@ -69,8 +69,8 @@ const CopyButton: React.FC<CopyButtonProps> = ({
         className={cn(
           "p-1.5 rounded-md transition-colors",
           copied
-            ? "bg-[#10B981]/10 text-[#10B981] hover:bg-[#10B981]/20"
-            : "bg-[#2A2A3C]/30 text-[#A1A1AA] hover:bg-[#2A2A3C]/50 hover:text-white",
+            ? "bg-green-500/10 text-green-500 hover:bg-green-500/20"
+            : "bg-[var(--muted)]/30 text-[var(--muted-foreground)] hover:bg-[var(--muted)]/50 hover:text-[var(--foreground)]",
           className
         )}
         aria-label={copied ? successMessage : "Copy to clipboard"}

@@ -33,7 +33,7 @@ export const FormGroup: React.FC<FormGroupProps> = ({
   children
 }) => {
   return (
-    <div className={cn('space-y-2', className)}>
+    <div className={cn('form-group', className)}>
       {children}
     </div>
   );
@@ -50,7 +50,7 @@ export const FormLabel: React.FC<FormLabelProps> = ({
   ...props
 }) => {
   return (
-    <Label className={className} {...props}>
+    <Label className={cn('form-label', className)} {...props}>
       {children}
     </Label>
   );

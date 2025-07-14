@@ -27,28 +27,28 @@ const StatsOverview: React.FC<StatsOverviewProps> = ({ stats, timeframe = "week"
 
   // Determine success rate color
   const getSuccessRateColor = (rate: number) => {
-    if (rate >= 70) return "text-[#10B981]";
-    if (rate >= 50) return "text-[#F5A623]";
-    return "text-[#EF4444]";
+    if (rate >= 70) return "text-green-500";
+    if (rate >= 50) return "text-primary-500";
+    return "text-red-500";
   };
 
   // Determine ROI color
   const getRoiColor = (roiValue: number) => {
-    if (roiValue >= 20) return "text-[#10B981]";
-    if (roiValue >= 0) return "text-[#F5A623]";
-    return "text-[#EF4444]";
+    if (roiValue >= 20) return "text-green-500";
+    if (roiValue >= 0) return "text-primary-500";
+    return "text-red-500";
   };
 
   return (
     <div className="space-y-6">
       {/* Main Stats Card */}
-      <Card className="w-full bg-[#1A1A27]/80 border border-[#2A2A3C]/20 shadow-lg overflow-hidden light-card-effect">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#F5A623]/10 to-transparent rounded-bl-full"></div>
+      <Card className="w-full bg-[var(--card)]/80 border border-[var(--border)] shadow-lg overflow-hidden light-card-effect">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary-500/10 to-transparent rounded-bl-full"></div>
 
         <CardHeader className="pb-2">
           <div className="flex justify-between items-center">
             <CardTitle className="text-lg flex items-center">
-              <TrendingUp size={18} className="mr-2 text-[#F5A623]" />
+              <TrendingUp size={18} className="mr-2 text-primary-500" />
               Performance Overview
             </CardTitle>
             <Badge variant="outline" className="text-xs px-2 py-0.5">
@@ -86,7 +86,7 @@ const StatsOverview: React.FC<StatsOverviewProps> = ({ stats, timeframe = "week"
 
           {/* Stats Grid */}
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            <div className="bg-[#1A1A27]/30 p-3 rounded-lg border border-[#2A2A3C]/10 dark:bg-[#1A1A27]/30 light:bg-white light:border-[#E2E8F0]/50 light:shadow-sm">
+            <div className="bg-[var(--card)] p-3 rounded-lg border border-[var(--border)]">
               <div className="flex items-center mb-1">
                 <Calendar size={16} className="text-[var(--muted-foreground)] mr-1" />
                 <p className="text-xs font-medium text-[var(--muted-foreground)]">Total Predictions</p>
@@ -94,7 +94,7 @@ const StatsOverview: React.FC<StatsOverviewProps> = ({ stats, timeframe = "week"
               <p className="text-xl font-bold">{totalPredictions}</p>
             </div>
 
-            <div className="bg-[#1A1A27]/30 p-3 rounded-lg border border-[#2A2A3C]/10 dark:bg-[#1A1A27]/30 light:bg-white light:border-[#E2E8F0]/50 light:shadow-sm">
+            <div className="bg-[var(--card)] p-3 rounded-lg border border-[var(--border)]">
               <div className="flex items-center mb-1">
                 <Target size={16} className="text-[var(--muted-foreground)] mr-1" />
                 <p className="text-xs font-medium text-[var(--muted-foreground)]">Average Odds</p>
@@ -102,7 +102,7 @@ const StatsOverview: React.FC<StatsOverviewProps> = ({ stats, timeframe = "week"
               <p className="text-xl font-bold">{averageOdds.toFixed(2)}x</p>
             </div>
 
-            <div className="bg-[#1A1A27]/30 p-3 rounded-lg border border-[#2A2A3C]/10 dark:bg-[#1A1A27]/30 light:bg-white light:border-[#E2E8F0]/50 light:shadow-sm">
+            <div className="bg-[var(--card)] p-3 rounded-lg border border-[var(--border)]">
               <div className="flex items-center mb-1">
                 <Percent size={16} className="text-[var(--muted-foreground)] mr-1" />
                 <p className="text-xs font-medium text-[var(--muted-foreground)]">ROI</p>
@@ -110,7 +110,7 @@ const StatsOverview: React.FC<StatsOverviewProps> = ({ stats, timeframe = "week"
               <p className={`text-xl font-bold ${getRoiColor(roi)}`}>{roi.toFixed(1)}%</p>
             </div>
 
-            <div className="bg-[#1A1A27]/30 p-3 rounded-lg border border-[#2A2A3C]/10 dark:bg-[#1A1A27]/30 light:bg-white light:border-[#E2E8F0]/50 light:shadow-sm">
+            <div className="bg-[var(--card)] p-3 rounded-lg border border-[var(--border)]">
               <div className="flex items-center mb-1">
                 <div className="w-3 h-3 rounded-full bg-[#10B981] mr-1"></div>
                 <p className="text-xs font-medium text-[var(--muted-foreground)]">Won</p>
@@ -118,7 +118,7 @@ const StatsOverview: React.FC<StatsOverviewProps> = ({ stats, timeframe = "week"
               <p className="text-xl font-bold text-[#10B981]">{wonPredictions}</p>
             </div>
 
-            <div className="bg-[#1A1A27]/30 p-3 rounded-lg border border-[#2A2A3C]/10 dark:bg-[#1A1A27]/30 light:bg-white light:border-[#E2E8F0]/50 light:shadow-sm">
+            <div className="bg-[var(--card)] p-3 rounded-lg border border-[var(--border)]">
               <div className="flex items-center mb-1">
                 <div className="w-3 h-3 rounded-full bg-[#EF4444] mr-1"></div>
                 <p className="text-xs font-medium text-[var(--muted-foreground)]">Lost</p>
@@ -126,12 +126,12 @@ const StatsOverview: React.FC<StatsOverviewProps> = ({ stats, timeframe = "week"
               <p className="text-xl font-bold text-[#EF4444]">{lostPredictions}</p>
             </div>
 
-            <div className="bg-[#1A1A27]/30 p-3 rounded-lg border border-[#2A2A3C]/10 dark:bg-[#1A1A27]/30 light:bg-white light:border-[#E2E8F0]/50 light:shadow-sm">
+            <div className="bg-[var(--card)] p-3 rounded-lg border border-[var(--border)]">
               <div className="flex items-center mb-1">
-                <div className="w-3 h-3 rounded-full bg-[#F5A623] mr-1"></div>
+                <div className="w-3 h-3 rounded-full bg-primary-500 mr-1"></div>
                 <p className="text-xs font-medium text-[var(--muted-foreground)]">Pending</p>
               </div>
-              <p className="text-xl font-bold text-[#F5A623]">{pendingPredictions}</p>
+              <p className="text-xl font-bold text-primary-500">{pendingPredictions}</p>
             </div>
           </div>
 

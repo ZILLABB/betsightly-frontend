@@ -202,9 +202,9 @@ const PredictionsList: React.FC<PredictionsListProps> = ({
       ) : (
         <>
           {sortedPredictions.length <= 10 ? (
-            // Regular grid for small number of predictions with modern styling
+            // Regular grid for small number of predictions with responsive styling
             <motion.div
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6"
               initial="initial"
               animate="animate"
               variants={fadeVariants}

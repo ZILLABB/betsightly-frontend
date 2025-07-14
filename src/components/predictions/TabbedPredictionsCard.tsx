@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent } from '../common/Card';
 import { Button } from '../common/Button';
 import { CheckCircle, BarChart3, Zap, TrendingUp, Info } from 'lucide-react';
 import PredictionGrid from './PredictionGrid';
+import { useSwipeGestures } from '../../hooks/useSwipeGestures';
 import { cn } from '../../utils/cn';
 import '../../styles/scrollbar-hide.css';
 
@@ -30,8 +31,44 @@ const TabbedPredictionsCard: React.FC<TabbedPredictionsCardProps> = ({
   onPredictionSelect,
   showFilters = false,
 }) => {
-  // State to track the active tab
-  const [activeCategory, setActiveCategory] = useState<string>('2_odds');
+  // Get the available categories from the predictions object
+  const categories = Object.keys(predictions).filter(
+    (category) => Array.isArray(predictions[category]) && predictions[category].length > 0
+  );
+
+  // State to track the active tab - use first available category as default
+  const [activeCategory, setActiveCategory] = useState<string>(categories[0] || '2_odds');
+
+  // Update active category when categories change
+  useEffect(() => {
+    if (categories.length > 0 && !categories.includes(activeCategory)) {
+      setActiveCategory(categories[0]);
+    }
+  }, [categories, activeCategory]);
+
+
+
+  // Swipe gesture handlers
+  const handleSwipeLeft = () => {
+    const currentIndex = categories.indexOf(activeCategory);
+    const nextIndex = (currentIndex + 1) % categories.length;
+    setActiveCategory(categories[nextIndex]);
+  };
+
+  const handleSwipeRight = () => {
+    const currentIndex = categories.indexOf(activeCategory);
+    const prevIndex = currentIndex === 0 ? categories.length - 1 : currentIndex - 1;
+    setActiveCategory(categories[prevIndex]);
+  };
+
+  // Initialize swipe gestures
+  const { elementRef } = useSwipeGestures({
+    onSwipeLeft: handleSwipeLeft,
+    onSwipeRight: handleSwipeRight,
+    threshold: 50,
+    enabled: true,
+    enableHaptic: true
+  });
 
   // Helper function to get category icon
   const getCategoryIcon = (category: string) => {
@@ -81,10 +118,29 @@ const TabbedPredictionsCard: React.FC<TabbedPredictionsCardProps> = ({
     }
   };
 
-  // Get the available categories from the predictions object
-  const categories = Object.keys(predictions).filter(
-    (category) => Array.isArray(predictions[category]) && predictions[category].length > 0
-  );
+  // Show loading or no data message if no categories
+  if (categories.length === 0) {
+    return (
+      <motion.div
+        variants={cardVariants}
+        initial="initial"
+        animate="animate"
+        className="w-full"
+      >
+        <Card className="border border-amber-500/20 bg-gradient-to-b from-gray-900 to-black shadow-xl overflow-hidden rounded-xl">
+          <CardContent className="p-8 text-center">
+            <div className="flex flex-col items-center justify-center space-y-4">
+              <div className="w-16 h-16 border-4 border-amber-500/30 border-t-amber-500 rounded-full animate-spin"></div>
+              <div className="space-y-2">
+                <p className="text-white/70 font-medium">Loading predictions...</p>
+                <p className="text-white/50 text-sm">Fetching the latest betting insights</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div
@@ -158,7 +214,7 @@ const TabbedPredictionsCard: React.FC<TabbedPredictionsCardProps> = ({
         </div>
 
         {/* Active Category Content with AnimatePresence for smooth transitions */}
-        <CardContent className="p-3 md:p-6 bg-black/20">
+        <CardContent className="p-3 md:p-6 bg-black/20" ref={elementRef}>
           <AnimatePresence mode="wait">
             {categories.includes(activeCategory) && (
               <motion.div

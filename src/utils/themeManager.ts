@@ -8,13 +8,13 @@ class ThemeManager {
   private listeners: Array<(theme: ThemeMode) => void> = [];
 
   private constructor() {
-    // Initialize with stored theme or default to system
+    // Initialize with stored theme or default to dark
     try {
       const savedTheme = localStorage?.getItem('betsightly_theme');
-      this.currentTheme = (savedTheme as ThemeMode) || 'system';
+      this.currentTheme = (savedTheme as ThemeMode) || 'dark';
     } catch (error) {
       console.error('Error loading theme from localStorage:', error);
-      this.currentTheme = 'system';
+      this.currentTheme = 'dark';
     }
 
     // Apply the theme immediately

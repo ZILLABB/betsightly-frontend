@@ -229,14 +229,16 @@ const PredictionGrid: React.FC<PredictionGridProps> = ({
         </div>
       )}
 
-      {/* Predictions Grid - Adjust grid columns based on number of items */}
+      {/* Predictions Grid - Optimized responsive layout */}
       <motion.div
-        className={`grid gap-3 ${
-          displayPredictions.length > 6
-            ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6' // Very compact grid for many items
-            : displayPredictions.length > 3
-              ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4' // More compact grid for more items
-              : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' // Standard grid for fewer items
+        className={`grid ${
+          displayPredictions.length > 8
+            ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3' // Dense grid for many items
+            : displayPredictions.length > 4
+              ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4' // Standard grid for moderate items
+              : displayPredictions.length > 2
+                ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5' // Comfortable grid for few items
+                : 'grid-cols-1 md:grid-cols-2 gap-6' // Spacious grid for very few items
         }`}
         variants={gridVariants}
         initial="initial"

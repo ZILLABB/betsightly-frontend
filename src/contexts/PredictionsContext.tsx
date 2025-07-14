@@ -5,6 +5,7 @@ import {
   getAllCategoryPredictions,
   getRolloverPredictions
 } from '../services/unifiedApiService';
+import { mockDataService } from '../services/mockDataService';
 import { useToast } from '../hooks/useToast';
 
 // Define the context state type
@@ -80,17 +81,21 @@ export const PredictionsProvider: React.FC<{ children: React.ReactNode }> = ({ c
       setError(null);
 
       console.log("Loading all predictions from context");
-      const data = await getAllCategoryPredictions();
-      console.log("All predictions data:", data);
 
-      if (!data || Object.keys(data).length === 0) {
-        console.error('No predictions available from API');
+      // Since we're not running the backend, directly use mock data
+      console.log("Loading mock predictions data");
+      const mockResponse = await mockDataService.getPredictionCategories();
+
+      if (!mockResponse.data) {
+        console.error('No mock data available');
         setError('No predictions available');
         return;
       }
 
+      const data = mockResponse.data;
       setAllPredictions(data);
-      console.log("All predictions set successfully");
+      console.log("✅ Categories loaded:", Object.keys(data).map(key => `${key}: ${data[key].length} items`).join(', '));
+
       toast({
         title: 'Predictions loaded',
         description: `Loaded predictions for ${Object.keys(data).length} categories`,
@@ -118,8 +123,19 @@ export const PredictionsProvider: React.FC<{ children: React.ReactNode }> = ({ c
       setError(null);
 
       console.log("Loading best predictions from context");
-      const data = await getAllBestPredictions();
-      console.log("Best predictions data:", data);
+
+      // Since we're not running the backend, directly use mock data
+      console.log("Loading mock best predictions");
+      const mockResponse = await mockDataService.getBestPredictions();
+      if (!mockResponse.data) {
+        console.error('No mock best predictions available');
+        setError('No best predictions available');
+        return;
+      }
+
+      // Convert array to the expected format
+      const data = { 'best': mockResponse.data };
+      console.log("Best predictions loaded:", data.best.length, "items");
 
       if (!data || Object.keys(data).length === 0) {
         console.error('No best predictions available');
@@ -144,16 +160,28 @@ export const PredictionsProvider: React.FC<{ children: React.ReactNode }> = ({ c
       setError(null);
 
       console.log("Loading rollover predictions from context");
-      const data = await getRolloverPredictions(days);
-      console.log("Rollover predictions data:", data);
 
-      if (!data || Object.keys(data).length === 0) {
-        console.error('No rollover predictions available from API');
-        setError('No rollover predictions available');
-        return;
+      // Since we're not running the backend, use mock data directly
+      // Generate rollover predictions for the specified number of days
+      const mockRolloverData: Record<number, Prediction[]> = {};
+
+      // Get rollover predictions from allPredictions if available
+      if (allPredictions.rollover && allPredictions.rollover.length > 0) {
+        // Distribute rollover predictions across days
+        for (let day = 1; day <= days; day++) {
+          const dayPredictions = allPredictions.rollover.slice(0, Math.min(3, allPredictions.rollover.length));
+          mockRolloverData[day] = dayPredictions.map(pred => ({
+            ...pred,
+            rolloverDay: day,
+            id: pred.id + day * 1000 // Ensure unique IDs
+          }));
+        }
+      } else {
+        console.warn('No rollover predictions available in allPredictions');
       }
 
-      setRolloverPredictions(data);
+      console.log("Rollover predictions data:", mockRolloverData);
+      setRolloverPredictions(mockRolloverData);
       console.log("Rollover predictions set successfully");
     } catch (err) {
       console.error('Error loading rollover predictions:', err);
@@ -161,7 +189,7 @@ export const PredictionsProvider: React.FC<{ children: React.ReactNode }> = ({ c
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [allPredictions]);
 
   // Refresh all predictions
   const refreshPredictions = useCallback(async () => {
@@ -176,17 +204,12 @@ export const PredictionsProvider: React.FC<{ children: React.ReactNode }> = ({ c
         duration: 2000
       });
 
-      // Load all types of predictions
-      const [allData, bestData, rolloverData] = await Promise.all([
-        getAllCategoryPredictions(),
-        getAllBestPredictions(),
-        getRolloverPredictions()
+      // Since we're not running the backend, refresh with mock data
+      await Promise.all([
+        loadAllPredictions(),
+        loadBestPredictions(),
+        loadRolloverPredictions()
       ]);
-
-      // Update state with new data
-      setAllPredictions(allData);
-      setBestPredictions(bestData);
-      setRolloverPredictions(rolloverData);
 
       toast({
         title: 'Predictions refreshed',

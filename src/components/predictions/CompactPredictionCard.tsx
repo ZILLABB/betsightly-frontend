@@ -57,7 +57,7 @@ const CompactPredictionCard: React.FC<CompactPredictionCardProps> = ({
   // If prediction is null or missing critical data, show a fallback UI
   if (!prediction || !prediction.game) {
     return (
-      <div className="bg-[#1A1A27]/50 p-2 rounded-lg border border-[#2A2A3C]/10 flex flex-col">
+      <div className="bg-[var(--color-bg-secondary)]/50 padding-standard rounded-xl border border-[var(--color-border-secondary)] flex flex-col">
         <div className="text-xs text-[var(--muted-foreground)] italic">Data unavailable</div>
       </div>
     );
@@ -79,6 +79,7 @@ const CompactPredictionCard: React.FC<CompactPredictionCardProps> = ({
       whileHover="hover"
       whileTap="tap"
       variants={cardVariants}
+      className="prediction-card-container"
     >
       <BasePredictionCard
         prediction={prediction}

@@ -32,7 +32,7 @@ export interface UserPreferences {
 
 // Define the default preferences
 export const defaultPreferences: UserPreferences = {
-  theme: 'system',
+  theme: 'dark',
   defaultView: 'grid',
   defaultTab: 'predictions',
   defaultOddsCategory: 'all',

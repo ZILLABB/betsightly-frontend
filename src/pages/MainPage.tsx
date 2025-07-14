@@ -6,6 +6,9 @@ import {
   ErrorDisplay,
   Spinner
 } from '../components/ui';
+import EnhancedLoadingSpinner from '../components/common/EnhancedLoadingSpinner';
+import FootballLoader from '../components/common/FootballLoader';
+import { PredictionCardSkeleton } from '../components/common/SkeletonLoader';
 import {
   RefreshCw,
   Filter
@@ -14,6 +17,9 @@ import TabbedPredictionsCard from '../components/predictions/TabbedPredictionsCa
 import HeroSection from '../components/home/HeroSection';
 import StatsSection from '../components/home/StatsSection';
 import TestimonialsSection from '../components/home/TestimonialsSection';
+
+import FeaturedMatchesSection from '../components/home/FeaturedMatchesSection';
+import PullToRefresh from '../components/common/PullToRefresh';
 import { useToast } from '../hooks/useToast';
 import { usePredictions } from '../contexts/PredictionsContext';
 
@@ -26,22 +32,24 @@ const pageVariants = {
 const MainPage: React.FC = () => {
   // Get predictions data and actions from context
   const {
-    bestPredictions: predictions,
+    allPredictions: predictions,
     loading,
     refreshing,
     error,
     refreshPredictions,
-    loadBestPredictions
+    loadAllPredictions
   } = usePredictions();
 
   // Local state for UI controls
   const [showFilters, setShowFilters] = useState(false);
 
-  // Load best predictions on component mount
+  // Load all predictions on component mount
   useEffect(() => {
-    console.log("Loading best predictions from MainPage");
-    loadBestPredictions();
-  }, [loadBestPredictions]);
+    console.log("Loading all predictions from MainPage");
+    loadAllPredictions();
+  }, [loadAllPredictions]);
+
+
 
 
   // Helper functions moved to TabbedPredictionsCard component
@@ -92,31 +100,36 @@ const MainPage: React.FC = () => {
 
 
   return (
-    <motion.div
-      className="w-full space-y-8 md:space-y-12 pb-16"
-      initial="initial"
-      animate="animate"
-      variants={pageVariants}
+    <PullToRefresh
+      onRefresh={handleRefresh}
+      className="min-h-screen"
+      enabled={!loading && !refreshing}
     >
-      {/* Hero Section */}
-      <section className="w-full bg-black pt-4">
-        <div className="container mx-auto px-4">
-          <HeroSection />
-        </div>
-      </section>
+      <motion.div
+        className="w-full space-y-8 md:space-y-12 pb-16"
+        initial="initial"
+        animate="animate"
+        variants={pageVariants}
+      >
+        {/* Hero Section */}
+        <section className="w-full bg-[var(--background)] pt-4">
+          <div className="container mx-auto container-padding">
+            <HeroSection />
+          </div>
+        </section>
 
-      {/* Controls Section */}
-      <section className="container mx-auto px-4 mt-8 md:mt-12">
+        {/* Controls Section */}
+        <section className="container mx-auto container-padding mt-8 md:mt-12">
         <div className="flex flex-wrap justify-between items-center mb-6">
-          <h2 className="text-2xl md:text-3xl font-bold text-white">
-            Today's <span className="text-amber-400">Premium Predictions</span>
+          <h2 className="text-2xl md:text-3xl font-bold text-[var(--foreground)]">
+            Today's <span className="text-primary-400">Premium Predictions</span>
           </h2>
           <div className="flex items-center gap-2 md:gap-3 mt-3 sm:mt-0">
             <Button
               variant="outline"
               size="sm"
               onClick={() => setShowFilters(!showFilters)}
-              className="border-amber-500/30 text-amber-400 hover:bg-amber-500/10 text-xs md:text-sm"
+              className="border-primary-500/30 text-primary-400 hover:bg-primary-500/10 text-xs md:text-sm"
             >
               <Filter size={14} className="mr-1.5" />
               Filters
@@ -126,7 +139,7 @@ const MainPage: React.FC = () => {
               size="sm"
               onClick={handleRefresh}
               disabled={loading || refreshing}
-              className="border-amber-500/30 text-amber-400 hover:bg-amber-500/10 text-xs md:text-sm"
+              className="border-primary-500/30 text-primary-400 hover:bg-primary-500/10 text-xs md:text-sm"
             >
               {refreshing ? (
                 <>
@@ -145,8 +158,17 @@ const MainPage: React.FC = () => {
 
         {/* Loading State */}
         {loading && (
-          <div className="flex flex-col items-center justify-center py-20">
-            <LoadingSpinner size="lg" variant="primary" text="Loading predictions from the API..." />
+          <div className="container mx-auto container-padding card-spacing">
+            <div className="flex flex-col items-center justify-center section-padding">
+              <FootballLoader
+                size="lg"
+                text="Loading football predictions..."
+              />
+            </div>
+            {/* Skeleton cards for better perceived performance */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <PredictionCardSkeleton count={6} />
+            </div>
           </div>
         )}
 
@@ -170,6 +192,9 @@ const MainPage: React.FC = () => {
         )}
       </section>
 
+      {/* Featured Matches Section */}
+      <FeaturedMatchesSection />
+
       {/* Stats Section */}
       <section className="container mx-auto px-4 py-4 md:py-8 mt-4 md:mt-8">
         <StatsSection />
@@ -182,7 +207,7 @@ const MainPage: React.FC = () => {
 
       {/* Call to Action */}
       <section className="container mx-auto px-4 py-4 md:py-8 mt-4 md:mt-8">
-        <div className="bg-gradient-to-r from-amber-500 to-amber-600 rounded-xl md:rounded-2xl p-6 md:p-12 shadow-xl">
+        <div className="bg-gradient-to-r from-primary-500 to-primary-600 rounded-xl md:rounded-2xl p-6 md:p-12 shadow-xl">
           <div className="max-w-3xl mx-auto text-center">
             <h2 className="text-2xl md:text-4xl font-bold text-black mb-3 md:mb-4">Ready to Elevate Your Betting Game?</h2>
             <p className="text-black/80 text-base md:text-lg mb-6 md:mb-8">
@@ -190,7 +215,7 @@ const MainPage: React.FC = () => {
             </p>
             <Button
               size="lg"
-              className="bg-black text-amber-400 hover:bg-gray-900 transition-colors duration-300 px-6 md:px-8 py-2 md:py-3 text-base md:text-lg"
+              className="bg-black text-primary-400 hover:bg-[var(--muted)] transition-colors duration-300 px-6 md:px-8 py-2 md:py-3 text-base md:text-lg"
             >
               Get Started Now
             </Button>
@@ -198,6 +223,7 @@ const MainPage: React.FC = () => {
         </div>
       </section>
     </motion.div>
+    </PullToRefresh>
   );
 };
 

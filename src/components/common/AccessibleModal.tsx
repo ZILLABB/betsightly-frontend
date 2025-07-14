@@ -142,7 +142,7 @@ const AccessibleModal: React.FC<AccessibleModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+      className="modal-backdrop"
       onClick={handleOutsideClick}
       role="dialog"
       aria-modal="true"
@@ -151,11 +151,11 @@ const AccessibleModal: React.FC<AccessibleModalProps> = ({
     >
       <div
         ref={modalRef}
-        className={`bg-[#1A1A27] rounded-xl border border-[#2A2A3C]/20 shadow-xl w-full ${sizeStyles[size]} max-h-[90vh] flex flex-col ${className}`}
+        className={`modal-content ${sizeStyles[size]} ${className}`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex justify-between items-center p-4 border-b border-[#2A2A3C]/20">
+        <div className="modal-header">
           <h2 id={titleId} className="text-lg font-bold">
             {title}
           </h2>

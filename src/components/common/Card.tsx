@@ -4,19 +4,18 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "../../lib/utils";
 
 const cardVariants = cva(
-  "rounded-lg border shadow-sm transition-all duration-300",
+  "card-base",
   {
     variants: {
       variant: {
-        default: "bg-gradient-to-b from-gray-900 to-black border-amber-500/20",
-        premium: "bg-gradient-to-r from-amber-500/10 to-amber-600/10 border-amber-500/30",
-        dark: "bg-black border-gray-800",
-        surface: "bg-[#1A1A27] border-[#2A2A3C]/30",
+        default: "card-default",
+        premium: "card-premium",
+        surface: "card-surface",
       },
       hover: {
-        default: "hover:shadow-md",
-        lift: "hover:shadow-md hover:-translate-y-1",
-        glow: "hover:shadow-amber-500/20 hover:border-amber-500/40",
+        default: "card-hover",
+        lift: "card-hover hover:-translate-y-1",
+        glow: "card-hover shadow-glow-hover",
         none: "",
       }
     },
@@ -46,8 +45,8 @@ const CardHeader = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "flex flex-col space-y-1.5",
-      noPadding ? "" : "p-4 md:p-6",
+      "card-header",
+      noPadding ? "p-0" : "",
       className
     )}
     {...props}
@@ -131,7 +130,8 @@ const CardContent = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      noPadding ? "" : "p-4 md:p-6",
+      "card-content",
+      noPadding ? "p-0" : "",
       className
     )}
     {...props}
@@ -146,8 +146,8 @@ const CardFooter = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "flex items-center",
-      noPadding ? "" : "px-4 md:px-6 pb-4 md:pb-6",
+      "card-footer",
+      noPadding ? "p-0 border-t-0" : "",
       className
     )}
     {...props}

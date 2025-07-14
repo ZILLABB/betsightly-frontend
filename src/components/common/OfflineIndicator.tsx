@@ -1,69 +1,68 @@
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { WifiOff, Wifi } from 'lucide-react';
+import { usePWA } from './PWAProvider';
 
 interface OfflineIndicatorProps {
   className?: string;
 }
 
 const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({ className = '' }) => {
-  const [offline, setOffline] = useState(!navigator.onLine);
-  const [visible, setVisible] = useState(false);
+  const { isOnline, isOfflineReady } = usePWA();
+  const [showOnlineMessage, setShowOnlineMessage] = useState(false);
+  const [wasOffline, setWasOffline] = useState(false);
 
   useEffect(() => {
-    // Set initial state
-    setOffline(!navigator.onLine);
-
-    // Add event listeners for online/offline events
-    const handleOnline = () => {
-      setOffline(false);
-      setVisible(true);
-      // Hide the indicator after 3 seconds
-      setTimeout(() => setVisible(false), 3000);
-    };
-
-    const handleOffline = () => {
-      setOffline(true);
-      setVisible(true);
-    };
-
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
-    // If we're offline on mount, show the indicator
-    if (!navigator.onLine) {
-      setVisible(true);
+    if (!isOnline) {
+      setWasOffline(true);
+    } else if (wasOffline && isOnline) {
+      // Show "back online" message
+      setShowOnlineMessage(true);
+      setTimeout(() => {
+        setShowOnlineMessage(false);
+        setWasOffline(false);
+      }, 3000);
     }
+  }, [isOnline, wasOffline]);
 
-    // Return cleanup function
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
-
-  // Don't render anything if we're online and the indicator is not visible
-  if (!offline && !visible) return null;
+  // Don't render anything if we're online and not showing the online message
+  if (isOnline && !showOnlineMessage) return null;
 
   return (
-    <div
-      className={`fixed bottom-4 left-4 z-50 flex items-center p-2 px-3 rounded-full shadow-lg transition-opacity duration-300 ${
-        offline ? 'bg-red-500/90' : 'bg-green-500/90'
-      } ${className}`}
-      role="status"
-      aria-live="polite"
-    >
-      {offline ? (
-        <>
-          <WifiOff size={16} className="mr-2" />
-          <span className="text-xs font-medium">You are offline</span>
-        </>
-      ) : (
-        <>
-          <Wifi size={16} className="mr-2" />
-          <span className="text-xs font-medium">Back online</span>
-        </>
+    <AnimatePresence>
+      {(!isOnline || showOnlineMessage) && (
+        <motion.div
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 50 }}
+          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+          className={`fixed bottom-4 left-4 z-40 flex items-center p-3 px-4 rounded-xl shadow-xl backdrop-blur-sm border ${
+            !isOnline
+              ? 'bg-red-500/90 border-red-400/20 text-white'
+              : 'bg-green-500/90 border-green-400/20 text-white'
+          } ${className}`}
+          role="status"
+          aria-live="polite"
+        >
+          {!isOnline ? (
+            <>
+              <WifiOff size={16} className="mr-2 flex-shrink-0" />
+              <div className="flex flex-col">
+                <span className="text-sm font-medium">You are offline</span>
+                {isOfflineReady && (
+                  <span className="text-xs opacity-90">Some features available</span>
+                )}
+              </div>
+            </>
+          ) : (
+            <>
+              <Wifi size={16} className="mr-2 flex-shrink-0" />
+              <span className="text-sm font-medium">Back online</span>
+            </>
+          )}
+        </motion.div>
       )}
-    </div>
+    </AnimatePresence>
   );
 };
 

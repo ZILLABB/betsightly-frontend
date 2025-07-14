@@ -6,9 +6,8 @@
  */
 
 import React from "react";
-import { Badge } from "../common/Badge";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "../common/Card";
-import CopyButton from "../common/CopyButton";
+import { Card, CardContent, CardHeader } from "../common/Card";
+import TeamLogo from "../common/TeamLogo";
 import { safeGet, safeFormatDate } from "../../utils/nullChecks";
 import { Calendar } from "lucide-react";
 import type { Prediction } from "../../types";
@@ -56,14 +55,7 @@ const BasePredictionCard: React.FC<BasePredictionCardProps> = ({
   mode = PredictionCardMode.STANDARD,
   variant = PredictionCardVariant.DEFAULT,
   showReason = true,
-  showStats = true,
-  // showActions = true,
   index,
-
-  // Actions
-  onCopy,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  onShare: _onShare,
   onClick,
 
   // Styling
@@ -360,6 +352,19 @@ const BasePredictionCard: React.FC<BasePredictionCardProps> = ({
   // Generate a reason if none exists
   const reason = explanation || description || generateReason(predictionType, homeTeam, awayTeam, odds);
 
+  // Get category and game code
+  const category = safeGet(prediction, 'category',
+    safeGet(prediction, 'prediction_category',
+      safeGet(firstNestedPrediction, 'category',
+        safeGet(firstNestedPrediction, 'prediction_category', '')))) as string;
+
+  const gameCode = safeGet(prediction, 'gameCode',
+    safeGet(prediction, 'game_code',
+      safeGet(prediction, 'code',
+        safeGet(firstNestedPrediction, 'gameCode',
+          safeGet(firstNestedPrediction, 'game_code',
+            safeGet(firstNestedPrediction, 'code', '')))))) as string;
+
   // Get game status with priority order
   const gameStatus = safeGet(prediction, 'game_status',
     safeGet(prediction, 'match_status',
@@ -487,7 +492,7 @@ const BasePredictionCard: React.FC<BasePredictionCardProps> = ({
   if (mode === PredictionCardMode.COMPACT) {
     return (
       <motion.div
-        className={`relative overflow-hidden p-3 border border-[#2A2A3C]/40 rounded-lg bg-gradient-to-b from-[#1A1A27] to-[#131320] shadow-md hover:shadow-lg transition-all duration-300 ${className}`}
+        className={`relative overflow-hidden border border-amber-500/20 rounded-xl bg-gradient-to-b from-gray-900/95 to-black/95 shadow-lg hover:shadow-xl transition-all duration-300 p-3 ${className}`}
         onClick={onClick}
         initial="initial"
         animate="animate"
@@ -496,71 +501,71 @@ const BasePredictionCard: React.FC<BasePredictionCardProps> = ({
         variants={cardVariants}
       >
         {/* Decorative accent */}
-        <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-amber-500/80 to-amber-600/50"></div>
+        <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-amber-500 to-yellow-500 rounded-l-xl"></div>
 
-        {/* Status indicator */}
-        <div className="absolute top-2 right-2">
-          <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
-            derivedGameStatus.includes('LIVE') ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
-            derivedGameStatus.includes('ENDED') ? 'bg-gray-500/20 text-gray-400 border border-gray-500/30' :
-            derivedGameStatus.includes('IN PLAY') ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
-            derivedGameStatus.includes('STARTS') ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' :
-            derivedGameStatus.includes('TODAY') ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' :
-            'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-          }`}>
-            <span className={`w-1.5 h-1.5 rounded-full ${
-              derivedGameStatus.includes('LIVE') ? 'bg-red-400 animate-pulse' :
-              derivedGameStatus.includes('IN PLAY') ? 'bg-green-400 animate-pulse' :
-              'bg-current'
-            }`}></span>
-            <span>{derivedGameStatus}</span>
-          </div>
-        </div>
-
-        {/* Main content with padding for the status indicator */}
-        <div className="pt-6">
-          {/* Teams */}
-          <div className="mb-3">
-            <div className="flex items-center mb-1">
-              <div className="w-3 h-3 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 mr-2"></div>
-              <h3 className="text-sm font-semibold text-white">{homeTeam}</h3>
-            </div>
-            <div className="flex items-center">
-              <div className="w-3 h-3 rounded-full bg-gradient-to-r from-blue-400 to-blue-500 mr-2"></div>
-              <h3 className="text-sm font-semibold text-white">{awayTeam}</h3>
+        {/* Premium badge for compact mode */}
+        {variant === PredictionCardVariant.PREMIUM && (
+          <div className="absolute top-2 right-2 z-10">
+            <div className="bg-gradient-to-r from-amber-500 to-yellow-500 text-black text-xs font-bold px-2 py-1 rounded-full shadow-sm">
+              PREMIUM
             </div>
           </div>
+        )}
 
-          {/* Middle section with prediction type and odds */}
-          <div className="flex justify-between items-center mb-3">
-            <div className="bg-[#2A2A3C]/60 text-xs px-2 py-1 rounded-md text-white font-medium">
-              {predictionType}
+        {/* Index number if provided */}
+        {index !== undefined && (
+          <div className="absolute top-2 left-3 z-10">
+            <div className="bg-gray-800/80 text-amber-400 text-xs font-bold px-2 py-1 rounded-md">
+              #{index}
             </div>
-            <div className="flex items-center">
-              <div className="text-xs font-bold px-2 py-1 rounded-md bg-amber-500/20 border border-amber-500/40 text-amber-400">
-                {formatOdds(odds)}x
-              </div>
+          </div>
+        )}
+
+        <div className="relative z-5 space-y-2">
+          {/* Teams - compact vertical layout */}
+          <div className="space-y-1">
+            <div className="flex items-center justify-center gap-1">
+              <TeamLogo teamName={homeTeam} size="sm" variant="circle" />
+              <span className="text-white font-medium text-xs text-center">{homeTeam}</span>
+            </div>
+            <div className="flex justify-center">
+              <span className="text-amber-500 font-bold text-xs">VS</span>
+            </div>
+            <div className="flex items-center justify-center gap-1">
+              <TeamLogo teamName={awayTeam} size="sm" variant="circle" />
+              <span className="text-white font-medium text-xs text-center">{awayTeam}</span>
             </div>
           </div>
 
-          {/* Bottom section with league, time and confidence */}
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <div className="text-xs text-white/70 bg-[#2A2A3C]/40 px-2 py-0.5 rounded-md">
-                {league}
-              </div>
-              <div className="text-xs text-white/60">
+          {/* Prediction and odds */}
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-amber-400 font-medium truncate">{predictionText || predictionType}</p>
+            </div>
+            <div className="bg-amber-500/20 text-amber-500 border border-amber-500/30 px-2 py-1 rounded-md font-bold text-xs">
+              {formatOdds(odds)}x
+            </div>
+          </div>
+
+          {/* Bottom section */}
+          <div className="flex justify-between items-center gap-2 text-xs">
+            <div className="flex items-center gap-1 flex-1 min-w-0">
+              <span className="text-gray-400 truncate">{league}</span>
+              <span className="text-gray-500">•</span>
+              <span className="text-gray-500 truncate">
                 {gameTimeStr ? formatLocalDateTime(gameTimeStr).split(' ')[0] : safeFormatDate(startTime)}
-              </div>
+              </span>
             </div>
-            <PredictionQuality prediction={prediction} showDetails={false} />
+            <div className="flex-shrink-0">
+              <PredictionQuality prediction={prediction} showDetails={false} />
+            </div>
           </div>
         </div>
       </motion.div>
     );
   }
 
-  // Standard or detailed mode
+  // Standard or detailed mode - Formal Base Design
   return (
     <motion.div
       initial="initial"
@@ -572,133 +577,153 @@ const BasePredictionCard: React.FC<BasePredictionCardProps> = ({
     >
       <Card
         variant={variant === PredictionCardVariant.PREMIUM ? "premium" : "default"}
-        className={`w-full overflow-hidden ${className}`}
+        className={`w-full overflow-hidden relative border border-amber-500/20 bg-gradient-to-b from-gray-900/95 to-black/95 shadow-xl hover:shadow-2xl transition-all duration-300 ${className}`}
         onClick={onClick}
       >
-      {/* Card Header with Gradient Background */}
-      <div className={`relative overflow-hidden ${variant === PredictionCardVariant.PREMIUM ? 'bg-gradient-to-r from-[#1A1A27] to-[#2A1A27]' : 'bg-gradient-to-r from-[#1A1A27] to-[#1A2A37]'}`}>
-        {/* Decorative elements */}
-        <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2"></div>
-        <div className="absolute bottom-0 left-0 w-16 h-16 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2"></div>
+        {/* Premium Badge */}
+        {variant === PredictionCardVariant.PREMIUM && (
+          <div className="absolute top-3 right-3 z-20">
+            <div className="bg-gradient-to-r from-amber-500 to-yellow-500 text-black text-xs font-bold px-3 py-1 rounded-full shadow-lg">
+              PREMIUM
+            </div>
+          </div>
+        )}
 
-        <CardHeader className="p-4 relative z-10">
-          <div className="flex justify-between items-start">
-            <div>
-              <CardTitle className="text-lg font-bold text-white">
-                {homeTeam} vs {awayTeam}
-              </CardTitle>
-              <div className="flex items-center gap-2 mt-2">
-                <div className={`text-xs px-2 py-0.5 rounded-md ${
+        {/* Card Header - Team Information */}
+        <CardHeader className="p-4 pb-3 bg-gradient-to-r from-gray-800/50 to-gray-900/50 border-b border-amber-500/10">
+          <div className="flex items-center justify-between gap-4">
+            {/* Teams Section */}
+            <div className="flex-1 min-w-0">
+              <div className="space-y-2 mb-3">
+                {/* Home Team */}
+                <div className="flex items-center justify-center gap-2">
+                  <TeamLogo teamName={homeTeam} size="md" variant="circle" />
+                  <span className="text-white font-semibold text-sm text-center">{homeTeam}</span>
+                </div>
+
+                {/* VS Separator */}
+                <div className="flex justify-center">
+                  <span className="text-amber-500 font-bold text-lg">VS</span>
+                </div>
+
+                {/* Away Team */}
+                <div className="flex items-center justify-center gap-2">
+                  <TeamLogo teamName={awayTeam} size="md" variant="circle" />
+                  <span className="text-white font-semibold text-sm text-center">{awayTeam}</span>
+                </div>
+              </div>
+
+              {/* League and Status */}
+              <div className="flex items-center justify-center gap-3 text-xs">
+                <span className="text-amber-400 font-medium">{league}</span>
+                <span className="text-gray-400">•</span>
+                <div className={`px-2 py-1 rounded-md font-medium ${
                   derivedGameStatus.includes('LIVE') ? 'bg-red-500/20 text-red-400' :
                   derivedGameStatus.includes('ENDED') ? 'bg-gray-500/20 text-gray-400' :
                   derivedGameStatus.includes('IN PLAY') ? 'bg-green-500/20 text-green-400' :
-                  derivedGameStatus.includes('STARTS') ? 'bg-yellow-500/20 text-yellow-400' :
-                  derivedGameStatus.includes('TODAY') ? 'bg-purple-500/20 text-purple-400' :
-                  'bg-blue-500/20 text-blue-400'
+                  'bg-amber-500/20 text-amber-400'
                 }`}>
                   {derivedGameStatus}
                 </div>
-                <div className="flex items-center">
-                  <Calendar className="h-3 w-3 mr-1 text-white/70" />
-                  <p className="text-xs text-white/70">
-                    {gameTimeStr ? formatLocalDateTime(gameTimeStr) : safeFormatDate(startTime)}
-                  </p>
+              </div>
+            </div>
+
+            {/* Odds Display */}
+            <div className="flex-shrink-0">
+              <div className="bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border border-amber-500/30 px-4 py-2 rounded-lg">
+                <div className="text-center">
+                  <div className="text-xs text-amber-400 font-medium">ODDS</div>
+                  <div className="text-amber-500 font-bold text-lg">{formatOdds(odds)}x</div>
                 </div>
               </div>
             </div>
-            <div className={`px-3 py-2 rounded-lg flex items-center justify-center min-w-[60px] ${
-              variant === PredictionCardVariant.PREMIUM
-                ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-            } font-bold`}>
-              {formatOdds(odds)}x
-            </div>
+          </div>
+
+          {/* Game Time */}
+          <div className="flex items-center justify-center gap-1 mt-2 text-xs text-gray-400">
+            <Calendar className="h-3 w-3" />
+            <span>{gameTimeStr ? formatLocalDateTime(gameTimeStr) : safeFormatDate(startTime)}</span>
           </div>
         </CardHeader>
-      </div>
 
-      <CardContent className="p-4 bg-[#1A1A27]">
-        <div className="flex justify-between items-center mb-4">
-          <div className="bg-[#2A2A3C]/50 px-3 py-2 rounded-lg">
-            <p className="text-xs font-medium text-white/70 mb-1">League</p>
-            <p className="text-sm font-medium text-white">{league}</p>
-          </div>
-          <div className="bg-[#2A2A3C]/50 px-3 py-2 rounded-lg">
-            <p className="text-xs font-medium text-white/70 mb-1">Bet Type</p>
-            <p className="text-sm font-semibold text-white">{predictionType}</p>
-          </div>
-        </div>
-
-        {/* Confidence indicator */}
-        <div className="mb-4">
-          <div className="flex justify-between items-center mb-1">
-            <p className="text-xs font-medium text-white/70">Confidence</p>
-            <p className="text-xs font-medium text-white/70">
-              {safeGet(prediction, 'confidence_display',
-                (confidence * 100).toFixed(1) + '%')}
-            </p>
-          </div>
-          <div className="w-full bg-[#2A2A3C] rounded-full h-1.5">
-            <div
-              className={`h-1.5 rounded-full ${variant === PredictionCardVariant.PREMIUM ? 'bg-[#F5A623]' : 'bg-[#56CCF2]'}`}
-              style={{ width: `${safeGet(prediction, 'confidence_pct', confidence * 100)}%` }}
-            ></div>
-          </div>
-
-          {/* Uncertainty indicator (if available) */}
-          {(uncertainty !== null || safeGet(prediction, 'uncertainty', null) !== null) && (
-            <div className="mt-2">
-              <div className="flex justify-between items-center mb-1">
-                <p className="text-xs font-medium text-white/70">Uncertainty</p>
-                <p className="text-xs font-medium text-white/70">
-                  {safeGet(prediction, 'uncertainty_display',
-                    (safeGet(prediction, 'uncertainty', uncertainty) as number * 100).toFixed(1) + '%')}
-                </p>
+        {/* Card Content - Prediction Details */}
+        <CardContent className="p-4 space-y-4">
+          {/* Prediction Type */}
+          <div className="bg-gray-800/50 border border-gray-700/50 rounded-lg p-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-xs text-gray-400 font-medium mb-1">PREDICTION</div>
+                <div className="text-white font-semibold">{predictionText || predictionType}</div>
               </div>
-              <div className="w-full bg-[#2A2A3C] rounded-full h-1.5">
+              <div className="text-right">
+                <div className="text-xs text-gray-400 font-medium mb-1">CATEGORY</div>
+                <div className="text-amber-400 font-medium text-sm">{category || 'Standard'}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Confidence Metrics */}
+          <div className="space-y-3">
+            {/* Confidence Bar */}
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-xs font-medium text-gray-400">CONFIDENCE</span>
+                <span className="text-xs font-bold text-amber-400">
+                  {safeGet(prediction, 'confidence_display', (confidence * 100).toFixed(1) + '%')}
+                </span>
+              </div>
+              <div className="w-full bg-gray-800 rounded-full h-2 overflow-hidden">
                 <div
-                  className="h-1.5 rounded-full bg-[#F97316]"
-                  style={{ width: `${safeGet(prediction, 'uncertainty_pct',
-                    (safeGet(prediction, 'uncertainty', uncertainty) as number * 100))}%` }}
+                  className="h-2 rounded-full bg-gradient-to-r from-amber-500 to-yellow-500 transition-all duration-500"
+                  style={{ width: `${Math.min(100, Math.max(0, safeGet(prediction, 'confidence_pct', confidence * 100)))}%` }}
                 ></div>
               </div>
-              <p className="text-xs text-white/50 mt-1">
-                {safeGet(prediction, 'uncertainty_message',
-                  (safeGet(prediction, 'uncertainty', uncertainty) as number) < 0.2
-                    ? "High confidence in this prediction"
-                    : (safeGet(prediction, 'uncertainty', uncertainty) as number) < 0.4
-                    ? "Good confidence in this prediction"
-                    : (safeGet(prediction, 'uncertainty', uncertainty) as number) < 0.6
-                    ? "Moderate uncertainty in this prediction"
-                    : "High uncertainty in this prediction"
-                )}
-              </p>
+            </div>
+
+            {/* Risk Level (if available) */}
+            {(uncertainty !== null || safeGet(prediction, 'uncertainty', null) !== null) && (
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-xs font-medium text-gray-400">RISK LEVEL</span>
+                  <span className="text-xs font-bold text-red-400">
+                    {safeGet(prediction, 'uncertainty_display',
+                      (safeGet(prediction, 'uncertainty', uncertainty) as number * 100).toFixed(1) + '%')}
+                  </span>
+                </div>
+                <div className="w-full bg-gray-800 rounded-full h-2 overflow-hidden">
+                  <div
+                    className="h-2 rounded-full bg-gradient-to-r from-red-500 to-orange-500 transition-all duration-500"
+                    style={{ width: `${Math.min(100, Math.max(0, safeGet(prediction, 'uncertainty_pct',
+                      (safeGet(prediction, 'uncertainty', uncertainty) as number * 100))))}%` }}
+                  ></div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Quality Rating */}
+          <div className="border-t border-gray-700/50 pt-3">
+            <PredictionQuality prediction={prediction} showDetails={false} />
+          </div>
+
+          {/* Reason/Explanation */}
+          {showReason && reason && (
+            <div className="bg-gradient-to-r from-amber-500/10 to-yellow-500/10 border border-amber-500/20 rounded-lg p-3">
+              <div className="text-xs text-amber-400 font-medium mb-2">ANALYSIS</div>
+              <p className="text-sm text-gray-300 leading-relaxed">{reason}</p>
             </div>
           )}
-        </div>
 
-        {/* Quality Rating */}
-        <div className="mb-4">
-          <PredictionQuality prediction={prediction} showDetails={true} />
-        </div>
-
-        {/* Reason/Explanation */}
-        {showReason && reason && (
-          <div className="mt-3 p-3 bg-[#2A2A3C]/30 rounded-lg border-l-2 border-[#56CCF2]">
-            <p className="text-xs text-white/80">{reason}</p>
-          </div>
-        )}
-      </CardContent>
-
-      {/* Premium badge */}
-      {variant === PredictionCardVariant.PREMIUM && (
-        <div className="absolute top-0 right-0">
-          <div className="bg-[#F5A623] text-[#1A1A27] text-xs font-bold px-2 py-1 rounded-bl-md">
-            PREMIUM
-          </div>
-        </div>
-      )}
-    </Card>
+          {/* Game Code (if available) */}
+          {gameCode && (
+            <div className="flex items-center justify-center pt-2 border-t border-gray-700/50">
+              <div className="text-xs text-gray-500">
+                Code: <span className="font-mono text-amber-400">{gameCode}</span>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </motion.div>
   );
 };

@@ -149,7 +149,7 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
           <CardContent className="p-4">
             <div className="flex justify-between items-start">
               <div>
-                <p className="text-[#A1A1AA] text-sm">Win Rate</p>
+                <p className="text-[var(--muted-foreground)] text-sm">Win Rate</p>
                 <h3 className="text-2xl font-bold mt-1">{data.winRate.toFixed(1)}%</h3>
               </div>
               <div className={`p-2 rounded-full ${data.winRate > 50 ? 'bg-green-500/10' : 'bg-red-500/10'}`}>
@@ -161,11 +161,11 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
               </div>
             </div>
             <div className="mt-2 flex items-center text-xs">
-              <span className={data.winRate > 60 ? 'text-green-500' : 'text-[#A1A1AA]'}>
+              <span className={data.winRate > 60 ? 'text-green-500' : 'text-[var(--muted-foreground)]'}>
                 {data.wonPredictions} won
               </span>
-              <span className="mx-1 text-[#A1A1AA]">•</span>
-              <span className={data.winRate < 40 ? 'text-red-500' : 'text-[#A1A1AA]'}>
+              <span className="mx-1 text-[var(--muted-foreground)]">•</span>
+              <span className={data.winRate < 40 ? 'text-red-500' : 'text-[var(--muted-foreground)]'}>
                 {data.lostPredictions} lost
               </span>
             </div>
@@ -264,7 +264,7 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                   ></div>
                 </div>
                 <div className="w-16 text-right text-sm">{sport.winRate.toFixed(1)}%</div>
-                <div className="w-16 text-right text-xs text-[#A1A1AA]">{sport.count} picks</div>
+                <div className="w-16 text-right text-xs text-[var(--muted-foreground)]">{sport.count} picks</div>
               </div>
             ))}
           </div>

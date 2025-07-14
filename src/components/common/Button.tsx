@@ -3,30 +3,28 @@ import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "../../lib/utils";
+import { HapticInteractions } from "../../utils/hapticFeedback";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center rounded-md font-medium font-jakarta ring-offset-background transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-1 disabled:pointer-events-none disabled:opacity-50",
+  "btn-base font-jakarta focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-1 transform hover:scale-[1.02] active:scale-[0.98]",
   {
     variants: {
       variant: {
-        default: "bg-amber-500 text-black hover:bg-amber-600",
-        destructive:
-          "bg-red-500 text-white hover:bg-red-600",
-        outline:
-          "border border-amber-500/30 bg-transparent text-amber-400 hover:bg-amber-500/10 hover:border-amber-500/50",
-        secondary:
-          "bg-gray-800 text-white hover:bg-gray-700",
-        ghost: "hover:bg-gray-800 hover:text-white",
-        link: "text-amber-400 underline-offset-4 hover:underline",
-        premium: "bg-gradient-to-r from-amber-500 to-amber-600 text-black hover:opacity-90",
+        default: "btn-primary",
+        destructive: "bg-red-500 text-white hover:bg-red-600",
+        outline: "border border-amber-500/30 bg-transparent text-amber-400 hover:bg-amber-500/10 hover:border-amber-500/50",
+        secondary: "btn-secondary",
+        ghost: "btn-ghost",
+        link: "text-amber-400 underline-offset-4 hover:underline bg-transparent shadow-none",
+        premium: "btn-primary bg-gradient-primary hover:opacity-90",
       },
       size: {
-        default: "h-10 px-4 py-2 text-sm",
-        sm: "h-8 rounded-md px-3 text-xs",
-        md: "h-9 rounded-md px-4 text-sm",
-        lg: "h-11 rounded-md px-6 text-base",
-        xl: "h-12 rounded-md px-8 text-lg",
-        icon: "h-10 w-10 text-sm",
+        default: "btn-md",
+        sm: "btn-sm",
+        md: "btn-md",
+        lg: "btn-lg",
+        xl: "btn-lg px-8 text-lg",
+        icon: "btn-md w-10 px-0",
       },
     },
     defaultVariants: {
@@ -42,11 +40,25 @@ export interface ButtonProps
   asChild?: boolean;
   shortcut?: string;
   shortcutDescription?: string;
+  enableHaptic?: boolean;
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, shortcut, shortcutDescription, children, ...props }, ref) => {
+  ({ className, variant, size, asChild = false, shortcut, shortcutDescription, enableHaptic = true, children, onClick, ...props }, ref) => {
     const Comp = asChild ? Slot : "button";
+
+    // Enhanced click handler with haptic feedback
+    const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+      // Trigger haptic feedback if enabled
+      if (enableHaptic) {
+        HapticInteractions.buttonPress();
+      }
+
+      // Call the original onClick handler
+      if (onClick) {
+        onClick(event);
+      }
+    };
 
     // Add keyboard shortcut to aria-label if provided
     let ariaLabel = props['aria-label'] || props.title || '';
@@ -61,6 +73,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           className={cn(buttonVariants({ variant, size, className }))}
           ref={ref}
           aria-label={ariaLabel || undefined}
+          onClick={handleClick}
           {...props}
         >
           {children}
@@ -74,6 +87,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         className={cn(buttonVariants({ variant, size, className }))}
         ref={ref}
         aria-label={ariaLabel || undefined}
+        onClick={handleClick}
         {...props}
       >
         <span className="flex items-center">

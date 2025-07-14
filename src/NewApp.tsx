@@ -20,8 +20,11 @@ import ProtectedRoute from './components/auth/ProtectedRoute';
 // Import performance monitoring
 import { initPerformanceMonitoring } from './utils/performanceMonitoring';
 import PerformanceMonitor from './components/dev/PerformanceMonitor';
-// Import update notification
-import UpdateNotification from './components/common/UpdateNotification';
+// Import PWA components
+import PWAProvider from './components/common/PWAProvider';
+import PWAUpdateNotification from './components/common/PWAUpdateNotification';
+import PWAInstallPrompt from './components/common/PWAInstallPrompt';
+import OfflineIndicator from './components/common/OfflineIndicator';
 // Import resource preloader
 import { initResourcePreloading } from './utils/resourcePreloader';
 
@@ -66,7 +69,8 @@ function App() {
           <ThemeProvider>
             <ToastProvider>
               <PredictionsProvider>
-                <GlobalErrorHandler>
+                <PWAProvider>
+                  <GlobalErrorHandler>
                 <Router>
                   <Routes>
                     <Route path="/login" element={
@@ -145,9 +149,12 @@ function App() {
               {/* Performance Monitor (only in development) */}
               {import.meta.env.DEV && <PerformanceMonitor />}
 
-              {/* Update Notification */}
-              <UpdateNotification />
+              {/* PWA Components */}
+              <PWAUpdateNotification />
+              <PWAInstallPrompt />
+              <OfflineIndicator />
             </GlobalErrorHandler>
+                </PWAProvider>
             </PredictionsProvider>
             </ToastProvider>
           </ThemeProvider>

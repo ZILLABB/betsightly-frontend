@@ -88,11 +88,11 @@ const AccessibleButton = forwardRef<HTMLButtonElement, AccessibleButtonProps>(
     
     // Variant styles
     const variantStyles = {
-      default: 'bg-[#F5A623] text-black hover:bg-[#F8BD4F] active:bg-[#E09000]',
-      outline: 'bg-transparent border border-[#2A2A3C] text-white hover:bg-[#1A1A27] active:bg-[#2A2A3C]',
-      ghost: 'bg-transparent text-white hover:bg-[#1A1A27] active:bg-[#2A2A3C]',
-      link: 'bg-transparent text-[#F5A623] hover:underline p-0 h-auto',
-      premium: 'bg-gradient-to-r from-[#F5A623] to-[#F8BD4F] text-black hover:from-[#F8BD4F] hover:to-[#F5A623]'
+      default: 'bg-primary-500 text-black hover:bg-primary-400 active:bg-primary-600',
+      outline: 'bg-transparent border border-[var(--border)] text-[var(--foreground)] hover:bg-[var(--muted)] active:bg-[var(--secondary)]',
+      ghost: 'bg-transparent text-[var(--foreground)] hover:bg-[var(--muted)] active:bg-[var(--secondary)]',
+      link: 'bg-transparent text-primary-500 hover:underline p-0 h-auto',
+      premium: 'bg-gradient-to-r from-primary-500 to-primary-400 text-black hover:from-primary-400 hover:to-primary-500'
     };
     
     // Size styles

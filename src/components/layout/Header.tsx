@@ -28,10 +28,10 @@ const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className={`sticky top-0 z-50 transition-all duration-300 ${
+    <header className={`nav-base ${
       scrolled
-        ? "bg-[var(--background)]/95 backdrop-blur-md shadow-md"
-        : "bg-[var(--background)]"
+        ? "shadow-md"
+        : ""
     }`}>
       {/* Top notification bar */}
       <div className="bg-gradient-to-r from-[var(--primary)]/20 to-[var(--primary)]/10 py-1.5 px-4 text-center text-xs md:text-sm">
@@ -55,10 +55,10 @@ const Header: React.FC<HeaderProps> = ({
               <Link
                 key={item.path}
                 to={item.path}
-                className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center ${
+                className={`nav-item ${
                   isActive(item.path)
-                    ? "bg-[var(--primary)] text-[var(--primary-foreground)]"
-                    : "text-[var(--foreground)] hover:bg-[var(--secondary)]"
+                    ? "nav-item-active"
+                    : ""
                 }`}
               >
                 <span className="mr-1.5">{item.icon}</span>
@@ -96,10 +96,10 @@ const Header: React.FC<HeaderProps> = ({
               <Link
                 key={item.path}
                 to={item.path}
-                className={`px-4 py-3 rounded-lg text-base font-medium transition-all duration-200 flex items-center ${
+                className={`nav-item px-4 py-3 text-base ${
                   isActive(item.path)
-                    ? "bg-[var(--primary)]/10 text-[var(--primary)] border-l-4 border-[var(--primary)] pl-3"
-                    : "text-[var(--foreground)] hover:bg-[var(--secondary)]/50"
+                    ? "nav-item-active border-l-4 border-amber-500 pl-3"
+                    : ""
                 }`}
                 onClick={() => setMobileMenuOpen(false)}
               >
