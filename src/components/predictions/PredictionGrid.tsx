@@ -130,10 +130,17 @@ const PredictionGrid: React.FC<PredictionGridProps> = ({
     );
   }
 
-  // Process predictions to handle nested structure
+  // Process predictions to handle both nested and flat structures
   const processedPredictions = React.useMemo(() => {
+    console.log(`Processing ${category} predictions:`, filteredPredictions.length, 'items');
+    console.log(`Sample prediction structure:`, filteredPredictions[0]);
+
     // Check if we have the new API format with nested predictions
-    if (filteredPredictions.length > 0 && filteredPredictions[0].predictions && Array.isArray(filteredPredictions[0].predictions)) {
+    if (filteredPredictions.length > 0 &&
+        filteredPredictions[0].predictions &&
+        Array.isArray(filteredPredictions[0].predictions) &&
+        filteredPredictions[0].predictions.length > 0) {
+
       console.log(`Processing ${category} predictions with nested structure`);
 
       // For 5_odds and 10_odds categories, we need to extract the nested predictions
@@ -162,9 +169,13 @@ const PredictionGrid: React.FC<PredictionGridProps> = ({
       }
     }
 
-    // Return original predictions if no nested structure or not 5_odds/10_odds
+    // Handle flat structure (accumulators format) - this is our current case
+    console.log(`Processing ${category} predictions with flat structure`);
+    console.log(`Returning ${filteredPredictions.length} flat predictions for ${category}`);
     return filteredPredictions;
   }, [filteredPredictions, category]);
+
+  console.log(`Final: Displaying ${processedPredictions.length} predictions for ${category} (out of ${predictions.length})`);
 
   // If no predictions, show empty state
   if (!predictions || predictions.length === 0) {

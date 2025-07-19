@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Clock, Calendar, TrendingUp, Star } from 'lucide-react';
 import TeamLogo from '../common/TeamLogo';
 import { cn } from '../../lib/utils';
+import { usePredictions } from '../../contexts/PredictionsContext';
+import type { Prediction } from '../../types';
 
 interface FeaturedMatch {
   id: string;
@@ -17,8 +19,25 @@ interface FeaturedMatch {
   status: 'upcoming' | 'live' | 'finished';
 }
 
-// Mock featured matches data
-const featuredMatches: FeaturedMatch[] = [
+// Transform prediction to featured match format
+const transformPredictionToFeaturedMatch = (prediction: Prediction): FeaturedMatch => {
+  const startTime = new Date(prediction.game.startTime);
+  return {
+    id: prediction.id,
+    homeTeam: prediction.game.homeTeam,
+    awayTeam: prediction.game.awayTeam,
+    league: prediction.game.league,
+    date: startTime.toISOString().split('T')[0],
+    time: startTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+    confidence: Math.round(prediction.confidence * 100),
+    odds: prediction.odds,
+    prediction: prediction.predictionType,
+    status: 'upcoming' as const
+  };
+};
+
+// Mock featured matches data (fallback)
+const mockFeaturedMatches: FeaturedMatch[] = [
   {
     id: '1',
     homeTeam: 'Manchester City',
@@ -64,6 +83,38 @@ interface FeaturedMatchesSectionProps {
 const FeaturedMatchesSection: React.FC<FeaturedMatchesSectionProps> = ({
   className = ''
 }) => {
+  const [featuredMatches, setFeaturedMatches] = useState<FeaturedMatch[]>(mockFeaturedMatches);
+  const { allPredictions, loading: contextLoading } = usePredictions();
+
+  // Use data from context instead of making separate API calls
+  useEffect(() => {
+    console.log('🎯 Processing featured matches from context data...');
+
+    // Get high-confidence predictions from all categories
+    const allPredictions_array: Prediction[] = [];
+    Object.values(allPredictions).forEach(categoryPredictions => {
+      allPredictions_array.push(...categoryPredictions);
+    });
+
+    if (allPredictions_array.length > 0) {
+      console.log(`🎯 Found ${allPredictions_array.length} total predictions from context`);
+
+      // Filter and sort by confidence, take top 3
+      const topPredictions = allPredictions_array
+        .filter(p => p.confidence > 0.8) // High confidence only
+        .sort((a, b) => b.confidence - a.confidence)
+        .slice(0, 3);
+
+      console.log(`🎯 Selected ${topPredictions.length} high-confidence predictions for featured matches`);
+
+      if (topPredictions.length > 0) {
+        const transformedMatches = topPredictions.map(transformPredictionToFeaturedMatch);
+        setFeaturedMatches(transformedMatches);
+      }
+    } else {
+      console.log('🎯 No predictions available yet, using mock data');
+    }
+  }, [allPredictions]); // Depend on context data
   const containerVariants = {
     initial: { opacity: 0, y: 20 },
     animate: { 

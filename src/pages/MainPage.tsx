@@ -22,6 +22,9 @@ import FeaturedMatchesSection from '../components/home/FeaturedMatchesSection';
 import PullToRefresh from '../components/common/PullToRefresh';
 import { useToast } from '../hooks/useToast';
 import { usePredictions } from '../contexts/PredictionsContext';
+import SimpleDataCheck from '../components/debug/SimpleDataCheck';
+import AccumulatorDebug from '../components/debug/AccumulatorDebug';
+import DirectApiTest from '../components/debug/DirectApiTest';
 
 // Animation variants
 const pageVariants = {
@@ -40,14 +43,36 @@ const MainPage: React.FC = () => {
     loadAllPredictions
   } = usePredictions();
 
+  // Debug: Log predictions state changes
+  useEffect(() => {
+    console.log("🏠 MainPage: predictions changed:", predictions);
+    console.log("🏠 MainPage: Categories in state:", Object.keys(predictions));
+    Object.entries(predictions).forEach(([cat, preds]) => {
+      console.log(`🏠 MainPage: ${cat} has ${preds.length} predictions`);
+    });
+  }, [predictions]);
+
   // Local state for UI controls
   const [showFilters, setShowFilters] = useState(false);
 
-  // Load all predictions on component mount
+  // Load all predictions on component mount (only once)
   useEffect(() => {
-    console.log("Loading all predictions from MainPage");
+    console.log("🏠 MainPage: Loading predictions (ONCE)...");
     loadAllPredictions();
-  }, [loadAllPredictions]);
+
+    // Manual test after a delay
+    setTimeout(async () => {
+      console.log("🏠 MainPage: Manual test after 3 seconds...");
+      try {
+        const response = await fetch('http://localhost:8000/api/accumulators/today');
+        const data = await response.json();
+        console.log("🏠 MainPage: Direct API test result:", data);
+        console.log("🏠 MainPage: Categories available:", Object.keys(data.accumulators || {}));
+      } catch (error) {
+        console.error("🏠 MainPage: Direct API test failed:", error);
+      }
+    }, 3000);
+  }, []); // Empty dependency array to run only once
 
 
 
@@ -105,6 +130,8 @@ const MainPage: React.FC = () => {
       className="min-h-screen"
       enabled={!loading && !refreshing}
     >
+
+
       <motion.div
         className="w-full space-y-8 md:space-y-12 pb-16"
         initial="initial"
@@ -117,6 +144,16 @@ const MainPage: React.FC = () => {
             <HeroSection />
           </div>
         </section>
+
+        {/* Debug Components (temporary) */}
+        <section className="container mx-auto container-padding">
+          <div className="flex justify-end gap-4">
+            <SimpleDataCheck />
+            <AccumulatorDebug />
+          </div>
+        </section>
+
+
 
         {/* Controls Section */}
         <section className="container mx-auto container-padding mt-8 md:mt-12">

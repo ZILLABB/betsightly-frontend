@@ -444,6 +444,7 @@ const BasePredictionCard: React.FC<BasePredictionCardProps> = ({
 
   // Determine game status based on start time if status is not provided
   const derivedGameStatus =
+    safeGet(prediction, 'status', '') === 'unavailable' ? 'NO DATA' :
     gameStatus === 'live' || gameStatus === 'in_play' ? 'LIVE' :
     gameStatus === 'finished' || gameStatus === 'ended' ? 'ENDED' :
     timeDiff > 7200000 ? 'ENDED' : // More than 2 hours after start time
@@ -618,6 +619,7 @@ const BasePredictionCard: React.FC<BasePredictionCardProps> = ({
                 <span className="text-amber-400 font-medium">{league}</span>
                 <span className="text-gray-400">•</span>
                 <div className={`px-2 py-1 rounded-md font-medium ${
+                  derivedGameStatus.includes('NO DATA') ? 'bg-gray-600/20 text-gray-500' :
                   derivedGameStatus.includes('LIVE') ? 'bg-red-500/20 text-red-400' :
                   derivedGameStatus.includes('ENDED') ? 'bg-gray-500/20 text-gray-400' :
                   derivedGameStatus.includes('IN PLAY') ? 'bg-green-500/20 text-green-400' :

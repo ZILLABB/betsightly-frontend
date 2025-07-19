@@ -204,18 +204,17 @@ export function useApiData<T>(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchOnMount, ...dependencies]);
 
-  // Check if data is stale periodically
+  // Check if data is stale periodically (disabled to prevent excessive checks)
   useEffect(() => {
-    // Check initially
+    // Check initially only
     checkIfDataIsStale();
 
-    // Set up interval to check every minute
-    const intervalId = setInterval(() => {
-      checkIfDataIsStale();
-    }, 60000); // 1 minute
+    // Disabled periodic checks to prevent API spam
+    // const intervalId = setInterval(() => {
+    //   checkIfDataIsStale();
+    // }, 60000); // 1 minute
 
-    // Clean up interval on unmount
-    return () => clearInterval(intervalId);
+    // return () => clearInterval(intervalId);
   }, [checkIfDataIsStale]);
 
   return {

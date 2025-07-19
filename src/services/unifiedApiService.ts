@@ -228,12 +228,11 @@ export async function isAPIHealthy(): Promise<boolean> {
  */
 export async function getAllCategoryPredictions(): Promise<Record<string, Prediction[]>> {
   try {
-    console.log('Fetching all category predictions from unified endpoint');
+    console.log('Fetching all category predictions from ML predictions endpoint');
 
-    // Use the /api/predictions/categories/ endpoint as specified
-    // This is the sole data source for all prediction sections as per requirements
+    // Use the new ML predictions categories endpoint
     const rawData = await fetchFromApi<any>(
-      API_ENDPOINTS.PREDICTIONS.CATEGORIES,
+      API_ENDPOINTS.ML_PREDICTIONS.CATEGORIES,
       {},
       API_CACHE_CONFIG.PREDICTIONS_TTL
     );
@@ -262,16 +261,15 @@ export async function getAllCategoryPredictions(): Promise<Record<string, Predic
  */
 export async function getAllBestPredictions(): Promise<Record<string, Prediction[]>> {
   try {
-    console.log('Fetching all best predictions from unified endpoint');
+    console.log('Fetching all best predictions from ML predictions today endpoint');
 
-    // Use the /api/predictions/best/ endpoint as specified
-    // This endpoint should be used for the main page as per requirements
+    // Use the new ML predictions today endpoint for best predictions
     const rawData = await fetchFromApi<any>(
-      API_ENDPOINTS.PREDICTIONS.BEST,
+      API_ENDPOINTS.ML_PREDICTIONS.TODAY,
       {},
       API_CACHE_CONFIG.PREDICTIONS_TTL
     );
-    console.log('Raw API Data received from /predictions/best/', rawData);
+    console.log('Raw API Data received from /ml-predictions/today', rawData);
 
     // Transform backend data to frontend format using adapter
     const categories = adaptPredictionData(rawData);

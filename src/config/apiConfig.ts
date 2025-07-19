@@ -14,17 +14,43 @@ export const FOOTBALL_API_KEY = import.meta.env.VITE_FOOTBALL_API_KEY || '';
 // API request timeout in milliseconds (30 seconds for ML predictions)
 export const API_TIMEOUT = parseInt(import.meta.env.VITE_API_TIMEOUT || '30000');
 
-// API endpoints (with trailing slashes as required by backend)
+// API endpoints (updated to match your backend)
 export const API_ENDPOINTS = {
   // Health check
   HEALTH: '/health/',
 
-  // Predictions endpoints (main endpoints for frontend)
+  // Accumulators endpoint (single optimized endpoint for everything)
+  ACCUMULATORS: {
+    // Today's accumulators - gets all 4 categories in one call
+    TODAY: '/accumulators/today',
+  },
+
+  // ML Predictions endpoints (legacy - keeping for fallback)
+  ML_PREDICTIONS: {
+    // Today's predictions endpoint
+    TODAY: '/ml-predictions/today',
+    // All categories endpoint
+    CATEGORIES: '/ml-predictions/categories',
+    // Models status endpoint
+    MODELS_STATUS: '/ml-predictions/models/status',
+  },
+
+  // Fixtures endpoints (from API Football)
+  FIXTURES: {
+    // Daily fixtures
+    DAILY: '/fixtures/apifootball/daily',
+    // Live fixtures
+    LIVE: '/fixtures/apifootball/live',
+    // By date
+    BY_DATE: (date: string) => `/fixtures/apifootball/daily?date=${date}`,
+  },
+
+  // Legacy predictions endpoints (now pointing to optimized accumulators)
   PREDICTIONS: {
-    // Main endpoint for all categories (used by frontend)
-    CATEGORIES: '/predictions/categories/',
-    // Best predictions endpoint (used by main page)
-    BEST: '/predictions/best/',
+    // Main endpoint for all categories (now uses accumulators)
+    CATEGORIES: '/accumulators/today',
+    // Best predictions endpoint (now uses accumulators)
+    BEST: '/accumulators/today',
     // Category-specific endpoints
     CATEGORY_2_ODDS: '/predictions/category/2_odds/',
     CATEGORY_5_ODDS: '/predictions/category/5_odds/',
@@ -64,12 +90,7 @@ export const API_ENDPOINTS = {
     DELETE: (id: string | number) => `/bookmakers/${id}/`,
   },
 
-  // Fixtures endpoints (if needed)
-  FIXTURES: {
-    LIST: '/fixtures/',
-    DETAIL: (id: string | number) => `/fixtures/${id}/`,
-    BY_DATE: (date: string) => `/fixtures/date/${date}/`,
-  },
+
 
   // Dashboard endpoint
   DASHBOARD: '/dashboard/',

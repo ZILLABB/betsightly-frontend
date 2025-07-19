@@ -8,12 +8,12 @@ const PerformanceMonitor: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [metrics, setMetrics] = useState(getPerformanceMetrics());
   
-  // Update metrics every second
+  // Update metrics every 30 seconds (reduced frequency)
   useEffect(() => {
     const interval = setInterval(() => {
       setMetrics(getPerformanceMetrics());
-    }, 1000);
-    
+    }, 30000); // 30 seconds instead of 1 second
+
     return () => clearInterval(interval);
   }, []);
   

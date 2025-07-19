@@ -31,10 +31,22 @@ const TabbedPredictionsCard: React.FC<TabbedPredictionsCardProps> = ({
   onPredictionSelect,
   showFilters = false,
 }) => {
-  // Get the available categories from the predictions object
-  const categories = Object.keys(predictions).filter(
-    (category) => Array.isArray(predictions[category]) && predictions[category].length > 0
+  // Get all available categories from the predictions object (including empty ones)
+  const allCategories = ['2_odds', '5_odds', '10_odds', 'rollover']; // Standard categories
+  const categories = allCategories.filter(category =>
+    predictions[category] && Array.isArray(predictions[category])
   );
+
+  // Debug: Log category availability
+  console.log('🔍 TabbedPredictionsCard - Available categories:', categories);
+  console.log('🔍 TabbedPredictionsCard - Predictions object keys:', Object.keys(predictions));
+  console.log('🔍 TabbedPredictionsCard - Full predictions object:', predictions);
+  allCategories.forEach(cat => {
+    console.log(`🔍 ${cat}: ${predictions[cat] ? predictions[cat].length : 'undefined'} predictions`);
+    if (predictions[cat] && predictions[cat].length > 0) {
+      console.log(`🔍 ${cat} sample:`, predictions[cat][0]);
+    }
+  });
 
   // State to track the active tab - use first available category as default
   const [activeCategory, setActiveCategory] = useState<string>(categories[0] || '2_odds');
@@ -226,7 +238,12 @@ const TabbedPredictionsCard: React.FC<TabbedPredictionsCardProps> = ({
               >
                 <PredictionGrid
                   title=""
-                  predictions={predictions[activeCategory] || []}
+                  predictions={(() => {
+                    const categoryPredictions = predictions[activeCategory] || [];
+                    console.log(`🔍 TabbedPredictionsCard: Passing ${categoryPredictions.length} predictions to PredictionGrid for ${activeCategory}`);
+                    console.log(`🔍 TabbedPredictionsCard: Sample prediction for ${activeCategory}:`, categoryPredictions[0]);
+                    return categoryPredictions;
+                  })()}
                   category={activeCategory}
                   maxItems={6}
                   showViewMore={true}
