@@ -12,9 +12,7 @@ import type {
   Punter,
   Bookmaker,
   HealthResponse,
-  PredictionCategoriesResponse,
   BettingCodesResponse,
-  ApiResponse,
   PaginatedResponse
 } from '../types';
 import {
@@ -24,7 +22,6 @@ import {
   API_ENDPOINTS,
   API_CACHE_CONFIG
 } from '../config/apiConfig';
-import { logApiResponse } from '../utils/logUtils';
 import { adaptPredictionData } from './dataAdapter';
 
 // Cache configuration
@@ -72,7 +69,6 @@ interface RolloverData {
  */
 export function setForceRefresh(value: boolean): void {
   FORCE_REFRESH = value;
-  console.log(`Force refresh set to: ${FORCE_REFRESH}`);
 }
 
 /**
@@ -117,14 +113,11 @@ export async function fetchFromApi<T>(
   const url = `${API_BASE_URL}${endpoint}`;
   const cacheKey = `${url}:${JSON.stringify(options)}`;
 
-  // Check cache if force refresh is not enabled
   if (isCacheValid(cacheKey, customTTL)) {
-    console.log(`Using cached data for ${endpoint}`);
     return cache[cacheKey].data as T;
   }
 
   try {
-    console.log(`Fetching from ${url}`);
 
     // Prepare fetch options with proper headers and timeout
     const fetchOptions: RequestInit = {
@@ -153,18 +146,11 @@ export async function fetchFromApi<T>(
       } else if (response.status === 503) {
         throw new Error(`Service unavailable (ML models may be down): ${endpoint}`);
       } else {
-        // Log additional context for 500 errors
-        if (response.status === 500) {
-          console.warn(`Server error on ${endpoint} - this endpoint may not have data yet or have database issues`);
-        }
         throw new Error(`API returned status ${response.status}: ${response.statusText}`);
       }
     }
 
     const data = await response.json();
-
-    // Log the API response
-    logApiResponse(`fetchFromApi:${endpoint}`, data);
 
     // Cache the response with headers
     cache[cacheKey] = {
@@ -175,18 +161,7 @@ export async function fetchFromApi<T>(
 
     return data as T;
   } catch (error) {
-    // Enhanced error logging
-    if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
-      console.error(`Network/CORS error for ${endpoint}:`, error);
-      console.error('This usually means:');
-      console.error('1. Backend is not running on port 8000');
-      console.error('2. Backend CORS is not configured for this origin');
-      console.error('3. Network connectivity issue');
-    } else if (error instanceof DOMException && error.name === 'AbortError') {
-      console.error(`Request timeout for ${endpoint}:`, error);
-    } else {
-      console.error(`Error fetching from ${endpoint}:`, error);
-    }
+    console.error(`Error fetching ${endpoint}:`, error);
     throw error;
   }
 }
@@ -196,7 +171,6 @@ export async function fetchFromApi<T>(
  */
 export function clearCache(): void {
   Object.keys(cache).forEach(key => delete cache[key]);
-  console.log('API cache cleared');
 }
 
 /**
@@ -228,21 +202,12 @@ export async function isAPIHealthy(): Promise<boolean> {
  */
 export async function getAllCategoryPredictions(): Promise<Record<string, Prediction[]>> {
   try {
-    console.log('Fetching all category predictions from ML predictions endpoint');
-
-    // Use the new ML predictions categories endpoint
     const rawData = await fetchFromApi<any>(
       API_ENDPOINTS.ML_PREDICTIONS.CATEGORIES,
       {},
       API_CACHE_CONFIG.PREDICTIONS_TTL
     );
-    console.log('Raw API Data received from /predictions/categories/', rawData);
-
-    // Transform backend data to frontend format using adapter
-    const categories = adaptPredictionData(rawData);
-
-    console.log('Processed categories:', Object.keys(categories).map(key => `${key}: ${categories[key].length} predictions`));
-    return categories;
+    return adaptPredictionData(rawData);
   } catch (error) {
     console.error('Error fetching all category predictions:', error);
     // Return empty object on error
@@ -261,21 +226,12 @@ export async function getAllCategoryPredictions(): Promise<Record<string, Predic
  */
 export async function getAllBestPredictions(): Promise<Record<string, Prediction[]>> {
   try {
-    console.log('Fetching all best predictions from ML predictions today endpoint');
-
-    // Use the new ML predictions today endpoint for best predictions
     const rawData = await fetchFromApi<any>(
       API_ENDPOINTS.ML_PREDICTIONS.TODAY,
       {},
       API_CACHE_CONFIG.PREDICTIONS_TTL
     );
-    console.log('Raw API Data received from /ml-predictions/today', rawData);
-
-    // Transform backend data to frontend format using adapter
-    const categories = adaptPredictionData(rawData);
-
-    console.log('Processed best predictions:', Object.keys(categories).map(key => `${key}: ${categories[key].length} predictions`));
-    return categories;
+    return adaptPredictionData(rawData);
   } catch (error) {
     console.error('Error fetching all best predictions:', error);
     // Return empty object on error
@@ -295,29 +251,15 @@ export async function getAllBestPredictions(): Promise<Record<string, Prediction
  */
 export async function getCategoryBestPredictions(category: string): Promise<Prediction[]> {
   try {
-    console.log(`Fetching best predictions for category: ${category}`);
-
-    // Ensure category format is correct (e.g., "2_odds")
     const apiCategory = category.includes('_') ? category : category.replace('odds', '_odds');
-
-    // Use the /api/predictions/best/{category}/ endpoint
     const data = await fetchFromApi<Prediction[]>(
       API_ENDPOINTS.PREDICTIONS.BEST_CATEGORY(apiCategory),
       {},
       API_CACHE_CONFIG.PREDICTIONS_TTL
     );
-    console.log(`API Data received for category: ${apiCategory}`, data);
-
-    // Backend should return an array of predictions directly
-    if (Array.isArray(data)) {
-      return data;
-    } else {
-      console.warn(`Unexpected data format for category ${apiCategory}:`, data);
-      return [];
-    }
+    return Array.isArray(data) ? data : [];
   } catch (error) {
     console.error(`Error fetching best predictions for ${category}:`, error);
-    // Return empty array on error
     return [];
   }
 }
@@ -329,25 +271,14 @@ export async function getCategoryBestPredictions(category: string): Promise<Pred
  */
 export async function getRolloverPredictions(days: number = 10): Promise<Record<number, Prediction[]>> {
   try {
-    console.log(`Fetching rollover predictions for ${days} days`);
-
-    // Get data from the categories endpoint as specified in the requirements
-    // This is the sole data source for all prediction sections including rollover
     const rawData = await fetchFromApi<any>(
       API_ENDPOINTS.PREDICTIONS.CATEGORIES,
       {},
       API_CACHE_CONFIG.PREDICTIONS_TTL
     );
-    console.log('Raw API Data received for rollover predictions', rawData);
 
-    // Transform backend data to frontend format using adapter
     const categories = adaptPredictionData(rawData);
-
-    // Get rollover predictions from the transformed response
     const rolloverPredictions = categories.rollover || [];
-    console.log(`Found ${rolloverPredictions.length} rollover predictions`);
-
-    // For now, organize predictions by day (this may need adjustment based on actual backend structure)
     const formattedDays: Record<number, Prediction[]> = {};
 
     // Initialize empty days
@@ -363,7 +294,6 @@ export async function getRolloverPredictions(days: number = 10): Promise<Record<
       });
     }
 
-    console.log(`Processed rollover predictions across ${days} days`);
     return formattedDays;
   } catch (error) {
     console.error('Error fetching rollover predictions:', error);
@@ -389,23 +319,17 @@ export async function getBettingCodes(
   filters?: Record<string, any>
 ): Promise<BettingCodesResponse> {
   try {
-    console.log(`Fetching betting codes: limit=${limit}, skip=${skip}`);
-
-    // Build query parameters
     const params = new URLSearchParams({
       limit: limit.toString(),
       skip: skip.toString(),
       ...filters
     });
 
-    const data = await fetchFromApi<BettingCodesResponse>(
+    return await fetchFromApi<BettingCodesResponse>(
       `${API_ENDPOINTS.BETTING_CODES.LIST}?${params}`,
       {},
       API_CACHE_CONFIG.BETTING_CODES_TTL
     );
-    console.log('API Data received for betting codes', data);
-
-    return data;
   } catch (error) {
     console.error('Error fetching betting codes:', error);
     // Return empty response on error
@@ -427,9 +351,7 @@ export async function getBettingCodes(
  */
 export async function getLatestBettingCodes(limit: number = 100, skip: number = 0): Promise<BettingCode[]> {
   try {
-    console.log(`Getting latest betting codes: limit=${limit}, skip=${skip}`);
     const response = await getBettingCodes(limit, skip);
-    console.log(`Latest betting codes response:`, response);
     return response.betting_codes || [];
   } catch (error) {
     console.error('Error fetching latest betting codes:', error);
@@ -446,21 +368,12 @@ export async function getLatestBettingCodes(limit: number = 100, skip: number = 
  */
 export async function getPunters(limit: number = 100, skip: number = 0): Promise<PaginatedResponse<Punter>> {
   try {
-    console.log(`Fetching punters: limit=${limit}, skip=${skip}`);
-
-    const params = new URLSearchParams({
-      limit: limit.toString(),
-      skip: skip.toString()
-    });
-
-    const data = await fetchFromApi<PaginatedResponse<Punter>>(
+    const params = new URLSearchParams({ limit: limit.toString(), skip: skip.toString() });
+    return await fetchFromApi<PaginatedResponse<Punter>>(
       `${API_ENDPOINTS.PUNTERS.LIST}?${params}`,
       {},
       API_CACHE_CONFIG.PUNTERS_TTL
     );
-    console.log('API Data received for punters', data);
-
-    return data;
   } catch (error) {
     console.error('Error fetching punters:', error);
     return {
@@ -481,21 +394,12 @@ export async function getPunters(limit: number = 100, skip: number = 0): Promise
  */
 export async function getBookmakers(limit: number = 100, skip: number = 0): Promise<PaginatedResponse<Bookmaker>> {
   try {
-    console.log(`Fetching bookmakers: limit=${limit}, skip=${skip}`);
-
-    const params = new URLSearchParams({
-      limit: limit.toString(),
-      skip: skip.toString()
-    });
-
-    const data = await fetchFromApi<PaginatedResponse<Bookmaker>>(
+    const params = new URLSearchParams({ limit: limit.toString(), skip: skip.toString() });
+    return await fetchFromApi<PaginatedResponse<Bookmaker>>(
       `${API_ENDPOINTS.BOOKMAKERS.LIST}?${params}`,
       {},
       API_CACHE_CONFIG.BOOKMAKERS_TTL
     );
-    console.log('API Data received for bookmakers', data);
-
-    return data;
   } catch (error) {
     console.error('Error fetching bookmakers:', error);
     return {

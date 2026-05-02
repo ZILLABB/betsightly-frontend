@@ -61,9 +61,6 @@ const BasePredictionCard: React.FC<BasePredictionCardProps> = ({
   // Styling
   className = ""
 }) => {
-  // First, log the entire prediction object to see its structure
-  console.log('Full prediction object:', prediction);
-
   // Check if this prediction has nested predictions (common in API response)
   const nestedPredictions = safeGet(prediction, 'predictions', null) as any[] | null;
 
@@ -79,9 +76,6 @@ const BasePredictionCard: React.FC<BasePredictionCardProps> = ({
 
   // Extract game data (legacy format)
   const game = safeGet(prediction, 'game', {}) as Record<string, unknown>;
-
-  // Log fixture data for debugging
-  console.log('Fixture data:', fixture);
 
   // Home team extraction - prioritize fixture data based on API example
   let homeTeam: string | null = null;
@@ -152,14 +146,6 @@ const BasePredictionCard: React.FC<BasePredictionCardProps> = ({
   // Extract team form data from fixture
   const homeForm = fixture ? safeGet(fixture, 'home_form', null) : null;
   const awayForm = fixture ? safeGet(fixture, 'away_form', null) : null;
-
-  // Log team data for debugging
-  console.log('Team data from API:', {
-    homeTeam,
-    awayTeam,
-    homeForm,
-    awayForm
-  });
 
   // Get league with priority order - prioritize fixture data based on API example
   let league = 'Unknown League';
@@ -258,14 +244,6 @@ const BasePredictionCard: React.FC<BasePredictionCardProps> = ({
     }
   }
 
-  // Log the odds data for debugging
-  console.log('Odds data:', {
-    finalOdds: odds,
-    predictionOdds: safeGet(prediction, 'odds', null),
-    predictionCombinedOdds: safeGet(prediction, 'combined_odds', null),
-    nestedPredictionOdds: firstNestedPrediction ? safeGet(firstNestedPrediction, 'odds', null) : null
-  });
-
   // Get match odds from fixture
   const homeOdds = fixture ? safeGet(fixture, 'home_odds', null) : null;
   const drawOdds = fixture ? safeGet(fixture, 'draw_odds', null) : null;
@@ -283,16 +261,6 @@ const BasePredictionCard: React.FC<BasePredictionCardProps> = ({
       safeGet(firstNestedPrediction, 'description',
         safeGet(firstNestedPrediction, 'summary', '')))) as string;
 
-  // Log prediction data for debugging
-  console.log('Prediction data:', {
-    league,
-    predictionType,
-    predictionText,
-    odds,
-    homeOdds,
-    drawOdds,
-    awayOdds
-  });
   // Get confidence with priority order based on API example
   let confidenceValue = 0;
 
@@ -318,14 +286,6 @@ const BasePredictionCard: React.FC<BasePredictionCardProps> = ({
 
   // Ensure confidence is never above 100%
   const confidence = Math.min(confidenceValue, 1);
-
-  // Log confidence data for debugging
-  console.log('Confidence data:', {
-    confidenceValue,
-    confidence,
-    predictionCombinedConfidence: safeGet(prediction, 'combined_confidence', null),
-    nestedPredictionConfidence: firstNestedPrediction ? safeGet(firstNestedPrediction, 'confidence', null) : null
-  });
 
   // Get uncertainty with priority order
   let uncertaintyValue = safeGet(prediction, 'uncertainty',
@@ -408,16 +368,6 @@ const BasePredictionCard: React.FC<BasePredictionCardProps> = ({
   const dateString = gameTime.toLocaleDateString();
   const timeString = gameTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-  // Log the game time for debugging
-  console.log('Game time data:', {
-    gameTimeStr,
-    startTime,
-    gameTime,
-    dateString,
-    timeString,
-    fixtureDate: fixture ? safeGet(fixture, 'date', null) : null
-  });
-
   // Get current time in user's local timezone
   const now = new Date();
 
@@ -479,15 +429,6 @@ const BasePredictionCard: React.FC<BasePredictionCardProps> = ({
 
   // Generate star rating display
   const valueStars = "★".repeat(Math.min(valueRating, 5)) + "☆".repeat(Math.max(0, 5 - valueRating));
-
-  // Log value rating data for debugging
-  console.log('Value rating data:', {
-    valueRating,
-    valueStars,
-    confidence,
-    odds,
-    calculatedValue: confidence * odds
-  });
 
   // Render different layouts based on mode
   if (mode === PredictionCardMode.COMPACT) {

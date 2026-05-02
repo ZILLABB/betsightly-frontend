@@ -37,17 +37,6 @@ const TabbedPredictionsCard: React.FC<TabbedPredictionsCardProps> = ({
     predictions[category] && Array.isArray(predictions[category])
   );
 
-  // Debug: Log category availability
-  console.log('🔍 TabbedPredictionsCard - Available categories:', categories);
-  console.log('🔍 TabbedPredictionsCard - Predictions object keys:', Object.keys(predictions));
-  console.log('🔍 TabbedPredictionsCard - Full predictions object:', predictions);
-  allCategories.forEach(cat => {
-    console.log(`🔍 ${cat}: ${predictions[cat] ? predictions[cat].length : 'undefined'} predictions`);
-    if (predictions[cat] && predictions[cat].length > 0) {
-      console.log(`🔍 ${cat} sample:`, predictions[cat][0]);
-    }
-  });
-
   // State to track the active tab - use first available category as default
   const [activeCategory, setActiveCategory] = useState<string>(categories[0] || '2_odds');
 
@@ -238,12 +227,7 @@ const TabbedPredictionsCard: React.FC<TabbedPredictionsCardProps> = ({
               >
                 <PredictionGrid
                   title=""
-                  predictions={(() => {
-                    const categoryPredictions = predictions[activeCategory] || [];
-                    console.log(`🔍 TabbedPredictionsCard: Passing ${categoryPredictions.length} predictions to PredictionGrid for ${activeCategory}`);
-                    console.log(`🔍 TabbedPredictionsCard: Sample prediction for ${activeCategory}:`, categoryPredictions[0]);
-                    return categoryPredictions;
-                  })()}
+                  predictions={predictions[activeCategory] || []}
                   category={activeCategory}
                   maxItems={6}
                   showViewMore={true}

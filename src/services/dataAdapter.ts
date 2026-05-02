@@ -43,8 +43,8 @@ export function transformBackendPrediction(
     id: parseInt(id.replace(/\D/g, '').slice(0, 8)) || index,
     home_team: backendPred.home_team,
     away_team: backendPred.away_team,
-    league: 'Premier League', // Default league - backend should provide this
-    match_datetime: new Date().toISOString(), // Default to current time
+    league: (backendPred as any).league || '',
+    match_datetime: (backendPred as any).match_datetime || new Date().toISOString(),
     status: 'scheduled'
   };
 
@@ -65,8 +65,8 @@ export function transformBackendPrediction(
       id: id,
       homeTeam: backendPred.home_team,
       awayTeam: backendPred.away_team,
-      league: 'Premier League',
-      startTime: new Date().toISOString(),
+      league: (backendPred as any).league || '',
+      startTime: (backendPred as any).match_datetime || new Date().toISOString(),
       fixture
     },
     gameId: id,
@@ -138,10 +138,8 @@ export function isBackendFormat(data: any): data is BackendCategoriesResponse {
  */
 export function adaptPredictionData(data: any): Record<string, Prediction[]> {
   if (isBackendFormat(data)) {
-    console.log('🔄 Transforming backend format to frontend format');
     return transformCategoriesResponse(data);
   } else if (data && typeof data === 'object') {
-    console.log('✅ Data already in frontend format');
     return data;
   } else {
     console.warn('⚠️ Unknown data format, returning empty categories');

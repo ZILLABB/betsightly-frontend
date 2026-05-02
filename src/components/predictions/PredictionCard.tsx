@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
 import type { Prediction } from "../../types";
-import { useBreakpoints } from "../../hooks/useMediaQuery";
 import BasePredictionCard from "./BasePredictionCard";
 import { PredictionCardMode, PredictionCardVariant } from "../../utils/predictionUtils";
 
@@ -21,7 +20,6 @@ const PredictionCard: React.FC<PredictionCardProps> = ({
 }) => {
   const [isVisible, setIsVisible] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
-  const { isMobile } = useBreakpoints();
 
   // Set up intersection observer for lazy loading
   useEffect(() => {
@@ -57,9 +55,9 @@ const PredictionCard: React.FC<PredictionCardProps> = ({
     return null;
   }
 
-  // If not visible yet and on mobile, render a minimal placeholder
-  if (!isVisible && isMobile) {
-    return <div ref={cardRef} className="w-full h-48 bg-[var(--color-bg-secondary)]/50 rounded-xl animate-pulse padding-standard"></div>;
+  // Render a placeholder until visible (lazy loading)
+  if (!isVisible) {
+    return <div ref={cardRef} className="w-full h-48 bg-[var(--color-bg-secondary)]/50 rounded-xl animate-pulse"></div>;
   }
 
   // Determine the card variant
@@ -83,49 +81,7 @@ const PredictionCard: React.FC<PredictionCardProps> = ({
     </div>
   );
 
-  // If we don't need to show details, just return the base card
-  if (!isMobile) {
-    return baseCard;
-  }
-
-  // For mobile, we'll add some additional content and expandable details
-
-  // Extract data from prediction with null checks
-  const game = safeGet(prediction, 'game', {});
-
-  // Extract team objects and handle them properly
-  const homeTeamObj = safeGet(game, 'homeTeam', { name: 'Home Team' });
-  const awayTeamObj = safeGet(game, 'awayTeam', { name: 'Away Team' });
-
-  // Extract team names safely
-  const homeTeamName = typeof homeTeamObj === 'string' ? homeTeamObj : safeGet(homeTeamObj, 'name', 'Home Team');
-  const awayTeamName = typeof awayTeamObj === 'string' ? awayTeamObj : safeGet(awayTeamObj, 'name', 'Away Team');
-
-  // Get historical success from prediction data or use confidence as fallback
-  const historicalSuccess = safeGet(prediction, 'historical_success',
-    safeGet(prediction, 'confidence', 0) * 100) as number;
-
-  // Get team logos from prediction data or use defaults
-  const homeTeamLogo = typeof homeTeamObj === 'object' && homeTeamObj?.logo
-    ? homeTeamObj.logo
-    : `/teams/default.png`;
-  const awayTeamLogo = typeof awayTeamObj === 'object' && awayTeamObj?.logo
-    ? awayTeamObj.logo
-    : `/teams/default.png`;
-
-  // Simplified return - no unnecessary wrappers
-  return (
-    <div ref={cardRef} className="prediction-card-container">
-      <BasePredictionCard
-        prediction={prediction}
-        mode={PredictionCardMode.STANDARD}
-        variant={cardVariant}
-        showReason={showReason}
-        onClick={onClick}
-      />
-    </div>
-  );
-
+  return baseCard;
 };
 
 export default PredictionCard;
