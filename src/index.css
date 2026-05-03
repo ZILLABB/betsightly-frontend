@@ -48,6 +48,36 @@
   --ease: cubic-bezier(0.4,0,0.2,1);
 }
 
+/* ── Light theme overrides ──────────────────────────── */
+.light {
+  --bg:          #f4f4f8;
+  --bg-mid:      #eaeaf2;
+  --surface:     #ffffff;
+  --surface-2:   #f0f0f7;
+  --surface-3:   #e4e4f0;
+
+  --brand:       #d97706;
+  --brand-dim:   #b45309;
+  --brand-faint: rgba(217,119,6,0.08);
+  --brand-glow:  rgba(217,119,6,0.18);
+
+  --green:       #16a34a;
+  --green-faint: rgba(22,163,74,0.10);
+  --blue:        #2563eb;
+  --blue-faint:  rgba(37,99,235,0.10);
+  --purple:      #7c3aed;
+  --purple-faint:rgba(124,58,237,0.10);
+  --red:         #dc2626;
+  --red-faint:   rgba(220,38,38,0.10);
+
+  --text-1: #0f0f1a;
+  --text-2: rgba(15,15,26,0.65);
+  --text-3: rgba(15,15,26,0.40);
+
+  --border:      rgba(0,0,0,0.08);
+  --border-brand:rgba(217,119,6,0.25);
+}
+
 /* ── Base reset ─────────────────────────────────────── */
 @layer base {
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -119,10 +149,9 @@
   .card {
     --card-accent: var(--brand);
     position: relative;
-    background: linear-gradient(145deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%);
+    background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius-xl);
-    backdrop-filter: blur(10px);
     overflow: hidden;
     transition: border-color 250ms var(--ease), box-shadow 300ms var(--ease), transform 250ms var(--ease);
   }

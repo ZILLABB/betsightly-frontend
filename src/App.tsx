@@ -1,5 +1,7 @@
-﻿import React, { Suspense } from "react";
+import React, { Suspense } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { PreferencesProvider } from "./contexts/PreferencesProvider";
+import ThemeProvider from "./components/common/ThemeProvider";
 import { Layout } from "./components/layout/Layout";
 import { Spinner } from "./components/ui/Spinner";
 import { HomePage } from "./pages/HomePage";
@@ -19,6 +21,8 @@ function Fallback() {
 
 export default function App() {
   return (
+    <PreferencesProvider>
+      <ThemeProvider>
     <BrowserRouter>
       <Layout>
         <Suspense fallback={<Fallback />}>
@@ -33,5 +37,7 @@ export default function App() {
         </Suspense>
       </Layout>
     </BrowserRouter>
+    </ThemeProvider>
+    </PreferencesProvider>
   );
 }
