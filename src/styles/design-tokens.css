@@ -1,242 +1,185 @@
 /**
  * BetSightly Design System - Design Tokens
- * 
- * Standardized design tokens for consistent theming across the application
  */
 
 :root {
-  /* === COLOR SYSTEM === */
-  
-  /* Primary Colors - Amber/Gold Theme */
-  --color-primary-50: #fffbeb;
-  --color-primary-100: #fef3c7;
-  --color-primary-200: #fde68a;
-  --color-primary-300: #fcd34d;
-  --color-primary-400: #fbbf24;
-  --color-primary-500: #f59e0b; /* Main brand color */
-  --color-primary-600: #d97706;
-  --color-primary-700: #b45309;
-  --color-primary-800: #92400e;
-  --color-primary-900: #78350f;
-  
-  /* Surface Colors - Dark Theme */
-  --color-surface-50: #f8fafc;
-  --color-surface-100: #f1f5f9;
-  --color-surface-200: #e2e8f0;
-  --color-surface-300: #cbd5e1;
-  --color-surface-400: #94a3b8;
-  --color-surface-500: #64748b;
-  --color-surface-600: #475569;
-  --color-surface-700: #334155;
-  --color-surface-800: #1e293b;
-  --color-surface-900: #0f172a;
-  --color-surface-950: #020617;
-  
-  /* Background Colors */
-  --color-bg-primary: #000000;
-  --color-bg-secondary: #1a1a27;
-  --color-bg-tertiary: #2a2a3c;
-  --color-bg-surface: #131320;
-  
-  /* Text Colors */
-  --color-text-primary: #ffffff;
-  --color-text-secondary: rgba(255, 255, 255, 0.7);
-  --color-text-tertiary: rgba(255, 255, 255, 0.5);
-  --color-text-disabled: rgba(255, 255, 255, 0.3);
-  --color-text-inverse: #000000;
-  
-  /* Status Colors */
-  --color-success: #22c55e;
-  --color-success-bg: rgba(34, 197, 94, 0.1);
-  --color-warning: #f59e0b;
-  --color-warning-bg: rgba(245, 158, 11, 0.1);
-  --color-error: #ef4444;
-  --color-error-bg: rgba(239, 68, 68, 0.1);
-  --color-info: #3b82f6;
-  --color-info-bg: rgba(59, 130, 246, 0.1);
-  
-  /* Border Colors */
-  --color-border-primary: rgba(245, 158, 11, 0.2);
-  --color-border-secondary: rgba(42, 42, 60, 0.3);
-  --color-border-tertiary: rgba(255, 255, 255, 0.1);
-  
-  /* === SPACING SYSTEM === */
-  --spacing-xs: 0.25rem;    /* 4px */
-  --spacing-sm: 0.5rem;     /* 8px */
-  --spacing-md: 0.75rem;    /* 12px */
-  --spacing-lg: 1rem;       /* 16px */
-  --spacing-xl: 1.5rem;     /* 24px */
-  --spacing-2xl: 2rem;      /* 32px */
-  --spacing-3xl: 3rem;      /* 48px */
-  --spacing-4xl: 4rem;      /* 64px */
-  
-  /* === BORDER RADIUS === */
-  --radius-sm: 0.375rem;    /* 6px */
-  --radius-md: 0.5rem;      /* 8px */
-  --radius-lg: 0.75rem;     /* 12px */
-  --radius-xl: 1rem;        /* 16px */
-  --radius-2xl: 1.5rem;     /* 24px */
+  /* ── Brand Colors ─────────────────────────────────── */
+  --brand-50:  #fffbeb;
+  --brand-100: #fef3c7;
+  --brand-200: #fde68a;
+  --brand-300: #fcd34d;
+  --brand-400: #fbbf24;
+  --brand-500: #f59e0b;   /* Primary brand */
+  --brand-600: #d97706;
+  --brand-700: #b45309;
+  --brand-800: #92400e;
+  --brand-900: #78350f;
+
+  /* ── Surface Scale (dark-first) ───────────────────── */
+  --surface-0:  #000000;
+  --surface-1:  #0a0a12;
+  --surface-2:  #111120;
+  --surface-3:  #18182c;
+  --surface-4:  #1e1e35;
+  --surface-5:  #252540;
+  --surface-6:  #2e2e50;
+
+  /* ── Text Scale ────────────────────────────────────── */
+  --text-primary:   #ffffff;
+  --text-secondary: rgba(255,255,255,0.72);
+  --text-tertiary:  rgba(255,255,255,0.48);
+  --text-disabled:  rgba(255,255,255,0.28);
+  --text-inverse:   #000000;
+
+  /* ── Semantic Status ───────────────────────────────── */
+  --color-success:     #22c55e;
+  --color-success-bg:  rgba(34,197,94,0.12);
+  --color-warning:     #f59e0b;
+  --color-warning-bg:  rgba(245,158,11,0.12);
+  --color-error:       #ef4444;
+  --color-error-bg:    rgba(239,68,68,0.12);
+  --color-info:        #60a5fa;
+  --color-info-bg:     rgba(96,165,250,0.12);
+
+  /* ── Borders ───────────────────────────────────────── */
+  --border-subtle:  rgba(255,255,255,0.07);
+  --border-default: rgba(245,158,11,0.18);
+  --border-strong:  rgba(245,158,11,0.35);
+
+  /* ── Spacing ───────────────────────────────────────── */
+  --sp-1:  0.25rem;
+  --sp-2:  0.5rem;
+  --sp-3:  0.75rem;
+  --sp-4:  1rem;
+  --sp-5:  1.25rem;
+  --sp-6:  1.5rem;
+  --sp-8:  2rem;
+  --sp-10: 2.5rem;
+  --sp-12: 3rem;
+  --sp-16: 4rem;
+
+  /* ── Radius ────────────────────────────────────────── */
+  --radius-sm:   0.375rem;
+  --radius-md:   0.5rem;
+  --radius-lg:   0.75rem;
+  --radius-xl:   1rem;
+  --radius-2xl:  1.5rem;
   --radius-full: 9999px;
-  
-  /* === SHADOWS === */
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  --shadow-glow: 0 0 20px rgba(245, 158, 11, 0.15);
-  --shadow-glow-hover: 0 0 30px rgba(245, 158, 11, 0.25);
-  
-  /* === TYPOGRAPHY === */
-  --font-family-primary: 'Clash Display', sans-serif;
-  --font-family-secondary: 'Plus Jakarta Sans', sans-serif;
-  --font-family-mono: 'JetBrains Mono', monospace;
-  
-  /* Font Sizes */
-  --font-size-xs: 0.75rem;     /* 12px */
-  --font-size-sm: 0.875rem;    /* 14px */
-  --font-size-base: 1rem;      /* 16px */
-  --font-size-lg: 1.125rem;    /* 18px */
-  --font-size-xl: 1.25rem;     /* 20px */
-  --font-size-2xl: 1.5rem;     /* 24px */
-  --font-size-3xl: 1.875rem;   /* 30px */
-  --font-size-4xl: 2.25rem;    /* 36px */
-  
-  /* Line Heights */
-  --line-height-tight: 1.25;
-  --line-height-normal: 1.5;
-  --line-height-relaxed: 1.75;
-  
-  /* === TRANSITIONS === */
-  --transition-fast: 150ms ease-in-out;
-  --transition-normal: 300ms ease-in-out;
-  --transition-slow: 500ms ease-in-out;
-  
-  /* === Z-INDEX === */
+
+  /* ── Typography ────────────────────────────────────── */
+  --font-display: 'Clash Display', 'Outfit', sans-serif;
+  --font-body:    'Plus Jakarta Sans', 'Outfit', sans-serif;
+  --font-mono:    'JetBrains Mono', monospace;
+
+  --text-xs:   0.75rem;
+  --text-sm:   0.875rem;
+  --text-base: 1rem;
+  --text-lg:   1.125rem;
+  --text-xl:   1.25rem;
+  --text-2xl:  1.5rem;
+  --text-3xl:  1.875rem;
+  --text-4xl:  2.25rem;
+  --text-5xl:  3rem;
+
+  --leading-tight:   1.2;
+  --leading-snug:    1.375;
+  --leading-normal:  1.5;
+  --leading-relaxed: 1.75;
+
+  --tracking-tight:  -0.025em;
+  --tracking-normal: 0;
+  --tracking-wide:   0.025em;
+  --tracking-wider:  0.05em;
+  --tracking-widest: 0.1em;
+
+  /* ── Shadows ───────────────────────────────────────── */
+  --shadow-sm:    0 1px 3px rgba(0,0,0,0.4);
+  --shadow-md:    0 4px 12px rgba(0,0,0,0.5);
+  --shadow-lg:    0 8px 24px rgba(0,0,0,0.6);
+  --shadow-xl:    0 16px 40px rgba(0,0,0,0.7);
+  --shadow-brand: 0 0 24px rgba(245,158,11,0.2);
+  --shadow-brand-hover: 0 0 40px rgba(245,158,11,0.35);
+
+  /* ── Transitions ───────────────────────────────────── */
+  --ease-fast:   150ms ease;
+  --ease-normal: 250ms ease;
+  --ease-slow:   400ms ease;
+
+  /* ── Z-index ───────────────────────────────────────── */
   --z-dropdown: 1000;
-  --z-sticky: 1020;
-  --z-fixed: 1030;
-  --z-modal-backdrop: 1040;
-  --z-modal: 1050;
-  --z-popover: 1060;
-  --z-tooltip: 1070;
-  --z-toast: 1080;
+  --z-sticky:   1020;
+  --z-fixed:    1030;
+  --z-overlay:  1040;
+  --z-modal:    1050;
+  --z-toast:    1080;
 }
 
-/* === COMPONENT TOKENS === */
-
-/* Card Tokens */
+/* ── shadcn/ui-style semantic tokens (dark default) ── */
 :root {
-  --card-bg-default: linear-gradient(to bottom, var(--color-bg-secondary), var(--color-bg-surface));
-  --card-bg-premium: linear-gradient(to right, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.05));
-  --card-border-default: var(--color-border-primary);
-  --card-border-premium: rgba(245, 158, 11, 0.3);
-  --card-padding: var(--spacing-xl);
-  --card-radius: var(--radius-lg);
-  --card-shadow: var(--shadow-md);
-  --card-shadow-hover: var(--shadow-lg);
+  --background:          var(--surface-2);
+  --foreground:          var(--text-primary);
+  --card:                var(--surface-3);
+  --card-foreground:     var(--text-primary);
+  --popover:             var(--surface-4);
+  --popover-foreground:  var(--text-primary);
+  --primary:             var(--brand-500);
+  --primary-foreground:  var(--text-inverse);
+  --secondary:           var(--surface-1);
+  --secondary-foreground:var(--text-primary);
+  --muted:               var(--surface-1);
+  --muted-foreground:    var(--text-secondary);
+  --accent:              var(--surface-5);
+  --accent-foreground:   var(--text-primary);
+  --destructive:         var(--color-error);
+  --destructive-foreground: var(--text-primary);
+  --border:              var(--border-default);
+  --input:               var(--surface-4);
+  --ring:                var(--brand-500);
+  --radius:              var(--radius-md);
 }
 
-/* Button Tokens */
-:root {
-  --button-radius: var(--radius-md);
-  --button-padding-x: var(--spacing-lg);
-  --button-padding-y: var(--spacing-sm);
-  --button-font-weight: 500;
-  --button-transition: var(--transition-fast);
-  --button-shadow: var(--shadow-sm);
-  --button-shadow-hover: var(--shadow-md);
-}
-
-/* Form Tokens */
-:root {
-  --form-input-bg: var(--color-bg-tertiary);
-  --form-input-border: var(--color-border-secondary);
-  --form-input-radius: var(--radius-md);
-  --form-input-padding: var(--spacing-md) var(--spacing-lg);
-  --form-label-color: var(--color-text-secondary);
-  --form-label-font-weight: 500;
-}
-
-/* Navigation Tokens */
-:root {
-  --nav-bg: rgba(0, 0, 0, 0.95);
-  --nav-border: var(--color-border-tertiary);
-  --nav-item-padding: var(--spacing-sm) var(--spacing-lg);
-  --nav-item-radius: var(--radius-md);
-  --nav-item-active-bg: var(--color-primary-500);
-  --nav-item-active-color: var(--color-text-inverse);
-  --nav-item-hover-bg: var(--color-bg-tertiary);
-}
-
-/* === THEME SYSTEM VARIABLES === */
-/* These variables are used by components expecting shadcn/ui-style theme system */
-
-/* Dark Theme (Default) */
-:root {
-  --background: var(--color-bg-secondary); /* #1a1a27 */
-  --foreground: var(--color-text-primary); /* #ffffff */
-  --card: var(--color-bg-tertiary); /* #2a2a3c */
-  --card-foreground: var(--color-text-primary); /* #ffffff */
-  --popover: var(--color-bg-tertiary); /* #2a2a3c */
-  --popover-foreground: var(--color-text-primary); /* #ffffff */
-  --primary: var(--color-primary-500); /* #f59e0b */
-  --primary-foreground: var(--color-text-inverse); /* #000000 */
-  --secondary: var(--color-bg-surface); /* #131320 */
-  --secondary-foreground: var(--color-text-primary); /* #ffffff */
-  --muted: var(--color-bg-surface); /* #131320 */
-  --muted-foreground: var(--color-text-secondary); /* rgba(255, 255, 255, 0.7) */
-  --accent: var(--color-bg-tertiary); /* #2a2a3c */
-  --accent-foreground: var(--color-text-primary); /* #ffffff */
-  --destructive: var(--color-error); /* #ef4444 */
-  --destructive-foreground: var(--color-text-primary); /* #ffffff */
-  --border: var(--color-border-primary); /* rgba(245, 158, 11, 0.2) */
-  --input: var(--color-bg-tertiary); /* #2a2a3c */
-  --ring: var(--color-primary-500); /* #f59e0b */
-  --radius: var(--radius-md); /* 0.5rem */
-}
-
-/* Light Theme Override */
+/* ── Light theme ──────────────────────────────────── */
 .light {
-  --background: #ffffff;
-  --foreground: #000000;
-  --card: #f8fafc;
-  --card-foreground: #000000;
-  --popover: #ffffff;
-  --popover-foreground: #000000;
-  --primary: var(--color-primary-500); /* #f59e0b */
-  --primary-foreground: #ffffff;
-  --secondary: #f1f5f9;
-  --secondary-foreground: #000000;
-  --muted: #f1f5f9;
-  --muted-foreground: #64748b;
-  --accent: #f1f5f9;
-  --accent-foreground: #000000;
-  --destructive: var(--color-error); /* #ef4444 */
+  --background:          #f8f9fc;
+  --foreground:          #0f0f1a;
+  --card:                #ffffff;
+  --card-foreground:     #0f0f1a;
+  --popover:             #ffffff;
+  --popover-foreground:  #0f0f1a;
+  --primary:             var(--brand-500);
+  --primary-foreground:  #ffffff;
+  --secondary:           #f1f5f9;
+  --secondary-foreground:#0f0f1a;
+  --muted:               #f1f5f9;
+  --muted-foreground:    #64748b;
+  --accent:              #f1f5f9;
+  --accent-foreground:   #0f0f1a;
+  --destructive:         var(--color-error);
   --destructive-foreground: #ffffff;
-  --border: #e2e8f0;
-  --input: #ffffff;
-  --ring: var(--color-primary-500); /* #f59e0b */
+  --border:              #e2e8f0;
+  --input:               #ffffff;
+  --ring:                var(--brand-500);
 }
 
-/* Dark Theme Explicit Override */
+/* ── Dark override ────────────────────────────────── */
 .dark {
-  --background: var(--color-bg-secondary); /* #1a1a27 */
-  --foreground: var(--color-text-primary); /* #ffffff */
-  --card: var(--color-bg-tertiary); /* #2a2a3c */
-  --card-foreground: var(--color-text-primary); /* #ffffff */
-  --popover: var(--color-bg-tertiary); /* #2a2a3c */
-  --popover-foreground: var(--color-text-primary); /* #ffffff */
-  --primary: var(--color-primary-500); /* #f59e0b */
-  --primary-foreground: var(--color-text-inverse); /* #000000 */
-  --secondary: var(--color-bg-surface); /* #131320 */
-  --secondary-foreground: var(--color-text-primary); /* #ffffff */
-  --muted: var(--color-bg-surface); /* #131320 */
-  --muted-foreground: var(--color-text-secondary); /* rgba(255, 255, 255, 0.7) */
-  --accent: var(--color-bg-tertiary); /* #2a2a3c */
-  --accent-foreground: var(--color-text-primary); /* #ffffff */
-  --destructive: var(--color-error); /* #ef4444 */
-  --destructive-foreground: var(--color-text-primary); /* #ffffff */
-  --border: var(--color-border-primary); /* rgba(245, 158, 11, 0.2) */
-  --input: var(--color-bg-tertiary); /* #2a2a3c */
-  --ring: var(--color-primary-500); /* #f59e0b */
+  --background:          var(--surface-2);
+  --foreground:          var(--text-primary);
+  --card:                var(--surface-3);
+  --card-foreground:     var(--text-primary);
+  --popover:             var(--surface-4);
+  --popover-foreground:  var(--text-primary);
+  --primary:             var(--brand-500);
+  --primary-foreground:  var(--text-inverse);
+  --secondary:           var(--surface-1);
+  --secondary-foreground:var(--text-primary);
+  --muted:               var(--surface-1);
+  --muted-foreground:    var(--text-secondary);
+  --accent:              var(--surface-5);
+  --accent-foreground:   var(--text-primary);
+  --destructive:         var(--color-error);
+  --destructive-foreground: var(--text-primary);
+  --border:              var(--border-default);
+  --input:               var(--surface-4);
+  --ring:                var(--brand-500);
 }

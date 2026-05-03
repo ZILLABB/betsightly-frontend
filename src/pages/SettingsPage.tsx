@@ -1,135 +1,49 @@
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/common/Card';
-import { Settings, Moon, Sun, DollarSign, Database } from 'lucide-react';
-import ThemeManager from '../utils/themeManager';
-import { usePreferences } from '../hooks/usePreferences';
-import { CURRENCY_SYMBOLS } from '../utils/currencyUtils';
-import type { Currency } from '../contexts/PreferencesTypes';
-import useCurrency from '../hooks/useCurrency';
+﻿import React from "react";
+import { Settings, Bell, Moon, Info } from "lucide-react";
 
-const SettingsPage: React.FC = () => {
-  const { preferences, updatePreference } = usePreferences();
-  const { formatUSD } = useCurrency();
-
-  // Simple function to toggle theme
-  const setLightTheme = () => {
-    ThemeManager.getInstance().setTheme('light');
-  };
-
-  const setDarkTheme = () => {
-    ThemeManager.getInstance().setTheme('dark');
-  };
-
-  // Function to update currency
-  const setCurrency = (currency: Currency) => {
-    updatePreference('currency', currency);
-  };
-
-  // Sample amount to demonstrate currency conversion
-  const sampleAmount = 100;
-
+function Row({ icon, label, sub, children }: { icon: React.ReactNode; label: string; sub: string; children?: React.ReactNode }) {
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Settings</h1>
+    <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "16px 0", borderBottom: "1px solid var(--border)" }}>
+      <div style={{ width: 36, height: 36, borderRadius: 9, background: "var(--surface-2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+        {icon}
       </div>
-
-      <div className="grid grid-cols-1 gap-6">
-
-
-        {/* Theme Settings Card */}
-        <Card className="bg-[var(--card)] border border-[var(--border)] shadow-lg overflow-hidden">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg flex items-center">
-              <Settings size={18} className="mr-2 text-[var(--primary)]" />
-              Theme Settings
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">Theme</label>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    className={`px-4 py-2 rounded-md flex items-center ${
-                      preferences.theme === 'light'
-                        ? 'bg-[var(--primary)] text-[var(--primary-foreground)]'
-                        : 'bg-[var(--secondary)] text-[var(--secondary-foreground)]'
-                    }`}
-                    onClick={setLightTheme}
-                  >
-                    <Sun size={14} className="mr-1.5" />
-                    Light Mode
-                  </button>
-                  <button
-                    className={`px-4 py-2 rounded-md flex items-center ${
-                      preferences.theme === 'dark'
-                        ? 'bg-[var(--primary)] text-[var(--primary-foreground)]'
-                        : 'bg-[var(--secondary)] text-[var(--secondary-foreground)]'
-                    }`}
-                    onClick={setDarkTheme}
-                  >
-                    <Moon size={14} className="mr-1.5" />
-                    Dark Mode
-                  </button>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Currency Settings Card */}
-        <Card className="bg-[var(--card)] border border-[var(--border)] shadow-lg overflow-hidden">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg flex items-center">
-              <DollarSign size={18} className="mr-2 text-[var(--primary)]" />
-              Currency Settings
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">Select Currency</label>
-                <div className="flex flex-wrap gap-2">
-                  {Object.entries(CURRENCY_SYMBOLS).map(([currency, symbol]) => (
-                    <button
-                      key={currency}
-                      className={`px-4 py-2 rounded-md flex items-center ${
-                        preferences.currency === currency
-                          ? 'bg-[var(--primary)] text-[var(--primary-foreground)]'
-                          : 'bg-[var(--secondary)] text-[var(--secondary-foreground)]'
-                      }`}
-                      onClick={() => setCurrency(currency as Currency)}
-                    >
-                      <span className="mr-1.5">{symbol}</span>
-                      {currency}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Currency conversion example */}
-                <div className="mt-4 p-3 bg-[var(--secondary)]/50 rounded-lg">
-                  <p className="text-sm font-medium mb-2">Currency Conversion Example:</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="p-2 bg-[var(--card)] rounded-lg">
-                      <p className="text-xs text-[var(--muted-foreground)]">Original (USD)</p>
-                      <p className="text-sm font-bold">${sampleAmount.toFixed(2)}</p>
-                    </div>
-                    <div className="p-2 bg-[var(--card)] rounded-lg">
-                      <p className="text-xs text-[var(--muted-foreground)]">Converted ({preferences.currency})</p>
-                      <p className="text-sm font-bold">{formatUSD(sampleAmount)}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      <div style={{ flex: 1 }}>
+        <p style={{ fontFamily: "var(--font-body)", fontSize: 14, fontWeight: 600, color: "var(--text-1)" }}>{label}</p>
+        <p style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text-3)", marginTop: 2 }}>{sub}</p>
       </div>
+      {children}
     </div>
   );
-};
+}
 
-export default SettingsPage;
+export function SettingsPage() {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
+      <div>
+        <div className="eyebrow" style={{ marginBottom: 8 }}>Preferences</div>
+        <h1 style={{ fontSize: 32, fontWeight: 800 }}>Settings</h1>
+      </div>
 
+      <div className="card" style={{ padding: "0 22px" }}>
+        <Row icon={<Bell size={16} color="var(--brand)" />} label="Notifications" sub="Get notified when new picks are ready">
+          <div style={{ width: 40, height: 22, borderRadius: 11, background: "var(--surface-3)", position: "relative", cursor: "not-allowed", opacity: 0.5 }}>
+            <div style={{ width: 18, height: 18, borderRadius: "50%", background: "var(--text-3)", position: "absolute", top: 2, left: 2 }} />
+          </div>
+        </Row>
+        <Row icon={<Moon size={16} color="var(--blue)" />} label="Dark mode" sub="Always on — optimised for night viewing">
+          <div style={{ width: 40, height: 22, borderRadius: 11, background: "var(--brand-faint)", border: "1px solid var(--border-brand)", position: "relative" }}>
+            <div style={{ width: 18, height: 18, borderRadius: "50%", background: "var(--brand)", position: "absolute", top: 2, right: 2 }} />
+          </div>
+        </Row>
+        <Row icon={<Info size={16} color="var(--text-3)" />} label="About BetSightly" sub="v1.0 · AI-powered sports predictions">
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--text-3)" }}>v1.0</span>
+        </Row>
+      </div>
 
+      <p style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text-3)", textAlign: "center", lineHeight: 1.8 }}>
+        BetSightly is for informational purposes only.<br />
+        Please gamble responsibly. 18+ only.
+      </p>
+    </div>
+  );
+}

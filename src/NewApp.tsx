@@ -3,30 +3,18 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { TrackedErrorBoundary } from './components/common/ErrorBoundary';
 import Layout from './components/layout/Layout';
 import { initErrorTracking } from './utils/errorTracking';
-// Initialize theme manager
 import ThemeManager from './utils/themeManager';
-// Import providers
 import { PreferencesProvider } from './contexts/PreferencesContext';
 import { AuthProvider } from './contexts/AuthContext';
 import ThemeProvider from './components/common/ThemeProvider';
 import { ToastProvider } from './hooks/useToast';
 import { PredictionsProvider } from './contexts/PredictionsContext';
-// Import cache utility
-import cache from './utils/cacheUtils';
-// Import GlobalErrorHandler
 import GlobalErrorHandler from './components/common/GlobalErrorHandler';
-// Import ProtectedRoute
 import ProtectedRoute from './components/auth/ProtectedRoute';
-// Import performance monitoring
-import { initPerformanceMonitoring } from './utils/performanceMonitoring';
-import PerformanceMonitor from './components/dev/PerformanceMonitor';
-// Import PWA components
 import PWAProvider from './components/common/PWAProvider';
 import PWAUpdateNotification from './components/common/PWAUpdateNotification';
 import PWAInstallPrompt from './components/common/PWAInstallPrompt';
 import OfflineIndicator from './components/common/OfflineIndicator';
-// Import resource preloader
-import { initResourcePreloading } from './utils/resourcePreloader';
 
 // Import lazy loaded pages
 import {
@@ -44,22 +32,9 @@ import {
 } from './pages/LazyPages';
 
 function App() {
-  // Initialize error tracking, theme, performance monitoring, and clear cache
   useEffect(() => {
     initErrorTracking();
-    // Initialize theme manager
     ThemeManager.getInstance();
-    // Clear cache to ensure fresh data
-    cache.clear();
-    console.log("Cache cleared on application start");
-
-    // Initialize performance monitoring in development
-    if (import.meta.env.DEV) {
-      initPerformanceMonitoring();
-    }
-
-    // Initialize resource preloading
-    initResourcePreloading();
   }, []);
 
   return (
@@ -145,9 +120,6 @@ function App() {
                   } />
                 </Routes>
               </Router>
-
-              {/* Performance Monitor (only in development) */}
-              {import.meta.env.DEV && <PerformanceMonitor />}
 
               {/* PWA Components */}
               <PWAUpdateNotification />

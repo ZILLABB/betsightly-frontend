@@ -73,7 +73,7 @@ export const PredictionsProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const [rolloverPredictions, setRolloverPredictions] = useState<Record<number, Prediction[]>>({});
 
   // Loading and error states
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(false);
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -85,7 +85,7 @@ export const PredictionsProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
   // Load all predictions
   const loadAllPredictions = useCallback(async () => {
-    if (loading) return;
+    if (loading || refreshing) return;
 
     try {
       setLoading(true);

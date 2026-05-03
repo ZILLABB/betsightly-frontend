@@ -116,49 +116,59 @@ const GlobalErrorHandler: React.FC<GlobalErrorHandlerProps> = ({ children }) => 
     );
   }
 
-  // If offline, show offline banner
+  // If offline, show offline banner below sticky nav
   if (!isOnline) {
     return (
       <>
-        <div className="fixed top-0 inset-x-0 bg-red-500 text-white py-2 px-4 z-50 flex items-center justify-center">
-          <WifiOff size={16} className="mr-2" />
+        <div
+          className="fixed inset-x-0 z-40 flex items-center justify-center gap-2 py-2 px-4 text-sm font-medium"
+          style={{ top: "64px", background: "var(--color-error)", color: "#fff" }}
+        >
+          <WifiOff size={14} />
           <span>You are offline. Some features may not be available.</span>
         </div>
-        <div className="pt-10">{children}</div>
+        <div className="pt-9">{children}</div>
       </>
     );
   }
 
-  // If API is unavailable but online, show API unavailable banner
+  // If API is unavailable but online, show subtle banner below sticky nav
   if (isOnline && !isApiAvailable) {
     return (
       <>
-        <div className="fixed top-0 inset-x-0 bg-primary-500 text-black py-2 px-4 z-50 flex items-center justify-between">
-          <div className="flex items-center">
-            <AlertTriangle size={16} className="mr-2" />
-            <span>API is currently unavailable. Using cached data.</span>
+        <div
+          className="fixed inset-x-0 z-40 flex items-center justify-between gap-2 py-2 px-4 text-sm"
+          style={{
+            top: "64px",
+            background: "rgba(180,83,9,0.95)",
+            color: "#fff",
+            backdropFilter: "blur(8px)",
+          }}
+        >
+          <div className="flex items-center gap-2">
+            <AlertTriangle size={14} />
+            <span>Backend unavailable — showing cached predictions.</span>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
+          <button
             onClick={retryApiConnection}
             disabled={isCheckingApi}
-            className="text-xs bg-white/20 border-white/40"
+            className="flex items-center gap-1.5 text-xs px-3 py-1 rounded-lg transition-colors"
+            style={{ background: "rgba(255,255,255,0.18)", border: "1px solid rgba(255,255,255,0.3)" }}
           >
             {isCheckingApi ? (
               <>
-                <div className="animate-spin mr-1 h-3 w-3 border-2 border-white border-t-transparent rounded-full"></div>
-                Checking...
+                <div className="animate-spin h-3 w-3 border-2 border-white border-t-transparent rounded-full"></div>
+                Checking…
               </>
             ) : (
               <>
-                <RefreshCw size={12} className="mr-1" />
+                <RefreshCw size={12} />
                 Retry
               </>
             )}
-          </Button>
+          </button>
         </div>
-        <div className="pt-10">{children}</div>
+        <div className="pt-9">{children}</div>
       </>
     );
   }

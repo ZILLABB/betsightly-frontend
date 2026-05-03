@@ -1,73 +1,46 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
-import Toast, { ToastVariant } from '../components/ui/Toast';
-import { createPortal } from 'react-dom';
-import { motion } from 'framer-motion';
+﻿import React, { createContext, useContext, useState, useCallback } from "react";
+import { X, CheckCircle, AlertCircle, Info } from "lucide-react";
 
-interface ToastOptions {
-  title: string;
-  description?: string;
-  variant?: ToastVariant;
-  duration?: number;
-}
+type Variant = "success" | "error" | "info";
+interface Toast { id: string; message: string; variant: Variant; }
+interface ToastCtx { toast: (message: string, variant?: Variant) => void; }
 
-interface ToastItem extends ToastOptions {
-  id: string;
-}
+const Ctx = createContext<ToastCtx>({ toast: () => {} });
 
-interface ToastContextType {
-  toast: (options: ToastOptions) => void;
-  removeToast: (id: string) => void;
-}
-
-const ToastContext = createContext<ToastContextType | undefined>(undefined);
-
-export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [toasts, setToasts] = useState<ToastItem[]>([]);
-
-  const toast = useCallback((options: ToastOptions) => {
-    const id = Math.random().toString(36).substring(2, 9);
-    setToasts((prev) => [...prev, { id, ...options }]);
+export function ToastProvider({ children }: { children: React.ReactNode }) {
+  const [toasts, setToasts] = useState<Toast[]>([]);
+  const toast = useCallback((message: string, variant: Variant = "info") => {
+    const id = Math.random().toString(36).slice(2);
+    setToasts(p => [...p, { id, message, variant }]);
+    setTimeout(() => setToasts(p => p.filter(t => t.id !== id)), 4000);
   }, []);
-
-  const removeToast = useCallback((id: string) => {
-    setToasts((prev) => prev.filter((toast) => toast.id !== id));
-  }, []);
-
-  // Create a portal for the toasts
-  const toastPortal = typeof document !== 'undefined' ? 
-    createPortal(
-      <div className="fixed top-4 right-4 z-50 flex flex-col gap-2">
-        <motion.div layout className="flex flex-col gap-2">
-          {toasts.map((toast) => (
-            <Toast
-              key={toast.id}
-              id={toast.id}
-              title={toast.title}
-              description={toast.description}
-              variant={toast.variant}
-              duration={toast.duration}
-              onClose={removeToast}
-            />
-          ))}
-        </motion.div>
-      </div>,
-      document.body
-    ) : null;
-
+  const dismiss = (id: string) => setToasts(p => p.filter(t => t.id !== id));
+  const icons: Record<Variant, React.ReactNode> = {
+    success: <CheckCircle size={15} />, error: <AlertCircle size={15} />, info: <Info size={15} />,
+  };
+  const colors: Record<Variant, string> = {
+    success: "#22c55e", error: "#f87171", info: "#60a5fa",
+  };
   return (
-    <ToastContext.Provider value={{ toast, removeToast }}>
+    <Ctx.Provider value={{ toast }}>
       {children}
-      {toastPortal}
-    </ToastContext.Provider>
+      <div style={{ position:"fixed", bottom:80, right:16, zIndex:9999, display:"flex", flexDirection:"column", gap:8, alignItems:"flex-end" }}>
+        {toasts.map(t => (
+          <div key={t.id} className="animate-fade-up" style={{
+            display:"flex", alignItems:"center", gap:10, padding:"10px 14px",
+            background:"rgba(20,20,48,0.97)", border:`1px solid ${colors[t.variant]}44`,
+            borderRadius:12, boxShadow:`0 4px 24px rgba(0,0,0,0.5)`,
+            color:"var(--text-1)", fontFamily:"var(--font-body)", fontSize:14, maxWidth:320,
+          }}>
+            <span style={{ color:colors[t.variant], flexShrink:0 }}>{icons[t.variant]}</span>
+            <span style={{ flex:1 }}>{t.message}</span>
+            <button onClick={() => dismiss(t.id)} style={{ background:"none", border:"none", cursor:"pointer", color:"var(--text-3)", padding:2, flexShrink:0 }}>
+              <X size={13} />
+            </button>
+          </div>
+        ))}
+      </div>
+    </Ctx.Provider>
   );
-};
-
-export const useToast = (): ToastContextType => {
-  const context = useContext(ToastContext);
-  if (context === undefined) {
-    throw new Error('useToast must be used within a ToastProvider');
-  }
-  return context;
-};
-
-export default useToast;
+}
+export const useToast = () => useContext(Ctx);

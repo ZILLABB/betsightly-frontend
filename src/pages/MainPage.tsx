@@ -125,8 +125,17 @@ const MainPage: React.FC = () => {
         {/* Controls Section */}
         <section className="container mx-auto container-padding mt-8 md:mt-12">
         <div className="flex flex-wrap justify-between items-center mb-6">
-          <h2 className="text-2xl md:text-3xl font-bold text-[var(--foreground)]">
-            Today's <span className="text-primary-400">Premium Predictions</span>
+          <h2 style={{ fontFamily: "var(--font-display)", color: "var(--text-primary)" }}
+              className="text-2xl md:text-3xl font-semibold">
+            Today's{" "}
+            <span style={{
+              background: "linear-gradient(135deg, var(--brand-400), var(--brand-600))",
+              WebkitBackgroundClip: "text",
+              backgroundClip: "text",
+              color: "transparent"
+            }}>
+              Premium Predictions
+            </span>
           </h2>
           <div className="flex items-center gap-2 md:gap-3 mt-3 sm:mt-0">
             <Button
@@ -211,15 +220,30 @@ const MainPage: React.FC = () => {
 
       {/* Call to Action */}
       <section className="container mx-auto px-4 py-4 md:py-8 mt-4 md:mt-8">
-        <div className="bg-gradient-to-r from-primary-500 to-primary-600 rounded-xl md:rounded-2xl p-6 md:p-12 shadow-xl">
-          <div className="max-w-3xl mx-auto text-center">
-            <h2 className="text-2xl md:text-4xl font-bold text-black mb-3 md:mb-4">Ready to Elevate Your Betting Game?</h2>
-            <p className="text-black/80 text-base md:text-lg mb-6 md:mb-8">
-              Join thousands of users who trust our predictions for their daily betting decisions.
+        <div
+          className="rounded-2xl p-8 md:p-14 text-center relative overflow-hidden"
+          style={{
+            background: "linear-gradient(135deg, var(--brand-500) 0%, var(--brand-700) 100%)",
+            boxShadow: "0 8px 40px rgba(245,158,11,0.35)",
+          }}
+        >
+          {/* Decorative ring */}
+          <div className="absolute inset-0 opacity-10"
+            style={{ background: "radial-gradient(circle at 70% 30%, white 0%, transparent 70%)" }} />
+          <div className="relative z-10 max-w-2xl mx-auto">
+            <h2
+              className="text-2xl md:text-4xl font-bold mb-3 md:mb-4"
+              style={{ fontFamily: "var(--font-display)", color: "var(--surface-0)", letterSpacing: "var(--tracking-tight)" }}
+            >
+              Ready to Elevate Your Betting Game?
+            </h2>
+            <p className="text-base md:text-lg mb-6 md:mb-8" style={{ color: "rgba(0,0,0,0.7)" }}>
+              Join thousands of users who trust our AI-powered predictions every day.
             </p>
             <Button
               size="lg"
-              className="bg-black text-primary-400 hover:bg-[var(--muted)] transition-colors duration-300 px-6 md:px-8 py-2 md:py-3 text-base md:text-lg"
+              className="font-semibold px-8 py-3"
+              style={{ background: "var(--surface-0)", color: "var(--brand-400)" }}
             >
               Get Started Now
             </Button>

@@ -1,6 +1,6 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import App from './NewApp'
+import App from './App'
 import './index.css'
 
 // Mount the application to the DOM
