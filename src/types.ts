@@ -4,12 +4,25 @@ export interface GamePrediction {
   away_team: string;
   league: string;
   date: string;
+  prediction: string;  // readable prediction (e.g., "Over 1.5 goals")
   prediction_type: string;
-  prediction_value: string;
-  readable_prediction: string;
+  prediction_value?: string;
+  readable_prediction?: string;  // keep for backwards compat
   confidence: number;
-  estimated_odds: number;
-  model_type: string;
+  estimated_odds?: number;
+  odds?: number;  // real odds from bookmaker
+  real_odds?: number;
+  risk_score?: number;
+  risk_level?: string;
+  models_agreed?: number;
+  edge?: number;
+  expected_value?: number;
+  bookmaker?: string;
+  model_type?: string;
+  // Logo URLs (from API-Football)
+  home_team_logo?: string;
+  away_team_logo?: string;
+  league_logo?: string;
 }
 
 export interface CategoryData {
@@ -27,11 +40,12 @@ export interface AccumulatorResponse {
     '2_odds': CategoryData;
     '5_odds': CategoryData;
     '10_odds': CategoryData;
+    over_1_5: CategoryData;
     rollover: CategoryData;
   };
 }
 
-export type CategoryKey = '2_odds' | '5_odds' | '10_odds' | 'rollover';
+export type CategoryKey = '2_odds' | '5_odds' | '10_odds' | 'over_1_5' | 'rollover';
 
 export interface CategoryMeta {
   key: CategoryKey;
@@ -70,6 +84,15 @@ export const CATEGORIES: CategoryMeta[] = [
     color: '#f59e0b',
     faint: 'rgba(245,158,11,0.10)',
     riskLabel: 'High Risk',
+  },
+  {
+    key: 'over_1_5',
+    label: 'Over 1.5',
+    shortLabel: '⚽ 1.5',
+    description: '2+ goals · very safe picks',
+    color: '#f472b6',
+    faint: 'rgba(244,114,182,0.10)',
+    riskLabel: 'Very Safe',
   },
   {
     key: 'rollover',

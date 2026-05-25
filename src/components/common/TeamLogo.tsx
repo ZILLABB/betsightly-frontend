@@ -5,6 +5,8 @@ import { cn } from '../../lib/utils';
 
 interface TeamLogoProps {
   teamName: string;
+  /** Direct logo URL (e.g. from API-Football). Takes priority over hardcoded lookup. */
+  logoUrl?: string;
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
   variant?: 'circle' | 'square' | 'rounded';
   showName?: boolean;
@@ -15,6 +17,7 @@ interface TeamLogoProps {
 
 const TeamLogo: React.FC<TeamLogoProps> = ({
   teamName,
+  logoUrl,
   size = 'md',
   variant = 'circle',
   showName = false,
@@ -24,6 +27,7 @@ const TeamLogo: React.FC<TeamLogoProps> = ({
 }) => {
   const [currentLogoIndex, setCurrentLogoIndex] = useState(0);
   const [allLogosExhausted, setAllLogosExhausted] = useState(false);
+  const [apiLogoFailed, setApiLogoFailed] = useState(false);
   const teamInfo = getTeamInfo(teamName);
   const alternativeLogos = getAlternativeLogos(teamName);
 
@@ -112,9 +116,15 @@ const TeamLogo: React.FC<TeamLogoProps> = ({
   useEffect(() => {
     setCurrentLogoIndex(0);
     setAllLogosExhausted(false);
-  }, [teamName]);
+    setApiLogoFailed(false);
+  }, [teamName, logoUrl]);
 
   const handleImageError = () => {
+    // If the API-provided logo failed, fall through to alternatives
+    if (logoUrl && !apiLogoFailed) {
+      setApiLogoFailed(true);
+      return;
+    }
     if (currentLogoIndex < alternativeLogos.length - 1) {
       setCurrentLogoIndex(currentLogoIndex + 1);
     } else {
@@ -123,6 +133,11 @@ const TeamLogo: React.FC<TeamLogoProps> = ({
   };
 
   const getCurrentLogoSrc = () => {
+    // Priority 1: API-provided logo URL (e.g. from API-Football)
+    if (logoUrl && !apiLogoFailed) {
+      return logoUrl;
+    }
+    // Priority 2: Hardcoded team database + alternatives
     if (allLogosExhausted || alternativeLogos.length === 0) {
       return generateFallbackLogo(teamName);
     }

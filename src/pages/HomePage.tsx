@@ -90,7 +90,7 @@ export function HomePage() {
         <StatBubble label="Picks today" value={loading ? "—" : String(totalGames)} icon={<Target size={19} color="var(--brand)" />} color="var(--brand)" />
         <StatBubble label="Confidence" value={loading ? "—" : `${avgConf}%`} icon={<Shield size={19} color="var(--green)" />} color="var(--green)" />
         <StatBubble label="Top odds" value={loading ? "—" : `${(activeCat?.total_odds ?? 0).toFixed(2)}x`} icon={<TrendingUp size={19} color="var(--blue)" />} color="var(--blue)" />
-        <StatBubble label="Categories" value="4" icon={<Zap size={19} color="var(--purple)" />} color="var(--purple)" />
+        <StatBubble label="Categories" value={String(CATEGORIES.length)} icon={<Zap size={19} color="var(--purple)" />} color="var(--purple)" />
       </div>
 
       {/* Tabs + content */}

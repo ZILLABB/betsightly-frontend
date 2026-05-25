@@ -1,5 +1,6 @@
 import React from "react";
 import type { GamePrediction } from "../../types";
+import TeamLogo from "../common/TeamLogo";
 
 interface Props {
   game: GamePrediction;
@@ -23,6 +24,12 @@ function ConfBar({ value, color }: { value: number; color: string }) {
 export function PredictionCard({ game, color, faint, index = 0 }: Props) {
   const pct = Math.round(game.confidence * 100);
   const isHighConf = game.confidence >= 0.75;
+
+  // Use whichever odds field is available
+  const displayOdds = game.odds ?? game.real_odds ?? game.estimated_odds ?? 0;
+
+  // Use prediction (readable) or fall back to readable_prediction
+  const displayPrediction = game.prediction || game.readable_prediction || game.prediction_value || "";
 
   return (
     <div
@@ -50,27 +57,33 @@ export function PredictionCard({ game, color, faint, index = 0 }: Props) {
         </span>
       </div>
 
-      {/* Teams — centered divider dots */}
-      <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "6px 0" }}>
-        <span style={{
-          fontFamily: "var(--font-display)", fontSize: 16, fontWeight: 700,
-          color: "var(--text-1)", flex: 1, minWidth: 0,
-          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-        }}>
-          {game.home_team}
-        </span>
+      {/* Teams with logos — centered divider dots */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 0" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0 }}>
+          <TeamLogo teamName={game.home_team} logoUrl={game.home_team_logo} size="sm" animate={false} />
+          <span style={{
+            fontFamily: "var(--font-display)", fontSize: 16, fontWeight: 700,
+            color: "var(--text-1)", minWidth: 0,
+            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+          }}>
+            {game.home_team}
+          </span>
+        </div>
         <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
           <div style={{ width: 4, height: 4, borderRadius: "50%", background: "var(--text-3)", opacity: 0.5 }} />
           <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, color: "var(--text-3)", letterSpacing: "0.05em" }}>VS</span>
           <div style={{ width: 4, height: 4, borderRadius: "50%", background: "var(--text-3)", opacity: 0.5 }} />
         </div>
-        <span style={{
-          fontFamily: "var(--font-display)", fontSize: 16, fontWeight: 700,
-          color: "var(--text-1)", flex: 1, minWidth: 0,
-          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textAlign: "right",
-        }}>
-          {game.away_team}
-        </span>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0, justifyContent: "flex-end" }}>
+          <span style={{
+            fontFamily: "var(--font-display)", fontSize: 16, fontWeight: 700,
+            color: "var(--text-1)", minWidth: 0,
+            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textAlign: "right",
+          }}>
+            {game.away_team}
+          </span>
+          <TeamLogo teamName={game.away_team} logoUrl={game.away_team_logo} size="sm" animate={false} />
+        </div>
       </div>
 
       {/* Prediction pill + odds */}
@@ -80,13 +93,13 @@ export function PredictionCard({ game, color, faint, index = 0 }: Props) {
           padding: "6px 14px", fontFamily: "var(--font-body)", fontSize: 13,
           fontWeight: 600, color, maxWidth: "calc(100% - 90px)",
         }}>
-          {game.readable_prediction}
+          {displayPrediction}
         </div>
         <div className="odds-value" style={{
           fontFamily: "var(--font-mono)", fontSize: 24, fontWeight: 700,
           color, flexShrink: 0, letterSpacing: "-0.03em", lineHeight: 1,
         }}>
-          {game.estimated_odds.toFixed(2)}
+          {displayOdds.toFixed(2)}
         </div>
       </div>
 
@@ -102,16 +115,46 @@ export function PredictionCard({ game, color, faint, index = 0 }: Props) {
         </span>
       </div>
 
-      {/* Model chip */}
-      <div>
-        <span style={{
-          fontFamily: "var(--font-body)", fontSize: 10, fontWeight: 600,
-          letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-3)",
-          background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.04)",
-          borderRadius: 5, padding: "3px 8px",
-        }}>
-          {game.model_type}
-        </span>
+      {/* Bottom row: model chip + edge + bookmaker */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+        {game.model_type && (
+          <span style={{
+            fontFamily: "var(--font-body)", fontSize: 10, fontWeight: 600,
+            letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-3)",
+            background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.04)",
+            borderRadius: 5, padding: "3px 8px",
+          }}>
+            {game.model_type}
+          </span>
+        )}
+        {game.edge != null && game.edge > 0 && (
+          <span style={{
+            fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 600,
+            color: "#22c55e", background: "rgba(34,197,94,0.10)",
+            border: "1px solid rgba(34,197,94,0.20)", borderRadius: 5,
+            padding: "3px 8px",
+          }}>
+            +{(game.edge * 100).toFixed(1)}% edge
+          </span>
+        )}
+        {game.bookmaker && (
+          <span style={{
+            fontFamily: "var(--font-body)", fontSize: 10, fontWeight: 500,
+            color: "var(--text-3)", marginLeft: "auto",
+          }}>
+            via {game.bookmaker}
+          </span>
+        )}
+        {game.models_agreed != null && game.models_agreed > 0 && (
+          <span style={{
+            fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 600,
+            color: "var(--text-3)", background: "rgba(255,255,255,0.04)",
+            border: "1px solid rgba(255,255,255,0.04)", borderRadius: 5,
+            padding: "3px 8px",
+          }}>
+            {game.models_agreed} models agree
+          </span>
+        )}
       </div>
     </div>
   );
