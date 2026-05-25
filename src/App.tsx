@@ -28,7 +28,8 @@ export default function App() {
         <Suspense fallback={<Fallback />}>
           <Routes>
             <Route path="/" element={<HomePage />} />
-            <Route path="/picks" element={<PredictionsPage />} />
+            <Route path="/predictions" element={<PredictionsPage />} />
+            <Route path="/predictions/:category" element={<PredictionsPage />} />
             <Route path="/results" element={<ResultsPage />} />
             <Route path="/rollover" element={<RolloverPage />} />
             <Route path="/settings" element={<SettingsPage />} />

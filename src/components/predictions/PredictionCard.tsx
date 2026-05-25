@@ -46,12 +46,22 @@ export function PredictionCard({ game, color, faint, index = 0 }: Props) {
     >
       {/* League + date */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-        <span style={{
-          fontFamily: "var(--font-body)", fontSize: 11, fontWeight: 600,
-          letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-3)",
-        }}>
-          {game.league}
-        </span>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          {game.league_logo && (
+            <img
+              src={game.league_logo}
+              alt=""
+              style={{ width: 16, height: 16, objectFit: "contain", borderRadius: 2, opacity: 0.8 }}
+              onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
+            />
+          )}
+          <span style={{
+            fontFamily: "var(--font-body)", fontSize: 11, fontWeight: 600,
+            letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-3)",
+          }}>
+            {game.league}
+          </span>
+        </div>
         <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-3)" }}>
           {new Date(game.date).toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}
         </span>

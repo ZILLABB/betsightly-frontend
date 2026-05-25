@@ -10,7 +10,32 @@ async function request<T>(path: string): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+/* ── History types ───────────────────────────────────── */
+
+export interface HistorySummary {
+  prediction_date: string;
+  total_fixtures: number;
+  upcoming_fixtures: number;
+  predictions_generated: number;
+  models_used: number;
+  betting_counts: Record<string, number>;
+  status: string;
+  generation_time: string | null;
+}
+
+export interface HistoryResponse {
+  status: string;
+  days_requested: number;
+  days_found: number;
+  history: HistorySummary[];
+}
+
+/* ── API ─────────────────────────────────────────────── */
+
 export const api = {
   getTodaysAccumulators: () =>
     request<AccumulatorResponse>('/accumulators/today'),
+
+  getPredictionHistory: (days = 14) =>
+    request<HistoryResponse>(`/daily-predictions/history?days=${days}`),
 };

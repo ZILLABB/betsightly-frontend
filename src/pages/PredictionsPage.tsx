@@ -1,4 +1,5 @@
 ﻿import React, { useState } from "react";
+import { useParams } from "react-router-dom";
 import { usePredictions } from "../hooks/usePredictions";
 import { CategoryTabs } from "../components/predictions/CategoryTabs";
 import { PredictionCard } from "../components/predictions/PredictionCard";
@@ -7,9 +8,14 @@ import { PredictionCardSkeleton } from "../components/ui/Skeleton";
 import { CATEGORIES } from "../types";
 import type { CategoryKey } from "../types";
 
+const VALID_KEYS = new Set<string>(CATEGORIES.map(c => c.key));
+
 export function PredictionsPage() {
+  const { category } = useParams<{ category?: string }>();
+  const initialKey: CategoryKey = category && VALID_KEYS.has(category) ? (category as CategoryKey) : "2_odds";
+
   const { data, loading, error, refetch } = usePredictions();
-  const [activeKey, setActiveKey] = useState<CategoryKey>("2_odds");
+  const [activeKey, setActiveKey] = useState<CategoryKey>(initialKey);
 
   const accumulators = data?.accumulators;
   const activeCat = accumulators?.[activeKey];
