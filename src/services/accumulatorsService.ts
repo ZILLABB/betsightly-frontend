@@ -20,15 +20,7 @@ let isCurrentlyFetching = false;
 function isCacheValid(key: string, ttl: number = API_CACHE_CONFIG.PREDICTIONS_TTL): boolean {
   const cached = cache[key];
   if (!cached) return false;
-  
-  const now = Date.now();
-  const isValid = (now - cached.timestamp) < ttl;
-  
-  if (isValid) {
-    console.log(`✅ Using cached accumulators data (${Math.round((ttl - (now - cached.timestamp)) / 1000)}s remaining)`);
-  }
-  
-  return isValid;
+  return (Date.now() - cached.timestamp) < ttl;
 }
 
 /**
@@ -45,8 +37,6 @@ async function fetchAccumulators(): Promise<any> {
 
   // Prevent multiple simultaneous calls
   if (isCurrentlyFetching) {
-    console.log('⏳ Already fetching accumulators, waiting for existing call...');
-    // Wait for the existing call to complete
     while (isCurrentlyFetching) {
       await new Promise(resolve => setTimeout(resolve, 100));
     }
@@ -58,10 +48,6 @@ async function fetchAccumulators(): Promise<any> {
 
   try {
     isCurrentlyFetching = true;
-    console.log(`🚀 Fetching from optimized endpoint (ONCE): ${url}`);
-    console.log(`🔍 Full URL being called: ${url}`);
-    console.log(`🔍 API_BASE_URL: ${API_BASE_URL}`);
-    console.log(`🔍 ACCUMULATORS.TODAY: ${API_ENDPOINTS.ACCUMULATORS.TODAY}`);
 
     const response = await fetch(url, {
       method: 'GET',
@@ -72,28 +58,21 @@ async function fetchAccumulators(): Promise<any> {
       mode: 'cors',
     });
 
-    console.log(`🔍 Response status: ${response.status}`);
-    console.log(`🔍 Response ok: ${response.ok}`);
-
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`❌ HTTP error! status: ${response.status}, response: ${errorText}`);
       throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
-    console.log(`🔍 Raw response data:`, data);
 
-    // Cache the response
     cache[cacheKey] = {
       data,
       timestamp: Date.now(),
     };
 
-    console.log(`✅ Accumulators data fetched successfully (cached for future use)`);
     return data;
   } catch (error) {
-    console.error(`❌ Error fetching accumulators:`, error);
+    console.error('Error fetching accumulators:', error);
     throw error;
   } finally {
     isCurrentlyFetching = false;
@@ -104,8 +83,6 @@ async function fetchAccumulators(): Promise<any> {
  * Transform accumulators data to frontend format
  */
 function transformAccumulatorsData(backendData: any): Record<string, Prediction[]> {
-  console.log('🔄 Transforming accumulators data:', backendData);
-
   const categorized: Record<string, Prediction[]> = {
     '2_odds': [],
     '5_odds': [],
@@ -113,26 +90,12 @@ function transformAccumulatorsData(backendData: any): Record<string, Prediction[
     'rollover': []
   };
 
-  // Handle the accumulators response format
   if (backendData && backendData.accumulators) {
     const accumulators = backendData.accumulators;
 
-    // Process each category
-    console.log('🔍 Processing categories:', Object.keys(accumulators));
-    console.log('🔍 Full accumulators object:', accumulators);
-
     Object.entries(accumulators).forEach(([categoryKey, categoryData]: [string, any]) => {
-      console.log(`🔍 Processing ${categoryKey}:`, {
-        selected: categoryData?.selected,
-        hasGames: categoryData?.games ? 'yes' : 'no',
-        gamesCount: categoryData?.games?.length || 0,
-        fullData: categoryData
-      });
-
-      // Check if category is selected and has games
       if (categoryData && categoryData.selected && categoryData.games && Array.isArray(categoryData.games)) {
         categoryData.games.forEach((game: any, index: number) => {
-          // Transform to frontend Prediction format
           const transformedPrediction: Prediction = {
             id: `${categoryKey}_${game.fixture_id}_${Date.now()}_${index}`,
             game: {
@@ -156,20 +119,12 @@ function transformAccumulatorsData(backendData: any): Record<string, Prediction[
             combined_confidence: game.confidence || 0.75
           };
 
-          // Add to the appropriate category
           if (categorized[categoryKey]) {
             categorized[categoryKey].push(transformedPrediction);
-            console.log(`✅ Added prediction to ${categoryKey}: ${transformedPrediction.game.homeTeam} vs ${transformedPrediction.game.awayTeam}`);
-          } else {
-            console.log(`❌ Category ${categoryKey} not found in categorized object`);
           }
         });
 
-        console.log(`✅ ${categoryKey}: ${categoryData.games.length} games, ${categoryData.total_odds}x odds, ${categoryData.risk_level} risk`);
       } else if (categoryData && !categoryData.selected) {
-        console.log(`⚠️ ${categoryKey}: Not selected - ${categoryData.reason || 'No reason provided'}`);
-
-        // Create a placeholder prediction for unselected categories
         const placeholderPrediction: Prediction = {
           id: `${categoryKey}_placeholder_${Date.now()}`,
           game: {
@@ -196,30 +151,9 @@ function transformAccumulatorsData(backendData: any): Record<string, Prediction[
         if (categorized[categoryKey]) {
           categorized[categoryKey].push(placeholderPrediction);
         }
-      } else {
-        console.log(`⚠️ ${categoryKey}: No data available`);
       }
     });
   }
-
-  const totalPredictions = Object.values(categorized).reduce((sum, predictions) => sum + predictions.length, 0);
-  console.log(`✅ Transformed ${totalPredictions} predictions across ${Object.keys(categorized).length} categories`);
-
-  // Debug: Show detailed breakdown
-  console.log('🔍 DETAILED CATEGORY BREAKDOWN:');
-  Object.entries(categorized).forEach(([category, predictions]) => {
-    console.log(`📊 ${category}: ${predictions.length} predictions`);
-    if (predictions.length > 0) {
-      console.log(`   Sample: ${predictions[0].game.homeTeam} vs ${predictions[0].game.awayTeam}`);
-      console.log(`   Prediction: ${predictions[0].predictionType}`);
-      console.log(`   Odds: ${predictions[0].odds}`);
-    } else {
-      console.log(`   ❌ NO PREDICTIONS FOUND FOR ${category}`);
-    }
-  });
-
-  // Debug: Show raw backend data structure
-  console.log('🔍 RAW BACKEND ACCUMULATORS:', Object.keys(backendData.accumulators || {}));
 
   return categorized;
 }
@@ -229,32 +163,17 @@ function transformAccumulatorsData(backendData: any): Record<string, Prediction[
  */
 export async function getTodaysAccumulators(): Promise<Record<string, Prediction[]>> {
   try {
-    console.log('🎯 Getting today\'s accumulators (all categories in one call)...');
-    
     const data = await fetchAccumulators();
-    
-    // Check if we have accumulator data
+
     if (data.status === 'success' && data.accumulators) {
       const transformed = transformAccumulatorsData(data);
-      const totalPredictions = Object.values(transformed).reduce((sum, predictions) => sum + predictions.length, 0);
-      
-      if (totalPredictions > 0) {
-        console.log(`🎉 Successfully loaded ${totalPredictions} predictions from accumulators endpoint!`);
-        return transformed;
-      }
+      const totalPredictions = Object.values(transformed).reduce((sum, preds) => sum + preds.length, 0);
+      if (totalPredictions > 0) return transformed;
     }
-    
-    // If no data or empty, return empty categories
-    console.log('⚠️ No accumulator data available for today');
-    return {
-      '2_odds': [],
-      '5_odds': [],
-      '10_odds': [],
-      'rollover': []
-    };
-    
+
+    return { '2_odds': [], '5_odds': [], '10_odds': [], 'rollover': [] };
   } catch (error) {
-    console.error('❌ Error fetching accumulators:', error);
+    console.error('Error fetching accumulators:', error);
     throw error;
   }
 }
@@ -289,32 +208,8 @@ export async function getAccumulatorSummary(): Promise<Record<string, { count: n
  */
 export function clearAccumulatorsCache(): void {
   Object.keys(cache).forEach(key => delete cache[key]);
-  console.log('🗑️ Accumulators cache cleared');
 }
 
-// Clear cache immediately to fetch fresh data
-clearAccumulatorsCache();
-
-// Force immediate refresh on module load
-setTimeout(() => {
-  console.log('🔄 Force refreshing accumulators data...');
-  clearAccumulatorsCache();
-}, 1000);
-
-// Clear cache right now for immediate refresh
-console.log('🎉 FRESH DATA AVAILABLE - CLEARING CACHE FOR TODAY (2025-07-18)!');
-clearAccumulatorsCache();
-
-// Force multiple clears to ensure fresh data
-setTimeout(() => {
-  console.log('🎉 CACHE CLEAR #2 - Uruguay vs Peru, Spain vs Switzerland available!');
-  clearAccumulatorsCache();
-}, 500);
-
-setTimeout(() => {
-  console.log('🎉 CACHE CLEAR #3 - All 4 categories with 20 games total!');
-  clearAccumulatorsCache();
-}, 1000);
 
 /**
  * Check if the accumulators endpoint is available

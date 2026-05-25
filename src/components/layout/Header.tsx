@@ -1,123 +1,114 @@
-import React from "react";
+﻿import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X } from "lucide-react";
-import HeaderButtons from "./HeaderButtons";
+import { Menu, X, Home, Target, BarChart2, RefreshCw, Settings } from "lucide-react";
 
-interface HeaderProps {
-  navItems: Array<{
-    path: string;
-    label: string;
-    icon: React.ReactNode;
-  }>;
-  mobileMenuOpen: boolean;
-  setMobileMenuOpen: (open: boolean) => void;
-  scrolled: boolean;
-}
+const NAV = [
+  { path:"/", label:"Home", icon:Home },
+  { path:"/predictions", label:"Predictions", icon:Target },
+  { path:"/results", label:"Results", icon:BarChart2 },
+  { path:"/rollover", label:"Rollover", icon:RefreshCw },
+  { path:"/settings", label:"Settings", icon:Settings },
+];
 
-const Header: React.FC<HeaderProps> = ({
-  navItems,
-  mobileMenuOpen,
-  setMobileMenuOpen,
-  scrolled
-}) => {
+export function Header() {
   const location = useLocation();
+  const [open, setOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
-  // Check if path is active
-  const isActive = (path: string) => {
-    return location.pathname === path;
-  };
+  useEffect(() => {
+    const fn = () => setScrolled(window.scrollY > 8);
+    window.addEventListener("scroll", fn, { passive:true });
+    return () => window.removeEventListener("scroll", fn);
+  }, []);
+
+  useEffect(() => {
+    document.body.style.overflow = open ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [open]);
+
+  const isActive = (p: string) => location.pathname === p;
 
   return (
-    <header className={`nav-base ${
-      scrolled
-        ? "shadow-md"
-        : ""
-    }`}>
-      {/* Top notification bar */}
-      <div className="bg-gradient-to-r from-[var(--primary)]/20 to-[var(--primary)]/10 py-1.5 px-4 text-center text-xs md:text-sm">
-        <span className="font-medium text-[var(--primary)]">New!</span> Check out our latest predictions with <span className="font-medium text-[var(--primary)]">copiable game codes</span>
-      </div>
-
-      {/* Main header */}
-      <div className="container mx-auto px-4 py-3">
-        <div className="flex justify-between items-center">
+    <>
+      <header style={{
+        position:"sticky", top:0, zIndex:50,
+        borderBottom: scrolled ? "1px solid rgba(255,255,255,0.06)" : "1px solid transparent",
+        background: scrolled ? "rgba(7,7,26,0.92)" : "rgba(7,7,26,0.6)",
+        backdropFilter:"blur(20px)",
+        transition:"all 250ms ease",
+      }}>
+        <div style={{ maxWidth:1200, margin:"0 auto", padding:"0 20px", height:64, display:"flex", alignItems:"center", justifyContent:"space-between", gap:24 }}>
+          
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2 z-20">
-            <div className="relative">
-              <span className="text-2xl font-extrabold premium-text">BetSightly</span>
-              <div className="absolute -bottom-1 left-0 w-full h-0.5 bg-gradient-to-r from-[#F5A623] to-transparent"></div>
-            </div>
+          <Link to="/" style={{ display:"flex", alignItems:"center", textDecoration:"none", flexShrink:0 }}>
+            <img
+              src="/logo.png"
+              alt="BetSightly"
+              style={{ height:44, width:"auto", objectFit:"contain", mixBlendMode:"screen" }}
+            />
           </Link>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-1">
-            {navItems.map((item) => (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`nav-item ${
-                  isActive(item.path)
-                    ? "nav-item-active"
-                    : ""
-                }`}
+          {/* Desktop Nav */}
+          <nav style={{ display:"flex", alignItems:"center", gap:2, flex:1, justifyContent:"center" }} className="hidden-mobile">
+            {NAV.map(({ path, label }) => (
+              <Link key={path} to={path} style={{
+                padding:"7px 14px", borderRadius:8,
+                fontFamily:"var(--font-body)", fontSize:14, fontWeight:500,
+                textDecoration:"none", transition:"all 180ms ease",
+                color: isActive(path) ? "var(--brand)" : "var(--text-2)",
+                background: isActive(path) ? "rgba(245,158,11,0.08)" : "transparent",
+              }}
+              onMouseEnter={e => { if(!isActive(path)) { (e.currentTarget as HTMLElement).style.color="var(--text-1)"; (e.currentTarget as HTMLElement).style.background="rgba(255,255,255,0.05)"; }}}
+              onMouseLeave={e => { if(!isActive(path)) { (e.currentTarget as HTMLElement).style.color="var(--text-2)"; (e.currentTarget as HTMLElement).style.background="transparent"; }}}
               >
-                <span className="mr-1.5">{item.icon}</span>
-                {item.label}
+                {label}
               </Link>
             ))}
           </nav>
 
-          {/* Right side actions */}
-          <div className="flex items-center z-20">
-            {/* Theme toggle buttons */}
-            <HeaderButtons className="hidden md:flex mr-2" />
-
-            {/* Mobile menu button */}
-            <button
-              className="p-2 rounded-lg md:hidden hover:bg-[var(--secondary)] transition-colors"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
-            >
-              {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
-          </div>
+          {/* Mobile toggle */}
+          <button
+            onClick={() => setOpen(!open)}
+            className="show-mobile"
+            style={{ background:"none", border:"none", cursor:"pointer", color:"var(--text-1)", padding:6, borderRadius:8 }}
+            aria-label="Menu"
+          >
+            {open ? <X size={22} /> : <Menu size={22} />}
+          </button>
         </div>
+      </header>
+
+      {/* Mobile overlay */}
+      <div style={{
+        position:"fixed", inset:0, zIndex:49,
+        background:"rgba(7,7,26,0.98)", backdropFilter:"blur(20px)",
+        display:"flex", flexDirection:"column", paddingTop:80, paddingLeft:24, paddingRight:24,
+        transition:"opacity 250ms ease, transform 250ms ease",
+        opacity: open ? 1 : 0,
+        transform: open ? "translateY(0)" : "translateY(-8px)",
+        pointerEvents: open ? "auto" : "none",
+      }}>
+        {NAV.map(({ path, label, icon: Icon }) => (
+          <Link key={path} to={path} onClick={() => setOpen(false)} style={{
+            display:"flex", alignItems:"center", gap:14,
+            padding:"14px 16px", borderRadius:12, textDecoration:"none",
+            fontFamily:"var(--font-body)", fontSize:17, fontWeight:500,
+            color: isActive(path) ? "var(--brand)" : "var(--text-2)",
+            background: isActive(path) ? "rgba(245,158,11,0.08)" : "transparent",
+            borderLeft: isActive(path) ? "2px solid var(--brand)" : "2px solid transparent",
+            marginBottom:4,
+          }}>
+            <Icon size={20} />
+            {label}
+          </Link>
+        ))}
       </div>
 
-      {/* Mobile Navigation */}
-      <div
-        className={`fixed inset-0 bg-[var(--background)]/95 backdrop-blur-md z-10 transition-all duration-300 md:hidden ${
-          mobileMenuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
-        }`}
-      >
-        <div className="container mx-auto px-4 pt-20 pb-6">
-          <nav className="flex flex-col space-y-2">
-            {navItems.map((item) => (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`nav-item px-4 py-3 text-base ${
-                  isActive(item.path)
-                    ? "nav-item-active border-l-4 border-amber-500 pl-3"
-                    : ""
-                }`}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <span className="mr-3">{item.icon}</span>
-                {item.label}
-              </Link>
-            ))}
-
-            <div className="pt-4 mt-4 border-t border-[var(--border)]">
-              <div className="mb-4">
-                <HeaderButtons className="flex justify-center" />
-              </div>
-            </div>
-          </nav>
-        </div>
-      </div>
-    </header>
+      <style>{`
+        @media (min-width: 768px) { .hidden-mobile { display:flex !important; } .show-mobile { display:none !important; } }
+        @media (max-width: 767px) { .hidden-mobile { display:none !important; } .show-mobile { display:flex !important; } }
+        @keyframes spin { to { transform:rotate(360deg); } }
+      `}</style>
+    </>
   );
-};
-
-export default Header;
+}

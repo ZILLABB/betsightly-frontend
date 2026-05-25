@@ -61,9 +61,6 @@ const BasePredictionCard: React.FC<BasePredictionCardProps> = ({
   // Styling
   className = ""
 }) => {
-  // First, log the entire prediction object to see its structure
-  console.log('Full prediction object:', prediction);
-
   // Check if this prediction has nested predictions (common in API response)
   const nestedPredictions = safeGet(prediction, 'predictions', null) as any[] | null;
 
@@ -79,9 +76,6 @@ const BasePredictionCard: React.FC<BasePredictionCardProps> = ({
 
   // Extract game data (legacy format)
   const game = safeGet(prediction, 'game', {}) as Record<string, unknown>;
-
-  // Log fixture data for debugging
-  console.log('Fixture data:', fixture);
 
   // Home team extraction - prioritize fixture data based on API example
   let homeTeam: string | null = null;
@@ -152,14 +146,6 @@ const BasePredictionCard: React.FC<BasePredictionCardProps> = ({
   // Extract team form data from fixture
   const homeForm = fixture ? safeGet(fixture, 'home_form', null) : null;
   const awayForm = fixture ? safeGet(fixture, 'away_form', null) : null;
-
-  // Log team data for debugging
-  console.log('Team data from API:', {
-    homeTeam,
-    awayTeam,
-    homeForm,
-    awayForm
-  });
 
   // Get league with priority order - prioritize fixture data based on API example
   let league = 'Unknown League';
@@ -258,14 +244,6 @@ const BasePredictionCard: React.FC<BasePredictionCardProps> = ({
     }
   }
 
-  // Log the odds data for debugging
-  console.log('Odds data:', {
-    finalOdds: odds,
-    predictionOdds: safeGet(prediction, 'odds', null),
-    predictionCombinedOdds: safeGet(prediction, 'combined_odds', null),
-    nestedPredictionOdds: firstNestedPrediction ? safeGet(firstNestedPrediction, 'odds', null) : null
-  });
-
   // Get match odds from fixture
   const homeOdds = fixture ? safeGet(fixture, 'home_odds', null) : null;
   const drawOdds = fixture ? safeGet(fixture, 'draw_odds', null) : null;
@@ -283,16 +261,6 @@ const BasePredictionCard: React.FC<BasePredictionCardProps> = ({
       safeGet(firstNestedPrediction, 'description',
         safeGet(firstNestedPrediction, 'summary', '')))) as string;
 
-  // Log prediction data for debugging
-  console.log('Prediction data:', {
-    league,
-    predictionType,
-    predictionText,
-    odds,
-    homeOdds,
-    drawOdds,
-    awayOdds
-  });
   // Get confidence with priority order based on API example
   let confidenceValue = 0;
 
@@ -318,14 +286,6 @@ const BasePredictionCard: React.FC<BasePredictionCardProps> = ({
 
   // Ensure confidence is never above 100%
   const confidence = Math.min(confidenceValue, 1);
-
-  // Log confidence data for debugging
-  console.log('Confidence data:', {
-    confidenceValue,
-    confidence,
-    predictionCombinedConfidence: safeGet(prediction, 'combined_confidence', null),
-    nestedPredictionConfidence: firstNestedPrediction ? safeGet(firstNestedPrediction, 'confidence', null) : null
-  });
 
   // Get uncertainty with priority order
   let uncertaintyValue = safeGet(prediction, 'uncertainty',
@@ -408,16 +368,6 @@ const BasePredictionCard: React.FC<BasePredictionCardProps> = ({
   const dateString = gameTime.toLocaleDateString();
   const timeString = gameTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-  // Log the game time for debugging
-  console.log('Game time data:', {
-    gameTimeStr,
-    startTime,
-    gameTime,
-    dateString,
-    timeString,
-    fixtureDate: fixture ? safeGet(fixture, 'date', null) : null
-  });
-
   // Get current time in user's local timezone
   const now = new Date();
 
@@ -480,20 +430,11 @@ const BasePredictionCard: React.FC<BasePredictionCardProps> = ({
   // Generate star rating display
   const valueStars = "★".repeat(Math.min(valueRating, 5)) + "☆".repeat(Math.max(0, 5 - valueRating));
 
-  // Log value rating data for debugging
-  console.log('Value rating data:', {
-    valueRating,
-    valueStars,
-    confidence,
-    odds,
-    calculatedValue: confidence * odds
-  });
-
   // Render different layouts based on mode
   if (mode === PredictionCardMode.COMPACT) {
     return (
       <motion.div
-        className={`relative overflow-hidden border border-amber-500/20 rounded-xl bg-gradient-to-b from-gray-900/95 to-black/95 shadow-lg hover:shadow-xl transition-all duration-300 p-3 ${className}`}
+        className={`relative overflow-hidden rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-3 ${className}`}
         onClick={onClick}
         initial="initial"
         animate="animate"
@@ -578,7 +519,7 @@ const BasePredictionCard: React.FC<BasePredictionCardProps> = ({
     >
       <Card
         variant={variant === PredictionCardVariant.PREMIUM ? "premium" : "default"}
-        className={`w-full overflow-hidden relative border border-amber-500/20 bg-gradient-to-b from-gray-900/95 to-black/95 shadow-xl hover:shadow-2xl transition-all duration-300 ${className}`}
+        className={`w-full overflow-hidden relative shadow-xl hover:shadow-2xl transition-all duration-300 ${className}`}
         onClick={onClick}
       >
         {/* Premium Badge */}
@@ -591,7 +532,7 @@ const BasePredictionCard: React.FC<BasePredictionCardProps> = ({
         )}
 
         {/* Card Header - Team Information */}
-        <CardHeader className="p-4 pb-3 bg-gradient-to-r from-gray-800/50 to-gray-900/50 border-b border-amber-500/10">
+        <CardHeader className="p-4 pb-3 border-b" style={{ background: "rgba(0,0,0,0.25)", borderColor: "var(--border-subtle)" }}>
           <div className="flex items-center justify-between gap-4">
             {/* Teams Section */}
             <div className="flex-1 min-w-0">
@@ -649,9 +590,9 @@ const BasePredictionCard: React.FC<BasePredictionCardProps> = ({
         </CardHeader>
 
         {/* Card Content - Prediction Details */}
-        <CardContent className="p-4 space-y-4">
+        <CardContent className="p-4 space-y-3">
           {/* Prediction Type */}
-          <div className="bg-gray-800/50 border border-gray-700/50 rounded-lg p-3">
+          <div className="rounded-lg p-3" style={{ background: "var(--surface-4)", border: "1px solid var(--border-subtle)" }}>
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-xs text-gray-400 font-medium mb-1">PREDICTION</div>
@@ -674,7 +615,7 @@ const BasePredictionCard: React.FC<BasePredictionCardProps> = ({
                   {safeGet(prediction, 'confidence_display', (confidence * 100).toFixed(1) + '%')}
                 </span>
               </div>
-              <div className="w-full bg-gray-800 rounded-full h-2 overflow-hidden">
+              <div className="w-full rounded-full h-1.5 overflow-hidden" style={{ background: "var(--surface-5)" }}>
                 <div
                   className="h-2 rounded-full bg-gradient-to-r from-amber-500 to-yellow-500 transition-all duration-500"
                   style={{ width: `${Math.min(100, Math.max(0, safeGet(prediction, 'confidence_pct', confidence * 100)))}%` }}
@@ -692,7 +633,7 @@ const BasePredictionCard: React.FC<BasePredictionCardProps> = ({
                       (safeGet(prediction, 'uncertainty', uncertainty) as number * 100).toFixed(1) + '%')}
                   </span>
                 </div>
-                <div className="w-full bg-gray-800 rounded-full h-2 overflow-hidden">
+                <div className="w-full rounded-full h-1.5 overflow-hidden" style={{ background: "var(--surface-5)" }}>
                   <div
                     className="h-2 rounded-full bg-gradient-to-r from-red-500 to-orange-500 transition-all duration-500"
                     style={{ width: `${Math.min(100, Math.max(0, safeGet(prediction, 'uncertainty_pct',
@@ -704,13 +645,13 @@ const BasePredictionCard: React.FC<BasePredictionCardProps> = ({
           </div>
 
           {/* Quality Rating */}
-          <div className="border-t border-gray-700/50 pt-3">
+          <div className="pt-3" style={{ borderTop: "1px solid var(--border-subtle)" }}>
             <PredictionQuality prediction={prediction} showDetails={false} />
           </div>
 
           {/* Reason/Explanation */}
           {showReason && reason && (
-            <div className="bg-gradient-to-r from-amber-500/10 to-yellow-500/10 border border-amber-500/20 rounded-lg p-3">
+            <div className="rounded-lg p-3" style={{ background: "rgba(245,158,11,0.07)", border: "1px solid var(--border-default)" }}>
               <div className="text-xs text-amber-400 font-medium mb-2">ANALYSIS</div>
               <p className="text-sm text-gray-300 leading-relaxed">{reason}</p>
             </div>
@@ -718,7 +659,7 @@ const BasePredictionCard: React.FC<BasePredictionCardProps> = ({
 
           {/* Game Code (if available) */}
           {gameCode && (
-            <div className="flex items-center justify-center pt-2 border-t border-gray-700/50">
+            <div className="flex items-center justify-center pt-2" style={{ borderTop: "1px solid var(--border-subtle)" }}>
               <div className="text-xs text-gray-500">
                 Code: <span className="font-mono text-amber-400">{gameCode}</span>
               </div>

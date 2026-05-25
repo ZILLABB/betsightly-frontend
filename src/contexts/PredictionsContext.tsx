@@ -73,7 +73,7 @@ export const PredictionsProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const [rolloverPredictions, setRolloverPredictions] = useState<Record<number, Prediction[]>>({});
 
   // Loading and error states
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(false);
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -85,123 +85,59 @@ export const PredictionsProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
   // Load all predictions
   const loadAllPredictions = useCallback(async () => {
-    console.log("🚀 loadAllPredictions: Function called!");
-    console.log("🚀 loadAllPredictions: Current loading state:", loading);
-    console.log("🚀 loadAllPredictions: Current allPredictions:", allPredictions);
-
-    // Prevent multiple simultaneous calls
-    if (loading) {
-      console.log("⏳ Already loading predictions, skipping...");
-      return;
-    }
-
-    // Check if we already have data (temporarily disabled to force reload)
-    const totalExisting = Object.values(allPredictions).reduce((sum, predictions) => sum + predictions.length, 0);
-    console.log("🚀 loadAllPredictions: Total existing predictions:", totalExisting);
-
-    // Temporarily disabled to force reload
-    // if (totalExisting > 0) {
-    //   console.log("✅ Already have predictions data, skipping reload");
-    //   return;
-    // }
-    console.log("🚀 loadAllPredictions: Proceeding with data load...");
+    if (loading || refreshing) return;
 
     try {
       setLoading(true);
       setError(null);
 
-      console.log("🚀 Loading predictions from optimized accumulators endpoint...");
-
-      // Clear cache to ensure fresh data
-      console.log('🔄 Context: Clearing cache for fresh data...');
-      clearAccumulatorsCache();
-
-      // Try the optimized accumulators endpoint first (gets all 4 categories in one call!)
+      // Try the optimized accumulators endpoint first
       try {
         const data = await getTodaysAccumulators();
-        console.log("📊 Accumulators response received:", data);
+        const totalPredictions = Object.values(data).reduce((sum, preds) => sum + preds.length, 0);
 
-        if (data && Object.keys(data).length > 0) {
-          // Check if we actually have predictions in any category
-          const totalPredictions = Object.values(data).reduce((sum, predictions) => sum + predictions.length, 0);
-          console.log("📈 Total predictions found:", totalPredictions);
-
-          if (totalPredictions > 0) {
-            console.log("🔍 Setting predictions data:", data);
-            setAllPredictions(data);
-            console.log("✅ Accumulators loaded successfully:", Object.keys(data).map(key => `${key}: ${data[key].length} items`).join(', '));
-
-            // Debug: Check what was actually set
-            setTimeout(() => {
-              console.log("🔍 Predictions state after setting:", allPredictions);
-            }, 100);
-
-            toast({
-              title: 'Accumulators loaded! 🚀',
-              description: `Loaded ${totalPredictions} predictions from optimized endpoint`,
-              variant: 'success',
-              duration: 3000
-            });
-            return;
-          } else {
-            console.warn("⚠️ Accumulators returned empty data, trying fallback...");
-          }
-        } else {
-          console.warn("⚠️ Accumulators returned no data, trying fallback...");
+        if (totalPredictions > 0) {
+          setAllPredictions(data);
+          toast({
+            title: 'Predictions loaded',
+            description: `Loaded ${totalPredictions} predictions`,
+            variant: 'success',
+            duration: 3000
+          });
+          return;
         }
       } catch (accError) {
-        console.error('❌ Accumulators endpoint failed:', accError);
-        console.warn('🔄 Trying ML predictions fallback...');
+        console.error('Accumulators endpoint failed:', accError);
       }
 
       // Fallback to ML predictions endpoint
       try {
-        console.log("🔄 Trying ML predictions fallback...");
         const mlData = await getCategorizedPredictions();
+        const mlTotal = Object.values(mlData).reduce((sum, preds) => sum + preds.length, 0);
 
-        if (mlData && Object.keys(mlData).length > 0) {
-          const mlTotalPredictions = Object.values(mlData).reduce((sum, predictions) => sum + predictions.length, 0);
-
-          if (mlTotalPredictions > 0) {
-            setAllPredictions(mlData);
-            console.log("✅ ML Predictions fallback successful:", Object.keys(mlData).map(key => `${key}: ${mlData[key].length} items`).join(', '));
-
-            toast({
-              title: 'Predictions loaded (fallback)',
-              description: `Loaded ${mlTotalPredictions} predictions from ML endpoint`,
-              variant: 'success',
-              duration: 3000
-            });
-            return;
-          }
+        if (mlTotal > 0) {
+          setAllPredictions(mlData);
+          toast({
+            title: 'Predictions loaded',
+            description: `Loaded ${mlTotal} predictions`,
+            variant: 'success',
+            duration: 3000
+          });
+          return;
         }
       } catch (mlError) {
-        console.error('❌ ML predictions fallback failed:', mlError);
-        console.warn('🔄 Using mock data...');
+        console.error('ML predictions fallback failed:', mlError);
       }
 
-      // Fallback to mock data if ML service fails
-      console.log("Loading mock predictions data as fallback");
+      // Last resort: mock data
       const mockResponse = await mockDataService.getPredictionCategories();
-
       if (!mockResponse.data) {
-        console.error('No mock data available');
         setError('No predictions available');
         return;
       }
-
-      const data = mockResponse.data;
-      setAllPredictions(data);
-      console.log("✅ Mock Categories loaded:", Object.keys(data).map(key => `${key}: ${data[key].length} items`).join(', '));
-
-      toast({
-        title: 'Predictions loaded (Mock)',
-        description: `Loaded predictions for ${Object.keys(data).length} categories`,
-        variant: 'success',
-        duration: 3000
-      });
+      setAllPredictions(mockResponse.data);
     } catch (err) {
-      console.error('Error loading all predictions:', err);
+      console.error('Error loading predictions:', err);
       setError('Failed to load predictions');
       toast({
         title: 'Error',
@@ -216,22 +152,11 @@ export const PredictionsProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
   // Load best predictions
   const loadBestPredictions = useCallback(async () => {
-    // If we already have all predictions data, derive best from it
-    const totalExisting = Object.values(allPredictions).reduce((sum, predictions) => sum + predictions.length, 0);
+    // Derive from existing data if available
+    const totalExisting = Object.values(allPredictions).reduce((sum, preds) => sum + preds.length, 0);
     if (totalExisting > 0) {
-      console.log("✅ Deriving best predictions from existing data (no API call needed)");
-
-      // Get high-confidence predictions from all categories
-      const allPreds: Prediction[] = [];
-      Object.values(allPredictions).forEach(categoryPredictions => {
-        allPreds.push(...categoryPredictions);
-      });
-
-      // Sort by confidence and take top predictions
-      const bestPreds = allPreds
-        .sort((a, b) => b.confidence - a.confidence)
-        .slice(0, 10); // Top 10 best predictions
-
+      const allPreds = Object.values(allPredictions).flat();
+      const bestPreds = allPreds.sort((a, b) => b.confidence - a.confidence).slice(0, 10);
       setBestPredictions(bestPreds);
       return;
     }
@@ -240,54 +165,30 @@ export const PredictionsProvider: React.FC<{ children: React.ReactNode }> = ({ c
       setLoading(true);
       setError(null);
 
-      console.log("🚀 Loading best predictions from optimized accumulators endpoint...");
-
-      // Try the optimized accumulators endpoint first
       try {
         const data = await getTodaysAccumulators();
-
-        if (data && Object.keys(data).length > 0) {
-          // Check if we actually have predictions in any category
-          const totalPredictions = Object.values(data).reduce((sum, predictions) => sum + predictions.length, 0);
-
-          if (totalPredictions > 0) {
-            setBestPredictions(data);
-            console.log("✅ ML Best Predictions loaded:", Object.keys(data).map(key => `${key}: ${data[key].length} items`).join(', '));
-            return;
-          }
+        const total = Object.values(data).reduce((sum, preds) => sum + preds.length, 0);
+        if (total > 0) {
+          setBestPredictions(data);
+          return;
         }
-      } catch (mlError) {
-        console.warn('ML predictions service failed for best predictions, falling back to mock data:', mlError);
+      } catch (err) {
+        console.error('Best predictions fetch failed:', err);
       }
 
-      // Fallback to mock data if ML service fails
-      console.log("Loading mock best predictions as fallback");
       const mockResponse = await mockDataService.getBestPredictions();
       if (!mockResponse.data) {
-        console.error('No mock best predictions available');
         setError('No best predictions available');
         return;
       }
-
-      // Convert array to the expected format
-      const data = { 'best': mockResponse.data };
-      console.log("Best predictions loaded:", data.best.length, "items");
-
-      if (!data || Object.keys(data).length === 0) {
-        console.error('No best predictions available');
-        setError('No best predictions available');
-        return;
-      }
-
-      setBestPredictions(data);
-      console.log("Best predictions set:", data);
+      setBestPredictions({ 'best': mockResponse.data });
     } catch (err) {
       console.error('Error loading best predictions:', err);
       setError('Failed to load best predictions');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [allPredictions]);
 
   // Load rollover predictions
   const loadRolloverPredictions = useCallback(async (days = 10) => {
@@ -295,30 +196,20 @@ export const PredictionsProvider: React.FC<{ children: React.ReactNode }> = ({ c
       setLoading(true);
       setError(null);
 
-      console.log("Loading rollover predictions from context");
-
-      // Since we're not running the backend, use mock data directly
-      // Generate rollover predictions for the specified number of days
       const mockRolloverData: Record<number, Prediction[]> = {};
 
-      // Get rollover predictions from allPredictions if available
       if (allPredictions.rollover && allPredictions.rollover.length > 0) {
-        // Distribute rollover predictions across days
         for (let day = 1; day <= days; day++) {
           const dayPredictions = allPredictions.rollover.slice(0, Math.min(3, allPredictions.rollover.length));
           mockRolloverData[day] = dayPredictions.map(pred => ({
             ...pred,
             rolloverDay: day,
-            id: pred.id + day * 1000 // Ensure unique IDs
+            id: pred.id + day * 1000
           }));
         }
-      } else {
-        console.warn('No rollover predictions available in allPredictions');
       }
 
-      console.log("Rollover predictions data:", mockRolloverData);
       setRolloverPredictions(mockRolloverData);
-      console.log("Rollover predictions set successfully");
     } catch (err) {
       console.error('Error loading rollover predictions:', err);
       setError('Failed to load rollover predictions');
@@ -332,15 +223,8 @@ export const PredictionsProvider: React.FC<{ children: React.ReactNode }> = ({ c
     try {
       setRefreshing(true);
       setError(null);
+      clearAccumulatorsCache();
 
-      toast({
-        title: 'Refreshing predictions',
-        description: 'Getting the latest data...',
-        variant: 'info',
-        duration: 2000
-      });
-
-      // Since we're not running the backend, refresh with mock data
       await Promise.all([
         loadAllPredictions(),
         loadBestPredictions(),
@@ -385,13 +269,8 @@ export const PredictionsProvider: React.FC<{ children: React.ReactNode }> = ({ c
     // Determine which predictions to use
     let predictionsToFilter: Prediction[] = [];
 
-    // Special handling for rollover category
     if (category === 'rollover' || filters.category === 'rollover') {
-      // If we're specifically looking for rollover predictions, use the rollover data
-      // Convert the rollover predictions object to an array
-      const rolloverArray = Object.values(rolloverPredictions).flat();
-      console.log('Using rollover predictions:', rolloverArray.length);
-      predictionsToFilter = rolloverArray;
+      predictionsToFilter = Object.values(rolloverPredictions).flat();
     } else if (category) {
       // Use predictions from a specific category
       predictionsToFilter = allPredictions[category] || [];
@@ -486,14 +365,8 @@ export const PredictionsProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
   // Force refresh function
   const forceRefresh = useCallback(async () => {
-    console.log('🔄 FORCE REFRESH: Clearing all caches and reloading...');
     clearAccumulatorsCache();
-    setAllPredictions({
-      '2_odds': [],
-      '5_odds': [],
-      '10_odds': [],
-      'rollover': []
-    });
+    setAllPredictions({ '2_odds': [], '5_odds': [], '10_odds': [], 'rollover': [] });
     setBestPredictions([]);
     setRolloverPredictions([]);
     await loadAllPredictions();
@@ -503,22 +376,8 @@ export const PredictionsProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
   // Load initial data
   useEffect(() => {
-    console.log('🔄 PredictionsContext: Initial data load triggered');
-    console.log('🔄 PredictionsContext: Current allPredictions state:', allPredictions);
-
-    // Force load all predictions
-    const loadData = async () => {
-      try {
-        console.log('🔄 PredictionsContext: Starting loadAllPredictions...');
-        await loadAllPredictions();
-        console.log('🔄 PredictionsContext: loadAllPredictions completed');
-      } catch (error) {
-        console.error('🔄 PredictionsContext: loadAllPredictions failed:', error);
-      }
-    };
-
-    loadData();
-  }, []); // Remove dependencies to prevent infinite loops
+    loadAllPredictions();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Create the context value
   const contextValue: PredictionsState = {

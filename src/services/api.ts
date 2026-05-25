@@ -7,7 +7,7 @@
 
 // API Configuration
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
-const FOOTBALL_API_KEY = import.meta.env.VITE_FOOTBALL_API_KEY || 'f9ed94ba8dde4a57b742ce7075057310';
+const FOOTBALL_API_KEY = import.meta.env.VITE_FOOTBALL_API_KEY || '';
 const FOOTBALL_API_URL = 'https://api.football-data.org/v4';
 
 // Cache configuration

@@ -1,131 +1,161 @@
-import React, { useState, useEffect, useRef } from "react";
-import type { Prediction } from "../../types";
-import { useBreakpoints } from "../../hooks/useMediaQuery";
-import BasePredictionCard from "./BasePredictionCard";
-import { PredictionCardMode, PredictionCardVariant } from "../../utils/predictionUtils";
+import React from "react";
+import type { GamePrediction } from "../../types";
+import TeamLogo from "../common/TeamLogo";
 
-interface PredictionCardProps {
-  prediction: Prediction;
-  isPremium?: boolean;
-  showReason?: boolean;
-  onClick?: () => void;
-  variant?: 'default' | 'premium' | 'rollover';
+interface Props {
+  game: GamePrediction;
+  color: string;
+  faint: string;
+  index?: number;
 }
 
-const PredictionCard: React.FC<PredictionCardProps> = ({
-  prediction,
-  isPremium = false,
-  showReason = true,
-  onClick,
-  variant
-}) => {
-  const [isVisible, setIsVisible] = useState(false);
-  const cardRef = useRef<HTMLDivElement>(null);
-  const { isMobile } = useBreakpoints();
-
-  // Set up intersection observer for lazy loading
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setIsVisible(true);
-            observer.unobserve(entry.target);
-          }
-        });
-      },
-      {
-        threshold: 0.1,
-        rootMargin: '200px 0px',
-      }
-    );
-
-    const cardElement = cardRef.current;
-    if (cardElement) {
-      observer.observe(cardElement);
-    }
-
-    return () => {
-      if (cardElement) {
-        observer.unobserve(cardElement);
-      }
-    };
-  }, []);
-
-  if (!prediction) {
-    console.error("PredictionCard received null or undefined prediction");
-    return null;
-  }
-
-  // If not visible yet and on mobile, render a minimal placeholder
-  if (!isVisible && isMobile) {
-    return <div ref={cardRef} className="w-full h-48 bg-[var(--color-bg-secondary)]/50 rounded-xl animate-pulse padding-standard"></div>;
-  }
-
-  // Determine the card variant
-  let cardVariant = PredictionCardVariant.DEFAULT;
-  if (variant === 'premium' || isPremium) {
-    cardVariant = PredictionCardVariant.PREMIUM;
-  } else if (variant === 'rollover') {
-    cardVariant = PredictionCardVariant.ROLLOVER;
-  }
-
-  // Use the BasePredictionCard for standard display
-  const baseCard = (
-    <div ref={cardRef} className="prediction-card-container">
-      <BasePredictionCard
-        prediction={prediction}
-        mode={PredictionCardMode.STANDARD}
-        variant={cardVariant}
-        showReason={showReason}
-        onClick={onClick}
-      />
-    </div>
-  );
-
-  // If we don't need to show details, just return the base card
-  if (!isMobile) {
-    return baseCard;
-  }
-
-  // For mobile, we'll add some additional content and expandable details
-
-  // Extract data from prediction with null checks
-  const game = safeGet(prediction, 'game', {});
-
-  // Extract team objects and handle them properly
-  const homeTeamObj = safeGet(game, 'homeTeam', { name: 'Home Team' });
-  const awayTeamObj = safeGet(game, 'awayTeam', { name: 'Away Team' });
-
-  // Extract team names safely
-  const homeTeamName = typeof homeTeamObj === 'string' ? homeTeamObj : safeGet(homeTeamObj, 'name', 'Home Team');
-  const awayTeamName = typeof awayTeamObj === 'string' ? awayTeamObj : safeGet(awayTeamObj, 'name', 'Away Team');
-
-  // Get historical success from prediction data or use confidence as fallback
-  const historicalSuccess = safeGet(prediction, 'historical_success',
-    safeGet(prediction, 'confidence', 0) * 100) as number;
-
-  // Get team logos from prediction data or use defaults
-  const homeTeamLogo = typeof homeTeamObj === 'object' && homeTeamObj?.logo
-    ? homeTeamObj.logo
-    : `/teams/default.png`;
-  const awayTeamLogo = typeof awayTeamObj === 'object' && awayTeamObj?.logo
-    ? awayTeamObj.logo
-    : `/teams/default.png`;
-
-  // Simplified return - no unnecessary wrappers
+function ConfBar({ value, color }: { value: number; color: string }) {
+  const isHigh = value >= 0.75;
   return (
-    <div ref={cardRef} className="prediction-card-container">
-      <BasePredictionCard
-        prediction={prediction}
-        mode={PredictionCardMode.STANDARD}
-        variant={cardVariant}
-        showReason={showReason}
-        onClick={onClick}
+    <div className="conf-bar-track" style={{ flex: 1 }}>
+      <div
+        className={`conf-bar-fill${isHigh ? " high" : ""}`}
+        style={{ width: `${Math.round(value * 100)}%`, background: color, color }}
       />
     </div>
   );
+}
 
-};
+export function PredictionCard({ game, color, faint, index = 0 }: Props) {
+  const pct = Math.round(game.confidence * 100);
+  const isHighConf = game.confidence >= 0.75;
 
-export default PredictionCard;
+  // Use whichever odds field is available
+  const displayOdds = game.odds ?? game.real_odds ?? game.estimated_odds ?? 0;
+
+  // Use prediction (readable) or fall back to readable_prediction
+  const displayPrediction = game.prediction || game.readable_prediction || game.prediction_value || "";
+
+  return (
+    <div
+      className="card animate-fade-up"
+      style={{
+        "--card-accent": color,
+        padding: "22px 24px",
+        display: "flex",
+        flexDirection: "column",
+        gap: 16,
+        animationDelay: `${index * 60}ms`,
+        borderLeft: `3px solid ${color}`,
+      } as React.CSSProperties}
+    >
+      {/* League + date */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+        <span style={{
+          fontFamily: "var(--font-body)", fontSize: 11, fontWeight: 600,
+          letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-3)",
+        }}>
+          {game.league}
+        </span>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-3)" }}>
+          {new Date(game.date).toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}
+        </span>
+      </div>
+
+      {/* Teams with logos — centered divider dots */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 0" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0 }}>
+          <TeamLogo teamName={game.home_team} logoUrl={game.home_team_logo} size="sm" animate={false} />
+          <span style={{
+            fontFamily: "var(--font-display)", fontSize: 16, fontWeight: 700,
+            color: "var(--text-1)", minWidth: 0,
+            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+          }}>
+            {game.home_team}
+          </span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+          <div style={{ width: 4, height: 4, borderRadius: "50%", background: "var(--text-3)", opacity: 0.5 }} />
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, color: "var(--text-3)", letterSpacing: "0.05em" }}>VS</span>
+          <div style={{ width: 4, height: 4, borderRadius: "50%", background: "var(--text-3)", opacity: 0.5 }} />
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0, justifyContent: "flex-end" }}>
+          <span style={{
+            fontFamily: "var(--font-display)", fontSize: 16, fontWeight: 700,
+            color: "var(--text-1)", minWidth: 0,
+            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textAlign: "right",
+          }}>
+            {game.away_team}
+          </span>
+          <TeamLogo teamName={game.away_team} logoUrl={game.away_team_logo} size="sm" animate={false} />
+        </div>
+      </div>
+
+      {/* Prediction pill + odds */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "4px 0" }}>
+        <div style={{
+          background: faint, border: `1px solid ${color}33`, borderRadius: 8,
+          padding: "6px 14px", fontFamily: "var(--font-body)", fontSize: 13,
+          fontWeight: 600, color, maxWidth: "calc(100% - 90px)",
+        }}>
+          {displayPrediction}
+        </div>
+        <div className="odds-value" style={{
+          fontFamily: "var(--font-mono)", fontSize: 24, fontWeight: 700,
+          color, flexShrink: 0, letterSpacing: "-0.03em", lineHeight: 1,
+        }}>
+          {displayOdds.toFixed(2)}
+        </div>
+      </div>
+
+      {/* Confidence bar */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <ConfBar value={game.confidence} color={color} />
+        <span style={{
+          fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 600,
+          color: isHighConf ? color : "var(--text-3)", flexShrink: 0,
+          minWidth: 36, textAlign: "right",
+        }}>
+          {pct}%
+        </span>
+      </div>
+
+      {/* Bottom row: model chip + edge + bookmaker */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+        {game.model_type && (
+          <span style={{
+            fontFamily: "var(--font-body)", fontSize: 10, fontWeight: 600,
+            letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-3)",
+            background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.04)",
+            borderRadius: 5, padding: "3px 8px",
+          }}>
+            {game.model_type}
+          </span>
+        )}
+        {game.edge != null && game.edge > 0 && (
+          <span style={{
+            fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 600,
+            color: "#22c55e", background: "rgba(34,197,94,0.10)",
+            border: "1px solid rgba(34,197,94,0.20)", borderRadius: 5,
+            padding: "3px 8px",
+          }}>
+            +{(game.edge * 100).toFixed(1)}% edge
+          </span>
+        )}
+        {game.bookmaker && (
+          <span style={{
+            fontFamily: "var(--font-body)", fontSize: 10, fontWeight: 500,
+            color: "var(--text-3)", marginLeft: "auto",
+          }}>
+            via {game.bookmaker}
+          </span>
+        )}
+        {game.models_agreed != null && game.models_agreed > 0 && (
+          <span style={{
+            fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 600,
+            color: "var(--text-3)", background: "rgba(255,255,255,0.04)",
+            border: "1px solid rgba(255,255,255,0.04)", borderRadius: 5,
+            padding: "3px 8px",
+          }}>
+            {game.models_agreed} models agree
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
