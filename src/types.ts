@@ -1,3 +1,98 @@
+// ── Shared entity types (used by services + pages) ──────────────────────
+
+export interface Punter {
+  id: number;
+  name: string;
+  nickname?: string;
+  telegram_username?: string;
+  country: string;
+  specialty?: string;
+  verified: boolean;
+  image_url?: string;
+  bio?: string;
+  social_media?: Record<string, string>;
+  success_rate?: number;
+  popularity?: number;
+  total_won?: number;
+  total_lost?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface Bookmaker {
+  id: number;
+  name: string;
+  logo_url?: string;
+  website_url?: string;
+  created_at?: string;
+}
+
+export type BookmakerType = Bookmaker;
+
+export interface BettingCode {
+  id: number;
+  code: string;
+  punter_id: number;
+  bookmaker_id?: number;
+  odds?: number;
+  event_date?: string;
+  status: string;
+  confidence?: number;
+  featured?: boolean;
+  notes?: string;
+  punter?: Punter;
+  bookmaker?: Bookmaker;
+  created_at?: string;
+}
+
+export interface PaginatedResponse<T> {
+  items: T[];
+  total: number;
+  skip: number;
+  limit: number;
+  has_more: boolean;
+}
+
+export interface HealthResponse {
+  status: string;
+  service: string;
+  version: string;
+  timestamp?: string;
+  environment?: string;
+}
+
+export interface BettingCodesResponse {
+  betting_codes: BettingCode[];
+  total: number;
+}
+
+export type PredictionStatus = 'won' | 'lost' | 'pending';
+
+export interface Prediction {
+  id: string;
+  fixture_id?: number;
+  home_team: string;
+  away_team: string;
+  league: string;
+  date: string;
+  prediction: string;
+  prediction_type: string;
+  confidence: number;
+  odds?: number;
+  status?: PredictionStatus;
+}
+
+export interface Game {
+  id: string;
+  home_team: string;
+  away_team: string;
+  league: string;
+  date: string;
+  status?: string;
+}
+
+// ── Prediction-specific types ───────────────────────────────────────────
+
 export interface GamePrediction {
   fixture_id: number;
   home_team: string;
