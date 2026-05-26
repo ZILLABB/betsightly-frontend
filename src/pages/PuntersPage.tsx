@@ -1,572 +1,572 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "../components/common/Card";
-import { Badge } from "../components/common/Badge";
-import { Button } from "../components/common/Button";
-import { getPuntersList, Punter } from "../services/punterService";
-import { formatDate } from "../lib/utils";
 import {
-  Star,
-  Search,
-  Filter,
-  RefreshCw,
-  AlertCircle,
-  ChevronLeft,
-  ChevronRight,
-  SlidersHorizontal,
-  Award,
-  MapPin,
-  TrendingUp,
-  User,
-  ExternalLink
+  Users, Search, Star, RefreshCw, Award, MapPin,
+  TrendingUp, User, ExternalLink, ChevronLeft, ChevronRight,
+  MessageCircle, Send, Bot, Hash
 } from "lucide-react";
+import { getPuntersList, type Punter } from "../services/punterService";
 
-const PuntersPage: React.FC = () => {
-  // State for punters and loading
-  const [loading, setLoading] = useState<boolean>(true);
+// ── Stat Pill ───────────────────────────────────────────
+function StatPill({ label, value, color }: { label: string; value: string; color: string }) {
+  return (
+    <div style={{ textAlign: "center", flex: 1, minWidth: 60 }}>
+      <p style={{
+        fontFamily: "var(--font-mono)", fontSize: 18, fontWeight: 700,
+        color, lineHeight: 1.2,
+      }}>{value}</p>
+      <p style={{
+        fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)",
+        marginTop: 2,
+      }}>{label}</p>
+    </div>
+  );
+}
+
+// ── Punter Card ─────────────────────────────────────────
+function PunterCard({
+  punter, isFav, onToggleFav,
+}: {
+  punter: Punter; isFav: boolean; onToggleFav: () => void;
+}) {
+  return (
+    <div className="card" style={{
+      padding: "20px",
+      display: "flex", flexDirection: "column", gap: 14,
+      borderTop: punter.verified ? "2px solid var(--brand)" : undefined,
+      transition: "border-color 200ms ease, box-shadow 200ms ease",
+    }}>
+      {/* Header row */}
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+        {/* Avatar */}
+        <div style={{
+          width: 48, height: 48, borderRadius: 12,
+          background: "rgba(245,158,11,0.10)", border: "1px solid rgba(245,158,11,0.18)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          flexShrink: 0, overflow: "hidden",
+        }}>
+          {punter.image_url ? (
+            <img
+              src={punter.image_url} alt={punter.name}
+              style={{ width: 48, height: 48, objectFit: "cover", borderRadius: 12 }}
+              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+            />
+          ) : (
+            <User size={22} color="var(--brand)" />
+          )}
+        </div>
+
+        {/* Name + badge */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <p style={{
+              fontFamily: "var(--font-body)", fontSize: 15, fontWeight: 700,
+              color: "var(--text-1)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+            }}>{punter.name}</p>
+            {punter.verified && (
+              <Award size={14} color="var(--brand)" style={{ flexShrink: 0 }} />
+            )}
+          </div>
+          {punter.nickname && (
+            <p style={{
+              fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text-3)", marginTop: 1,
+            }}>@{punter.nickname}</p>
+          )}
+        </div>
+
+        {/* Fav star */}
+        <button
+          onClick={onToggleFav}
+          style={{
+            background: "none", border: "none", cursor: "pointer", padding: 4,
+            color: isFav ? "var(--brand)" : "var(--text-3)",
+            transition: "color 180ms ease",
+          }}
+          aria-label={isFav ? "Remove from favorites" : "Add to favorites"}
+        >
+          <Star size={16} fill={isFav ? "var(--brand)" : "none"} />
+        </button>
+      </div>
+
+      {/* Info tags */}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+        <span style={{
+          display: "inline-flex", alignItems: "center", gap: 4,
+          fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)",
+          background: "var(--surface-2)", padding: "3px 10px", borderRadius: 6,
+        }}>
+          <MapPin size={11} /> {punter.country}
+        </span>
+        {punter.specialty && (
+          <span style={{
+            display: "inline-flex", alignItems: "center", gap: 4,
+            fontFamily: "var(--font-body)", fontSize: 11, color: "var(--brand)",
+            background: "rgba(245,158,11,0.08)", padding: "3px 10px", borderRadius: 6,
+          }}>
+            <TrendingUp size={11} /> {punter.specialty}
+          </span>
+        )}
+      </div>
+
+      {/* Stats row */}
+      <div style={{
+        display: "flex", gap: 8, padding: "10px 0",
+        borderTop: "1px solid var(--border)", borderBottom: "1px solid var(--border)",
+      }}>
+        <StatPill
+          label="Success"
+          value={punter.success_rate ? `${punter.success_rate.toFixed(1)}%` : "—"}
+          color="var(--green)"
+        />
+        <StatPill
+          label="Codes"
+          value={String(punter.popularity ?? 0)}
+          color="var(--brand)"
+        />
+        <StatPill
+          label="Won"
+          value={String(punter.total_won ?? 0)}
+          color="var(--green)"
+        />
+        <StatPill
+          label="Lost"
+          value={String(punter.total_lost ?? 0)}
+          color="var(--red)"
+        />
+      </div>
+
+      {/* Bio */}
+      {punter.bio && (
+        <p style={{
+          fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text-3)",
+          lineHeight: 1.6, display: "-webkit-box",
+          WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden",
+        }}>{punter.bio}</p>
+      )}
+
+      {/* Social links */}
+      {punter.social_media && Object.keys(punter.social_media).length > 0 && (
+        <div style={{ display: "flex", gap: 8 }}>
+          {Object.entries(punter.social_media).map(([platform, url]) => (
+            <a
+              key={platform}
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: "inline-flex", alignItems: "center", gap: 4,
+                fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)",
+                textDecoration: "none", padding: "4px 10px", borderRadius: 6,
+                background: "var(--surface-2)", transition: "color 180ms ease",
+              }}
+            >
+              <ExternalLink size={11} /> {platform}
+            </a>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Telegram Guide ──────────────────────────────────────
+function TelegramGuide() {
+  const steps = [
+    {
+      icon: <Bot size={18} color="var(--brand)" />,
+      title: "1. Set up the Telegram Bot",
+      body: "Create a bot with @BotFather on Telegram. Set TELEGRAM_BOT_TOKEN in your backend .env file.",
+    },
+    {
+      icon: <MessageCircle size={18} color="var(--blue)" />,
+      title: "2. Add bot to your group",
+      body: "Add the bot to your Telegram group. Set TELEGRAM_GROUP_ID in .env to restrict it to that group.",
+    },
+    {
+      icon: <Send size={18} color="var(--green)" />,
+      title: "3. Post betting codes",
+      body: "Members post codes in the format shown below. The bot parses them and saves punter + code to the database automatically.",
+    },
+    {
+      icon: <Hash size={18} color="var(--purple)" />,
+      title: "4. Punters appear here",
+      body: "Each Telegram user who posts a code becomes a punter on this page. Stats update as their codes are resolved.",
+    },
+  ];
+
+  return (
+    <div className="card" style={{ padding: "24px", borderTop: "2px solid rgba(96,165,250,0.3)" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
+        <div style={{
+          width: 36, height: 36, borderRadius: 10,
+          background: "rgba(96,165,250,0.12)", border: "1px solid rgba(96,165,250,0.2)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          <Send size={17} color="var(--blue)" />
+        </div>
+        <div>
+          <h3 style={{ fontSize: 16, fontWeight: 700, color: "var(--text-1)" }}>How to Add Punters via Telegram</h3>
+          <p style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text-3)", marginTop: 2 }}>
+            Punters are added automatically when they post betting codes in your Telegram group
+          </p>
+        </div>
+      </div>
+
+      {/* Steps */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 14, marginBottom: 20 }}>
+        {steps.map((step, i) => (
+          <div key={i} style={{
+            padding: "14px 16px", borderRadius: 10,
+            background: "var(--surface-2)", border: "1px solid var(--border)",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+              {step.icon}
+              <p style={{ fontFamily: "var(--font-body)", fontSize: 13, fontWeight: 700, color: "var(--text-1)" }}>{step.title}</p>
+            </div>
+            <p style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text-3)", lineHeight: 1.6 }}>{step.body}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Code format */}
+      <div style={{
+        padding: "16px 20px", borderRadius: 10,
+        background: "rgba(0,0,0,0.3)", border: "1px solid var(--border)",
+      }}>
+        <p style={{
+          fontFamily: "var(--font-body)", fontSize: 11, fontWeight: 700,
+          letterSpacing: "0.1em", textTransform: "uppercase",
+          color: "var(--brand)", marginBottom: 10,
+        }}>Message Format</p>
+        <pre style={{
+          fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--text-2)",
+          lineHeight: 1.8, margin: 0, whiteSpace: "pre-wrap",
+        }}>
+{`Code: ABC123
+Odds: 5.50
+Bookmaker: Bet365
+Date: 26/05/2026  (optional)
+Time: 19:30        (optional)`}
+        </pre>
+        <p style={{
+          fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)",
+          marginTop: 12, lineHeight: 1.6,
+        }}>
+          The bot requires <strong style={{ color: "var(--text-2)" }}>Code</strong>,{" "}
+          <strong style={{ color: "var(--text-2)" }}>Odds</strong>, and{" "}
+          <strong style={{ color: "var(--text-2)" }}>Bookmaker</strong>. Date and Time are optional.
+          The sender's Telegram name becomes the punter name.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ── Main Page ───────────────────────────────────────────
+export default function PuntersPage() {
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [punters, setPunters] = useState<Punter[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
+  const [favIds, setFavIds] = useState<number[]>([]);
+  const [showFavsOnly, setShowFavsOnly] = useState(false);
+  const [sortBy, setSortBy] = useState<"popularity" | "success_rate" | "name">("popularity");
+  const perPage = 12;
 
-  // Pagination state
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const [totalPunters, setTotalPunters] = useState<number>(0);
-  const puntersPerPage = 12;
+  // Load favorites from localStorage
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("favoritePunters");
+      if (raw) setFavIds(JSON.parse(raw));
+    } catch { /* ignore */ }
+  }, []);
 
-  // Filter state
-  const [searchQuery, setSearchQuery] = useState<string>("");
-  const [filterCountry, setFilterCountry] = useState<string>("all");
-  const [filterVerified, setFilterVerified] = useState<string>("all");
-  const [showFilters, setShowFilters] = useState<boolean>(false);
-  const [sortBy, setSortBy] = useState<string>("popularity");
-  const [sortOrder, setSortOrder] = useState<string>("desc");
-
-  // Favorite punters state
-  const [favoritePunters, setFavoritePunters] = useState<number[]>([]);
-  const [showFavoritesOnly, setShowFavoritesOnly] = useState<boolean>(false);
-
-  // Toggle favorite status for a punter
-  const toggleFavoritePunter = useCallback((punterId: number) => {
-    setFavoritePunters(prevFavorites => {
-      const newFavorites = prevFavorites.includes(punterId)
-        ? prevFavorites.filter(id => id !== punterId)
-        : [...prevFavorites, punterId];
-
-      localStorage.setItem("favoritePunters", JSON.stringify(newFavorites));
-      return newFavorites;
+  const toggleFav = useCallback((id: number) => {
+    setFavIds(prev => {
+      const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id];
+      localStorage.setItem("favoritePunters", JSON.stringify(next));
+      return next;
     });
   }, []);
 
-  // Load favorite punters from localStorage
-  useEffect(() => {
-    const favoritesFromStorage = localStorage.getItem("favoritePunters");
-    if (favoritesFromStorage) {
-      setFavoritePunters(JSON.parse(favoritesFromStorage));
-    }
-  }, []);
-
-  // Fetch punters with pagination
-  const fetchPunters = useCallback(async (page: number = 1) => {
+  // Fetch punters
+  const fetchPunters = useCallback(async (p: number) => {
+    setLoading(true);
+    setError(null);
     try {
-      setLoading(true);
-      setError(null);
-
-      const skip = (page - 1) * puntersPerPage;
-      const limit = puntersPerPage;
-
-      console.log(`Fetching punters: page ${page}, skip ${skip}, limit ${limit}`);
-      const response = await getPuntersList(limit, skip);
-
-      console.log('Fetched punters response:', response);
-      console.log(`API returned ${response.items.length} punters`);
-      setPunters(response.items);
-      setTotalPunters(response.total);
-
-      // Log success for debugging
-      if (response.items.length === 0) {
-        console.log('✅ API call successful but no punters found in database');
-      } else {
-        console.log(`✅ API call successful - loaded ${response.items.length} punters`);
-      }
+      const res = await getPuntersList(perPage, (p - 1) * perPage);
+      setPunters(res.items);
+      setTotal(res.total);
     } catch (err) {
-      console.error("Error fetching punters:", err);
-      setError(`Failed to load punters: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      setError(err instanceof Error ? err.message : "Failed to load punters");
     } finally {
       setLoading(false);
     }
-  }, [puntersPerPage]);
+  }, [perPage]);
 
-  // Fetch punters when page changes
-  useEffect(() => {
-    fetchPunters(currentPage);
-  }, [currentPage, fetchPunters]);
+  useEffect(() => { fetchPunters(page); }, [page, fetchPunters]);
 
-  // Filter and sort punters
-  const filteredPunters = punters
-    .filter(punter => {
-      // Apply search filter
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase();
+  // Client-side filter + sort
+  const filtered = punters
+    .filter(p => {
+      if (showFavsOnly && !favIds.includes(p.id)) return false;
+      if (search) {
+        const q = search.toLowerCase();
         return (
-          punter.name.toLowerCase().includes(query) ||
-          (punter.nickname && punter.nickname.toLowerCase().includes(query)) ||
-          punter.country.toLowerCase().includes(query) ||
-          (punter.specialty && punter.specialty.toLowerCase().includes(query))
+          p.name.toLowerCase().includes(q) ||
+          (p.nickname?.toLowerCase().includes(q)) ||
+          p.country.toLowerCase().includes(q) ||
+          (p.specialty?.toLowerCase().includes(q))
         );
       }
       return true;
     })
-    .filter(punter => {
-      // Apply country filter
-      if (filterCountry !== "all") {
-        return punter.country.toLowerCase() === filterCountry.toLowerCase();
-      }
-      return true;
-    })
-    .filter(punter => {
-      // Apply verified filter
-      if (filterVerified !== "all") {
-        return filterVerified === "verified" ? punter.verified : !punter.verified;
-      }
-      return true;
-    })
-    .filter(punter => {
-      // Apply favorites filter
-      if (showFavoritesOnly) {
-        return favoritePunters.includes(punter.id);
-      }
-      return true;
-    })
     .sort((a, b) => {
-      // Apply sorting
-      if (sortBy === "popularity") {
-        const popularityA = a.popularity || 0;
-        const popularityB = b.popularity || 0;
-        return sortOrder === "asc" ? popularityA - popularityB : popularityB - popularityA;
-      } else if (sortBy === "success_rate") {
-        const successA = a.success_rate || 0;
-        const successB = b.success_rate || 0;
-        return sortOrder === "asc" ? successA - successB : successB - successA;
-      } else if (sortBy === "name") {
-        return sortOrder === "asc" ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
-      }
-      return 0;
+      if (sortBy === "popularity") return (b.popularity ?? 0) - (a.popularity ?? 0);
+      if (sortBy === "success_rate") return (b.success_rate ?? 0) - (a.success_rate ?? 0);
+      return a.name.localeCompare(b.name);
     });
 
-  // Calculate total pages
-  const totalPages = Math.ceil(totalPunters / puntersPerPage);
-
-  // Handle page change
-  const handlePageChange = (page: number) => {
-    if (page < 1 || page > totalPages) return;
-    setCurrentPage(page);
-  };
-
-  // Reset filters
-  const resetFilters = () => {
-    setSearchQuery("");
-    setFilterCountry("all");
-    setFilterVerified("all");
-    setShowFavoritesOnly(false);
-    setSortBy("popularity");
-    setSortOrder("desc");
-  };
-
-  // Get unique countries from punters
-  const getUniqueCountries = () => {
-    const countries = punters.map(punter => punter.country).filter(Boolean);
-    return [...new Set(countries)].sort();
-  };
+  const totalPages = Math.ceil(total / perPage);
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold mb-1">Expert Punters</h1>
-          <p className="text-sm text-[#A1A1AA]">
-            Discover and follow our verified betting experts from around the world
-          </p>
+    <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
+
+      {/* Page header */}
+      <div>
+        <div className="eyebrow" style={{ marginBottom: 10, display: "flex", alignItems: "center", gap: 8 }}>
+          <Users size={14} color="var(--brand)" />
+          Expert Network
         </div>
-
-        {/* Search and filter controls */}
-        <div className="flex flex-wrap gap-2 items-center">
-          {/* Search input */}
-          <div className="relative">
-            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-[#A1A1AA]" size={16} />
-            <input
-              type="text"
-              placeholder="Search punters..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8 pr-3 py-2 bg-[#1A1A27] border border-[#2A2A3C] rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#F5A623] focus:border-[#F5A623] w-full md:w-auto"
-            />
-          </div>
-
-          {/* Filter toggle */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center gap-1"
-          >
-            <Filter size={16} />
-            Filters
-          </Button>
-
-          {/* Favorites toggle */}
-          <Button
-            variant={showFavoritesOnly ? "default" : "outline"}
-            size="sm"
-            onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
-            className="flex items-center gap-1"
-          >
-            <Star size={16} className={showFavoritesOnly ? "fill-current" : ""} />
-            Favorites
-          </Button>
-
-          {/* Refresh button */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => fetchPunters(currentPage)}
-            disabled={loading}
-            className="flex items-center gap-1"
-          >
-            <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
-            Refresh
-          </Button>
-        </div>
+        <h1 style={{ fontSize: "clamp(26px, 5vw, 40px)", fontWeight: 800, lineHeight: 1.1, marginBottom: 10 }}>
+          Expert <span className="text-brand-gradient">Punters</span>
+        </h1>
+        <p style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text-3)", maxWidth: 480, lineHeight: 1.7 }}>
+          Discover and follow verified betting experts. Punters are added via our Telegram bot.
+        </p>
       </div>
 
-      {/* Filters panel */}
-      {showFilters && (
-        <Card className="bg-[#1A1A27]/80 border border-[#2A2A3C]/20 shadow-lg">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold flex items-center gap-2">
-                <SlidersHorizontal size={18} className="text-[#F5A623]" />
-                Filter Options
-              </h3>
-              <Button variant="outline" size="sm" onClick={resetFilters}>
-                Reset Filters
-              </Button>
-            </div>
+      {/* Controls bar */}
+      <div style={{
+        display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap",
+      }}>
+        {/* Search */}
+        <div style={{
+          position: "relative", flex: "1 1 200px", maxWidth: 320,
+        }}>
+          <Search size={14} color="var(--text-3)" style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)" }} />
+          <input
+            type="text"
+            placeholder="Search punters…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            style={{
+              width: "100%", padding: "9px 12px 9px 34px", borderRadius: 8,
+              border: "1px solid var(--border)", background: "var(--surface-2)",
+              fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text-1)",
+              outline: "none", transition: "border-color 180ms ease",
+            }}
+          />
+        </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              {/* Country filter */}
-              <div>
-                <label className="block text-sm font-medium mb-1">Country</label>
-                <select
-                  value={filterCountry}
-                  onChange={(e) => setFilterCountry(e.target.value)}
-                  className="w-full bg-[#1A1A27] border border-[#2A2A3C] rounded-lg p-2 text-sm"
-                >
-                  <option value="all">All Countries</option>
-                  {getUniqueCountries().map(country => (
-                    <option key={country} value={country}>{country}</option>
-                  ))}
-                </select>
-              </div>
+        {/* Sort */}
+        <select
+          value={sortBy}
+          onChange={e => setSortBy(e.target.value as any)}
+          style={{
+            padding: "9px 12px", borderRadius: 8,
+            border: "1px solid var(--border)", background: "var(--surface-2)",
+            fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text-1)",
+            cursor: "pointer", outline: "none",
+          }}
+        >
+          <option value="popularity">Sort: Popularity</option>
+          <option value="success_rate">Sort: Success Rate</option>
+          <option value="name">Sort: Name</option>
+        </select>
 
-              {/* Verified filter */}
-              <div>
-                <label className="block text-sm font-medium mb-1">Verification</label>
-                <select
-                  value={filterVerified}
-                  onChange={(e) => setFilterVerified(e.target.value)}
-                  className="w-full bg-[#1A1A27] border border-[#2A2A3C] rounded-lg p-2 text-sm"
-                >
-                  <option value="all">All Punters</option>
-                  <option value="verified">Verified Only</option>
-                  <option value="unverified">Unverified Only</option>
-                </select>
-              </div>
+        {/* Favs toggle */}
+        <button
+          onClick={() => setShowFavsOnly(!showFavsOnly)}
+          style={{
+            display: "flex", alignItems: "center", gap: 6,
+            padding: "9px 14px", borderRadius: 8, cursor: "pointer",
+            fontFamily: "var(--font-body)", fontSize: 13, fontWeight: 600,
+            border: showFavsOnly ? "1px solid var(--brand)" : "1px solid var(--border)",
+            background: showFavsOnly ? "rgba(245,158,11,0.10)" : "var(--surface-2)",
+            color: showFavsOnly ? "var(--brand)" : "var(--text-2)",
+            transition: "all 180ms ease",
+          }}
+        >
+          <Star size={13} fill={showFavsOnly ? "var(--brand)" : "none"} />
+          Favorites
+        </button>
 
-              {/* Sort by */}
-              <div>
-                <label className="block text-sm font-medium mb-1">Sort By</label>
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className="w-full bg-[#1A1A27] border border-[#2A2A3C] rounded-lg p-2 text-sm"
-                >
-                  <option value="popularity">Popularity</option>
-                  <option value="success_rate">Success Rate</option>
-                  <option value="name">Name</option>
-                </select>
-              </div>
+        {/* Refresh */}
+        <button
+          onClick={() => fetchPunters(page)}
+          disabled={loading}
+          style={{
+            display: "flex", alignItems: "center", justifyContent: "center",
+            width: 36, height: 36, borderRadius: 8,
+            border: "1px solid var(--border)", background: "transparent",
+            cursor: loading ? "wait" : "pointer", color: "var(--text-3)",
+            transition: "all 180ms ease",
+          }}
+          title="Refresh"
+        >
+          <RefreshCw size={14} style={loading ? { animation: "spin 0.7s linear infinite" } : undefined} />
+        </button>
+      </div>
 
-              {/* Sort order */}
-              <div>
-                <label className="block text-sm font-medium mb-1">Sort Order</label>
-                <select
-                  value={sortOrder}
-                  onChange={(e) => setSortOrder(e.target.value)}
-                  className="w-full bg-[#1A1A27] border border-[#2A2A3C] rounded-lg p-2 text-sm"
-                >
-                  <option value="desc">Descending</option>
-                  <option value="asc">Ascending</option>
-                </select>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Error message */}
+      {/* Error */}
       {error && (
-        <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 flex items-start gap-3">
-          <AlertCircle size={20} className="text-red-500 mt-0.5 flex-shrink-0" />
-          <div>
-            <h3 className="font-semibold text-red-500">Error Loading Data</h3>
-            <p className="text-sm text-[#A1A1AA]">{error}</p>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => fetchPunters(currentPage)}
-              className="mt-2"
-            >
-              Try Again
-            </Button>
-          </div>
+        <div style={{
+          padding: "12px 16px", borderRadius: "var(--radius-md)",
+          background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.2)",
+          fontFamily: "var(--font-body)", fontSize: 13, color: "var(--red)",
+        }}>
+          {error}
         </div>
       )}
 
-      {/* Punters Card */}
-      <Card className="bg-[#1A1A27]/80 border border-[#2A2A3C]/20 shadow-lg">
-        <CardHeader className="p-4">
-          <CardTitle className="text-xl flex items-center">
-            <span className="bg-[#F5A623]/10 text-[#F5A623] p-1 rounded-md mr-2 text-sm">👑</span>
-            Expert Punters
-            {filteredPunters.length > 0 && (
-              <Badge variant="outline" className="ml-2">
-                {filteredPunters.length} {filteredPunters.length === 1 ? 'punter' : 'punters'}
-              </Badge>
-            )}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-4 pt-0">
-          {loading ? (
-            <div className="text-center py-16">
-              <div className="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-[#F5A623] mb-4"></div>
-              <p className="text-[#A1A1AA]">Loading punters...</p>
+      {/* Content */}
+      {loading ? (
+        <div style={{
+          display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16,
+        }}>
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="card" style={{ padding: 20, height: 220 }}>
+              <div style={{
+                width: 48, height: 48, borderRadius: 12,
+                background: "var(--surface-2)", animation: "pulse 1.5s ease infinite",
+              }} />
             </div>
-          ) : filteredPunters.length > 0 ? (
-            <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {filteredPunters.map((punter) => (
-                  <div key={punter.id} className="bg-[#2A2A3C]/20 rounded-lg p-4 border border-[#2A2A3C]/30 hover:border-[#F5A623]/30 transition-all duration-200">
-                    {/* Punter Header */}
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-3">
-                        {/* Avatar */}
-                        <div className="w-12 h-12 bg-[#F5A623]/10 rounded-full flex items-center justify-center">
-                          {punter.image_url ? (
-                            <img
-                              src={punter.image_url}
-                              alt={punter.name}
-                              className="w-12 h-12 rounded-full object-cover"
-                              onError={(e) => {
-                                e.currentTarget.style.display = 'none';
-                                e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                              }}
-                            />
-                          ) : null}
-                          <User size={20} className={`text-[#F5A623] ${punter.image_url ? 'hidden' : ''}`} />
-                        </div>
+          ))}
+        </div>
+      ) : filtered.length > 0 ? (
+        <>
+          {/* Punter cards grid */}
+          <div style={{
+            display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16,
+          }}>
+            {filtered.map(p => (
+              <PunterCard
+                key={p.id}
+                punter={p}
+                isFav={favIds.includes(p.id)}
+                onToggleFav={() => toggleFav(p.id)}
+              />
+            ))}
+          </div>
 
-                        {/* Name and verification */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1">
-                            <h3 className="font-semibold text-sm truncate">{punter.name}</h3>
-                            {punter.verified && (
-                              <Award size={14} className="text-[#F5A623] flex-shrink-0" />
-                            )}
-                          </div>
-                          {punter.nickname && (
-                            <p className="text-xs text-[#A1A1AA] truncate">@{punter.nickname}</p>
-                          )}
-                        </div>
-                      </div>
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              padding: "16px 0", borderTop: "1px solid var(--border)",
+            }}>
+              <p style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text-3)" }}>
+                {(page - 1) * perPage + 1}–{Math.min(page * perPage, total)} of {total}
+              </p>
+              <div style={{ display: "flex", gap: 6 }}>
+                <button
+                  onClick={() => setPage(Math.max(1, page - 1))}
+                  disabled={page === 1}
+                  style={{
+                    width: 32, height: 32, borderRadius: 8, display: "flex",
+                    alignItems: "center", justifyContent: "center",
+                    border: "1px solid var(--border)", background: "transparent",
+                    cursor: page === 1 ? "not-allowed" : "pointer",
+                    color: page === 1 ? "var(--text-3)" : "var(--text-1)",
+                    opacity: page === 1 ? 0.4 : 1,
+                  }}
+                ><ChevronLeft size={14} /></button>
 
-                      {/* Favorite button */}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="p-1 h-auto"
-                        onClick={() => toggleFavoritePunter(punter.id)}
-                      >
-                        <Star
-                          size={16}
-                          className={`${favoritePunters.includes(punter.id) ? 'fill-[#F5A623] text-[#F5A623]' : 'text-[#A1A1AA]'}`}
-                        />
-                      </Button>
-                    </div>
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let num: number;
+                  if (totalPages <= 5) num = i + 1;
+                  else if (page <= 3) num = i + 1;
+                  else if (page >= totalPages - 2) num = totalPages - 4 + i;
+                  else num = page - 2 + i;
+                  return (
+                    <button
+                      key={num}
+                      onClick={() => setPage(num)}
+                      style={{
+                        width: 32, height: 32, borderRadius: 8, display: "flex",
+                        alignItems: "center", justifyContent: "center",
+                        fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 700,
+                        border: page === num ? "1px solid var(--brand)" : "1px solid var(--border)",
+                        background: page === num ? "rgba(245,158,11,0.12)" : "transparent",
+                        color: page === num ? "var(--brand)" : "var(--text-2)",
+                        cursor: "pointer",
+                      }}
+                    >{num}</button>
+                  );
+                })}
 
-                    {/* Punter Info */}
-                    <div className="space-y-2 mb-3">
-                      {/* Country */}
-                      <div className="flex items-center gap-1 text-xs text-[#A1A1AA]">
-                        <MapPin size={12} />
-                        <span>{punter.country}</span>
-                      </div>
-
-                      {/* Specialty */}
-                      {punter.specialty && (
-                        <div className="flex items-center gap-1 text-xs">
-                          <TrendingUp size={12} className="text-[#F5A623]" />
-                          <span className="text-[#A1A1AA]">{punter.specialty}</span>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Stats */}
-                    <div className="grid grid-cols-2 gap-2 mb-3">
-                      {/* Success Rate */}
-                      <div className="text-center">
-                        <div className="text-lg font-bold text-[#F5A623]">
-                          {punter.success_rate ? `${punter.success_rate.toFixed(1)}%` : 'N/A'}
-                        </div>
-                        <div className="text-xs text-[#A1A1AA]">Success Rate</div>
-                      </div>
-
-                      {/* Popularity */}
-                      <div className="text-center">
-                        <div className="text-lg font-bold text-[#F5A623]">
-                          {punter.popularity || 0}
-                        </div>
-                        <div className="text-xs text-[#A1A1AA]">Popularity</div>
-                      </div>
-                    </div>
-
-                    {/* Bio */}
-                    {punter.bio && (
-                      <p className="text-xs text-[#A1A1AA] line-clamp-2 mb-3">
-                        {punter.bio}
-                      </p>
-                    )}
-
-                    {/* Social Media Links */}
-                    {punter.social_media && Object.keys(punter.social_media).length > 0 && (
-                      <div className="flex gap-2 justify-center">
-                        {Object.entries(punter.social_media).map(([platform, url]) => (
-                          <a
-                            key={platform}
-                            href={url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-[#A1A1AA] hover:text-[#F5A623] transition-colors"
-                          >
-                            <ExternalLink size={14} />
-                          </a>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
+                <button
+                  onClick={() => setPage(Math.min(totalPages, page + 1))}
+                  disabled={page === totalPages}
+                  style={{
+                    width: 32, height: 32, borderRadius: 8, display: "flex",
+                    alignItems: "center", justifyContent: "center",
+                    border: "1px solid var(--border)", background: "transparent",
+                    cursor: page === totalPages ? "not-allowed" : "pointer",
+                    color: page === totalPages ? "var(--text-3)" : "var(--text-1)",
+                    opacity: page === totalPages ? 0.4 : 1,
+                  }}
+                ><ChevronRight size={14} /></button>
               </div>
-
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex items-center justify-between mt-4 pt-4 border-t border-[#2A2A3C]/20">
-                  <div className="text-sm text-[#A1A1AA]">
-                    Showing {(currentPage - 1) * puntersPerPage + 1} to {Math.min(currentPage * puntersPerPage, totalPunters)} of {totalPunters} punters
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handlePageChange(currentPage - 1)}
-                      disabled={currentPage === 1}
-                      className="p-1 h-8 w-8"
-                    >
-                      <ChevronLeft size={16} />
-                    </Button>
-
-                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                      // Show pages around current page
-                      let pageNum;
-                      if (totalPages <= 5) {
-                        pageNum = i + 1;
-                      } else if (currentPage <= 3) {
-                        pageNum = i + 1;
-                      } else if (currentPage >= totalPages - 2) {
-                        pageNum = totalPages - 4 + i;
-                      } else {
-                        pageNum = currentPage - 2 + i;
-                      }
-
-                      return (
-                        <Button
-                          key={pageNum}
-                          variant={currentPage === pageNum ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => handlePageChange(pageNum)}
-                          className="h-8 w-8"
-                        >
-                          {pageNum}
-                        </Button>
-                      );
-                    })}
-
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handlePageChange(currentPage + 1)}
-                      disabled={currentPage === totalPages}
-                      className="p-1 h-8 w-8"
-                    >
-                      <ChevronRight size={16} />
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="text-center py-8 bg-[#1A1A27]/30 rounded-xl border border-[#2A2A3C]/10">
-              {(searchQuery || filterCountry !== "all" || filterVerified !== "all" || showFavoritesOnly) ? (
-                <>
-                  <p className="text-[#A1A1AA]">No punters match your current filters.</p>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={resetFilters}
-                    className="mt-4"
-                  >
-                    Clear Filters
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <div className="text-6xl mb-4">👑</div>
-                  <h3 className="text-lg font-semibold mb-2">No Punters Yet</h3>
-                  <p className="text-[#A1A1AA] mb-4">
-                    Expert punters will appear here once they join our platform and start sharing their expertise.
-                  </p>
-                  <p className="text-sm text-[#A1A1AA]">
-                    The backend is connected and working - we're just waiting for punter data to be added.
-                  </p>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => fetchPunters(currentPage)}
-                    className="mt-4"
-                  >
-                    <RefreshCw size={16} className="mr-2" />
-                    Check Again
-                  </Button>
-                </>
-              )}
             </div>
           )}
-        </CardContent>
-      </Card>
+        </>
+      ) : (
+        /* Empty state */
+        <div style={{
+          display: "flex", flexDirection: "column", alignItems: "center",
+          padding: "48px 20px", textAlign: "center",
+        }}>
+          <div style={{
+            width: 72, height: 72, borderRadius: 18,
+            background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.15)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            marginBottom: 20,
+          }}>
+            <Users size={32} color="var(--brand)" />
+          </div>
+          <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>
+            {search || showFavsOnly ? "No punters match your filters" : "No Punters Yet"}
+          </h3>
+          <p style={{
+            fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text-3)",
+            maxWidth: 420, lineHeight: 1.7, marginBottom: 20,
+          }}>
+            {search || showFavsOnly
+              ? "Try adjusting your search or clearing filters."
+              : "Expert punters will appear here once they start sharing betting codes via the Telegram bot."
+            }
+          </p>
+          {(search || showFavsOnly) && (
+            <button
+              onClick={() => { setSearch(""); setShowFavsOnly(false); }}
+              style={{
+                padding: "9px 20px", borderRadius: 8,
+                border: "1px solid var(--border)", background: "var(--surface-2)",
+                fontFamily: "var(--font-body)", fontSize: 13, fontWeight: 600,
+                color: "var(--text-1)", cursor: "pointer",
+              }}
+            >Clear Filters</button>
+          )}
+        </div>
+      )}
+
+      {/* Telegram setup guide */}
+      <TelegramGuide />
+
+      <style>{`@keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }`}</style>
     </div>
   );
-};
-
-export default PuntersPage;
-
-
-
-
-
+}
