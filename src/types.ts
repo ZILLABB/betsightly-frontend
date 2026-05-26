@@ -17,6 +17,7 @@ export interface Punter {
   total_lost?: number;
   created_at?: string;
   updated_at?: string;
+  betting_codes?: BettingCode[];
 }
 
 export interface Bookmaker {
@@ -40,6 +41,8 @@ export interface BettingCode {
   confidence?: number;
   featured?: boolean;
   notes?: string;
+  punter_name?: string;
+  bookmaker_name?: string;
   punter?: Punter;
   bookmaker?: Bookmaker;
   created_at?: string;

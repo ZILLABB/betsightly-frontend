@@ -2,9 +2,11 @@ import React, { useEffect, useState, useCallback } from "react";
 import {
   Users, Search, Star, RefreshCw, Award, MapPin,
   TrendingUp, User, ExternalLink, ChevronLeft, ChevronRight,
-  MessageCircle, Send, Bot, Hash
+  MessageCircle, Send, Bot, Hash, ChevronDown, ChevronUp,
+  Clock, CheckCircle, XCircle, Copy
 } from "lucide-react";
 import { getPuntersList, type Punter } from "../services/punterService";
+import type { BettingCode } from "../types";
 
 // ── Stat Pill ───────────────────────────────────────────
 function StatPill({ label, value, color }: { label: string; value: string; color: string }) {
@@ -22,12 +24,64 @@ function StatPill({ label, value, color }: { label: string; value: string; color
   );
 }
 
+// ── Betting Code Row ────────────────────────────────────
+function CodeRow({ code }: { code: BettingCode }) {
+  const [copied, setCopied] = useState(false);
+  const statusColor = code.status === "won" ? "var(--green)"
+    : code.status === "lost" ? "var(--red)" : "var(--text-3)";
+  const StatusIcon = code.status === "won" ? CheckCircle
+    : code.status === "lost" ? XCircle : Clock;
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(code.code).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  };
+
+  return (
+    <div style={{
+      display: "flex", alignItems: "center", gap: 10,
+      padding: "8px 0",
+      borderBottom: "1px solid var(--border)",
+    }}>
+      <StatusIcon size={13} color={statusColor} style={{ flexShrink: 0 }} />
+      <button
+        onClick={handleCopy}
+        title="Copy code"
+        style={{
+          fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 700,
+          color: "var(--brand)", background: "none", border: "none",
+          cursor: "pointer", padding: 0, display: "flex", alignItems: "center", gap: 4,
+        }}
+      >
+        {code.code}
+        <Copy size={10} color={copied ? "var(--green)" : "var(--text-3)"} />
+      </button>
+      <span style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)", flex: 1, textAlign: "right" }}>
+        {code.bookmaker_name ?? "—"}
+      </span>
+      {code.odds && (
+        <span style={{
+          fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 700,
+          color: "var(--text-2)", background: "var(--surface-2)",
+          padding: "2px 6px", borderRadius: 4,
+        }}>
+          {code.odds.toFixed(2)}x
+        </span>
+      )}
+    </div>
+  );
+}
+
 // ── Punter Card ─────────────────────────────────────────
 function PunterCard({
   punter, isFav, onToggleFav,
 }: {
   punter: Punter; isFav: boolean; onToggleFav: () => void;
 }) {
+  const [showCodes, setShowCodes] = useState(false);
+  const codes = punter.betting_codes ?? [];
   return (
     <div className="card" style={{
       padding: "20px",
@@ -162,6 +216,29 @@ function PunterCard({
               <ExternalLink size={11} /> {platform}
             </a>
           ))}
+        </div>
+      )}
+
+      {/* Betting codes section */}
+      {codes.length > 0 && (
+        <div>
+          <button
+            onClick={() => setShowCodes(!showCodes)}
+            style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              width: "100%", padding: "8px 0", background: "none", border: "none",
+              cursor: "pointer", color: "var(--text-2)",
+              fontFamily: "var(--font-body)", fontSize: 12, fontWeight: 600,
+            }}
+          >
+            <span>{codes.length} Betting Code{codes.length !== 1 ? "s" : ""}</span>
+            {showCodes ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+          </button>
+          {showCodes && (
+            <div style={{ padding: "0 0 4px" }}>
+              {codes.map(c => <CodeRow key={c.id} code={c} />)}
+            </div>
+          )}
         </div>
       )}
     </div>
