@@ -254,7 +254,7 @@ export function SettingsPage() {
         <Row
           icon={<Info size={15} color="var(--text-3)" />}
           label="BetSightly"
-          sub="AI-powered sports predictions"
+          sub="Sports predictions backed by data"
         >
           <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--text-3)" }}>v1.0</span>
         </Row>
