@@ -24,7 +24,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             {/* Brand */}
             <div>
               <Link to="/" style={{ display:"inline-flex", alignItems:"center", textDecoration:"none", marginBottom: 12 }}>
-                <img src="/logo.png" alt="BetSightly" style={{ height:32, width:"auto", objectFit:"contain", mixBlendMode:"screen" }} />
+                <img src="/logo.png" alt="BetSightly" className="brand-logo" style={{ height:32, width:"auto", objectFit:"contain" }} />
               </Link>
               <p style={{ fontFamily:"var(--font-body)", fontSize:12, color:"var(--text-3)", lineHeight:1.6, maxWidth:320 }}>
                 Sports predictions backed by real bookmaker odds and statistical analysis. For informational purposes only.

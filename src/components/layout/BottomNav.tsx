@@ -18,8 +18,8 @@ export function BottomNav() {
     <>
       <nav style={{
         position:"fixed", bottom:0, left:0, right:0, zIndex:50,
-        background:"rgba(7,7,26,0.97)", backdropFilter:"blur(20px)",
-        borderTop:"1px solid rgba(255,255,255,0.07)",
+        background:"var(--nav-overlay)", backdropFilter:"blur(20px)",
+        borderTop:"1px solid var(--border)",
         display:"flex", alignItems:"center",
         padding:"8px 0 max(8px, env(safe-area-inset-bottom))",
       }} className="bottom-nav">

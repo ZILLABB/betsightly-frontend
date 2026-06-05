@@ -37,6 +37,15 @@
   --border:      rgba(255,255,255,0.07);
   --border-brand:rgba(59,130,246,0.25);
 
+  /* Navigation overlays — themed */
+  --nav-bg-scrolled: rgba(7,7,26,0.92);
+  --nav-bg-top:      rgba(7,7,26,0.6);
+  --nav-overlay:     rgba(7,7,26,0.98);
+  --nav-hover:       rgba(255,255,255,0.05);
+  --logo-blend:      screen;
+  --shadow-md:       0 4px 12px rgba(0,0,0,0.3);
+  --shadow-lg:       0 8px 32px rgba(0,0,0,0.5);
+
   --font-display: 'Clash Display', 'Plus Jakarta Sans', sans-serif;
   --font-body:    'Plus Jakarta Sans', sans-serif;
   --font-mono:    'JetBrains Mono', monospace;
@@ -52,34 +61,44 @@
 
 /* ── Light theme overrides ──────────────────────────── */
 .light {
-  --bg:          #f4f4f8;
-  --bg-mid:      #eaeaf2;
+  /* Warm off-white background — not pure white */
+  --bg:          #f7f6f1;
+  --bg-mid:      #efede4;
   --surface:     #ffffff;
-  --surface-2:   #f0f0f7;
-  --surface-3:   #e4e4f0;
+  --surface-2:   #f0ede4;
+  --surface-3:   #e6e1d2;
 
-  --brand:       #2563eb;
-  --brand-dim:   #1d4ed8;
-  --brand-faint: rgba(37,99,235,0.08);
-  --brand-glow:  rgba(37,99,235,0.18);
-  --accent:      #d97706;
-  --accent-dim:  #b45309;
+  --brand:       #1e40af;
+  --brand-dim:   #1e3a8a;
+  --brand-faint: rgba(30,64,175,0.08);
+  --brand-glow:  rgba(30,64,175,0.18);
+  --accent:      #b45309;
+  --accent-dim:  #92400e;
 
-  --green:       #16a34a;
-  --green-faint: rgba(22,163,74,0.10);
-  --blue:        #2563eb;
-  --blue-faint:  rgba(37,99,235,0.10);
-  --purple:      #7c3aed;
-  --purple-faint:rgba(124,58,237,0.10);
-  --red:         #dc2626;
-  --red-faint:   rgba(220,38,38,0.10);
+  --green:       #15803d;
+  --green-faint: rgba(21,128,61,0.10);
+  --blue:        #1e40af;
+  --blue-faint:  rgba(30,64,175,0.10);
+  --purple:      #6d28d9;
+  --purple-faint:rgba(109,40,217,0.10);
+  --red:         #b91c1c;
+  --red-faint:   rgba(185,28,28,0.10);
 
-  --text-1: #0f0f1a;
-  --text-2: rgba(15,15,26,0.65);
-  --text-3: rgba(15,15,26,0.40);
+  --text-1: #1a1815;
+  --text-2: rgba(26,24,21,0.72);
+  --text-3: rgba(26,24,21,0.48);
 
-  --border:      rgba(0,0,0,0.08);
-  --border-brand:rgba(37,99,235,0.25);
+  --border:      rgba(26,24,21,0.10);
+  --border-brand:rgba(30,64,175,0.25);
+
+  /* Navigation overlays — light theme */
+  --nav-bg-scrolled: rgba(247,246,241,0.92);
+  --nav-bg-top:      rgba(247,246,241,0.65);
+  --nav-overlay:     rgba(247,246,241,0.98);
+  --nav-hover:       rgba(26,24,21,0.05);
+  --logo-blend:      multiply;
+  --shadow-md:       0 4px 16px rgba(26,24,21,0.06);
+  --shadow-lg:       0 12px 32px rgba(26,24,21,0.10);
 }
 
 /* ── Base reset ─────────────────────────────────────── */
@@ -113,6 +132,7 @@
     background-repeat: repeat;
     background-size: 128px;
   }
+
 
   #root { min-height: 100vh; }
 
@@ -156,6 +176,11 @@
     color: transparent;
   }
 
+  /* Brand logo — uses screen blend on dark, multiply on light */
+  .brand-logo {
+    mix-blend-mode: var(--logo-blend);
+  }
+
   /* glass card — color-aware hover via CSS custom property */
   .card {
     --card-accent: var(--brand);
@@ -164,6 +189,7 @@
     border: 1px solid var(--border);
     border-radius: var(--radius-xl);
     overflow: hidden;
+    box-shadow: var(--shadow-md);
     transition: border-color 250ms var(--ease), box-shadow 300ms var(--ease), transform 250ms var(--ease);
   }
 
@@ -182,7 +208,7 @@
     border-color: color-mix(in srgb, var(--card-accent) 35%, transparent);
     box-shadow:
       0 0 0 1px color-mix(in srgb, var(--card-accent) 20%, transparent),
-      0 8px 32px rgba(0,0,0,0.5),
+      var(--shadow-lg),
       0 0 40px color-mix(in srgb, var(--card-accent) 8%, transparent);
     transform: translateY(-2px);
   }
@@ -268,9 +294,9 @@
 
 .skeleton {
   background: linear-gradient(90deg,
-    rgba(255,255,255,0.04) 25%,
-    rgba(255,255,255,0.09) 50%,
-    rgba(255,255,255,0.04) 75%
+    var(--surface-2) 25%,
+    var(--surface-3) 50%,
+    var(--surface-2) 75%
   );
   background-size: 200% 100%;
   animation: shimmer 1.6s ease-in-out infinite;
@@ -281,7 +307,7 @@
 .conf-bar-track {
   height: 6px;
   border-radius: 99px;
-  background: rgba(255,255,255,0.06);
+  background: var(--surface-2);
   overflow: visible;
   position: relative;
 }
@@ -327,8 +353,33 @@
 }
 
 /* ── Refresh spin ──────────────────────────────────── */
-.refresh-btn:hover { background: rgba(255,255,255,0.06) !important; color: var(--text-1) !important; }
+.refresh-btn:hover { background: var(--nav-hover) !important; color: var(--text-1) !important; }
 .refresh-btn:active svg { animation: spin 0.5s ease; }
+
+/* ── Light theme background mesh ───────────────────── */
+.light body {
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 0%, rgba(30,64,175,0.05) 0%, transparent 60%),
+    radial-gradient(ellipse 70% 50% at 80% 100%, rgba(180,83,9,0.04) 0%, transparent 60%),
+    var(--bg) !important;
+}
+.light body::after { opacity: 0.03; }
+
+/* Light theme: glow-bg gradient adapts */
+.light .glow-bg::before {
+  background:
+    radial-gradient(ellipse 50% 50% at 50% 0%, rgba(30,64,175,0.08) 0%, transparent 70%),
+    radial-gradient(circle at 30% 20%, rgba(21,128,61,0.05) 0%, transparent 50%),
+    radial-gradient(circle at 70% 20%, rgba(30,64,175,0.05) 0%, transparent 50%);
+}
+.light .glow-bg::after {
+  background-image:
+    linear-gradient(rgba(26,24,21,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(26,24,21,0.04) 1px, transparent 1px);
+}
+
+/* Light theme: header doesn't need screen blend on logo */
+.light .brand-logo { mix-blend-mode: multiply; }
 
 /* ── Odds glow ─────────────────────────────────────── */
 .odds-value {

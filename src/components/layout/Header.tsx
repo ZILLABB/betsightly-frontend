@@ -34,8 +34,8 @@ export function Header() {
     <>
       <header style={{
         position:"sticky", top:0, zIndex:50,
-        borderBottom: scrolled ? "1px solid rgba(255,255,255,0.06)" : "1px solid transparent",
-        background: scrolled ? "rgba(7,7,26,0.92)" : "rgba(7,7,26,0.6)",
+        borderBottom: scrolled ? "1px solid var(--border)" : "1px solid transparent",
+        background: scrolled ? "var(--nav-bg-scrolled)" : "var(--nav-bg-top)",
         backdropFilter:"blur(20px)",
         transition:"all 250ms ease",
       }}>
@@ -46,7 +46,8 @@ export function Header() {
             <img
               src="/logo.png"
               alt="BetSightly"
-              style={{ height:44, width:"auto", objectFit:"contain", mixBlendMode:"screen" }}
+              className="brand-logo"
+              style={{ height:44, width:"auto", objectFit:"contain" }}
             />
           </Link>
 
@@ -65,7 +66,7 @@ export function Header() {
                   color: active ? activeColor : "var(--text-2)",
                   background: active ? activeBg : "transparent",
                 }}
-                onMouseEnter={e => { if(!active) { (e.currentTarget as HTMLElement).style.color="var(--text-1)"; (e.currentTarget as HTMLElement).style.background="rgba(255,255,255,0.05)"; }}}
+                onMouseEnter={e => { if(!active) { (e.currentTarget as HTMLElement).style.color="var(--text-1)"; (e.currentTarget as HTMLElement).style.background="var(--nav-hover)"; }}}
                 onMouseLeave={e => { if(!active) { (e.currentTarget as HTMLElement).style.color="var(--text-2)"; (e.currentTarget as HTMLElement).style.background="transparent"; }}}
                 >
                   {label}
@@ -89,7 +90,7 @@ export function Header() {
       {/* Mobile overlay */}
       <div style={{
         position:"fixed", inset:0, zIndex:49,
-        background:"rgba(7,7,26,0.98)", backdropFilter:"blur(20px)",
+        background:"var(--nav-overlay)", backdropFilter:"blur(20px)",
         display:"flex", flexDirection:"column", paddingTop:80, paddingLeft:24, paddingRight:24,
         transition:"opacity 250ms ease, transform 250ms ease",
         opacity: open ? 1 : 0,
