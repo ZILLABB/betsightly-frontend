@@ -1,10 +1,11 @@
 ﻿import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, Home, Target, BarChart2, RefreshCw, Settings, Users } from "lucide-react";
+import { Menu, X, Home, Target, BarChart2, RefreshCw, Settings, Users, Trophy } from "lucide-react";
 
 const NAV = [
   { path:"/", label:"Home", icon:Home },
   { path:"/predictions", label:"Predictions", icon:Target },
+  { path:"/worldcup", label:"World Cup", icon:Trophy },
   { path:"/results", label:"Results", icon:BarChart2 },
   { path:"/rollover", label:"Rollover", icon:RefreshCw },
   { path:"/punters", label:"Punters", icon:Users },

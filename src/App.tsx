@@ -12,6 +12,7 @@ import { SettingsPage } from "./pages/SettingsPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import PuntersPage from "./pages/PuntersPage";
 import PunterDetailPage from "./pages/PunterDetailPage";
+import WorldCupPage from "./pages/WorldCupPage";
 
 function Fallback() {
   return (
@@ -34,6 +35,7 @@ export default function App() {
             <Route path="/predictions/:category" element={<PredictionsPage />} />
             <Route path="/results" element={<ResultsPage />} />
             <Route path="/rollover" element={<RolloverPage />} />
+            <Route path="/worldcup" element={<WorldCupPage />} />
             <Route path="/punters" element={<PuntersPage />} />
             <Route path="/punters/:id" element={<PunterDetailPage />} />
             <Route path="/settings" element={<SettingsPage />} />

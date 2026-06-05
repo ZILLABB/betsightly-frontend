@@ -1,12 +1,11 @@
 ﻿import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Home, Target, BarChart2, RefreshCw, Settings, Users } from "lucide-react";
+import { Home, Target, Trophy, Users, Settings } from "lucide-react";
 
 const NAV = [
   { path:"/", label:"Home", icon:Home },
   { path:"/predictions", label:"Picks", icon:Target },
-  { path:"/results", label:"Results", icon:BarChart2 },
-  { path:"/rollover", label:"Rollover", icon:RefreshCw },
+  { path:"/worldcup", label:"WC 2026", icon:Trophy },
   { path:"/punters", label:"Punters", icon:Users },
   { path:"/settings", label:"Settings", icon:Settings },
 ];
@@ -26,6 +25,9 @@ export function BottomNav() {
       }} className="bottom-nav">
         {NAV.map(({ path, label, icon: Icon }) => {
           const active = isActive(path);
+          const isWC = path === "/worldcup";
+          const activeColor = isWC ? "#fbbf24" : "var(--brand)";
+          const activeBg = isWC ? "rgba(251,191,36,0.15)" : "rgba(59,130,246,0.15)";
           return (
             <Link key={path} to={path} style={{
               flex:1, display:"flex", flexDirection:"column", alignItems:"center", gap:4,
@@ -34,14 +36,14 @@ export function BottomNav() {
               <div style={{
                 width:44, height:28, borderRadius:14,
                 display:"flex", alignItems:"center", justifyContent:"center",
-                background: active ? "rgba(245,158,11,0.15)" : "transparent",
+                background: active ? activeBg : "transparent",
                 transition:"all 200ms ease",
               }}>
-                <Icon size={20} style={{ color: active ? "var(--brand)" : "var(--text-3)", transition:"color 200ms ease" }} />
+                <Icon size={20} style={{ color: active ? activeColor : "var(--text-3)", transition:"color 200ms ease" }} />
               </div>
               <span style={{
                 fontFamily:"var(--font-body)", fontSize:10, fontWeight:600,
-                color: active ? "var(--brand)" : "var(--text-3)",
+                color: active ? activeColor : "var(--text-3)",
                 letterSpacing:"0.03em",
                 transition:"color 200ms ease",
               }}>

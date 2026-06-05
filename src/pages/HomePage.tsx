@@ -1,6 +1,8 @@
-import React, { useState, useCallback } from "react";
-import { TrendingUp, Zap, Shield, Target, RefreshCw } from "lucide-react";
+import React, { useState, useCallback, useEffect } from "react";
+import { TrendingUp, Zap, Shield, Target, RefreshCw, Trophy, ChevronRight, ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
 import { usePredictions } from "../hooks/usePredictions";
+import { getWCPredictions, type WCPrediction } from "../services/worldcupService";
 import { CategoryTabs } from "../components/predictions/CategoryTabs";
 import { PredictionCard } from "../components/predictions/PredictionCard";
 import { EmptyState } from "../components/predictions/EmptyState";
@@ -38,6 +40,111 @@ function StatBubble({ label, value, icon, color }: { label: string; value: strin
   );
 }
 
+// ── World Cup Banner ───────────────────────────────────────
+function WorldCupBanner() {
+  const [picks, setPicks] = useState<WCPrediction[]>([]);
+
+  useEffect(() => {
+    getWCPredictions(0.5)
+      .then(preds => {
+        // Get next 3 upcoming matches with highest confidence
+        const now = new Date().toISOString();
+        const upcoming = preds
+          .filter(p => p.commence_time >= now)
+          .sort((a, b) => b.confidence - a.confidence)
+          .slice(0, 3);
+        setPicks(upcoming.length ? upcoming : preds.slice(0, 3));
+      })
+      .catch(() => {});
+  }, []);
+
+  const daysToGo = Math.max(0, Math.ceil((new Date("2026-06-11T19:00:00Z").getTime() - Date.now()) / 86400000));
+
+  return (
+    <div style={{
+      borderRadius: 20, overflow: "hidden", position: "relative",
+      background: "linear-gradient(135deg, #1a1a3e 0%, #0d1b2a 50%, #1b2838 100%)",
+      border: "1px solid rgba(255,215,0,0.12)",
+    }}>
+      {/* Gold accent line */}
+      <div style={{ height: 2, background: "linear-gradient(90deg, transparent, #fbbf24, #d97706, transparent)" }} />
+
+      <div style={{ padding: "24px 28px", display: "flex", flexDirection: "column", gap: 20 }}>
+        {/* Top row */}
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
+          <div style={{ flex: 1, minWidth: 200 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+              <Trophy size={16} color="#fbbf24" />
+              <span style={{
+                fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700,
+                letterSpacing: "0.15em", textTransform: "uppercase", color: "#fbbf24",
+              }}>FIFA World Cup 2026</span>
+            </div>
+            <h2 style={{
+              fontFamily: "var(--font-display)", fontSize: "clamp(20px, 4vw, 28px)",
+              fontWeight: 800, color: "#fff", lineHeight: 1.15, marginBottom: 6,
+            }}>
+              {daysToGo > 0 ? (
+                <>{daysToGo} day{daysToGo !== 1 ? "s" : ""} until kickoff</>
+              ) : (
+                <>The World Cup is here!</>
+              )}
+            </h2>
+            <p style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "rgba(255,255,255,0.5)", lineHeight: 1.5 }}>
+              72 matches analyzed · 48 teams · Real bookmaker odds
+            </p>
+          </div>
+
+          <Link to="/worldcup" style={{
+            display: "flex", alignItems: "center", gap: 8,
+            padding: "10px 20px", borderRadius: 10, textDecoration: "none",
+            background: "linear-gradient(135deg, #fbbf24, #d97706)",
+            color: "#000", fontFamily: "var(--font-body)", fontSize: 13, fontWeight: 700,
+            transition: "transform 150ms ease, box-shadow 150ms ease",
+            boxShadow: "0 4px 20px rgba(251,191,36,0.25)",
+          }}>
+            View Predictions <ArrowRight size={14} />
+          </Link>
+        </div>
+
+        {/* Top picks strip */}
+        {picks.length > 0 && (
+          <div style={{
+            display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+            gap: 10,
+          }}>
+            {picks.map(p => (
+              <Link to="/worldcup" key={p.match_id} style={{
+                padding: "12px 14px", borderRadius: 10, textDecoration: "none",
+                background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)",
+                transition: "background 150ms ease",
+              }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+                  <span style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "rgba(255,255,255,0.4)" }}>
+                    {new Date(p.commence_time).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+                  </span>
+                  <span style={{
+                    fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700,
+                    color: p.confidence >= 0.6 ? "#22c55e" : "#fbbf24",
+                  }}>
+                    {Math.round(p.confidence * 100)}%
+                  </span>
+                </div>
+                <p style={{ fontFamily: "var(--font-body)", fontSize: 12, fontWeight: 600, color: "#fff", marginBottom: 4 }}>
+                  {p.home_team} vs {p.away_team}
+                </p>
+                <p style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#fbbf24", fontWeight: 600 }}>
+                  {p.prediction}
+                </p>
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function HomePage() {
   const { data, loading, error, refetch } = usePredictions();
   const [activeKey, setActiveKey] = useState<CategoryKey>("2_odds");
@@ -68,12 +175,15 @@ export function HomePage() {
   }, [refetch]);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 40 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
+      {/* World Cup Banner */}
+      <WorldCupBanner />
+
       {/* Hero */}
       <div className="glow-bg" style={{ textAlign: "center", padding: "16px 0 0", position: "relative", zIndex: 1 }}>
         <div className="eyebrow" style={{ marginBottom: 14, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
           <div style={{ width: 24, height: 1, background: "linear-gradient(90deg, transparent, var(--brand))" }} />
-          AI-Powered · {data?.date ?? new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}
+          {data?.date ?? new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}
           <div style={{ width: 24, height: 1, background: "linear-gradient(90deg, var(--brand), transparent)" }} />
         </div>
         <h1 style={{ fontSize: "clamp(30px, 6vw, 52px)", fontWeight: 800, lineHeight: 1.08, marginBottom: 16 }}>
@@ -81,7 +191,7 @@ export function HomePage() {
           <span className="text-brand-gradient">Smart Picks</span>
         </h1>
         <p style={{ fontFamily: "var(--font-body)", fontSize: 16, color: "var(--text-2)", maxWidth: 480, margin: "0 auto", lineHeight: 1.7 }}>
-          Curated accumulators powered by machine-learning models trained on thousands of matches.
+          Curated accumulators backed by real bookmaker odds and statistical analysis.
         </p>
       </div>
 
