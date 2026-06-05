@@ -1,9 +1,12 @@
 import React, { useEffect, useState, useMemo } from "react";
 import {
   Trophy, Calendar, TrendingUp, Shield, Zap, ChevronDown,
-  ChevronUp, Target, BarChart2, Clock, Filter, Star
+  ChevronUp, Target, BarChart2, Clock, Filter, Star, Users, Layers
 } from "lucide-react";
-import { getWCPredictions, getWCValueBets, type WCPrediction, type WCValueBet } from "../services/worldcupService";
+import {
+  getWCPredictions, getWCValueBets, getWCGroups, getWCAccumulators,
+  type WCPrediction, type WCValueBet, type WCGroup, type WCAccumulator,
+} from "../services/worldcupService";
 
 // ── Helpers ────────────────────────────────────────────────
 function formatDate(iso: string) {
@@ -153,24 +156,58 @@ function MatchCard({ pred }: { pred: WCPrediction }) {
           <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--red)" }}>{Math.round(pred.probabilities.away_win * 100)}%</span>
         </div>
 
-        {/* Prediction */}
-        <div style={{
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          marginTop: 12, padding: "10px 14px", borderRadius: 8,
-          background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.12)",
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <Target size={14} color="var(--brand)" />
-            <span style={{ fontFamily: "var(--font-body)", fontSize: 13, fontWeight: 700, color: "var(--text-1)" }}>
-              {pred.prediction}
-            </span>
-          </div>
-          <span style={{
-            fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 700,
-            color: pred.confidence >= 0.5 ? "var(--green)" : "var(--brand)",
-          }}>
-            {Math.round(pred.confidence * 100)}%
-          </span>
+        {/* Top Tips */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 12 }}>
+          {(pred.top_tips ?? [{ tip: pred.prediction, market: pred.prediction_market || "match_result", confidence: pred.confidence }]).map((tip, i) => {
+            const isMain = i === 0;
+            const marketColors: Record<string, string> = {
+              match_result: "var(--brand)",
+              goals: "var(--green)",
+              btts: "var(--blue)",
+              double_chance: "var(--purple)",
+            };
+            const marketLabels: Record<string, string> = {
+              match_result: "Result",
+              goals: "Goals",
+              btts: "BTTS",
+              double_chance: "DC",
+            };
+            const color = marketColors[tip.market] || "var(--text-3)";
+            return (
+              <div key={i} style={{
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                padding: isMain ? "10px 14px" : "6px 14px", borderRadius: 8,
+                background: isMain ? "rgba(245,158,11,0.06)" : "rgba(255,255,255,0.02)",
+                border: isMain ? "1px solid rgba(245,158,11,0.12)" : "1px solid var(--border)",
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  {isMain && <Target size={13} color="var(--brand)" />}
+                  <span style={{
+                    fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 700,
+                    padding: "1px 6px", borderRadius: 3,
+                    background: `${color}15`, color,
+                    textTransform: "uppercase", letterSpacing: "0.05em",
+                  }}>
+                    {marketLabels[tip.market] || tip.market}
+                  </span>
+                  <span style={{
+                    fontFamily: "var(--font-body)",
+                    fontSize: isMain ? 13 : 12,
+                    fontWeight: isMain ? 700 : 600,
+                    color: isMain ? "var(--text-1)" : "var(--text-2)",
+                  }}>
+                    {tip.tip}
+                  </span>
+                </div>
+                <span style={{
+                  fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 700,
+                  color: tip.confidence >= 0.6 ? "var(--green)" : tip.confidence >= 0.45 ? "var(--brand)" : "var(--text-3)",
+                }}>
+                  {Math.round(tip.confidence * 100)}%
+                </span>
+              </div>
+            );
+          })}
         </div>
 
         {/* Expand arrow */}
@@ -285,21 +322,29 @@ function ValueBetRow({ vb }: { vb: WCValueBet }) {
 export default function WorldCupPage() {
   const [predictions, setPredictions] = useState<WCPrediction[]>([]);
   const [valueBets, setValueBets] = useState<WCValueBet[]>([]);
+  const [groups, setGroups] = useState<Record<string, WCGroup>>({});
+  const [accumulators, setAccumulators] = useState<Record<string, WCAccumulator>>({});
+  const [accuDate, setAccuDate] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [dateFilter, setDateFilter] = useState<string>("");
   const [riskFilter, setRiskFilter] = useState<string>("");
   const [showFilters, setShowFilters] = useState(false);
-  const [tab, setTab] = useState<"matches" | "value">("matches");
+  const [tab, setTab] = useState<"matches" | "groups" | "accumulators" | "value">("matches");
 
   useEffect(() => {
     async function load() {
       setLoading(true);
       try {
-        const [preds, vbs] = await Promise.all([
+        const [preds, vbs, grps, accu] = await Promise.all([
           getWCPredictions(),
           getWCValueBets(0.02),
+          getWCGroups().catch(() => ({})),
+          getWCAccumulators().catch(() => ({ date: "", accumulators: {} })),
         ]);
+        setGroups(grps);
+        setAccumulators(accu.accumulators || {});
+        setAccuDate(accu.date || "");
         setPredictions(preds);
         setValueBets(vbs);
       } catch (e) {
@@ -399,9 +444,11 @@ export default function WorldCupPage() {
       {/* Tabs + Filters */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
         {/* Tabs */}
-        <div style={{ display: "flex", gap: 4, background: "var(--surface-2)", borderRadius: 8, padding: 3 }}>
+        <div style={{ display: "flex", gap: 4, background: "var(--surface-2)", borderRadius: 8, padding: 3, flexWrap: "wrap" }}>
           {([
-            { key: "matches" as const, label: "Match Predictions", icon: <Target size={13} /> },
+            { key: "matches" as const, label: "Predictions", icon: <Target size={13} /> },
+            { key: "groups" as const, label: "Groups", icon: <Users size={13} /> },
+            { key: "accumulators" as const, label: "Accumulators", icon: <Layers size={13} /> },
             { key: "value" as const, label: "Value Bets", icon: <Zap size={13} /> },
           ]).map(t => (
             <button
@@ -522,6 +569,143 @@ export default function WorldCupPage() {
             <div style={{ padding: "40px 20px", textAlign: "center" }}>
               <p style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text-3)" }}>
                 No matches for selected filters.
+              </p>
+            </div>
+          )}
+        </div>
+      ) : tab === "groups" ? (
+        /* Groups Tab */
+        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+          {Object.entries(groups).sort(([a], [b]) => a.localeCompare(b)).map(([name, group]) => (
+            <div key={name} className="card" style={{ padding: "20px", overflow: "hidden" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+                <span style={{
+                  fontFamily: "var(--font-mono)", fontSize: 14, fontWeight: 800,
+                  color: "var(--brand)", background: "rgba(245,158,11,0.12)",
+                  width: 32, height: 32, borderRadius: 8,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}>
+                  {name}
+                </span>
+                <div style={{ display: "flex", gap: 10, flex: 1, flexWrap: "wrap" }}>
+                  {group.teams.map(t => (
+                    <div key={t.name} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                      {t.logo && <img src={t.logo} alt="" style={{ width: 18, height: 18 }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
+                      <span style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text-2)" }}>{t.name}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {/* Group matches */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {group.matches.map(p => (
+                  <div key={p.match_id} style={{
+                    display: "flex", alignItems: "center", gap: 10, padding: "10px 12px",
+                    background: "var(--surface-2)", borderRadius: 8,
+                    borderLeft: `3px solid ${RISK_COLORS[p.risk_level] || "var(--border)"}`,
+                  }}>
+                    <span style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)", width: 60, flexShrink: 0 }}>
+                      {formatDate(p.commence_time).slice(0, 6)}
+                    </span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontFamily: "var(--font-body)", fontSize: 12, fontWeight: 600, color: "var(--text-1)" }}>
+                        {p.home_team} vs {p.away_team}
+                      </p>
+                    </div>
+                    <div style={{ textAlign: "right", flexShrink: 0 }}>
+                      <p style={{ fontFamily: "var(--font-body)", fontSize: 11, fontWeight: 700, color: "var(--brand)" }}>
+                        {p.prediction}
+                      </p>
+                      <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: Math.round(p.confidence * 100) >= 60 ? "var(--green)" : "var(--text-3)" }}>
+                        {Math.round(p.confidence * 100)}%
+                      </p>
+                    </div>
+                  </div>
+                ))}
+                {group.matches.length === 0 && (
+                  <p style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text-3)", padding: 10 }}>No matches scheduled yet</p>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : tab === "accumulators" ? (
+        /* Accumulators Tab */
+        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+          {accuDate && (
+            <p style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text-3)" }}>
+              Picks for <strong style={{ color: "var(--text-1)" }}>{formatDate(accuDate + "T00:00:00Z")}</strong>
+            </p>
+          )}
+          {Object.entries(accumulators).map(([key, accu]) => {
+            const colors: Record<string, string> = { safe: "var(--green)", moderate: "var(--brand)", bold: "var(--red)" };
+            const color = colors[key] || "var(--text-2)";
+            return (
+              <div key={key} className="card" style={{ padding: "20px", borderTop: `2px solid ${color}` }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+                  <Layers size={16} color={color} />
+                  <h3 style={{ fontSize: 15, fontWeight: 700, color: "var(--text-1)" }}>{accu.label}</h3>
+                  <span style={{
+                    fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 700,
+                    color, background: `${color}15`, padding: "2px 10px", borderRadius: 4,
+                  }}>
+                    {accu.total_odds}x
+                  </span>
+                </div>
+                {accu.picks.length > 0 ? (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {accu.picks.map((pick, i) => (
+                      <div key={i} style={{
+                        display: "flex", alignItems: "center", gap: 10, padding: "10px 14px",
+                        background: "var(--surface-2)", borderRadius: 8,
+                      }}>
+                        <span style={{
+                          fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 700,
+                          color: "var(--text-3)", width: 20,
+                        }}>{i + 1}</span>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <p style={{ fontFamily: "var(--font-body)", fontSize: 12, fontWeight: 600, color: "var(--text-1)" }}>
+                            {pick.home_team} vs {pick.away_team}
+                          </p>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 3 }}>
+                            <span style={{
+                              fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 700, padding: "1px 5px",
+                              borderRadius: 3, background: "rgba(96,165,250,0.12)", color: "var(--blue)",
+                              textTransform: "uppercase",
+                            }}>{pick.market}</span>
+                            <span style={{ fontFamily: "var(--font-body)", fontSize: 12, fontWeight: 700, color: "var(--brand)" }}>
+                              {pick.tip}
+                            </span>
+                          </div>
+                        </div>
+                        <div style={{ textAlign: "right", flexShrink: 0 }}>
+                          <p style={{
+                            fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 700,
+                            color: pick.confidence >= 0.6 ? "var(--green)" : "var(--brand)",
+                          }}>
+                            {Math.round(pick.confidence * 100)}%
+                          </p>
+                          {pick.estimated_odds && (
+                            <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-3)" }}>
+                              @{pick.estimated_odds}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text-3)", padding: 10 }}>
+                    No picks available for this category
+                  </p>
+                )}
+              </div>
+            );
+          })}
+          {Object.keys(accumulators).length === 0 && (
+            <div style={{ padding: "40px 20px", textAlign: "center" }}>
+              <p style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text-3)" }}>
+                No upcoming match days for accumulators.
               </p>
             </div>
           )}

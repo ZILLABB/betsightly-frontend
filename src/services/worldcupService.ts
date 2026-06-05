@@ -2,7 +2,9 @@
  * World Cup 2026 API Service
  */
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+// Strip trailing /api if present — worldcup endpoints are at /api/worldcup/*
+const _raw = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const API_BASE = _raw.replace(/\/api\/?$/, '');
 
 export interface WCPrediction {
   match_id: string;
@@ -13,8 +15,10 @@ export interface WCPrediction {
   commence_time: string;
   prediction: string;
   prediction_key: string;
+  prediction_market: string;
   confidence: number;
   risk_level: string;
+  top_tips: { tip: string; market: string; confidence: number; odds?: number }[];
   probabilities: { home_win: number; draw: number; away_win: number };
   goals: {
     expected_home: number;
@@ -87,4 +91,46 @@ export async function getWCValueBets(minEdge = 0): Promise<WCValueBet[]> {
 export async function getWCTeams(): Promise<any[]> {
   const data = await fetchJSON<{ teams: any[] }>('/api/worldcup/teams');
   return data.teams;
+}
+
+export interface WCGroup {
+  teams: { name: string; logo?: string }[];
+  matches: WCPrediction[];
+  total_matches: number;
+}
+
+export async function getWCGroups(): Promise<Record<string, WCGroup>> {
+  const data = await fetchJSON<{ groups: Record<string, WCGroup> }>('/api/worldcup/groups');
+  return data.groups;
+}
+
+export interface WCAccuPick {
+  match: string;
+  match_id: string;
+  home_team: string;
+  away_team: string;
+  home_team_logo?: string;
+  away_team_logo?: string;
+  commence_time: string;
+  group: string;
+  tip: string;
+  market: string;
+  confidence: number;
+  estimated_odds?: number;
+}
+
+export interface WCAccumulator {
+  picks: WCAccuPick[];
+  total_picks: number;
+  total_odds: number;
+  label: string;
+}
+
+export async function getWCAccumulators(date?: string): Promise<{ date: string; accumulators: Record<string, WCAccumulator> }> {
+  const url = date ? `/api/worldcup/accumulators?date=${date}` : '/api/worldcup/accumulators';
+  return fetchJSON(url);
+}
+
+export async function getWCPerformance(): Promise<any> {
+  return fetchJSON('/api/worldcup/performance');
 }
