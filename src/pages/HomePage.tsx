@@ -183,7 +183,7 @@ export function HomePage() {
       <div className="glow-bg" style={{ textAlign: "center", padding: "16px 0 0", position: "relative", zIndex: 1 }}>
         <div className="eyebrow" style={{ marginBottom: 14, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
           <div style={{ width: 24, height: 1, background: "linear-gradient(90deg, transparent, var(--brand))" }} />
-          AI-Powered · {data?.date ?? new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}
+          {data?.date ?? new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}
           <div style={{ width: 24, height: 1, background: "linear-gradient(90deg, var(--brand), transparent)" }} />
         </div>
         <h1 style={{ fontSize: "clamp(30px, 6vw, 52px)", fontWeight: 800, lineHeight: 1.08, marginBottom: 16 }}>
@@ -191,7 +191,7 @@ export function HomePage() {
           <span className="text-brand-gradient">Smart Picks</span>
         </h1>
         <p style={{ fontFamily: "var(--font-body)", fontSize: 16, color: "var(--text-2)", maxWidth: 480, margin: "0 auto", lineHeight: 1.7 }}>
-          Curated accumulators powered by machine-learning models trained on thousands of matches.
+          Curated accumulators backed by real bookmaker odds and statistical analysis.
         </p>
       </div>
 
