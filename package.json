@@ -23,6 +23,8 @@
   "dependencies": {
     "@radix-ui/react-popover": "^1.1.13",
     "@radix-ui/react-slot": "^1.0.2",
+    "@vercel/analytics": "^2.0.1",
+    "@vercel/speed-insights": "^2.0.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.0.0",
     "decimal.js": "^10.4.3",
