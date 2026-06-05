@@ -1,4 +1,4 @@
-﻿import React from "react";
+import React from "react";
 import { Link } from "react-router-dom";
 
 export function NotFoundPage() {
@@ -14,7 +14,7 @@ export function NotFoundPage() {
         style={{
           padding: "10px 24px",
           borderRadius: "var(--radius-md)",
-          background: "linear-gradient(135deg, #f59e0b, #d97706)",
+          background: "linear-gradient(135deg, #3b82f6, #2563eb)",
           color: "#000",
           fontFamily: "var(--font-body)",
           fontWeight: 700,

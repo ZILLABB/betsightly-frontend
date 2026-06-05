@@ -651,7 +651,7 @@ const BasePredictionCard: React.FC<BasePredictionCardProps> = ({
 
           {/* Reason/Explanation */}
           {showReason && reason && (
-            <div className="rounded-lg p-3" style={{ background: "rgba(245,158,11,0.07)", border: "1px solid var(--border-default)" }}>
+            <div className="rounded-lg p-3" style={{ background: "rgba(59,130,246,0.07)", border: "1px solid var(--border-default)" }}>
               <div className="text-xs text-amber-400 font-medium mb-2">ANALYSIS</div>
               <p className="text-sm text-gray-300 leading-relaxed">{reason}</p>
             </div>
