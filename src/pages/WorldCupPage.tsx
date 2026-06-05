@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import {
-  Trophy, Calendar, TrendingUp, Shield, Zap, ChevronDown,
-  ChevronUp, Target, BarChart2, Clock, Filter, Star, Users, Layers
+  Trophy, Calendar, Zap, ChevronDown, ChevronUp, Target,
+  BarChart2, Filter, Users, Layers, ArrowRight, TrendingUp
 } from "lucide-react";
 import {
   getWCPredictions, getWCValueBets, getWCGroups, getWCAccumulators,
@@ -9,316 +9,331 @@ import {
 } from "../services/worldcupService";
 
 // ── Helpers ────────────────────────────────────────────────
-function formatDate(iso: string) {
-  const d = new Date(iso);
-  return d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
-}
-function formatTime(iso: string) {
-  return new Date(iso).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
-}
-function daysUntil(iso: string) {
-  const now = new Date();
-  const target = new Date(iso);
-  return Math.max(0, Math.ceil((target.getTime() - now.getTime()) / 86400000));
-}
+const fmtDate = (iso: string) => new Date(iso).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+const fmtTime = (iso: string) => new Date(iso).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+const daysUntil = (iso: string) => Math.max(0, Math.ceil((new Date(iso).getTime() - Date.now()) / 86400000));
 
-const RISK_COLORS: Record<string, string> = {
-  low: "var(--green)", medium: "var(--brand)", high: "var(--red)",
+const RISK: Record<string, { bg: string; c: string }> = {
+  very_low: { bg: "rgba(34,197,94,0.10)", c: "#22c55e" },
+  low: { bg: "rgba(34,197,94,0.10)", c: "#22c55e" },
+  medium: { bg: "rgba(245,158,11,0.10)", c: "#f59e0b" },
+  high: { bg: "rgba(248,113,113,0.10)", c: "#f87171" },
 };
 
-// ── Countdown Banner ───────────────────────────────────────
-function CountdownBanner({ firstMatch }: { firstMatch: string }) {
-  const days = daysUntil(firstMatch);
+const MKT_COLORS: Record<string, string> = {
+  match_result: "#f59e0b", goals: "#22c55e", btts: "#60a5fa", double_chance: "#a78bfa",
+};
+const MKT_LABELS: Record<string, string> = {
+  match_result: "Result", goals: "Goals", btts: "BTTS", double_chance: "DC",
+};
+
+// ── Confidence Ring ────────────────────────────────────────
+function ConfRing({ value, size = 40, color }: { value: number; size?: number; color: string }) {
+  const pct = Math.round(value * 100);
+  const r = (size - 6) / 2;
+  const circ = 2 * Math.PI * r;
+  const offset = circ * (1 - value);
   return (
-    <div style={{
-      background: "linear-gradient(135deg, rgba(245,158,11,0.12) 0%, rgba(96,165,250,0.08) 100%)",
-      border: "1px solid rgba(245,158,11,0.2)",
-      borderRadius: 16, padding: "24px 28px",
-      display: "flex", alignItems: "center", justifyContent: "space-between",
-      flexWrap: "wrap", gap: 16,
-    }}>
-      <div>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-          <Trophy size={20} color="var(--brand)" />
-          <h2 style={{ fontSize: 20, fontWeight: 800, color: "var(--text-1)" }}>
-            FIFA World Cup 2026
-          </h2>
-        </div>
-        <p style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text-3)", lineHeight: 1.6 }}>
-          USA, Mexico & Canada · June 11 – July 19, 2026 · 48 teams · 104 matches
-        </p>
-      </div>
-      <div style={{
-        display: "flex", alignItems: "center", gap: 16,
-        padding: "12px 20px", borderRadius: 12,
-        background: "rgba(0,0,0,0.2)", border: "1px solid var(--border)",
-      }}>
-        <div style={{ textAlign: "center" }}>
-          <p style={{ fontFamily: "var(--font-mono)", fontSize: 32, fontWeight: 800, color: "var(--brand)", lineHeight: 1 }}>
-            {days}
-          </p>
-          <p style={{ fontFamily: "var(--font-body)", fontSize: 10, color: "var(--text-3)", marginTop: 4, textTransform: "uppercase", letterSpacing: "0.1em" }}>
-            {days === 1 ? "Day" : "Days"} to go
-          </p>
-        </div>
-      </div>
+    <div style={{ position: "relative", width: size, height: size, flexShrink: 0 }}>
+      <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}>
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={4} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={4}
+          strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round"
+          style={{ transition: "stroke-dashoffset 0.6s ease" }} />
+      </svg>
+      <span style={{
+        position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center",
+        fontFamily: "var(--font-mono)", fontSize: size > 36 ? 11 : 9, fontWeight: 700, color,
+      }}>{pct}</span>
     </div>
   );
 }
 
 // ── Probability Bar ────────────────────────────────────────
-function ProbBar({ probs }: { probs: { home_win: number; draw: number; away_win: number } }) {
-  const h = Math.round(probs.home_win * 100);
-  const d = Math.round(probs.draw * 100);
-  const a = 100 - h - d;
+function ProbBar({ h, d, a }: { h: number; d: number; a: number }) {
   return (
-    <div style={{ display: "flex", borderRadius: 4, overflow: "hidden", height: 6, width: "100%" }}>
-      <div style={{ width: `${h}%`, background: "var(--green)", transition: "width 300ms" }} title={`Home ${h}%`} />
-      <div style={{ width: `${d}%`, background: "var(--text-3)", transition: "width 300ms" }} title={`Draw ${d}%`} />
-      <div style={{ width: `${a}%`, background: "var(--red)", transition: "width 300ms" }} title={`Away ${a}%`} />
+    <div style={{ display: "flex", gap: 2, height: 4, borderRadius: 2, overflow: "hidden" }}>
+      <div style={{ flex: h, background: "#22c55e", minWidth: 2, transition: "flex 300ms" }} />
+      <div style={{ flex: d, background: "rgba(255,255,255,0.2)", minWidth: 2, transition: "flex 300ms" }} />
+      <div style={{ flex: a, background: "#f87171", minWidth: 2, transition: "flex 300ms" }} />
     </div>
   );
 }
 
+// ── Market Tag ─────────────────────────────────────────────
+function MktTag({ market }: { market: string }) {
+  const c = MKT_COLORS[market] || "#999";
+  return (
+    <span style={{
+      fontFamily: "var(--font-mono)", fontSize: 8, fontWeight: 700,
+      padding: "1px 5px", borderRadius: 3, letterSpacing: "0.08em",
+      background: `${c}18`, color: c, textTransform: "uppercase",
+    }}>{MKT_LABELS[market] || market}</span>
+  );
+}
+
 // ── Match Card ─────────────────────────────────────────────
-function MatchCard({ pred }: { pred: WCPrediction }) {
-  const [expanded, setExpanded] = useState(false);
+function MatchCard({ p }: { p: WCPrediction }) {
+  const [open, setOpen] = useState(false);
+  const risk = RISK[p.risk_level] || RISK.medium;
+  const confColor = p.confidence >= 0.65 ? "#22c55e" : p.confidence >= 0.48 ? "#f59e0b" : "#f87171";
+  const tips = p.top_tips ?? [{ tip: p.prediction, market: p.prediction_market || "match_result", confidence: p.confidence }];
 
   return (
-    <div className="card" style={{
-      padding: 0, overflow: "hidden",
-      borderLeft: `3px solid ${RISK_COLORS[pred.risk_level] || "var(--border)"}`,
+    <div style={{
+      background: "var(--surface)", borderRadius: 14, overflow: "hidden",
+      border: "1px solid var(--border)",
+      transition: "border-color 200ms, box-shadow 200ms",
     }}>
-      {/* Main row */}
-      <div
-        style={{ padding: "16px 18px", cursor: "pointer" }}
-        onClick={() => setExpanded(!expanded)}
-      >
-        {/* Date + time */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <Calendar size={11} color="var(--text-3)" />
-            <span style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)" }}>
-              {formatDate(pred.commence_time)} · {formatTime(pred.commence_time)}
-            </span>
-          </div>
-          <span style={{
-            fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700,
-            padding: "2px 8px", borderRadius: 4, textTransform: "uppercase",
-            background: `${RISK_COLORS[pred.risk_level]}15`,
-            color: RISK_COLORS[pred.risk_level],
-          }}>
-            {pred.risk_level} risk
+      <div style={{ padding: "14px 16px", cursor: "pointer" }} onClick={() => setOpen(!open)}>
+        {/* Time + group */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-3)" }}>
+            {fmtTime(p.commence_time)} · {fmtDate(p.commence_time)}
           </span>
+          <span style={{
+            fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 700, padding: "1px 6px",
+            borderRadius: 3, background: risk.bg, color: risk.c, textTransform: "uppercase",
+          }}>{p.risk_level.replace("_", " ")}</span>
         </div>
 
-        {/* Teams */}
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
-          <div style={{ flex: 1, textAlign: "center" }}>
-            {pred.home_team_logo && (
-              <img src={pred.home_team_logo} alt="" style={{ width: 32, height: 32, marginBottom: 4 }}
-                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-            )}
-            <p style={{ fontFamily: "var(--font-body)", fontSize: 13, fontWeight: 700, color: "var(--text-1)" }}>
-              {pred.home_team}
-            </p>
-            <p style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-3)" }}>
-              {pred.best_odds.home_win ? `@${pred.best_odds.home_win}` : ""}
-            </p>
+        {/* Teams row */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+          {/* Home */}
+          <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+            {p.home_team_logo && <img src={p.home_team_logo} alt="" style={{ width: 28, height: 28, flexShrink: 0 }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
+            <div style={{ minWidth: 0 }}>
+              <p style={{ fontFamily: "var(--font-display)", fontSize: 14, fontWeight: 700, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.home_team}</p>
+              {p.best_odds.home_win && <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-3)" }}>@{p.best_odds.home_win}</span>}
+            </div>
           </div>
-
-          <div style={{ textAlign: "center", flexShrink: 0, padding: "0 8px" }}>
-            <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-3)", marginBottom: 2 }}>VS</p>
-            <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-3)" }}>
-              {pred.best_odds.draw ? `Draw @${pred.best_odds.draw}` : ""}
-            </p>
-          </div>
-
-          <div style={{ flex: 1, textAlign: "center" }}>
-            {pred.away_team_logo && (
-              <img src={pred.away_team_logo} alt="" style={{ width: 32, height: 32, marginBottom: 4 }}
-                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-            )}
-            <p style={{ fontFamily: "var(--font-body)", fontSize: 13, fontWeight: 700, color: "var(--text-1)" }}>
-              {pred.away_team}
-            </p>
-            <p style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-3)" }}>
-              {pred.best_odds.away_win ? `@${pred.best_odds.away_win}` : ""}
-            </p>
+          {/* VS */}
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--text-3)", flexShrink: 0 }}>VS</span>
+          {/* Away */}
+          <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, justifyContent: "flex-end", minWidth: 0 }}>
+            <div style={{ textAlign: "right", minWidth: 0 }}>
+              <p style={{ fontFamily: "var(--font-display)", fontSize: 14, fontWeight: 700, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.away_team}</p>
+              {p.best_odds.away_win && <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-3)" }}>@{p.best_odds.away_win}</span>}
+            </div>
+            {p.away_team_logo && <img src={p.away_team_logo} alt="" style={{ width: 28, height: 28, flexShrink: 0 }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
           </div>
         </div>
 
         {/* Prob bar */}
-        <ProbBar probs={pred.probabilities} />
-        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--green)" }}>{Math.round(pred.probabilities.home_win * 100)}%</span>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-3)" }}>{Math.round(pred.probabilities.draw * 100)}%</span>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--red)" }}>{Math.round(pred.probabilities.away_win * 100)}%</span>
+        <ProbBar h={p.probabilities.home_win} d={p.probabilities.draw} a={p.probabilities.away_win} />
+        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 3, marginBottom: 10 }}>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "#22c55e" }}>{Math.round(p.probabilities.home_win * 100)}%</span>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--text-3)" }}>{Math.round(p.probabilities.draw * 100)}%</span>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "#f87171" }}>{Math.round(p.probabilities.away_win * 100)}%</span>
         </div>
 
-        {/* Top Tips */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 12 }}>
-          {(pred.top_tips ?? [{ tip: pred.prediction, market: pred.prediction_market || "match_result", confidence: pred.confidence }]).map((tip, i) => {
-            const isMain = i === 0;
-            const marketColors: Record<string, string> = {
-              match_result: "var(--brand)",
-              goals: "var(--green)",
-              btts: "var(--blue)",
-              double_chance: "var(--purple)",
-            };
-            const marketLabels: Record<string, string> = {
-              match_result: "Result",
-              goals: "Goals",
-              btts: "BTTS",
-              double_chance: "DC",
-            };
-            const color = marketColors[tip.market] || "var(--text-3)";
-            return (
-              <div key={i} style={{
-                display: "flex", alignItems: "center", justifyContent: "space-between",
-                padding: isMain ? "10px 14px" : "6px 14px", borderRadius: 8,
-                background: isMain ? "rgba(245,158,11,0.06)" : "rgba(255,255,255,0.02)",
-                border: isMain ? "1px solid rgba(245,158,11,0.12)" : "1px solid var(--border)",
-              }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  {isMain && <Target size={13} color="var(--brand)" />}
-                  <span style={{
-                    fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 700,
-                    padding: "1px 6px", borderRadius: 3,
-                    background: `${color}15`, color,
-                    textTransform: "uppercase", letterSpacing: "0.05em",
-                  }}>
-                    {marketLabels[tip.market] || tip.market}
-                  </span>
-                  <span style={{
-                    fontFamily: "var(--font-body)",
-                    fontSize: isMain ? 13 : 12,
-                    fontWeight: isMain ? 700 : 600,
-                    color: isMain ? "var(--text-1)" : "var(--text-2)",
-                  }}>
-                    {tip.tip}
-                  </span>
-                </div>
-                <span style={{
-                  fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 700,
-                  color: tip.confidence >= 0.6 ? "var(--green)" : tip.confidence >= 0.45 ? "var(--brand)" : "var(--text-3)",
-                }}>
-                  {Math.round(tip.confidence * 100)}%
-                </span>
-              </div>
-            );
-          })}
+        {/* Tips */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          {tips.map((tip, i) => (
+            <div key={i} style={{
+              display: "flex", alignItems: "center", gap: 8, padding: "6px 10px",
+              borderRadius: 8,
+              background: i === 0 ? "rgba(245,158,11,0.05)" : "transparent",
+              border: i === 0 ? "1px solid rgba(245,158,11,0.10)" : "1px solid transparent",
+            }}>
+              <MktTag market={tip.market} />
+              <span style={{
+                fontFamily: "var(--font-body)", fontSize: i === 0 ? 12 : 11,
+                fontWeight: i === 0 ? 700 : 500, color: i === 0 ? "var(--text-1)" : "var(--text-2)",
+                flex: 1,
+              }}>{tip.tip}</span>
+              <ConfRing value={tip.confidence} size={i === 0 ? 34 : 28} color={tip.confidence >= 0.6 ? "#22c55e" : "#f59e0b"} />
+            </div>
+          ))}
         </div>
 
-        {/* Expand arrow */}
-        <div style={{ display: "flex", justifyContent: "center", marginTop: 8 }}>
-          {expanded ? <ChevronUp size={14} color="var(--text-3)" /> : <ChevronDown size={14} color="var(--text-3)" />}
+        {/* Chevron */}
+        <div style={{ display: "flex", justifyContent: "center", marginTop: 6, opacity: 0.3 }}>
+          {open ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
         </div>
       </div>
 
-      {/* Expanded details */}
-      {expanded && (
-        <div style={{
-          padding: "0 18px 16px",
-          borderTop: "1px solid var(--border)",
-        }}>
-          {/* Goals */}
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", padding: "12px 0" }}>
+      {/* Expanded */}
+      {open && (
+        <div style={{ padding: "0 16px 14px", borderTop: "1px solid var(--border)" }}>
+          {/* Goals stats */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6, padding: "12px 0" }}>
             {[
-              { label: "Exp. Goals", value: pred.goals.expected_total.toFixed(1), color: "var(--text-1)" },
-              { label: "Over 2.5", value: `${Math.round(pred.goals.over_2_5_prob * 100)}%`, color: pred.goals.over_2_5_prob > 0.5 ? "var(--green)" : "var(--text-3)" },
-              { label: "Over 1.5", value: `${Math.round(pred.goals.over_1_5_prob * 100)}%`, color: pred.goals.over_1_5_prob > 0.6 ? "var(--green)" : "var(--text-3)" },
-              { label: "BTTS", value: `${Math.round(pred.goals.btts_prob * 100)}%`, color: pred.goals.btts_prob > 0.5 ? "var(--green)" : "var(--text-3)" },
+              { l: "Exp. Goals", v: p.goals.expected_total.toFixed(1) },
+              { l: "Over 2.5", v: `${Math.round(p.goals.over_2_5_prob * 100)}%` },
+              { l: "Over 1.5", v: `${Math.round(p.goals.over_1_5_prob * 100)}%` },
+              { l: "BTTS", v: `${Math.round(p.goals.btts_prob * 100)}%` },
             ].map(s => (
-              <div key={s.label} style={{
-                flex: "1 1 70px", textAlign: "center", padding: "8px 6px",
-                background: "var(--surface-2)", borderRadius: 8,
-              }}>
-                <p style={{ fontFamily: "var(--font-mono)", fontSize: 16, fontWeight: 700, color: s.color }}>{s.value}</p>
-                <p style={{ fontFamily: "var(--font-body)", fontSize: 10, color: "var(--text-3)", marginTop: 2 }}>{s.label}</p>
+              <div key={s.l} style={{ textAlign: "center", padding: "8px 4px", background: "rgba(255,255,255,0.02)", borderRadius: 8 }}>
+                <p style={{ fontFamily: "var(--font-mono)", fontSize: 15, fontWeight: 700, color: "var(--text-1)" }}>{s.v}</p>
+                <p style={{ fontFamily: "var(--font-body)", fontSize: 9, color: "var(--text-3)", marginTop: 2 }}>{s.l}</p>
               </div>
             ))}
           </div>
-
           {/* Value bets */}
-          {pred.value_bets.length > 0 && (
-            <div style={{ marginTop: 8 }}>
-              <p style={{
-                fontFamily: "var(--font-body)", fontSize: 10, fontWeight: 700,
-                color: "var(--green)", textTransform: "uppercase", letterSpacing: "0.1em",
-                marginBottom: 8,
-              }}>
-                <Zap size={10} style={{ display: "inline", verticalAlign: "middle" }} /> Value Bets
+          {p.value_bets.length > 0 && (
+            <div>
+              <p style={{ fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 700, color: "#22c55e", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 6 }}>
+                Value Bets
               </p>
-              {pred.value_bets.map((vb, i) => (
+              {p.value_bets.map((vb, i) => (
                 <div key={i} style={{
                   display: "flex", alignItems: "center", justifyContent: "space-between",
-                  padding: "6px 10px", borderRadius: 6, marginBottom: 4,
-                  background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.1)",
+                  padding: "5px 8px", borderRadius: 6, marginBottom: 3,
+                  background: "rgba(34,197,94,0.04)", border: "1px solid rgba(34,197,94,0.08)",
                 }}>
-                  <span style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text-1)" }}>
-                    {vb.bet}
-                  </span>
-                  <div style={{ display: "flex", gap: 12 }}>
-                    <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-2)" }}>
-                      @{vb.odds}
-                    </span>
-                    <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 700, color: "var(--green)" }}>
-                      +{(vb.edge * 100).toFixed(1)}% edge
-                    </span>
+                  <span style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-1)" }}>{vb.bet}</span>
+                  <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-3)" }}>@{vb.odds}</span>
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, color: "#22c55e" }}>+{(vb.edge * 100).toFixed(1)}%</span>
                   </div>
                 </div>
               ))}
             </div>
           )}
-
-          {/* Data quality */}
-          <div style={{ marginTop: 10, display: "flex", gap: 8 }}>
-            {pred.data_quality.home_has_wc_data && (
-              <span style={{ fontFamily: "var(--font-body)", fontSize: 10, color: "var(--text-3)", background: "var(--surface-2)", padding: "2px 8px", borderRadius: 4 }}>
-                {pred.home_team}: {pred.data_quality.home_wc_matches} WC matches
-              </span>
-            )}
-            {pred.data_quality.away_has_wc_data && (
-              <span style={{ fontFamily: "var(--font-body)", fontSize: 10, color: "var(--text-3)", background: "var(--surface-2)", padding: "2px 8px", borderRadius: 4 }}>
-                {pred.away_team}: {pred.data_quality.away_wc_matches} WC matches
-              </span>
-            )}
-          </div>
         </div>
       )}
     </div>
   );
 }
 
-// ── Value Bet Card ─────────────────────────────────────────
-function ValueBetRow({ vb }: { vb: WCValueBet }) {
+// ── Group Card ─────────────────────────────────────────────
+function GroupCard({ name, group }: { name: string; group: WCGroup }) {
   return (
     <div style={{
-      display: "flex", alignItems: "center", gap: 12,
-      padding: "10px 0", borderBottom: "1px solid var(--border)",
+      background: "var(--surface)", borderRadius: 14, overflow: "hidden",
+      border: "1px solid var(--border)",
     }}>
-      <span style={{
-        fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 700,
-        color: "var(--green)", background: "rgba(34,197,94,0.10)",
-        padding: "3px 8px", borderRadius: 4, whiteSpace: "nowrap",
-      }}>+{(vb.edge * 100).toFixed(1)}%</span>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <p style={{ fontFamily: "var(--font-body)", fontSize: 12, fontWeight: 600, color: "var(--text-1)" }}>
-          {vb.bet}
-        </p>
-        <p style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)" }}>
-          {vb.match} · {formatDate(vb.commence_time)}
-        </p>
+      {/* Header */}
+      <div style={{
+        padding: "12px 16px", display: "flex", alignItems: "center", gap: 10,
+        background: "rgba(245,158,11,0.04)", borderBottom: "1px solid var(--border)",
+      }}>
+        <span style={{
+          fontFamily: "var(--font-display)", fontSize: 16, fontWeight: 800,
+          color: "#fbbf24", width: 28, textAlign: "center",
+        }}>
+          {name}
+        </span>
+        <div style={{ display: "flex", gap: 6, flex: 1, flexWrap: "wrap" }}>
+          {group.teams.map(t => (
+            <div key={t.name} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+              {t.logo && <img src={t.logo} alt="" style={{ width: 16, height: 16 }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
+              <span style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-2)" }}>{t.name}</span>
+            </div>
+          ))}
+        </div>
       </div>
-      <span style={{ fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 700, color: "var(--brand)" }}>
-        @{vb.odds}
-      </span>
+      {/* Matches */}
+      <div style={{ padding: "8px 12px" }}>
+        {group.matches.map(p => (
+          <div key={p.match_id} style={{
+            display: "flex", alignItems: "center", gap: 8, padding: "8px 6px",
+            borderBottom: "1px solid rgba(255,255,255,0.03)",
+          }}>
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-3)", width: 40, flexShrink: 0 }}>
+              {fmtDate(p.commence_time).slice(0, 6)}
+            </span>
+            <p style={{ fontFamily: "var(--font-body)", fontSize: 12, fontWeight: 600, color: "var(--text-1)", flex: 1 }}>
+              {p.home_team} <span style={{ color: "var(--text-3)", fontWeight: 400 }}>vs</span> {p.away_team}
+            </p>
+            <div style={{ textAlign: "right", flexShrink: 0 }}>
+              <MktTag market={p.prediction_market || "match_result"} />
+              <p style={{ fontFamily: "var(--font-body)", fontSize: 11, fontWeight: 700, color: "#fbbf24", marginTop: 2 }}>{p.prediction}</p>
+            </div>
+            <ConfRing value={p.confidence} size={28} color={p.confidence >= 0.6 ? "#22c55e" : "#f59e0b"} />
+          </div>
+        ))}
+        {group.matches.length === 0 && <p style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)", padding: 10 }}>TBD</p>}
+      </div>
     </div>
   );
 }
 
-// ── Main Page ──────────────────────────────────────────────
+// ── Accumulator Slip ───────────────────────────────────────
+function AccuSlip({ label, accu, color }: { label: string; accu: WCAccumulator; color: string }) {
+  return (
+    <div style={{
+      background: "var(--surface)", borderRadius: 14, overflow: "hidden",
+      border: "1px solid var(--border)",
+    }}>
+      {/* Header — betting slip style */}
+      <div style={{
+        padding: "14px 18px", display: "flex", alignItems: "center", justifyContent: "space-between",
+        background: `${color}08`, borderBottom: `2px solid ${color}30`,
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{
+            width: 8, height: 8, borderRadius: "50%", background: color,
+            boxShadow: `0 0 8px ${color}60`,
+          }} />
+          <span style={{ fontFamily: "var(--font-display)", fontSize: 15, fontWeight: 700, color: "var(--text-1)" }}>{accu.label}</span>
+        </div>
+        <div style={{
+          padding: "4px 12px", borderRadius: 6,
+          background: `${color}15`, border: `1px solid ${color}30`,
+        }}>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 16, fontWeight: 800, color }}>{accu.total_odds}x</span>
+        </div>
+      </div>
+      {/* Picks */}
+      <div style={{ padding: "6px 0" }}>
+        {accu.picks.map((pick, i) => (
+          <div key={i} style={{
+            display: "flex", alignItems: "center", gap: 10,
+            padding: "10px 18px",
+            borderBottom: i < accu.picks.length - 1 ? "1px solid rgba(255,255,255,0.03)" : "none",
+          }}>
+            <span style={{
+              fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700,
+              color: "var(--text-3)", width: 18, textAlign: "center",
+            }}>{i + 1}</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ fontFamily: "var(--font-body)", fontSize: 12, fontWeight: 600, color: "var(--text-1)" }}>
+                {pick.home_team} vs {pick.away_team}
+              </p>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 3 }}>
+                <MktTag market={pick.market} />
+                <span style={{ fontFamily: "var(--font-body)", fontSize: 12, fontWeight: 700, color }}>{pick.tip}</span>
+              </div>
+            </div>
+            <ConfRing value={pick.confidence} size={32} color={pick.confidence >= 0.6 ? "#22c55e" : color} />
+          </div>
+        ))}
+      </div>
+      {accu.picks.length === 0 && (
+        <p style={{ padding: "20px 18px", fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text-3)" }}>
+          No picks available for this tier
+        </p>
+      )}
+    </div>
+  );
+}
+
+// ── Value Bet Row ──────────────────────────────────────────
+function VBRow({ vb }: { vb: WCValueBet }) {
+  return (
+    <div style={{
+      display: "flex", alignItems: "center", gap: 10,
+      padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.03)",
+    }}>
+      <span style={{
+        fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 700,
+        color: "#22c55e", background: "rgba(34,197,94,0.10)",
+        padding: "3px 8px", borderRadius: 4, whiteSpace: "nowrap",
+      }}>+{(vb.edge * 100).toFixed(1)}%</span>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <p style={{ fontFamily: "var(--font-body)", fontSize: 12, fontWeight: 600, color: "var(--text-1)" }}>{vb.bet}</p>
+        <p style={{ fontFamily: "var(--font-body)", fontSize: 10, color: "var(--text-3)" }}>{vb.match}</p>
+      </div>
+      <span style={{ fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 700, color: "#f59e0b" }}>@{vb.odds}</span>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════
+// ██  MAIN PAGE
+// ════════════════════════════════════════════════════════════
 export default function WorldCupPage() {
   const [predictions, setPredictions] = useState<WCPrediction[]>([]);
   const [valueBets, setValueBets] = useState<WCValueBet[]>([]);
@@ -327,416 +342,254 @@ export default function WorldCupPage() {
   const [accuDate, setAccuDate] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [dateFilter, setDateFilter] = useState<string>("");
-  const [riskFilter, setRiskFilter] = useState<string>("");
+  const [dateFilter, setDateFilter] = useState("");
+  const [riskFilter, setRiskFilter] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [tab, setTab] = useState<"matches" | "groups" | "accumulators" | "value">("matches");
 
   useEffect(() => {
-    async function load() {
+    (async () => {
       setLoading(true);
       try {
         const [preds, vbs, grps, accu] = await Promise.all([
-          getWCPredictions(),
-          getWCValueBets(0.02),
+          getWCPredictions(), getWCValueBets(0.02),
           getWCGroups().catch(() => ({})),
           getWCAccumulators().catch(() => ({ date: "", accumulators: {} })),
         ]);
-        setGroups(grps);
-        setAccumulators(accu.accumulators || {});
-        setAccuDate(accu.date || "");
-        setPredictions(preds);
-        setValueBets(vbs);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Failed to load");
-      } finally {
-        setLoading(false);
-      }
-    }
-    load();
+        setPredictions(preds); setValueBets(vbs);
+        setGroups(grps); setAccumulators(accu.accumulators || {}); setAccuDate(accu.date || "");
+      } catch (e) { setError(e instanceof Error ? e.message : "Failed to load"); }
+      finally { setLoading(false); }
+    })();
   }, []);
 
-  // Unique dates for filter
-  const uniqueDates = useMemo(() => {
-    const dates = new Set(predictions.map(p => p.commence_time.slice(0, 10)));
-    return Array.from(dates).sort();
-  }, [predictions]);
+  const uniqueDates = useMemo(() => Array.from(new Set(predictions.map(p => p.commence_time.slice(0, 10)))).sort(), [predictions]);
 
-  // Filtered predictions
-  const filtered = useMemo(() => {
-    return predictions.filter(p => {
-      if (dateFilter && !p.commence_time.startsWith(dateFilter)) return false;
-      if (riskFilter && p.risk_level !== riskFilter) return false;
-      return true;
-    });
-  }, [predictions, dateFilter, riskFilter]);
+  const filtered = useMemo(() => predictions.filter(p => {
+    if (dateFilter && !p.commence_time.startsWith(dateFilter)) return false;
+    if (riskFilter && p.risk_level !== riskFilter) return false;
+    return true;
+  }), [predictions, dateFilter, riskFilter]);
 
-  // Group by date
-  const groupedByDate = useMemo(() => {
-    const groups: Record<string, WCPrediction[]> = {};
-    for (const p of filtered) {
-      const date = p.commence_time.slice(0, 10);
-      if (!groups[date]) groups[date] = [];
-      groups[date].push(p);
-    }
-    return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
+  const grouped = useMemo(() => {
+    const g: Record<string, WCPrediction[]> = {};
+    for (const p of filtered) { const d = p.commence_time.slice(0, 10); (g[d] ??= []).push(p); }
+    return Object.entries(g).sort(([a], [b]) => a.localeCompare(b));
   }, [filtered]);
 
-  // Stats
-  const stats = useMemo(() => {
-    const highConf = predictions.filter(p => p.confidence >= 0.5).length;
-    const withValue = predictions.filter(p => p.value_bets.length > 0).length;
-    const avgConf = predictions.length > 0
-      ? predictions.reduce((s, p) => s + p.confidence, 0) / predictions.length
-      : 0;
-    return { total: predictions.length, highConf, withValue, avgConf };
-  }, [predictions]);
+  const stats = useMemo(() => ({
+    total: predictions.length,
+    highConf: predictions.filter(p => p.confidence >= 0.5).length,
+    valueBets: predictions.filter(p => p.value_bets?.length > 0).length,
+    avgConf: predictions.length ? Math.round(predictions.reduce((s, p) => s + p.confidence, 0) / predictions.length * 100) : 0,
+  }), [predictions]);
 
   const firstMatch = predictions[0]?.commence_time || "2026-06-11T19:00:00Z";
+  const days = daysUntil(firstMatch);
 
-  if (loading) {
-    return (
-      <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-        <div style={{ height: 120, borderRadius: 16, background: "var(--surface-2)", animation: "pulse 1.5s ease infinite" }} />
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
-          {[1, 2, 3, 4].map(i => (
-            <div key={i} className="card" style={{ height: 240, animation: "pulse 1.5s ease infinite" }} />
-          ))}
-        </div>
-        <style>{`@keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }`}</style>
+  if (loading) return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      <div className="skeleton" style={{ height: 100, borderRadius: 16 }} />
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
+        {[1, 2, 3, 4].map(i => <div key={i} className="skeleton" style={{ height: 60, borderRadius: 12 }} />)}
       </div>
-    );
-  }
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 14 }}>
+        {[1, 2, 3, 4, 5, 6].map(i => <div key={i} className="skeleton" style={{ height: 200, borderRadius: 14 }} />)}
+      </div>
+    </div>
+  );
 
-  if (error) {
-    return (
-      <div style={{ padding: "60px 20px", textAlign: "center" }}>
-        <Trophy size={48} color="var(--text-3)" style={{ marginBottom: 16 }} />
-        <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>World Cup Data Not Available</h2>
-        <p style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text-3)", maxWidth: 400, margin: "0 auto", lineHeight: 1.7 }}>
-          {error}. The prediction engine needs to be initialized on the backend first.
-        </p>
-      </div>
-    );
-  }
+  if (error) return (
+    <div style={{ padding: "60px 20px", textAlign: "center" }}>
+      <Trophy size={40} color="var(--text-3)" style={{ marginBottom: 16 }} />
+      <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>World Cup Data Not Available</h2>
+      <p style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text-3)", maxWidth: 360, margin: "0 auto" }}>{error}</p>
+    </div>
+  );
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
 
-      {/* Countdown */}
-      <CountdownBanner firstMatch={firstMatch} />
-
-      {/* Stats row */}
-      <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-        {[
-          { label: "Total Matches", value: String(stats.total), color: "var(--text-1)" },
-          { label: "High Confidence", value: String(stats.highConf), color: "var(--green)" },
-          { label: "Value Bets", value: String(stats.withValue), color: "var(--brand)" },
-          { label: "Avg Confidence", value: `${Math.round(stats.avgConf * 100)}%`, color: "var(--blue)" },
-        ].map(s => (
-          <div key={s.label} className="card" style={{ flex: "1 1 100px", padding: "14px 18px", minWidth: 100 }}>
-            <p style={{ fontFamily: "var(--font-mono)", fontSize: 22, fontWeight: 800, color: s.color }}>{s.value}</p>
-            <p style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)", marginTop: 2 }}>{s.label}</p>
+      {/* ── Hero ───────────────────────────────────────── */}
+      <div style={{
+        borderRadius: 18, overflow: "hidden", position: "relative",
+        background: "linear-gradient(135deg, #1a1a3e 0%, #0d1b2a 40%, #162232 100%)",
+        border: "1px solid rgba(255,215,0,0.10)",
+      }}>
+        <div style={{ height: 2, background: "linear-gradient(90deg, transparent, #fbbf24 30%, #d97706 70%, transparent)" }} />
+        <div style={{ padding: "28px 28px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 20 }}>
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+              <Trophy size={18} color="#fbbf24" />
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", color: "#fbbf24" }}>
+                FIFA World Cup 2026
+              </span>
+            </div>
+            <h1 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(22px, 4vw, 32px)", fontWeight: 800, color: "#fff", lineHeight: 1.1 }}>
+              USA · Mexico · Canada
+            </h1>
+            <p style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "rgba(255,255,255,0.4)", marginTop: 6 }}>
+              48 teams · {stats.total} matches analyzed · Real bookmaker odds
+            </p>
           </div>
-        ))}
+          <div style={{
+            padding: "14px 24px", borderRadius: 14, textAlign: "center",
+            background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,215,0,0.12)",
+          }}>
+            <p style={{ fontFamily: "var(--font-display)", fontSize: 36, fontWeight: 800, color: "#fbbf24", lineHeight: 1 }}>{days}</p>
+            <p style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "rgba(255,255,255,0.4)", marginTop: 4, textTransform: "uppercase", letterSpacing: "0.12em" }}>
+              days to go
+            </p>
+          </div>
+        </div>
+
+        {/* Stats strip */}
+        <div style={{
+          display: "flex", borderTop: "1px solid rgba(255,255,255,0.05)",
+          background: "rgba(0,0,0,0.15)",
+        }}>
+          {[
+            { v: String(stats.total), l: "Matches" },
+            { v: String(stats.highConf), l: "High Conf" },
+            { v: String(stats.valueBets), l: "Value Bets" },
+            { v: `${stats.avgConf}%`, l: "Avg Conf" },
+          ].map(s => (
+            <div key={s.l} style={{ flex: 1, textAlign: "center", padding: "12px 8px" }}>
+              <p style={{ fontFamily: "var(--font-mono)", fontSize: 16, fontWeight: 800, color: "#fff" }}>{s.v}</p>
+              <p style={{ fontFamily: "var(--font-body)", fontSize: 9, color: "rgba(255,255,255,0.35)", marginTop: 1 }}>{s.l}</p>
+            </div>
+          ))}
+        </div>
       </div>
 
-      {/* Tabs + Filters */}
+      {/* ── Tabs ───────────────────────────────────────── */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
-        {/* Tabs */}
-        <div style={{ display: "flex", gap: 4, background: "var(--surface-2)", borderRadius: 8, padding: 3, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: 2, background: "var(--surface)", borderRadius: 10, padding: 3, border: "1px solid var(--border)" }}>
           {([
-            { key: "matches" as const, label: "Predictions", icon: <Target size={13} /> },
-            { key: "groups" as const, label: "Groups", icon: <Users size={13} /> },
-            { key: "accumulators" as const, label: "Accumulators", icon: <Layers size={13} /> },
-            { key: "value" as const, label: "Value Bets", icon: <Zap size={13} /> },
+            { k: "matches" as const, l: "Predictions", ic: <Target size={12} /> },
+            { k: "groups" as const, l: "Groups", ic: <Users size={12} /> },
+            { k: "accumulators" as const, l: "Accas", ic: <Layers size={12} /> },
+            { k: "value" as const, l: "Value", ic: <Zap size={12} /> },
           ]).map(t => (
-            <button
-              key={t.key}
-              onClick={() => setTab(t.key)}
-              style={{
-                display: "flex", alignItems: "center", gap: 6,
-                padding: "8px 14px", borderRadius: 6, border: "none", cursor: "pointer",
-                fontFamily: "var(--font-body)", fontSize: 12, fontWeight: 600,
-                background: tab === t.key ? "rgba(245,158,11,0.12)" : "transparent",
-                color: tab === t.key ? "var(--brand)" : "var(--text-3)",
-              }}
-            >
-              {t.icon} {t.label}
+            <button key={t.k} onClick={() => setTab(t.k)} style={{
+              display: "flex", alignItems: "center", gap: 5, padding: "8px 14px", borderRadius: 8,
+              border: "none", cursor: "pointer",
+              fontFamily: "var(--font-body)", fontSize: 12, fontWeight: 600,
+              background: tab === t.k ? "rgba(245,158,11,0.12)" : "transparent",
+              color: tab === t.k ? "#fbbf24" : "var(--text-3)",
+              transition: "all 150ms",
+            }}>
+              {t.ic} {t.l}
             </button>
           ))}
         </div>
 
-        {/* Filter toggle */}
         {tab === "matches" && (
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            style={{
-              display: "flex", alignItems: "center", gap: 6,
-              padding: "8px 14px", borderRadius: 8, cursor: "pointer",
-              fontFamily: "var(--font-body)", fontSize: 12, fontWeight: 600,
-              border: (dateFilter || riskFilter) ? "1px solid var(--brand)" : "1px solid var(--border)",
-              background: (dateFilter || riskFilter) ? "rgba(245,158,11,0.10)" : "var(--surface-2)",
-              color: (dateFilter || riskFilter) ? "var(--brand)" : "var(--text-2)",
-            }}
-          >
-            <Filter size={13} /> Filters
+          <button onClick={() => setShowFilters(!showFilters)} style={{
+            display: "flex", alignItems: "center", gap: 5, padding: "8px 14px", borderRadius: 8,
+            cursor: "pointer", fontFamily: "var(--font-body)", fontSize: 12, fontWeight: 600,
+            border: (dateFilter || riskFilter) ? "1px solid var(--brand)" : "1px solid var(--border)",
+            background: (dateFilter || riskFilter) ? "rgba(245,158,11,0.08)" : "transparent",
+            color: (dateFilter || riskFilter) ? "#fbbf24" : "var(--text-3)",
+          }}>
+            <Filter size={12} /> Filters
           </button>
         )}
       </div>
 
-      {/* Filter panel */}
+      {/* Filters panel */}
       {showFilters && tab === "matches" && (
-        <div className="card" style={{
-          padding: "12px 16px", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap",
-        }}>
-          <div>
-            <p style={{ fontFamily: "var(--font-body)", fontSize: 10, fontWeight: 700, color: "var(--text-3)", marginBottom: 4, textTransform: "uppercase" }}>Date</p>
-            <select
-              value={dateFilter}
-              onChange={e => setDateFilter(e.target.value)}
-              style={{
-                padding: "6px 10px", borderRadius: 6, border: "1px solid var(--border)",
-                background: "var(--surface-2)", fontFamily: "var(--font-body)", fontSize: 12,
-                color: "var(--text-1)", cursor: "pointer", outline: "none",
-              }}
-            >
-              <option value="">All Dates</option>
-              {uniqueDates.map(d => (
-                <option key={d} value={d}>{formatDate(d + "T00:00:00Z")}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <p style={{ fontFamily: "var(--font-body)", fontSize: 10, fontWeight: 700, color: "var(--text-3)", marginBottom: 4, textTransform: "uppercase" }}>Risk</p>
-            <select
-              value={riskFilter}
-              onChange={e => setRiskFilter(e.target.value)}
-              style={{
-                padding: "6px 10px", borderRadius: 6, border: "1px solid var(--border)",
-                background: "var(--surface-2)", fontFamily: "var(--font-body)", fontSize: 12,
-                color: "var(--text-1)", cursor: "pointer", outline: "none",
-              }}
-            >
-              <option value="">All Risk Levels</option>
-              <option value="low">Low Risk</option>
-              <option value="medium">Medium Risk</option>
-              <option value="high">High Risk</option>
-            </select>
-          </div>
+        <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+          <select value={dateFilter} onChange={e => setDateFilter(e.target.value)} style={{
+            padding: "7px 10px", borderRadius: 8, border: "1px solid var(--border)",
+            background: "var(--surface)", fontFamily: "var(--font-body)", fontSize: 12,
+            color: "var(--text-1)", cursor: "pointer", outline: "none",
+          }}>
+            <option value="">All Dates</option>
+            {uniqueDates.map(d => <option key={d} value={d}>{fmtDate(d + "T00:00:00Z")}</option>)}
+          </select>
+          <select value={riskFilter} onChange={e => setRiskFilter(e.target.value)} style={{
+            padding: "7px 10px", borderRadius: 8, border: "1px solid var(--border)",
+            background: "var(--surface)", fontFamily: "var(--font-body)", fontSize: 12,
+            color: "var(--text-1)", cursor: "pointer", outline: "none",
+          }}>
+            <option value="">All Risk</option>
+            <option value="very_low">Very Low</option>
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+          </select>
           {(dateFilter || riskFilter) && (
-            <button
-              onClick={() => { setDateFilter(""); setRiskFilter(""); }}
-              style={{
-                padding: "6px 14px", borderRadius: 6, border: "1px solid var(--border)",
-                background: "transparent", fontFamily: "var(--font-body)", fontSize: 12,
-                color: "var(--text-3)", cursor: "pointer", marginTop: 14,
-              }}
-            >Clear</button>
+            <button onClick={() => { setDateFilter(""); setRiskFilter(""); }} style={{
+              padding: "7px 12px", borderRadius: 8, border: "1px solid var(--border)",
+              background: "transparent", fontFamily: "var(--font-body)", fontSize: 11,
+              color: "var(--text-3)", cursor: "pointer",
+            }}>Clear</button>
           )}
         </div>
       )}
 
-      {/* Content */}
-      {tab === "matches" ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-          {groupedByDate.map(([date, matches]) => (
+      {/* ── Tab Content ─────────────────────────────────── */}
+      {tab === "matches" && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+          {grouped.map(([date, matches]) => (
             <div key={date}>
-              <div style={{
-                display: "flex", alignItems: "center", gap: 8, marginBottom: 12,
-                padding: "8px 0", borderBottom: "1px solid var(--border)",
-              }}>
-                <Calendar size={14} color="var(--brand)" />
-                <h3 style={{ fontFamily: "var(--font-body)", fontSize: 14, fontWeight: 700, color: "var(--text-1)" }}>
-                  {formatDate(date + "T00:00:00Z")}
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, padding: "4px 0" }}>
+                <Calendar size={12} color="#fbbf24" />
+                <h3 style={{ fontFamily: "var(--font-display)", fontSize: 14, fontWeight: 700, color: "var(--text-1)" }}>
+                  {fmtDate(date + "T00:00:00Z")}
                 </h3>
-                <span style={{
-                  fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-3)",
-                  background: "var(--surface-2)", padding: "2px 8px", borderRadius: 4,
-                }}>
-                  {matches.length} match{matches.length !== 1 ? "es" : ""}
-                </span>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-3)" }}>{matches.length}</span>
               </div>
-              <div style={{
-                display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 14,
-              }}>
-                {matches.map(p => <MatchCard key={p.match_id} pred={p} />)}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(310px, 1fr))", gap: 12 }}>
+                {matches.map(p => <MatchCard key={p.match_id} p={p} />)}
               </div>
             </div>
           ))}
+          {filtered.length === 0 && <p style={{ textAlign: "center", color: "var(--text-3)", padding: 40 }}>No matches for these filters.</p>}
+        </div>
+      )}
 
-          {filtered.length === 0 && (
-            <div style={{ padding: "40px 20px", textAlign: "center" }}>
-              <p style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text-3)" }}>
-                No matches for selected filters.
-              </p>
-            </div>
-          )}
-        </div>
-      ) : tab === "groups" ? (
-        /* Groups Tab */
-        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-          {Object.entries(groups).sort(([a], [b]) => a.localeCompare(b)).map(([name, group]) => (
-            <div key={name} className="card" style={{ padding: "20px", overflow: "hidden" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-                <span style={{
-                  fontFamily: "var(--font-mono)", fontSize: 14, fontWeight: 800,
-                  color: "var(--brand)", background: "rgba(245,158,11,0.12)",
-                  width: 32, height: 32, borderRadius: 8,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                }}>
-                  {name}
-                </span>
-                <div style={{ display: "flex", gap: 10, flex: 1, flexWrap: "wrap" }}>
-                  {group.teams.map(t => (
-                    <div key={t.name} style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                      {t.logo && <img src={t.logo} alt="" style={{ width: 18, height: 18 }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
-                      <span style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text-2)" }}>{t.name}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              {/* Group matches */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {group.matches.map(p => (
-                  <div key={p.match_id} style={{
-                    display: "flex", alignItems: "center", gap: 10, padding: "10px 12px",
-                    background: "var(--surface-2)", borderRadius: 8,
-                    borderLeft: `3px solid ${RISK_COLORS[p.risk_level] || "var(--border)"}`,
-                  }}>
-                    <span style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)", width: 60, flexShrink: 0 }}>
-                      {formatDate(p.commence_time).slice(0, 6)}
-                    </span>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ fontFamily: "var(--font-body)", fontSize: 12, fontWeight: 600, color: "var(--text-1)" }}>
-                        {p.home_team} vs {p.away_team}
-                      </p>
-                    </div>
-                    <div style={{ textAlign: "right", flexShrink: 0 }}>
-                      <p style={{ fontFamily: "var(--font-body)", fontSize: 11, fontWeight: 700, color: "var(--brand)" }}>
-                        {p.prediction}
-                      </p>
-                      <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: Math.round(p.confidence * 100) >= 60 ? "var(--green)" : "var(--text-3)" }}>
-                        {Math.round(p.confidence * 100)}%
-                      </p>
-                    </div>
-                  </div>
-                ))}
-                {group.matches.length === 0 && (
-                  <p style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text-3)", padding: 10 }}>No matches scheduled yet</p>
-                )}
-              </div>
-            </div>
+      {tab === "groups" && (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: 14 }}>
+          {Object.entries(groups).sort(([a], [b]) => a.localeCompare(b)).map(([name, g]) => (
+            <GroupCard key={name} name={name} group={g} />
           ))}
         </div>
-      ) : tab === "accumulators" ? (
-        /* Accumulators Tab */
-        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      )}
+
+      {tab === "accumulators" && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           {accuDate && (
             <p style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text-3)" }}>
-              Picks for <strong style={{ color: "var(--text-1)" }}>{formatDate(accuDate + "T00:00:00Z")}</strong>
+              Picks for <strong style={{ color: "var(--text-1)" }}>{fmtDate(accuDate + "T00:00:00Z")}</strong>
             </p>
           )}
           {Object.entries(accumulators).map(([key, accu]) => {
-            const colors: Record<string, string> = { safe: "var(--green)", moderate: "var(--brand)", bold: "var(--red)" };
-            const color = colors[key] || "var(--text-2)";
-            return (
-              <div key={key} className="card" style={{ padding: "20px", borderTop: `2px solid ${color}` }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-                  <Layers size={16} color={color} />
-                  <h3 style={{ fontSize: 15, fontWeight: 700, color: "var(--text-1)" }}>{accu.label}</h3>
-                  <span style={{
-                    fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 700,
-                    color, background: `${color}15`, padding: "2px 10px", borderRadius: 4,
-                  }}>
-                    {accu.total_odds}x
-                  </span>
-                </div>
-                {accu.picks.length > 0 ? (
-                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                    {accu.picks.map((pick, i) => (
-                      <div key={i} style={{
-                        display: "flex", alignItems: "center", gap: 10, padding: "10px 14px",
-                        background: "var(--surface-2)", borderRadius: 8,
-                      }}>
-                        <span style={{
-                          fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 700,
-                          color: "var(--text-3)", width: 20,
-                        }}>{i + 1}</span>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <p style={{ fontFamily: "var(--font-body)", fontSize: 12, fontWeight: 600, color: "var(--text-1)" }}>
-                            {pick.home_team} vs {pick.away_team}
-                          </p>
-                          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 3 }}>
-                            <span style={{
-                              fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 700, padding: "1px 5px",
-                              borderRadius: 3, background: "rgba(96,165,250,0.12)", color: "var(--blue)",
-                              textTransform: "uppercase",
-                            }}>{pick.market}</span>
-                            <span style={{ fontFamily: "var(--font-body)", fontSize: 12, fontWeight: 700, color: "var(--brand)" }}>
-                              {pick.tip}
-                            </span>
-                          </div>
-                        </div>
-                        <div style={{ textAlign: "right", flexShrink: 0 }}>
-                          <p style={{
-                            fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 700,
-                            color: pick.confidence >= 0.6 ? "var(--green)" : "var(--brand)",
-                          }}>
-                            {Math.round(pick.confidence * 100)}%
-                          </p>
-                          {pick.estimated_odds && (
-                            <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-3)" }}>
-                              @{pick.estimated_odds}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text-3)", padding: 10 }}>
-                    No picks available for this category
-                  </p>
-                )}
-              </div>
-            );
+            const colors: Record<string, string> = { safe: "#22c55e", moderate: "#f59e0b", bold: "#f87171" };
+            return <AccuSlip key={key} label={key} accu={accu} color={colors[key] || "#f59e0b"} />;
           })}
-          {Object.keys(accumulators).length === 0 && (
-            <div style={{ padding: "40px 20px", textAlign: "center" }}>
-              <p style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text-3)" }}>
-                No upcoming match days for accumulators.
-              </p>
-            </div>
-          )}
-        </div>
-      ) : (
-        /* Value Bets Tab */
-        <div className="card" style={{ padding: "20px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
-            <Zap size={16} color="var(--green)" />
-            <h3 style={{ fontSize: 16, fontWeight: 700, color: "var(--text-1)" }}>
-              Best Value Bets
-            </h3>
-            <span style={{
-              fontFamily: "var(--font-mono)", fontSize: 11, background: "rgba(34,197,94,0.12)",
-              color: "var(--green)", padding: "2px 8px", borderRadius: 4,
-            }}>{valueBets.length}</span>
-          </div>
-          <p style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text-3)", marginBottom: 16, lineHeight: 1.6 }}>
-            Bets where our model finds a positive edge over bookmaker odds. Higher edge = more value.
-          </p>
-          {valueBets.length > 0 ? (
-            valueBets.slice(0, 20).map((vb, i) => <ValueBetRow key={i} vb={vb} />)
-          ) : (
-            <p style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text-3)", textAlign: "center", padding: 20 }}>
-              No value bets found at current threshold.
-            </p>
-          )}
+          {Object.keys(accumulators).length === 0 && <p style={{ textAlign: "center", color: "var(--text-3)", padding: 40 }}>No upcoming match days.</p>}
         </div>
       )}
 
-      <style>{`@keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }`}</style>
+      {tab === "value" && (
+        <div style={{
+          background: "var(--surface)", borderRadius: 14, padding: "18px 20px",
+          border: "1px solid var(--border)",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+            <Zap size={14} color="#22c55e" />
+            <h3 style={{ fontFamily: "var(--font-display)", fontSize: 15, fontWeight: 700, color: "var(--text-1)" }}>Value Bets</h3>
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#22c55e", background: "rgba(34,197,94,0.10)", padding: "2px 8px", borderRadius: 4 }}>{valueBets.length}</span>
+          </div>
+          <p style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)", marginBottom: 14, lineHeight: 1.5 }}>
+            Where our model probability beats the bookmaker implied probability.
+          </p>
+          {valueBets.slice(0, 20).map((vb, i) => <VBRow key={i} vb={vb} />)}
+          {valueBets.length === 0 && <p style={{ textAlign: "center", color: "var(--text-3)", padding: 20 }}>No value bets at current threshold.</p>}
+        </div>
+      )}
     </div>
   );
 }
