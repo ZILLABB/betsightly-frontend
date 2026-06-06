@@ -126,6 +126,7 @@ export interface GamePrediction {
 export interface RolloverChainDay {
   date: string;
   day_number: number;
+  market?: 'match_result' | 'goals' | 'btts' | 'double_chance';
   match: string;
   prediction: string;
   odds: number;

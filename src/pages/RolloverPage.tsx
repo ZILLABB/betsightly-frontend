@@ -164,7 +164,24 @@ export function RolloverPage() {
                         }}>Today</span>
                       )}
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                      {day.market && (() => {
+                        const MKT: Record<string, { c: string; l: string }> = {
+                          match_result: { c: "var(--blue)", l: "Result" },
+                          goals: { c: "var(--green)", l: "Goals" },
+                          btts: { c: "var(--purple)", l: "BTTS" },
+                          double_chance: { c: "var(--accent)", l: "DC" },
+                        };
+                        const m = MKT[day.market] || { c: "var(--text-3)", l: day.market };
+                        return (
+                          <span style={{
+                            fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 700,
+                            padding: "1px 5px", borderRadius: 3,
+                            background: `color-mix(in srgb, ${m.c} 12%, transparent)`,
+                            color: m.c, letterSpacing: "0.08em", textTransform: "uppercase",
+                          }}>{m.l}</span>
+                        );
+                      })()}
                       <span style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text-2)", fontWeight: 600 }}>
                         {day.prediction}
                       </span>
