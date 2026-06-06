@@ -1,8 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import { usePredictions } from "../hooks/usePredictions";
 import { PredictionCardSkeleton } from "../components/ui/Skeleton";
 import { CATEGORIES } from "../types";
-import { Repeat2, CheckCircle, XCircle, Clock, Circle, TrendingUp, Calendar } from "lucide-react";
+import { Repeat2, CheckCircle, XCircle, Clock, Circle, TrendingUp, Calendar, List, Zap } from "lucide-react";
 
 const STATUS_CONFIG: Record<string, { icon: React.ReactNode; color: string; bg: string; label: string }> = {
   won: { icon: <CheckCircle size={14} />, color: "var(--green)", bg: "rgba(34,197,94,0.10)", label: "Won" },
@@ -18,6 +18,7 @@ function fmtDate(iso: string) {
 
 export function RolloverPage() {
   const { data, loading, error } = usePredictions();
+  const [view, setView] = useState<"today" | "all">("today");
   const rollover = data?.accumulators?.rollover;
   const catMeta = CATEGORIES.find(c => c.key === "rollover")!;
   const chain = rollover?.chain ?? [];
@@ -106,24 +107,61 @@ export function RolloverPage() {
         </div>
       ) : (
         <div>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, flexWrap: "wrap", gap: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, flexWrap: "wrap", gap: 12 }}>
             <h2 style={{ fontFamily: "var(--font-display)", fontSize: 18, fontWeight: 700, color: "var(--text-1)" }}>
-              The {targetDays}-day chain
+              {view === "today" ? "Today's pick" : `The ${targetDays}-day chain`}
             </h2>
-            <p style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text-3)" }}>
-              Stake → {targetDays}× wins → {(rollover?.cumulative_odds ?? rollover?.total_odds ?? 0).toFixed(2)}× payout
-            </p>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <p style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)" }}>
+                {targetDays}× wins → {(rollover?.cumulative_odds ?? rollover?.total_odds ?? 0).toFixed(0)}× payout
+              </p>
+              {/* View toggle */}
+              <div style={{ display: "flex", padding: 2, background: "var(--surface-2)", borderRadius: 8, border: "1px solid var(--border)" }}>
+                <button
+                  onClick={() => setView("today")}
+                  style={{
+                    display: "inline-flex", alignItems: "center", gap: 4,
+                    padding: "5px 12px", borderRadius: 6, border: "none", cursor: "pointer",
+                    fontFamily: "var(--font-body)", fontSize: 11, fontWeight: 600,
+                    background: view === "today" ? "var(--surface)" : "transparent",
+                    color: view === "today" ? "var(--brand)" : "var(--text-3)",
+                    boxShadow: view === "today" ? "var(--shadow-md)" : "none",
+                  }}
+                >
+                  <Zap size={11} /> Today
+                </button>
+                <button
+                  onClick={() => setView("all")}
+                  style={{
+                    display: "inline-flex", alignItems: "center", gap: 4,
+                    padding: "5px 12px", borderRadius: 6, border: "none", cursor: "pointer",
+                    fontFamily: "var(--font-body)", fontSize: 11, fontWeight: 600,
+                    background: view === "all" ? "var(--surface)" : "transparent",
+                    color: view === "all" ? "var(--brand)" : "var(--text-3)",
+                    boxShadow: view === "all" ? "var(--shadow-md)" : "none",
+                  }}
+                >
+                  <List size={11} /> Full chain
+                </button>
+              </div>
+            </div>
           </div>
 
-          {/* Compact chain list */}
+          {/* Compact chain list — filtered by view */}
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {chain.map((day, idx) => {
+            {(view === "today"
+              ? chain.filter(d => d.date >= today && d.status === "pending").slice(0, 1)
+              : chain
+            ).map((day, idx, arr) => {
+              // Find original index for cum odds calculation
+              const origIdx = chain.findIndex(c => c.date === day.date);
               const status = STATUS_CONFIG[day.status] || STATUS_CONFIG.pending;
-              const isToday = day.date >= today && day.status === "pending" && idx === chain.findIndex(d => d.date >= today && d.status === "pending");
+              const todayIdx = chain.findIndex(d => d.date >= today && d.status === "pending");
+              const isToday = day.date >= today && day.status === "pending" && origIdx === todayIdx;
 
-              // Cumulative odds up to this day
+              // Cumulative odds up to this day (using original index)
               let cum = 1;
-              for (let i = 0; i <= idx; i++) cum *= chain[i].odds;
+              for (let i = 0; i <= origIdx; i++) cum *= chain[i].odds;
 
               return (
                 <div
