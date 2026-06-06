@@ -32,7 +32,9 @@ export function PredictionsPage() {
         <div className="eyebrow" style={{ marginBottom: 8 }}>Today&apos;s Picks</div>
         <h1 style={{ fontSize: 32, fontWeight: 800 }}>All Predictions</h1>
         <p style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text-3)", marginTop: 6 }}>
-          Browse all accumulator categories for {data?.date ?? "today"}.
+          Browse all accumulator categories for {data?.date
+            ? new Date(data.date + "T12:00:00Z").toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" })
+            : "today"}.
         </p>
       </div>
 

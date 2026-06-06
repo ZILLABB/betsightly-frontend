@@ -51,9 +51,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
               </h4>
               <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
                 <Link to="/worldcup" style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text-3)", textDecoration:"none" }}>All Predictions</Link>
-                <Link to="/worldcup" style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text-3)", textDecoration:"none" }}>Groups</Link>
-                <Link to="/worldcup" style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text-3)", textDecoration:"none" }}>Accumulators</Link>
-                <Link to="/worldcup" style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text-3)", textDecoration:"none" }}>Value Bets</Link>
+                <Link to="/worldcup?tab=groups" style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text-3)", textDecoration:"none" }}>Groups</Link>
+                <Link to="/worldcup?tab=accumulators" style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text-3)", textDecoration:"none" }}>Accumulators</Link>
+                <Link to="/worldcup?tab=value" style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text-3)", textDecoration:"none" }}>Value Bets</Link>
               </div>
             </div>
 
