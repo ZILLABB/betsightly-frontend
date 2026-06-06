@@ -3,7 +3,29 @@ import { usePredictions } from "../hooks/usePredictions";
 import { PredictionCardSkeleton } from "../components/ui/Skeleton";
 import { CATEGORIES } from "../types";
 import { Repeat2, CheckCircle, XCircle, Clock, Circle, TrendingUp, Calendar, List, Zap } from "lucide-react";
-import { getTeamFlag } from "../data/wcFlags";
+import { getTeamFlag, isWcNation, teamInitials, teamColor } from "../data/wcFlags";
+
+function TeamBadge({ team, logo }: { team: string; logo?: string | null }) {
+  if (isWcNation(team)) {
+    return (
+      <img
+        src={getTeamFlag(team, logo, 40)}
+        alt=""
+        style={{ width: 18, height: 13, objectFit: "cover", borderRadius: 2, flexShrink: 0 }}
+        onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
+      />
+    );
+  }
+  return (
+    <span style={{
+      width: 18, height: 13, borderRadius: 2, flexShrink: 0,
+      background: teamColor(team), color: "#fff",
+      fontSize: 8, fontWeight: 800, fontFamily: "var(--font-mono)",
+      display: "inline-flex", alignItems: "center", justifyContent: "center",
+      letterSpacing: "-0.04em",
+    }}>{teamInitials(team)}</span>
+  );
+}
 
 const STATUS_CONFIG: Record<string, { icon: React.ReactNode; color: string; bg: string; label: string }> = {
   won: { icon: <CheckCircle size={14} />, color: "var(--green)", bg: "rgba(34,197,94,0.10)", label: "Won" },
@@ -58,8 +80,8 @@ export function RolloverPage() {
           <div className="eyebrow" style={{ marginBottom: 6 }}>10-day safe challenge</div>
           <h1 style={{ fontSize: 30, fontWeight: 800 }}>Rollover</h1>
           <p style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text-3)", marginTop: 4, maxWidth: 560, lineHeight: 1.6 }}>
-            Each day has 1–3 safest WC picks. All picks on a day must hit for that day to count.
-            Days without safe matches are skipped, never repeated.
+            Each day has 1–3 safest picks pulled from active leagues + the World Cup.
+            All picks on a day must hit for that day to count. Days with no safe matches are skipped.
           </p>
         </div>
       </div>
@@ -226,10 +248,10 @@ export function RolloverPage() {
                           padding: "8px 10px", borderRadius: 8,
                           background: "var(--surface-2)",
                         }}>
-                          {/* Flags */}
-                          <div style={{ display: "flex", alignItems: "center", gap: 2, flexShrink: 0 }}>
-                            <img src={getTeamFlag(pick.home_team, pick.home_team_logo, 40)} alt="" style={{ width: 18, height: 13, objectFit: "cover", borderRadius: 2 }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
-                            <img src={getTeamFlag(pick.away_team, pick.away_team_logo, 40)} alt="" style={{ width: 18, height: 13, objectFit: "cover", borderRadius: 2 }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                          {/* Flags or initials badges */}
+                          <div style={{ display: "flex", alignItems: "center", gap: 3, flexShrink: 0 }}>
+                            <TeamBadge team={pick.home_team} logo={pick.home_team_logo} />
+                            <TeamBadge team={pick.away_team} logo={pick.away_team_logo} />
                           </div>
                           {/* Match */}
                           <div style={{ flex: 1, minWidth: 0 }}>
@@ -270,9 +292,9 @@ export function RolloverPage() {
           <div style={{ marginTop: 18, padding: "12px 16px", background: "var(--surface-2)", borderRadius: 10, display: "flex", alignItems: "flex-start", gap: 10 }}>
             <TrendingUp size={14} color="var(--text-3)" style={{ marginTop: 2, flexShrink: 0 }} />
             <p style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text-3)", lineHeight: 1.6 }}>
-              Each day picks the 1–3 safest WC matches (≥70% confidence). No match appears more than once across the chain.
-              Days with no safe matches are skipped, so the {chain.length}-day chain pulls from the next available WC dates.
-              Lose any single pick on any day and the chain breaks.
+              Each day picks the 1–3 safest matches available — across active club leagues and the World Cup —
+              at ≥65% confidence. No match appears more than once. Days with no safe matches are skipped so the
+              {" "}{chain.length}-day chain pulls from the next available dates. Lose any single pick on any day and the chain breaks.
             </p>
           </div>
         </div>
