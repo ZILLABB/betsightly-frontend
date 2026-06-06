@@ -1,7 +1,28 @@
 import React from "react";
 import type { GamePrediction } from "../../types";
-import TeamLogo from "../common/TeamLogo";
-import { getTeamFlag, WC_TEAM_CODES } from "../../data/wcFlags";
+import { getTeamFlag, isWcNation, teamInitials, teamColor } from "../../data/wcFlags";
+
+function TeamBadge({ team, logo }: { team: string; logo?: string | null }) {
+  if (isWcNation(team)) {
+    return (
+      <img
+        src={getTeamFlag(team, logo, 80)}
+        alt=""
+        style={{ width: 28, height: 20, objectFit: "cover", borderRadius: 3, flexShrink: 0 }}
+        onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
+      />
+    );
+  }
+  return (
+    <span style={{
+      width: 28, height: 20, borderRadius: 3, flexShrink: 0,
+      background: teamColor(team), color: "#fff",
+      fontSize: 10, fontWeight: 800, fontFamily: "var(--font-mono)",
+      display: "inline-flex", alignItems: "center", justifyContent: "center",
+      letterSpacing: "-0.04em",
+    }}>{teamInitials(team)}</span>
+  );
+}
 
 interface Props {
   game: GamePrediction;
@@ -68,20 +89,10 @@ export function PredictionCard({ game, color, faint, index = 0 }: Props) {
         </span>
       </div>
 
-      {/* Teams — stacked layout to prevent truncation, flags from WC mapping when applicable */}
+      {/* Teams — stacked layout (badges flex shrink to 0, names get to wrap) */}
       <div style={{ display: "flex", flexDirection: "column", gap: 6, padding: "4px 0" }}>
-        {/* Home */}
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          {WC_TEAM_CODES[game.home_team] ? (
-            <img
-              src={getTeamFlag(game.home_team, game.home_team_logo, 80)}
-              alt=""
-              style={{ width: 28, height: 20, objectFit: "cover", borderRadius: 3, flexShrink: 0 }}
-              onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
-            />
-          ) : (
-            <TeamLogo teamName={game.home_team} logoUrl={game.home_team_logo} size="sm" animate={false} />
-          )}
+          <TeamBadge team={game.home_team} logo={game.home_team_logo} />
           <span style={{
             fontFamily: "var(--font-display)", fontSize: 15, fontWeight: 700,
             color: "var(--text-1)", lineHeight: 1.25, flex: 1, minWidth: 0,
@@ -91,25 +102,14 @@ export function PredictionCard({ game, color, faint, index = 0 }: Props) {
           </span>
         </div>
 
-        {/* VS divider */}
         <div style={{ display: "flex", alignItems: "center", gap: 6, paddingLeft: 8 }}>
           <div style={{ width: 4, height: 4, borderRadius: "50%", background: "var(--text-3)", opacity: 0.4 }} />
           <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 700, color: "var(--text-3)", letterSpacing: "0.08em" }}>VS</span>
           <div style={{ width: 4, height: 4, borderRadius: "50%", background: "var(--text-3)", opacity: 0.4 }} />
         </div>
 
-        {/* Away */}
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          {WC_TEAM_CODES[game.away_team] ? (
-            <img
-              src={getTeamFlag(game.away_team, game.away_team_logo, 80)}
-              alt=""
-              style={{ width: 28, height: 20, objectFit: "cover", borderRadius: 3, flexShrink: 0 }}
-              onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
-            />
-          ) : (
-            <TeamLogo teamName={game.away_team} logoUrl={game.away_team_logo} size="sm" animate={false} />
-          )}
+          <TeamBadge team={game.away_team} logo={game.away_team_logo} />
           <span style={{
             fontFamily: "var(--font-display)", fontSize: 15, fontWeight: 700,
             color: "var(--text-1)", lineHeight: 1.25, flex: 1, minWidth: 0,

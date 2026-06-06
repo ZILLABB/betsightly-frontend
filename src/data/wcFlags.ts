@@ -72,3 +72,36 @@ export function getTeamFlag(teamName: string | undefined, originalLogo?: string 
   }
   return originalLogo ?? undefined;
 }
+
+/**
+ * True if team is recognized as a WC nation.
+ * Use for choosing flag vs initials-badge rendering.
+ */
+export function isWcNation(teamName: string | undefined): boolean {
+  return !!(teamName && WC_TEAM_CODES[teamName]);
+}
+
+/**
+ * 2-letter team initials for non-WC clubs.
+ * "CD Castellón" → "CC", "FC Inter Turku" → "IT", "Real Madrid" → "RM"
+ */
+export function teamInitials(teamName: string | undefined): string {
+  if (!teamName) return "?";
+  const cleaned = teamName.replace(/\b(FC|CD|CF|SC|AC|AS|SS|RC|UD|CA|CD|St|Saint)\b\.?/gi, "").trim();
+  const words = cleaned.split(/\s+/).filter(Boolean);
+  if (words.length >= 2) return (words[0][0] + words[1][0]).toUpperCase();
+  if (words.length === 1 && words[0].length >= 2) return words[0].slice(0, 2).toUpperCase();
+  return (teamName[0] || "?").toUpperCase();
+}
+
+/**
+ * Deterministic color for a non-WC team (consistent across renders).
+ * Returns an HSL string.
+ */
+export function teamColor(teamName: string | undefined): string {
+  if (!teamName) return "hsl(220, 30%, 40%)";
+  let h = 0;
+  for (let i = 0; i < teamName.length; i++) h = (h * 31 + teamName.charCodeAt(i)) >>> 0;
+  const hue = h % 360;
+  return `hsl(${hue}, 45%, 38%)`;
+}
