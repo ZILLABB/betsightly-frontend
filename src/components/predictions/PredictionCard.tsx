@@ -1,6 +1,7 @@
 import React from "react";
 import type { GamePrediction } from "../../types";
 import TeamLogo from "../common/TeamLogo";
+import { getTeamFlag, WC_TEAM_CODES } from "../../data/wcFlags";
 
 interface Props {
   game: GamePrediction;
@@ -67,32 +68,55 @@ export function PredictionCard({ game, color, faint, index = 0 }: Props) {
         </span>
       </div>
 
-      {/* Teams with logos — centered divider dots */}
-      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 0" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0 }}>
-          <TeamLogo teamName={game.home_team} logoUrl={game.home_team_logo} size="sm" animate={false} />
+      {/* Teams — stacked layout to prevent truncation, flags from WC mapping when applicable */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 6, padding: "4px 0" }}>
+        {/* Home */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          {WC_TEAM_CODES[game.home_team] ? (
+            <img
+              src={getTeamFlag(game.home_team, game.home_team_logo, 80)}
+              alt=""
+              style={{ width: 28, height: 20, objectFit: "cover", borderRadius: 3, flexShrink: 0 }}
+              onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
+            />
+          ) : (
+            <TeamLogo teamName={game.home_team} logoUrl={game.home_team_logo} size="sm" animate={false} />
+          )}
           <span style={{
-            fontFamily: "var(--font-display)", fontSize: 16, fontWeight: 700,
-            color: "var(--text-1)", minWidth: 0,
-            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+            fontFamily: "var(--font-display)", fontSize: 15, fontWeight: 700,
+            color: "var(--text-1)", lineHeight: 1.25, flex: 1, minWidth: 0,
+            wordBreak: "break-word",
           }}>
             {game.home_team}
           </span>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
-          <div style={{ width: 4, height: 4, borderRadius: "50%", background: "var(--text-3)", opacity: 0.5 }} />
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, color: "var(--text-3)", letterSpacing: "0.05em" }}>VS</span>
-          <div style={{ width: 4, height: 4, borderRadius: "50%", background: "var(--text-3)", opacity: 0.5 }} />
+
+        {/* VS divider */}
+        <div style={{ display: "flex", alignItems: "center", gap: 6, paddingLeft: 8 }}>
+          <div style={{ width: 4, height: 4, borderRadius: "50%", background: "var(--text-3)", opacity: 0.4 }} />
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 700, color: "var(--text-3)", letterSpacing: "0.08em" }}>VS</span>
+          <div style={{ width: 4, height: 4, borderRadius: "50%", background: "var(--text-3)", opacity: 0.4 }} />
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0, justifyContent: "flex-end" }}>
+
+        {/* Away */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          {WC_TEAM_CODES[game.away_team] ? (
+            <img
+              src={getTeamFlag(game.away_team, game.away_team_logo, 80)}
+              alt=""
+              style={{ width: 28, height: 20, objectFit: "cover", borderRadius: 3, flexShrink: 0 }}
+              onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
+            />
+          ) : (
+            <TeamLogo teamName={game.away_team} logoUrl={game.away_team_logo} size="sm" animate={false} />
+          )}
           <span style={{
-            fontFamily: "var(--font-display)", fontSize: 16, fontWeight: 700,
-            color: "var(--text-1)", minWidth: 0,
-            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textAlign: "right",
+            fontFamily: "var(--font-display)", fontSize: 15, fontWeight: 700,
+            color: "var(--text-1)", lineHeight: 1.25, flex: 1, minWidth: 0,
+            wordBreak: "break-word",
           }}>
             {game.away_team}
           </span>
-          <TeamLogo teamName={game.away_team} logoUrl={game.away_team_logo} size="sm" animate={false} />
         </div>
       </div>
 
