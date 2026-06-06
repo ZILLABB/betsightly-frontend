@@ -123,13 +123,27 @@ export interface GamePrediction {
   league_logo?: string;
 }
 
-export interface RolloverChainDay {
-  date: string;
-  day_number: number;
+export interface RolloverPick {
+  match_id: string;
   match: string;
+  home_team: string;
+  away_team: string;
+  home_team_logo?: string;
+  away_team_logo?: string;
+  commence_time?: string;
+  market: 'match_result' | 'goals' | 'btts' | 'double_chance';
   prediction: string;
   odds: number;
   confidence: number;
+  status?: 'pending' | 'won' | 'lost' | 'void';
+}
+
+export interface RolloverChainDay {
+  day_number: number;
+  date: string;
+  picks: RolloverPick[];
+  combined_odds: number;
+  avg_confidence: number;
   status: 'pending' | 'won' | 'lost' | 'void';
 }
 
