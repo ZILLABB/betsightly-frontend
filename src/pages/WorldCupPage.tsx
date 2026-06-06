@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   Trophy, Calendar, Zap, ChevronDown, ChevronUp, Target,
   BarChart2, Filter, Users, Layers, ArrowRight, TrendingUp
@@ -7,9 +8,16 @@ import {
   getWCPredictions, getWCValueBets, getWCGroups, getWCAccumulators,
   type WCPrediction, type WCValueBet, type WCGroup, type WCAccumulator,
 } from "../services/worldcupService";
+import { getTeamFlag } from "../data/wcFlags";
 
 // ── Helpers ────────────────────────────────────────────────
-const fmtDate = (iso: string) => new Date(iso).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+// Use UTC for date keys (avoids timezone drift where 23:00 UTC becomes next-day locally)
+const dateKey = (iso: string) => iso.slice(0, 10);
+const fmtDate = (iso: string) => {
+  // If just a date (YYYY-MM-DD), append T12:00:00Z so timezone doesn't shift it
+  const safe = iso.length === 10 ? iso + "T12:00:00Z" : iso;
+  return new Date(safe).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" });
+};
 const fmtTime = (iso: string) => new Date(iso).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
 const daysUntil = (iso: string) => Math.max(0, Math.ceil((new Date(iso).getTime() - Date.now()) / 86400000));
 
@@ -101,21 +109,20 @@ function MatchCard({ p }: { p: WCPrediction }) {
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
           {/* Home */}
           <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-            {p.home_team_logo && <img src={p.home_team_logo} alt="" style={{ width: 28, height: 28, flexShrink: 0 }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
-            <div style={{ minWidth: 0 }}>
-              <p style={{ fontFamily: "var(--font-display)", fontSize: 14, fontWeight: 700, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.home_team}</p>
+            <img src={getTeamFlag(p.home_team, p.home_team_logo, 80)} alt="" style={{ width: 28, height: 20, flexShrink: 0, objectFit: "cover", borderRadius: 3 }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <p style={{ fontFamily: "var(--font-display)", fontSize: 13, fontWeight: 700, color: "var(--text-1)", lineHeight: 1.2 }} title={p.home_team}>{p.home_team}</p>
               {p.best_odds.home_win && <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-3)" }}>@{p.best_odds.home_win}</span>}
             </div>
           </div>
-          {/* VS */}
           <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--text-3)", flexShrink: 0 }}>VS</span>
           {/* Away */}
           <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, justifyContent: "flex-end", minWidth: 0 }}>
-            <div style={{ textAlign: "right", minWidth: 0 }}>
-              <p style={{ fontFamily: "var(--font-display)", fontSize: 14, fontWeight: 700, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.away_team}</p>
+            <div style={{ textAlign: "right", minWidth: 0, flex: 1 }}>
+              <p style={{ fontFamily: "var(--font-display)", fontSize: 13, fontWeight: 700, color: "var(--text-1)", lineHeight: 1.2 }} title={p.away_team}>{p.away_team}</p>
               {p.best_odds.away_win && <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-3)" }}>@{p.best_odds.away_win}</span>}
             </div>
-            {p.away_team_logo && <img src={p.away_team_logo} alt="" style={{ width: 28, height: 28, flexShrink: 0 }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
+            <img src={getTeamFlag(p.away_team, p.away_team_logo, 80)} alt="" style={{ width: 28, height: 20, flexShrink: 0, objectFit: "cover", borderRadius: 3 }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
           </div>
         </div>
 
@@ -218,7 +225,7 @@ function GroupCard({ name, group }: { name: string; group: WCGroup }) {
         <div style={{ display: "flex", gap: 6, flex: 1, flexWrap: "wrap" }}>
           {group.teams.map(t => (
             <div key={t.name} style={{ display: "flex", alignItems: "center", gap: 4 }}>
-              {t.logo && <img src={t.logo} alt="" style={{ width: 16, height: 16 }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
+              <img src={getTeamFlag(t.name, t.logo, 40)} alt="" style={{ width: 18, height: 13, objectFit: "cover", borderRadius: 2 }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
               <span style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-2)" }}>{t.name}</span>
             </div>
           ))}
@@ -345,7 +352,14 @@ export default function WorldCupPage() {
   const [dateFilter, setDateFilter] = useState("");
   const [riskFilter, setRiskFilter] = useState("");
   const [showFilters, setShowFilters] = useState(false);
-  const [tab, setTab] = useState<"matches" | "groups" | "accumulators" | "value">("matches");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialTab = (searchParams.get("tab") as "matches" | "groups" | "accumulators" | "value") || "matches";
+  const [tab, setTabState] = useState<"matches" | "groups" | "accumulators" | "value">(initialTab);
+  const setTab = (t: "matches" | "groups" | "accumulators" | "value") => {
+    setTabState(t);
+    if (t === "matches") setSearchParams({});
+    else setSearchParams({ tab: t });
+  };
 
   useEffect(() => {
     (async () => {

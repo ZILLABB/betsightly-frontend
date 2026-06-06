@@ -18,7 +18,17 @@ export function Header() {
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
-    const fn = () => setScrolled(window.scrollY > 8);
+    let ticking = false;
+    const fn = () => {
+      if (!ticking) {
+        ticking = true;
+        requestAnimationFrame(() => {
+          const isScrolled = window.scrollY > 8;
+          setScrolled(prev => prev === isScrolled ? prev : isScrolled);
+          ticking = false;
+        });
+      }
+    };
     window.addEventListener("scroll", fn, { passive:true });
     return () => window.removeEventListener("scroll", fn);
   }, []);

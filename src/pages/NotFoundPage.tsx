@@ -14,12 +14,13 @@ export function NotFoundPage() {
         style={{
           padding: "10px 24px",
           borderRadius: "var(--radius-md)",
-          background: "linear-gradient(135deg, #3b82f6, #2563eb)",
-          color: "#000",
+          background: "var(--brand)",
+          color: "#fff",
           fontFamily: "var(--font-body)",
           fontWeight: 700,
           fontSize: 14,
           textDecoration: "none",
+          boxShadow: "0 4px 16px rgba(59,130,246,0.25)",
         }}
       >
         Back to home
