@@ -104,10 +104,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
         @media (min-width: 768px) {
           .site-footer { display: block; }
         }
-        /* Main bottom padding: account for bottom nav on mobile */
+        /* Main: tight padding on mobile, account for bottom nav */
         @media (max-width: 767px) {
-          .main-area { padding-bottom: 100px !important; }
+          .main-area {
+            padding: 16px 14px 100px !important;
+          }
         }
+        /* Prevent horizontal overflow from very wide content */
+        html, body { overflow-x: hidden; }
         /* Footer grid: stack on smaller desktops */
         @media (max-width: 900px) {
           .footer-grid { grid-template-columns: 1fr 1fr !important; }

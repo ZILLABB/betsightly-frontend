@@ -1,8 +1,9 @@
 import React from "react";
 import {
   Bell, Moon, Sun, Monitor, Info, BarChart2,
-  DollarSign, Globe, RotateCcw, ChevronRight, Check
+  DollarSign, Globe, RotateCcw, ChevronRight, Check, Mail, HelpCircle
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import { usePreferences } from "../hooks/usePreferences";
 import type { ThemeMode, OddsFormat, Currency, Language } from "../contexts/PreferencesTypes";
 
@@ -249,8 +250,26 @@ export function SettingsPage() {
         </Row>
       </Section>
 
-      {/* About */}
-      <Section title="About">
+      {/* About + Support */}
+      <Section title="About & support">
+        <Link to="/about" style={{ textDecoration: "none", display: "block" }}>
+          <Row
+            icon={<HelpCircle size={15} color="var(--brand)" />}
+            label="How it works"
+            sub="Methodology, data sources, FAQ"
+          >
+            <ChevronRight size={16} color="var(--text-3)" />
+          </Row>
+        </Link>
+        <a href="mailto:support@betsightly.com" style={{ textDecoration: "none", display: "block" }}>
+          <Row
+            icon={<Mail size={15} color="var(--text-3)" />}
+            label="Contact support"
+            sub="Bug reports, feedback, league requests"
+          >
+            <ChevronRight size={16} color="var(--text-3)" />
+          </Row>
+        </a>
         <Row
           icon={<Info size={15} color="var(--text-3)" />}
           label="BetSightly"

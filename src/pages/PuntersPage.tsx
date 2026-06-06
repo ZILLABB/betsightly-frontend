@@ -972,8 +972,6 @@ export default function PuntersPage() {
         <EmptyState search={search} showFavsOnly={showFavsOnly} onClear={() => { setSearch(""); setShowFavsOnly(false); setBookmakerFilter(""); setStatusFilter(""); }} />
       )}
 
-      {/* Telegram setup guide */}
-      <TelegramGuide />
 
       <style>{`
         @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }

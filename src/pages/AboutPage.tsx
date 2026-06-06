@@ -134,10 +134,19 @@ export function AboutPage() {
       </div>
 
       <div style={{
-        padding: "12px 16px", fontFamily: "var(--font-body)", fontSize: 12,
-        color: "var(--text-3)", textAlign: "center",
+        padding: "16px 20px", fontFamily: "var(--font-body)", fontSize: 13,
+        color: "var(--text-2)", textAlign: "center", display: "flex",
+        flexDirection: "column", gap: 6,
       }}>
-        Questions or feedback? <Link to="/" style={{ color: "var(--brand)" }}>Back to home</Link>
+        <p>Questions, bug reports, or league requests?</p>
+        <p>
+          Email us at <a href="mailto:support@betsightly.com" style={{
+            color: "var(--brand)", fontWeight: 600, textDecoration: "none",
+          }}>support@betsightly.com</a>
+        </p>
+        <p style={{ fontSize: 12, color: "var(--text-3)", marginTop: 6 }}>
+          <Link to="/" style={{ color: "var(--brand)" }}>Back to home</Link>
+        </p>
       </div>
     </div>
   );

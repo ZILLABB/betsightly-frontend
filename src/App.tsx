@@ -4,6 +4,7 @@ import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import { PreferencesProvider } from "./contexts/PreferencesProvider";
 import ThemeProvider from "./components/common/ThemeProvider";
+import { ErrorBoundary } from "./components/common/ErrorBoundary";
 import { Layout } from "./components/layout/Layout";
 import { Spinner } from "./components/ui/Spinner";
 import { HomePage } from "./pages/HomePage";
@@ -27,6 +28,7 @@ function Fallback() {
 
 export default function App() {
   return (
+    <ErrorBoundary>
     <PreferencesProvider>
       <ThemeProvider>
     <BrowserRouter>
@@ -52,5 +54,6 @@ export default function App() {
     </BrowserRouter>
     </ThemeProvider>
     </PreferencesProvider>
+    </ErrorBoundary>
   );
 }
