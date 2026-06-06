@@ -3,6 +3,7 @@ import { TrendingUp, Zap, Shield, Target, RefreshCw, Trophy, ChevronRight, Arrow
 import { Link } from "react-router-dom";
 import { usePredictions } from "../hooks/usePredictions";
 import { getWCPredictions, type WCPrediction } from "../services/worldcupService";
+import { getTeamFlag } from "../data/wcFlags";
 import { CategoryTabs } from "../components/predictions/CategoryTabs";
 import { PredictionCard } from "../components/predictions/PredictionCard";
 import { EmptyState } from "../components/predictions/EmptyState";
@@ -117,11 +118,11 @@ function WorldCupBanner() {
               <Link to="/worldcup" key={p.match_id} style={{
                 padding: "12px 14px", borderRadius: 10, textDecoration: "none",
                 background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)",
-                transition: "background 150ms ease",
+                transition: "background 150ms ease", display: "flex", flexDirection: "column", gap: 8,
               }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <span style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "rgba(255,255,255,0.4)" }}>
-                    {new Date(p.commence_time).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+                    {new Date(p.commence_time).toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" })}
                   </span>
                   <span style={{
                     fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700,
@@ -130,9 +131,32 @@ function WorldCupBanner() {
                     {Math.round(p.confidence * 100)}%
                   </span>
                 </div>
-                <p style={{ fontFamily: "var(--font-body)", fontSize: 12, fontWeight: 600, color: "#fff", marginBottom: 4 }}>
-                  {p.home_team} vs {p.away_team}
-                </p>
+                {/* Teams stacked with flags */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <img
+                      src={getTeamFlag(p.home_team, p.home_team_logo, 40)}
+                      alt=""
+                      style={{ width: 18, height: 13, objectFit: "cover", borderRadius: 2, flexShrink: 0 }}
+                      onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
+                    />
+                    <span style={{ fontFamily: "var(--font-body)", fontSize: 12, fontWeight: 600, color: "#fff", lineHeight: 1.3 }}>
+                      {p.home_team}
+                    </span>
+                  </div>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "rgba(255,255,255,0.3)", paddingLeft: 6 }}>vs</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <img
+                      src={getTeamFlag(p.away_team, p.away_team_logo, 40)}
+                      alt=""
+                      style={{ width: 18, height: 13, objectFit: "cover", borderRadius: 2, flexShrink: 0 }}
+                      onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
+                    />
+                    <span style={{ fontFamily: "var(--font-body)", fontSize: 12, fontWeight: 600, color: "#fff", lineHeight: 1.3 }}>
+                      {p.away_team}
+                    </span>
+                  </div>
+                </div>
                 <p style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#fbbf24", fontWeight: 600 }}>
                   {p.prediction}
                 </p>

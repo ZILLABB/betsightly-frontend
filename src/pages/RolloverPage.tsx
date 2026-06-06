@@ -3,6 +3,7 @@ import { usePredictions } from "../hooks/usePredictions";
 import { PredictionCardSkeleton } from "../components/ui/Skeleton";
 import { CATEGORIES } from "../types";
 import { Repeat2, CheckCircle, XCircle, Clock, Circle, TrendingUp, Calendar, List, Zap } from "lucide-react";
+import { getTeamFlag } from "../data/wcFlags";
 
 const STATUS_CONFIG: Record<string, { icon: React.ReactNode; color: string; bg: string; label: string }> = {
   won: { icon: <CheckCircle size={14} />, color: "var(--green)", bg: "rgba(34,197,94,0.10)", label: "Won" },
@@ -11,9 +12,17 @@ const STATUS_CONFIG: Record<string, { icon: React.ReactNode; color: string; bg: 
   void: { icon: <Circle size={14} />, color: "var(--text-3)", bg: "var(--surface-2)", label: "Void" },
 };
 
+const MARKET_COLORS: Record<string, { c: string; l: string }> = {
+  match_result: { c: "var(--blue)", l: "Result" },
+  goals: { c: "var(--green)", l: "Goals" },
+  btts: { c: "var(--purple)", l: "BTTS" },
+  double_chance: { c: "var(--accent)", l: "DC" },
+};
+
 function fmtDate(iso: string) {
-  const d = new Date(iso + "T00:00:00Z");
-  return d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+  // Force UTC so we don't drift into the next/prev day in local time
+  const safe = iso.length === 10 ? iso + "T12:00:00Z" : iso;
+  return new Date(safe).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" });
 }
 
 export function RolloverPage() {
@@ -24,16 +33,19 @@ export function RolloverPage() {
   const chain = rollover?.chain ?? [];
   const targetDays = rollover?.target_days ?? 10;
 
-  // Calculate progress
+  // Stats
   const wonDays = chain.filter(d => d.status === "won").length;
   const lostDays = chain.filter(d => d.status === "lost").length;
   const completedDays = wonDays + lostDays;
   const pendingDays = chain.length - completedDays;
   const isAlive = lostDays === 0;
 
-  // Find today's pick (first pending)
+  // Find today's day slot (first pending day whose date is >= today)
   const today = new Date().toISOString().slice(0, 10);
-  const todaysPick = chain.find(d => d.date >= today && d.status === "pending");
+  const todaysDay = chain.find(d => d.date >= today && d.status === "pending");
+
+  // Cumulative odds
+  const cumOdds = rollover?.cumulative_odds ?? rollover?.total_odds ?? 0;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
@@ -43,46 +55,43 @@ export function RolloverPage() {
           <Repeat2 size={22} color={catMeta.color} />
         </div>
         <div>
-          <div className="eyebrow" style={{ marginBottom: 6 }}>10-day challenge</div>
+          <div className="eyebrow" style={{ marginBottom: 6 }}>10-day safe challenge</div>
           <h1 style={{ fontSize: 30, fontWeight: 800 }}>Rollover</h1>
-          <p style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text-3)", marginTop: 4, maxWidth: 540, lineHeight: 1.6 }}>
-            One carefully-picked bet per day at 1.5–3.0 odds. Win every day for 10 days to multiply your stake by ~100x.
+          <p style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text-3)", marginTop: 4, maxWidth: 560, lineHeight: 1.6 }}>
+            Each day has 1–3 safest WC picks. All picks on a day must hit for that day to count.
+            Days without safe matches are skipped, never repeated.
           </p>
         </div>
       </div>
 
       {/* Stat cards */}
-      {rollover && rollover.selected && (
+      {chain.length > 0 && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
-          {/* Cumulative odds */}
           <div className="card" style={{ padding: "18px 20px", borderLeft: `3px solid ${catMeta.color}` }}>
             <p style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Total payout multiplier</p>
-            <p className="stat-num" style={{ fontSize: 32, color: catMeta.color, lineHeight: 1.05 }}>{(rollover.cumulative_odds ?? rollover.total_odds).toFixed(2)}x</p>
-            <p style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)", marginTop: 6 }}>If all {targetDays} days win</p>
+            <p className="stat-num" style={{ fontSize: 32, color: catMeta.color, lineHeight: 1.05 }}>{cumOdds.toFixed(2)}x</p>
+            <p style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)", marginTop: 6 }}>If all {chain.length} days hit</p>
           </div>
 
-          {/* Progress */}
           <div className="card" style={{ padding: "18px 20px" }}>
             <p style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Progress</p>
-            <p className="stat-num" style={{ fontSize: 32, color: "var(--text-1)", lineHeight: 1.05 }}>{wonDays}/{targetDays}</p>
-            <p style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)", marginTop: 6 }}>{pendingDays} pending, {lostDays} lost</p>
+            <p className="stat-num" style={{ fontSize: 32, color: "var(--text-1)", lineHeight: 1.05 }}>{wonDays}/{chain.length}</p>
+            <p style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)", marginTop: 6 }}>{pendingDays} pending · {lostDays} lost</p>
           </div>
 
-          {/* Status */}
           <div className="card" style={{ padding: "18px 20px" }}>
             <p style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Chain status</p>
             <p className="stat-num" style={{ fontSize: 22, color: isAlive ? "var(--green)" : "var(--red)", lineHeight: 1.05 }}>
-              {isAlive ? (completedDays === targetDays ? "Completed" : "Active") : "Broken"}
+              {isAlive ? (completedDays === chain.length ? "Completed" : "Active") : "Broken"}
             </p>
-            <p style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)", marginTop: 6 }}>{rollover.risk_level}</p>
+            <p style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)", marginTop: 6 }}>Safest picks only</p>
           </div>
 
-          {/* Today's pick */}
-          {todaysPick && (
+          {todaysDay && (
             <div className="card" style={{ padding: "18px 20px", borderLeft: `3px solid var(--blue)` }}>
-              <p style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--blue)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Today's pick</p>
-              <p style={{ fontFamily: "var(--font-display)", fontSize: 14, fontWeight: 700, color: "var(--text-1)" }}>{todaysPick.prediction}</p>
-              <p style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)", marginTop: 4 }}>@{todaysPick.odds} · Day {todaysPick.day_number}</p>
+              <p style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--blue)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Today's slot</p>
+              <p className="stat-num" style={{ fontSize: 22, color: "var(--text-1)", lineHeight: 1.05 }}>{todaysDay.picks.length} pick{todaysDay.picks.length !== 1 ? "s" : ""}</p>
+              <p style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)", marginTop: 6 }}>Combined {todaysDay.combined_odds}x</p>
             </div>
           )}
         </div>
@@ -94,161 +103,163 @@ export function RolloverPage() {
         </div>
       )}
 
-      {/* 10-day chain */}
+      {/* Toggle + chain */}
       {loading ? (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 10 }}>
-          {Array.from({ length: 4 }).map((_, i) => <PredictionCardSkeleton key={i} />)}
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {[1, 2, 3].map(i => <PredictionCardSkeleton key={i} />)}
         </div>
       ) : chain.length === 0 ? (
         <div className="card" style={{ padding: "40px 20px", textAlign: "center" }}>
           <p style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text-3)" }}>
-            No rollover chain available yet. The challenge will begin when matches are scheduled.
+            No rollover chain yet. The challenge begins when WC matches are scheduled.
           </p>
         </div>
       ) : (
         <div>
+          {/* Header + toggle */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, flexWrap: "wrap", gap: 12 }}>
             <h2 style={{ fontFamily: "var(--font-display)", fontSize: 18, fontWeight: 700, color: "var(--text-1)" }}>
-              {view === "today" ? "Today's pick" : `The ${targetDays}-day chain`}
+              {view === "today" ? "Today's pick" : `Full chain (${chain.length} days)`}
             </h2>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <p style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)" }}>
-                {targetDays}× wins → {(rollover?.cumulative_odds ?? rollover?.total_odds ?? 0).toFixed(0)}× payout
-              </p>
-              {/* View toggle */}
-              <div style={{ display: "flex", padding: 2, background: "var(--surface-2)", borderRadius: 8, border: "1px solid var(--border)" }}>
-                <button
-                  onClick={() => setView("today")}
-                  style={{
-                    display: "inline-flex", alignItems: "center", gap: 4,
-                    padding: "5px 12px", borderRadius: 6, border: "none", cursor: "pointer",
-                    fontFamily: "var(--font-body)", fontSize: 11, fontWeight: 600,
-                    background: view === "today" ? "var(--surface)" : "transparent",
-                    color: view === "today" ? "var(--brand)" : "var(--text-3)",
-                    boxShadow: view === "today" ? "var(--shadow-md)" : "none",
-                  }}
-                >
-                  <Zap size={11} /> Today
-                </button>
-                <button
-                  onClick={() => setView("all")}
-                  style={{
-                    display: "inline-flex", alignItems: "center", gap: 4,
-                    padding: "5px 12px", borderRadius: 6, border: "none", cursor: "pointer",
-                    fontFamily: "var(--font-body)", fontSize: 11, fontWeight: 600,
-                    background: view === "all" ? "var(--surface)" : "transparent",
-                    color: view === "all" ? "var(--brand)" : "var(--text-3)",
-                    boxShadow: view === "all" ? "var(--shadow-md)" : "none",
-                  }}
-                >
-                  <List size={11} /> Full chain
-                </button>
-              </div>
+            <div style={{ display: "flex", padding: 2, background: "var(--surface-2)", borderRadius: 8, border: "1px solid var(--border)" }}>
+              <button
+                onClick={() => setView("today")}
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 4,
+                  padding: "5px 12px", borderRadius: 6, border: "none", cursor: "pointer",
+                  fontFamily: "var(--font-body)", fontSize: 11, fontWeight: 600,
+                  background: view === "today" ? "var(--surface)" : "transparent",
+                  color: view === "today" ? "var(--brand)" : "var(--text-3)",
+                  boxShadow: view === "today" ? "var(--shadow-md)" : "none",
+                }}
+              >
+                <Zap size={11} /> Today
+              </button>
+              <button
+                onClick={() => setView("all")}
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 4,
+                  padding: "5px 12px", borderRadius: 6, border: "none", cursor: "pointer",
+                  fontFamily: "var(--font-body)", fontSize: 11, fontWeight: 600,
+                  background: view === "all" ? "var(--surface)" : "transparent",
+                  color: view === "all" ? "var(--brand)" : "var(--text-3)",
+                  boxShadow: view === "all" ? "var(--shadow-md)" : "none",
+                }}
+              >
+                <List size={11} /> Full chain
+              </button>
             </div>
           </div>
 
-          {/* Compact chain list — filtered by view */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {(view === "today"
-              ? chain.filter(d => d.date >= today && d.status === "pending").slice(0, 1)
-              : chain
-            ).map((day, idx, arr) => {
-              // Find original index for cum odds calculation
-              const origIdx = chain.findIndex(c => c.date === day.date);
+          {/* Days */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            {(view === "today" && todaysDay ? [todaysDay] : chain).map(day => {
               const status = STATUS_CONFIG[day.status] || STATUS_CONFIG.pending;
-              const todayIdx = chain.findIndex(d => d.date >= today && d.status === "pending");
-              const isToday = day.date >= today && day.status === "pending" && origIdx === todayIdx;
-
-              // Cumulative odds up to this day (using original index)
-              let cum = 1;
-              for (let i = 0; i <= origIdx; i++) cum *= chain[i].odds;
+              const isToday = todaysDay?.date === day.date;
 
               return (
                 <div
                   key={day.day_number}
                   className="card"
                   style={{
-                    padding: "14px 18px",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 14,
+                    padding: "16px 18px",
                     borderLeft: isToday ? `3px solid var(--blue)` : `3px solid ${status.color}`,
-                    opacity: day.status === "lost" ? 0.6 : 1,
+                    opacity: day.status === "lost" ? 0.55 : 1,
                   }}
                 >
-                  {/* Day number */}
-                  <div style={{
-                    width: 38, height: 38, borderRadius: 10,
-                    background: isToday ? "var(--blue-faint)" : status.bg,
-                    color: isToday ? "var(--blue)" : status.color,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    fontFamily: "var(--font-mono)", fontSize: 14, fontWeight: 800,
-                    flexShrink: 0,
-                  }}>
-                    {day.day_number}
-                  </div>
-
-                  {/* Match + prediction */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3 }}>
-                      <p style={{ fontFamily: "var(--font-display)", fontSize: 14, fontWeight: 700, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {day.match}
-                      </p>
-                      {isToday && (
-                        <span style={{
-                          fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 700, padding: "2px 6px",
-                          background: "var(--blue-faint)", color: "var(--blue)", borderRadius: 4,
-                          textTransform: "uppercase", letterSpacing: "0.08em",
-                        }}>Today</span>
-                      )}
+                  {/* Day header */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+                    <div style={{
+                      width: 38, height: 38, borderRadius: 10,
+                      background: isToday ? "var(--blue-faint)" : status.bg,
+                      color: isToday ? "var(--blue)" : status.color,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontFamily: "var(--font-mono)", fontSize: 14, fontWeight: 800,
+                      flexShrink: 0,
+                    }}>
+                      {day.day_number}
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                      {day.market && (() => {
-                        const MKT: Record<string, { c: string; l: string }> = {
-                          match_result: { c: "var(--blue)", l: "Result" },
-                          goals: { c: "var(--green)", l: "Goals" },
-                          btts: { c: "var(--purple)", l: "BTTS" },
-                          double_chance: { c: "var(--accent)", l: "DC" },
-                        };
-                        const m = MKT[day.market] || { c: "var(--text-3)", l: day.market };
-                        return (
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                        <p style={{ fontFamily: "var(--font-display)", fontSize: 15, fontWeight: 700, color: "var(--text-1)" }}>
+                          Day {day.day_number}
+                        </p>
+                        {isToday && (
                           <span style={{
-                            fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 700,
-                            padding: "1px 5px", borderRadius: 3,
-                            background: `color-mix(in srgb, ${m.c} 12%, transparent)`,
-                            color: m.c, letterSpacing: "0.08em", textTransform: "uppercase",
-                          }}>{m.l}</span>
-                        );
-                      })()}
-                      <span style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text-2)", fontWeight: 600 }}>
-                        {day.prediction}
-                      </span>
-                      <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-3)" }}>
-                        <Calendar size={10} /> {fmtDate(day.date)}
-                      </span>
+                            fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 700, padding: "2px 6px",
+                            background: "var(--blue-faint)", color: "var(--blue)", borderRadius: 4,
+                            textTransform: "uppercase", letterSpacing: "0.08em",
+                          }}>Today</span>
+                        )}
+                      </div>
+                      <p style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text-3)", marginTop: 2, display: "inline-flex", alignItems: "center", gap: 4 }}>
+                        <Calendar size={11} /> {fmtDate(day.date)} · {day.picks.length} pick{day.picks.length !== 1 ? "s" : ""}
+                      </p>
+                    </div>
+                    {/* Combined odds */}
+                    <div style={{ textAlign: "right", flexShrink: 0 }}>
+                      <p style={{ fontFamily: "var(--font-mono)", fontSize: 18, fontWeight: 800, color: catMeta.color, lineHeight: 1 }}>
+                        {day.combined_odds.toFixed(2)}x
+                      </p>
+                      <p style={{ fontFamily: "var(--font-body)", fontSize: 10, color: "var(--text-3)", marginTop: 3 }}>
+                        avg {Math.round(day.avg_confidence * 100)}% conf
+                      </p>
+                    </div>
+                    <div style={{
+                      display: "flex", alignItems: "center", gap: 4,
+                      padding: "4px 8px", borderRadius: 6,
+                      background: status.bg, color: status.color,
+                      fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700,
+                      textTransform: "uppercase", letterSpacing: "0.05em", flexShrink: 0,
+                    }}>
+                      {status.icon} {status.label}
                     </div>
                   </div>
 
-                  {/* Odds */}
-                  <div style={{ textAlign: "right", flexShrink: 0 }}>
-                    <p style={{ fontFamily: "var(--font-mono)", fontSize: 15, fontWeight: 700, color: catMeta.color }}>
-                      {day.odds.toFixed(2)}x
-                    </p>
-                    <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-3)", marginTop: 2 }}>
-                      cum {cum.toFixed(1)}x
-                    </p>
-                  </div>
-
-                  {/* Status badge */}
-                  <div style={{
-                    display: "flex", alignItems: "center", gap: 4,
-                    padding: "4px 8px", borderRadius: 6,
-                    background: status.bg, color: status.color,
-                    fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700,
-                    textTransform: "uppercase", letterSpacing: "0.05em",
-                    flexShrink: 0,
-                  }}>
-                    {status.icon} {status.label}
+                  {/* Picks */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6, paddingLeft: 50 }}>
+                    {day.picks.map((pick, pi) => {
+                      const mkt = MARKET_COLORS[pick.market] || { c: "var(--text-3)", l: pick.market };
+                      return (
+                        <div key={pi} style={{
+                          display: "flex", alignItems: "center", gap: 8,
+                          padding: "8px 10px", borderRadius: 8,
+                          background: "var(--surface-2)",
+                        }}>
+                          {/* Flags */}
+                          <div style={{ display: "flex", alignItems: "center", gap: 2, flexShrink: 0 }}>
+                            <img src={getTeamFlag(pick.home_team, pick.home_team_logo, 40)} alt="" style={{ width: 18, height: 13, objectFit: "cover", borderRadius: 2 }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                            <img src={getTeamFlag(pick.away_team, pick.away_team_logo, 40)} alt="" style={{ width: 18, height: 13, objectFit: "cover", borderRadius: 2 }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                          </div>
+                          {/* Match */}
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <p style={{ fontFamily: "var(--font-body)", fontSize: 12, fontWeight: 600, color: "var(--text-1)" }}>
+                              {pick.home_team} <span style={{ color: "var(--text-3)" }}>vs</span> {pick.away_team}
+                            </p>
+                            <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
+                              <span style={{
+                                fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 700,
+                                padding: "1px 5px", borderRadius: 3,
+                                background: `color-mix(in srgb, ${mkt.c} 12%, transparent)`,
+                                color: mkt.c, letterSpacing: "0.08em", textTransform: "uppercase",
+                              }}>{mkt.l}</span>
+                              <span style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-2)", fontWeight: 600 }}>
+                                {pick.prediction}
+                              </span>
+                            </div>
+                          </div>
+                          {/* Odds + conf */}
+                          <div style={{ textAlign: "right", flexShrink: 0 }}>
+                            <p style={{ fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 700, color: catMeta.color, lineHeight: 1 }}>
+                              {pick.odds.toFixed(2)}x
+                            </p>
+                            <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, color: pick.confidence >= 0.8 ? "var(--green)" : "var(--brand)", marginTop: 2 }}>
+                              {Math.round(pick.confidence * 100)}%
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               );
@@ -259,8 +270,9 @@ export function RolloverPage() {
           <div style={{ marginTop: 18, padding: "12px 16px", background: "var(--surface-2)", borderRadius: 10, display: "flex", alignItems: "flex-start", gap: 10 }}>
             <TrendingUp size={14} color="var(--text-3)" style={{ marginTop: 2, flexShrink: 0 }} />
             <p style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text-3)", lineHeight: 1.6 }}>
-              Each day's pick is selected from World Cup matches at 1.5–3.0 odds based on highest confidence.
-              Lose any single day and the chain breaks. The {(rollover?.cumulative_odds ?? rollover?.total_odds ?? 0).toFixed(0)}× multiplier is the payout if every day wins.
+              Each day picks the 1–3 safest WC matches (≥70% confidence). No match appears more than once across the chain.
+              Days with no safe matches are skipped, so the {chain.length}-day chain pulls from the next available WC dates.
+              Lose any single pick on any day and the chain breaks.
             </p>
           </div>
         </div>
