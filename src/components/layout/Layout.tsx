@@ -57,22 +57,41 @@ export function Layout({ children }: { children: React.ReactNode }) {
               </div>
             </div>
 
-            {/* Community */}
+            {/* About */}
             <div>
               <h4 style={{ fontFamily:"var(--font-body)", fontSize:11, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.1em", color:"var(--text-2)", marginBottom:12 }}>
-                Community
+                About
               </h4>
               <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                <Link to="/about" style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text-3)", textDecoration:"none" }}>How it works</Link>
                 <Link to="/punters" style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text-3)", textDecoration:"none" }}>Expert Punters</Link>
                 <Link to="/settings" style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text-3)", textDecoration:"none" }}>Settings</Link>
               </div>
             </div>
           </div>
 
+          {/* Responsible gambling banner */}
+          <div style={{
+            padding: "14px 18px", borderRadius: 10,
+            background: "rgba(248,113,113,0.04)",
+            border: "1px solid rgba(248,113,113,0.15)",
+            display: "flex", alignItems: "flex-start", gap: 10,
+          }}>
+            <span style={{ fontSize: 18, lineHeight: 1, color: "var(--red)" }}>⚠</span>
+            <p style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text-2)", lineHeight: 1.6 }}>
+              <strong>18+ only.</strong> Sports betting carries financial risk — only bet what you can afford to lose.
+              Predictions are informational and probabilistic. No result is guaranteed.
+              If gambling is a problem for you or someone you know, please contact a national helpline.
+            </p>
+          </div>
+
           {/* Bottom row */}
           <div style={{ borderTop:"1px solid var(--border)", paddingTop:20, display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:12 }}>
-            <span style={{ fontFamily:"var(--font-body)", fontSize:12, color:"var(--text-3)" }}>&copy; {new Date().getFullYear()} BetSightly. All rights reserved.</span>
-            <span style={{ fontFamily:"var(--font-body)", fontSize:12, color:"var(--text-3)" }}>Bet Responsibly · 18+</span>
+            <span style={{ fontFamily:"var(--font-body)", fontSize:12, color:"var(--text-3)" }}>&copy; {new Date().getFullYear()} BetSightly · All rights reserved</span>
+            <span style={{ fontFamily:"var(--font-body)", fontSize:12, color:"var(--text-3)" }}>
+              <Link to="/about" style={{ color:"var(--text-3)", textDecoration:"none", marginRight:14 }}>About</Link>
+              Bet Responsibly · 18+
+            </span>
           </div>
         </div>
       </footer>

@@ -1,6 +1,7 @@
 import React from "react";
 import type { GamePrediction } from "../../types";
 import { getTeamFlag, isWcNation, teamInitials, teamColor } from "../../data/wcFlags";
+import { ShareButton } from "../common/ShareButton";
 
 function TeamBadge({ team, logo }: { team: string; logo?: string | null }) {
   if (isWcNation(team)) {
@@ -189,6 +190,10 @@ export function PredictionCard({ game, color, faint, index = 0 }: Props) {
             {game.models_agreed} models agree
           </span>
         )}
+        <ShareButton
+          compact
+          text={`${game.home_team} vs ${game.away_team} — ${displayPrediction} @${displayOdds.toFixed(2)} (${pct}% confidence) · BetSightly`}
+        />
       </div>
     </div>
   );

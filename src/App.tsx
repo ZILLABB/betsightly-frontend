@@ -15,6 +15,7 @@ import { NotFoundPage } from "./pages/NotFoundPage";
 import PuntersPage from "./pages/PuntersPage";
 import PunterDetailPage from "./pages/PunterDetailPage";
 import WorldCupPage from "./pages/WorldCupPage";
+import { AboutPage } from "./pages/AboutPage";
 
 function Fallback() {
   return (
@@ -40,6 +41,7 @@ export default function App() {
             <Route path="/worldcup" element={<WorldCupPage />} />
             <Route path="/punters" element={<PuntersPage />} />
             <Route path="/punters/:id" element={<PunterDetailPage />} />
+            <Route path="/about" element={<AboutPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
