@@ -1,158 +1,104 @@
-import { Component } from 'react';
-import type { ErrorInfo, ReactNode } from 'react';
-import { AlertTriangle, RefreshCw } from 'lucide-react';
-import { Button } from './Button';
-import { captureException } from '../../utils/errorTracking';
+import { Component } from "react";
+import type { ErrorInfo, ReactNode } from "react";
+import { AlertTriangle, RefreshCw, Home } from "lucide-react";
 
 interface ErrorBoundaryProps {
   children: ReactNode;
   fallback?: ReactNode | ((error: Error, resetError: () => void) => ReactNode);
-  onError?: (error: Error, errorInfo: ErrorInfo) => void;
 }
 
 interface ErrorBoundaryState {
   hasError: boolean;
   error: Error | null;
-  errorInfo: ErrorInfo | null;
 }
 
 /**
- * ErrorBoundary component to catch JavaScript errors anywhere in the child component tree,
- * log those errors, and display a fallback UI instead of the component tree that crashed.
+ * Root-level error boundary. Catches any uncaught render error in the
+ * React tree and shows a styled fallback instead of a blank white page.
  */
 class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
     super(props);
-    this.state = {
-      hasError: false,
-      error: null,
-      errorInfo: null
-    };
+    this.state = { hasError: false, error: null };
   }
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
-    // Update state so the next render will show the fallback UI
-    return {
-      hasError: true,
-      error,
-      errorInfo: null
-    };
+    return { hasError: true, error };
   }
 
-  componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
-    // Log the error to our error tracking service
-    captureException(error, {
-      componentStack: errorInfo.componentStack,
-      component: this.constructor.name
-    });
-
-    // Show error notification to user
-    console.error('An error occurred in the application:', error);
-
-    // Call the onError callback if provided
-    if (this.props.onError) {
-      this.props.onError(error, errorInfo);
-    }
-
-    // Update state with error details
-    this.setState({
-      error,
-      errorInfo
-    });
+  componentDidCatch(error: Error, info: ErrorInfo): void {
+    console.error("Uncaught render error:", error, info?.componentStack);
   }
 
-  resetErrorBoundary = (): void => {
-    this.setState({
-      hasError: false,
-      error: null,
-      errorInfo: null
-    });
-  };
+  reset = (): void => this.setState({ hasError: false, error: null });
 
   render(): ReactNode {
-    if (this.state.hasError) {
-      // If a custom fallback is provided, use it
-      if (this.props.fallback) {
-        if (typeof this.props.fallback === 'function' && this.state.error) {
-          return (this.props.fallback as (error: Error, resetError: () => void) => ReactNode)(this.state.error, this.resetErrorBoundary);
-        }
-        return this.props.fallback as ReactNode;
+    if (!this.state.hasError) return this.props.children;
+
+    if (this.props.fallback) {
+      if (typeof this.props.fallback === "function" && this.state.error) {
+        return (this.props.fallback as (e: Error, r: () => void) => ReactNode)(this.state.error, this.reset);
       }
-
-      // Default fallback UI
-      return (
-        <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-center my-4">
-          <AlertTriangle size={32} className="mx-auto mb-2 text-red-500" />
-          <h2 className="text-lg font-semibold mb-2 text-red-500">Something went wrong</h2>
-          <p className="text-sm text-[#A1A1AA] mb-4">
-            {this.state.error?.message || 'An unexpected error occurred'}
-          </p>
-          {this.state.error && (
-            <div className="text-xs text-[#A1A1AA] mb-4 p-2 bg-[#1A1A27] rounded-md max-w-md mx-auto overflow-auto text-left">
-              <pre>{this.state.error.message}</pre>
-            </div>
-          )}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={this.resetErrorBoundary}
-            className="mx-auto"
-          >
-            <RefreshCw size={14} className="mr-1" />
-            Try Again
-          </Button>
-        </div>
-      );
+      return this.props.fallback as ReactNode;
     }
 
-    // When there's no error, render children normally
-    return this.props.children;
-  }
-}
+    const msg = this.state.error?.message || "An unexpected error occurred";
 
-/**
- * TrackedErrorBoundary component that integrates with our error tracking system
- */
-export class TrackedErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  constructor(props: ErrorBoundaryProps) {
-    super(props);
-    this.state = {
-      hasError: false,
-      error: null,
-      errorInfo: null
-    };
-  }
-
-  handleError = (error: Error, errorInfo: ErrorInfo): void => {
-    // Send the error to our tracking system
-    captureException(error, {
-      componentStack: errorInfo.componentStack,
-      component: 'TrackedErrorBoundary'
-    });
-
-    // Call the onError callback if provided
-    if (this.props.onError) {
-      this.props.onError(error, errorInfo);
-    }
-  };
-
-  render(): ReactNode {
     return (
-      <ErrorBoundary
-        onError={this.handleError}
-        fallback={this.props.fallback}
-      >
-        {this.props.children}
-      </ErrorBoundary>
+      <div style={{
+        minHeight: "70vh",
+        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+        padding: "40px 24px", textAlign: "center", gap: 16,
+      }}>
+        <div style={{
+          width: 56, height: 56, borderRadius: 14,
+          background: "rgba(248,113,113,0.10)", border: "1px solid rgba(248,113,113,0.20)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          <AlertTriangle size={24} color="var(--red)" />
+        </div>
+        <h1 style={{ fontFamily: "var(--font-display)", fontSize: 22, fontWeight: 800, color: "var(--text-1)" }}>
+          Something went wrong
+        </h1>
+        <p style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text-3)", maxWidth: 380, lineHeight: 1.6 }}>
+          We hit an unexpected error while rendering this page.
+          Try refreshing — if it persists, head back home.
+        </p>
+        <p style={{
+          fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-3)",
+          maxWidth: 480, wordBreak: "break-word",
+          padding: "8px 12px", borderRadius: 6,
+          background: "var(--surface-2)", border: "1px solid var(--border)",
+        }}>
+          {msg}
+        </p>
+        <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
+          <button
+            onClick={() => window.location.reload()}
+            style={{
+              display: "inline-flex", alignItems: "center", gap: 6,
+              padding: "10px 18px", borderRadius: 8, cursor: "pointer",
+              fontFamily: "var(--font-body)", fontSize: 13, fontWeight: 600,
+              background: "var(--brand)", color: "#fff", border: "none",
+            }}>
+            <RefreshCw size={14} /> Refresh
+          </button>
+          <a
+            href="/"
+            style={{
+              display: "inline-flex", alignItems: "center", gap: 6,
+              padding: "10px 18px", borderRadius: 8,
+              fontFamily: "var(--font-body)", fontSize: 13, fontWeight: 600,
+              background: "var(--surface-2)", color: "var(--text-1)", textDecoration: "none",
+              border: "1px solid var(--border)",
+            }}>
+            <Home size={14} /> Back to home
+          </a>
+        </div>
+      </div>
     );
   }
 }
 
+export { ErrorBoundary };
 export default ErrorBoundary;
-
-
-
-
-
-
-
