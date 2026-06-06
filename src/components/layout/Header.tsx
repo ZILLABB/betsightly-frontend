@@ -34,8 +34,8 @@ export function Header() {
     <>
       <header style={{
         position:"sticky", top:0, zIndex:50,
-        borderBottom: scrolled ? "1px solid rgba(255,255,255,0.06)" : "1px solid transparent",
-        background: scrolled ? "rgba(7,7,26,0.92)" : "rgba(7,7,26,0.6)",
+        borderBottom: scrolled ? "1px solid var(--border)" : "1px solid transparent",
+        background: scrolled ? "var(--nav-bg-scrolled)" : "var(--nav-bg-top)",
         backdropFilter:"blur(20px)",
         transition:"all 250ms ease",
       }}>
@@ -46,26 +46,33 @@ export function Header() {
             <img
               src="/logo.png"
               alt="BetSightly"
-              style={{ height:44, width:"auto", objectFit:"contain", mixBlendMode:"screen" }}
+              className="brand-logo"
+              style={{ height:44, width:"auto", objectFit:"contain" }}
             />
           </Link>
 
           {/* Desktop Nav */}
           <nav style={{ display:"flex", alignItems:"center", gap:2, flex:1, justifyContent:"center" }} className="hidden-mobile">
-            {NAV.map(({ path, label }) => (
-              <Link key={path} to={path} style={{
-                padding:"7px 14px", borderRadius:8,
-                fontFamily:"var(--font-body)", fontSize:14, fontWeight:500,
-                textDecoration:"none", transition:"all 180ms ease",
-                color: isActive(path) ? "var(--brand)" : "var(--text-2)",
-                background: isActive(path) ? "rgba(245,158,11,0.08)" : "transparent",
-              }}
-              onMouseEnter={e => { if(!isActive(path)) { (e.currentTarget as HTMLElement).style.color="var(--text-1)"; (e.currentTarget as HTMLElement).style.background="rgba(255,255,255,0.05)"; }}}
-              onMouseLeave={e => { if(!isActive(path)) { (e.currentTarget as HTMLElement).style.color="var(--text-2)"; (e.currentTarget as HTMLElement).style.background="transparent"; }}}
-              >
-                {label}
-              </Link>
-            ))}
+            {NAV.map(({ path, label }) => {
+              const active = isActive(path);
+              const isWC = path === "/worldcup";
+              const activeColor = isWC ? "#fbbf24" : "var(--brand)";
+              const activeBg = isWC ? "rgba(251,191,36,0.10)" : "rgba(59,130,246,0.10)";
+              return (
+                <Link key={path} to={path} style={{
+                  padding:"7px 14px", borderRadius:8,
+                  fontFamily:"var(--font-body)", fontSize:14, fontWeight:500,
+                  textDecoration:"none", transition:"all 180ms ease",
+                  color: active ? activeColor : "var(--text-2)",
+                  background: active ? activeBg : "transparent",
+                }}
+                onMouseEnter={e => { if(!active) { (e.currentTarget as HTMLElement).style.color="var(--text-1)"; (e.currentTarget as HTMLElement).style.background="var(--nav-hover)"; }}}
+                onMouseLeave={e => { if(!active) { (e.currentTarget as HTMLElement).style.color="var(--text-2)"; (e.currentTarget as HTMLElement).style.background="transparent"; }}}
+                >
+                  {label}
+                </Link>
+              );
+            })}
           </nav>
 
           {/* Mobile toggle */}
@@ -83,27 +90,33 @@ export function Header() {
       {/* Mobile overlay */}
       <div style={{
         position:"fixed", inset:0, zIndex:49,
-        background:"rgba(7,7,26,0.98)", backdropFilter:"blur(20px)",
+        background:"var(--nav-overlay)", backdropFilter:"blur(20px)",
         display:"flex", flexDirection:"column", paddingTop:80, paddingLeft:24, paddingRight:24,
         transition:"opacity 250ms ease, transform 250ms ease",
         opacity: open ? 1 : 0,
         transform: open ? "translateY(0)" : "translateY(-8px)",
         pointerEvents: open ? "auto" : "none",
       }}>
-        {NAV.map(({ path, label, icon: Icon }) => (
-          <Link key={path} to={path} onClick={() => setOpen(false)} style={{
-            display:"flex", alignItems:"center", gap:14,
-            padding:"14px 16px", borderRadius:12, textDecoration:"none",
-            fontFamily:"var(--font-body)", fontSize:17, fontWeight:500,
-            color: isActive(path) ? "var(--brand)" : "var(--text-2)",
-            background: isActive(path) ? "rgba(245,158,11,0.08)" : "transparent",
-            borderLeft: isActive(path) ? "2px solid var(--brand)" : "2px solid transparent",
-            marginBottom:4,
-          }}>
-            <Icon size={20} />
-            {label}
-          </Link>
-        ))}
+        {NAV.map(({ path, label, icon: Icon }) => {
+          const active = isActive(path);
+          const isWC = path === "/worldcup";
+          const c = isWC ? "#fbbf24" : "var(--brand)";
+          const bg = isWC ? "rgba(251,191,36,0.10)" : "rgba(59,130,246,0.10)";
+          return (
+            <Link key={path} to={path} onClick={() => setOpen(false)} style={{
+              display:"flex", alignItems:"center", gap:14,
+              padding:"14px 16px", borderRadius:12, textDecoration:"none",
+              fontFamily:"var(--font-body)", fontSize:17, fontWeight:500,
+              color: active ? c : "var(--text-2)",
+              background: active ? bg : "transparent",
+              borderLeft: active ? `2px solid ${c}` : "2px solid transparent",
+              marginBottom:4,
+            }}>
+              <Icon size={20} />
+              {label}
+            </Link>
+          );
+        })}
       </div>
 
       <style>{`

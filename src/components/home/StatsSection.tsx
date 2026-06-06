@@ -18,9 +18,9 @@ const STATS = [
     value: "78%",
     label: "Success Rate",
     desc: "For 2 odds predictions",
-    accent: "#f59e0b",
-    accentBg: "rgba(245,158,11,0.1)",
-    accentBorder: "rgba(245,158,11,0.25)",
+    accent: "#3b82f6",
+    accentBg: "rgba(59,130,246,0.1)",
+    accentBorder: "rgba(59,130,246,0.25)",
   },
   {
     icon: Users,

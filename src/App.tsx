@@ -1,5 +1,7 @@
 import React, { Suspense } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 import { PreferencesProvider } from "./contexts/PreferencesProvider";
 import ThemeProvider from "./components/common/ThemeProvider";
 import { Layout } from "./components/layout/Layout";
@@ -43,6 +45,8 @@ export default function App() {
           </Routes>
         </Suspense>
       </Layout>
+      <Analytics />
+      <SpeedInsights />
     </BrowserRouter>
     </ThemeProvider>
     </PreferencesProvider>

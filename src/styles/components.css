@@ -43,7 +43,7 @@
 
   .card-premium:hover {
     box-shadow: var(--shadow-brand-hover);
-    border-color: rgba(245,158,11,0.5);
+    border-color: rgba(59,130,246,0.5);
   }
 
   .card-header {
@@ -79,12 +79,12 @@
     @apply btn-base;
     background: linear-gradient(135deg, var(--brand-500), var(--brand-600));
     color: var(--text-inverse);
-    box-shadow: 0 2px 8px rgba(245,158,11,0.3);
+    box-shadow: 0 2px 8px rgba(59,130,246,0.3);
   }
 
   .btn-primary:hover:not(:disabled) {
     background: linear-gradient(135deg, var(--brand-400), var(--brand-500));
-    box-shadow: 0 4px 16px rgba(245,158,11,0.4);
+    box-shadow: 0 4px 16px rgba(59,130,246,0.4);
     transform: translateY(-1px);
   }
 
@@ -115,12 +115,12 @@
     @apply btn-base;
     background: transparent;
     color: var(--brand-400);
-    border: 1px solid rgba(245,158,11,0.3);
+    border: 1px solid rgba(59,130,246,0.3);
   }
 
   .btn-outline:hover:not(:disabled) {
-    background: rgba(245,158,11,0.08);
-    border-color: rgba(245,158,11,0.5);
+    background: rgba(59,130,246,0.08);
+    border-color: rgba(59,130,246,0.5);
   }
 
   /* ── Form inputs ───────────────────────────────────── */
@@ -186,7 +186,7 @@
   }
 
   .nav-item:hover    { color: var(--text-primary); background: rgba(255,255,255,0.05); }
-  .nav-item-active   { color: var(--brand-400); background: rgba(245,158,11,0.1); }
+  .nav-item-active   { color: var(--brand-400); background: rgba(59,130,246,0.1); }
 
   /* ── Badges ────────────────────────────────────────── */
 

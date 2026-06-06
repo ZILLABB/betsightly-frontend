@@ -161,7 +161,7 @@ function PunterCard({
       >
         <div style={{
           width: 36, height: 36, borderRadius: 10,
-          background: "rgba(245,158,11,0.10)", border: "1px solid rgba(245,158,11,0.18)",
+          background: "rgba(59,130,246,0.10)", border: "1px solid rgba(59,130,246,0.18)",
           display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
         }}>
           <User size={16} color="var(--brand)" />
@@ -208,7 +208,7 @@ function PunterCard({
         <div
           style={{
             width: 48, height: 48, borderRadius: 12,
-            background: "rgba(245,158,11,0.10)", border: "1px solid rgba(245,158,11,0.18)",
+            background: "rgba(59,130,246,0.10)", border: "1px solid rgba(59,130,246,0.18)",
             display: "flex", alignItems: "center", justifyContent: "center",
             flexShrink: 0, cursor: "pointer",
           }}
@@ -261,7 +261,7 @@ function PunterCard({
           <span style={{
             display: "inline-flex", alignItems: "center", gap: 4,
             fontFamily: "var(--font-body)", fontSize: 11, color: "var(--brand)",
-            background: "rgba(245,158,11,0.08)", padding: "3px 10px", borderRadius: 6,
+            background: "rgba(59,130,246,0.08)", padding: "3px 10px", borderRadius: 6,
           }}>
             <TrendingUp size={11} /> {punter.specialty}
           </span>
@@ -303,7 +303,7 @@ function PunterCard({
                   display: "flex", alignItems: "center", gap: 4,
                   padding: "4px 10px", borderRadius: 6, fontSize: 10, fontWeight: 700,
                   fontFamily: "var(--font-mono)", cursor: "pointer",
-                  background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.15)",
+                  background: "rgba(59,130,246,0.08)", border: "1px solid rgba(59,130,246,0.15)",
                   color: "var(--brand)",
                 }}
               >
@@ -426,7 +426,7 @@ function LeaderboardTable({ punters }: { punters: Punter[] }) {
             padding: "10px 12px", gap: 8, alignItems: "center",
             borderBottom: "1px solid var(--border)",
             cursor: "pointer",
-            background: i < 3 ? "rgba(245,158,11,0.03)" : "transparent",
+            background: i < 3 ? "rgba(59,130,246,0.03)" : "transparent",
           }}
           onClick={() => navigate(`/punters/${p.id}`)}
         >
@@ -735,7 +735,7 @@ export default function PuntersPage() {
               style={{
                 display: "flex", alignItems: "center", justifyContent: "center",
                 width: 36, height: 36, border: "none", cursor: "pointer",
-                background: viewMode === mode ? "rgba(245,158,11,0.12)" : "var(--surface-2)",
+                background: viewMode === mode ? "rgba(59,130,246,0.12)" : "var(--surface-2)",
                 color: viewMode === mode ? "var(--brand)" : "var(--text-3)",
               }}
               title={mode}
@@ -751,7 +751,7 @@ export default function PuntersPage() {
             padding: "9px 14px", borderRadius: 8, cursor: "pointer",
             fontFamily: "var(--font-body)", fontSize: 13, fontWeight: 600,
             border: hasActiveFilters ? "1px solid var(--brand)" : "1px solid var(--border)",
-            background: hasActiveFilters ? "rgba(245,158,11,0.10)" : "var(--surface-2)",
+            background: hasActiveFilters ? "rgba(59,130,246,0.10)" : "var(--surface-2)",
             color: hasActiveFilters ? "var(--brand)" : "var(--text-2)",
           }}
         >
@@ -773,7 +773,7 @@ export default function PuntersPage() {
             padding: "9px 14px", borderRadius: 8, cursor: "pointer",
             fontFamily: "var(--font-body)", fontSize: 13, fontWeight: 600,
             border: showFavsOnly ? "1px solid var(--brand)" : "1px solid var(--border)",
-            background: showFavsOnly ? "rgba(245,158,11,0.10)" : "var(--surface-2)",
+            background: showFavsOnly ? "rgba(59,130,246,0.10)" : "var(--surface-2)",
             color: showFavsOnly ? "var(--brand)" : "var(--text-2)",
           }}
         >
@@ -944,7 +944,7 @@ export default function PuntersPage() {
                         alignItems: "center", justifyContent: "center",
                         fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 700,
                         border: page === num ? "1px solid var(--brand)" : "1px solid var(--border)",
-                        background: page === num ? "rgba(245,158,11,0.12)" : "transparent",
+                        background: page === num ? "rgba(59,130,246,0.12)" : "transparent",
                         color: page === num ? "var(--brand)" : "var(--text-2)",
                         cursor: "pointer",
                       }}
@@ -993,7 +993,7 @@ function EmptyState({ search, showFavsOnly, onClear }: { search: string; showFav
     }}>
       <div style={{
         width: 72, height: 72, borderRadius: 18,
-        background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.15)",
+        background: "rgba(59,130,246,0.08)", border: "1px solid rgba(59,130,246,0.15)",
         display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 20,
       }}>
         <Users size={32} color="var(--brand)" />

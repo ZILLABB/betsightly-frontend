@@ -1,4 +1,4 @@
-﻿import React from "react";
+import React from "react";
 
 interface BadgeProps {
   children: React.ReactNode;
@@ -8,7 +8,7 @@ interface BadgeProps {
   style?: React.CSSProperties;
 }
 
-export function Badge({ children, color="var(--brand)", faint="rgba(245,158,11,0.12)", size="sm", style }: BadgeProps) {
+export function Badge({ children, color="var(--brand)", faint="rgba(59,130,246,0.12)", size="sm", style }: BadgeProps) {
   return (
     <span style={{
       display:"inline-flex", alignItems:"center", gap:5,

@@ -1,4 +1,4 @@
-﻿import React from "react";
+import React from "react";
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "primary" | "secondary" | "ghost" | "outline";
@@ -22,10 +22,10 @@ export function Button({ variant="primary", size="md", loading, children, disabl
     lg: { fontSize:16, padding:"13px 28px", borderRadius:12 },
   };
   const variants: Record<string, React.CSSProperties> = {
-    primary:   { background:"linear-gradient(135deg,#f59e0b,#d97706)", color:"#000", boxShadow:"0 2px 12px rgba(245,158,11,0.35)" },
+    primary:   { background:"linear-gradient(135deg,#3b82f6,#2563eb)", color:"#000", boxShadow:"0 2px 12px rgba(59,130,246,0.35)" },
     secondary: { background:"rgba(255,255,255,0.07)", color:"var(--text-1)", border:"1px solid var(--border)" },
     ghost:     { background:"transparent", color:"var(--text-2)" },
-    outline:   { background:"transparent", color:"var(--brand)", border:"1px solid rgba(245,158,11,0.35)" },
+    outline:   { background:"transparent", color:"var(--brand)", border:"1px solid rgba(59,130,246,0.35)" },
   };
   return (
     <button style={{ ...base, ...sizes[size], ...variants[variant], ...style }} disabled={disabled || loading} {...props}>

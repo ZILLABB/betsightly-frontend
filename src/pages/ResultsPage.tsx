@@ -39,7 +39,7 @@ function ResultBadge({ result }: { result: string }) {
   const cfg: Record<string, { color: string; bg: string; icon: React.ReactNode }> = {
     won: { color: "#22c55e", bg: "rgba(34,197,94,0.12)", icon: <CheckCircle2 size={12} /> },
     lost: { color: "#f87171", bg: "rgba(248,113,113,0.12)", icon: <XCircle size={12} /> },
-    pending: { color: "#f59e0b", bg: "rgba(245,158,11,0.12)", icon: <Clock size={12} /> },
+    pending: { color: "#3b82f6", bg: "rgba(59,130,246,0.12)", icon: <Clock size={12} /> },
     void: { color: "#94a3b8", bg: "rgba(148,163,184,0.12)", icon: <Minus size={12} /> },
   };
   const c = cfg[result] ?? cfg.pending;
@@ -116,7 +116,7 @@ function DayResults({ date }: { date: string }) {
                     <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "#22c55e" }}>{cat.wins}W</span>
                     <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "#f87171" }}>{cat.losses}L</span>
                     {(cat.pending ?? 0) > 0 && (
-                      <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "#f59e0b" }}>{cat.pending}P</span>
+                      <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "#3b82f6" }}>{cat.pending}P</span>
                     )}
                     <ResultBadge result={cat.accumulator_result ?? "pending"} />
                   </div>
@@ -188,7 +188,7 @@ export function ResultsPage() {
             <button key={d} onClick={() => setDays(d)} style={{
               padding: "7px 16px", borderRadius: 8,
               border: `1px solid ${days === d ? "var(--brand)" : "var(--border)"}`,
-              background: days === d ? "rgba(245,158,11,0.10)" : "transparent",
+              background: days === d ? "rgba(59,130,246,0.10)" : "transparent",
               color: days === d ? "var(--brand)" : "var(--text-3)",
               fontFamily: "var(--font-body)", fontSize: 13, fontWeight: 600, cursor: "pointer", transition: "all 180ms ease",
             }}>{d}d</button>
@@ -276,7 +276,7 @@ export function ResultsPage() {
                 {isToday && (
                   <span style={{
                     padding: "2px 8px", borderRadius: 4, fontSize: 10, fontWeight: 700,
-                    fontFamily: "var(--font-body)", background: "rgba(245,158,11,0.15)", color: "var(--brand)",
+                    fontFamily: "var(--font-body)", background: "rgba(59,130,246,0.15)", color: "var(--brand)",
                   }}>TODAY</span>
                 )}
               </div>

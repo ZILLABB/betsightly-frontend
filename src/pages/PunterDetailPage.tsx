@@ -148,7 +148,7 @@ export default function PunterDetailPage() {
         <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 20 }}>
           <div style={{
             width: 64, height: 64, borderRadius: 16,
-            background: "rgba(245,158,11,0.10)", border: "1px solid rgba(245,158,11,0.18)",
+            background: "rgba(59,130,246,0.10)", border: "1px solid rgba(59,130,246,0.18)",
             display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
           }}>
             <User size={28} color="var(--brand)" />
@@ -186,7 +186,7 @@ export default function PunterDetailPage() {
                 <span style={{
                   display: "inline-flex", alignItems: "center", gap: 4,
                   fontFamily: "var(--font-body)", fontSize: 11, color: "var(--brand)",
-                  background: "rgba(245,158,11,0.08)", padding: "3px 10px", borderRadius: 6,
+                  background: "rgba(59,130,246,0.08)", padding: "3px 10px", borderRadius: 6,
                 }}>
                   <TrendingUp size={11} /> {punter.specialty}
                 </span>
@@ -273,7 +273,7 @@ export default function PunterDetailPage() {
                 display: "flex", alignItems: "center", gap: 4,
                 padding: "6px 12px", borderRadius: 6, fontSize: 11, fontWeight: 700,
                 fontFamily: "var(--font-mono)", cursor: "pointer",
-                background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.15)",
+                background: "rgba(59,130,246,0.08)", border: "1px solid rgba(59,130,246,0.15)",
                 color: "var(--brand)",
               }}>
                 <Copy size={11} /> Copy All Pending ({pendingCount})

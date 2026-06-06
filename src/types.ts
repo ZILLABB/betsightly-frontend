@@ -123,12 +123,27 @@ export interface GamePrediction {
   league_logo?: string;
 }
 
+export interface RolloverChainDay {
+  date: string;
+  day_number: number;
+  match: string;
+  prediction: string;
+  odds: number;
+  confidence: number;
+  status: 'pending' | 'won' | 'lost' | 'void';
+}
+
 export interface CategoryData {
   selected: boolean;
   games: GamePrediction[];
   total_odds: number;
   risk_level: string;
   reason?: string;
+  // Rollover-specific fields
+  chain?: RolloverChainDay[];
+  chain_length?: number;
+  target_days?: number;
+  cumulative_odds?: number;
 }
 
 export interface AccumulatorResponse {
