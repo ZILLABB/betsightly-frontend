@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Shield, TrendingUp, Database, Bot, Sparkles, AlertTriangle, Trophy } from "lucide-react";
+import { JoinTelegram } from "../components/common/JoinTelegram";
 
 function Section({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) {
   return (
@@ -83,6 +84,9 @@ export function AboutPage() {
 
       <Section icon={<Bot size={18} />} title="The Telegram bot">
         <p>Our Telegram bot posts each day's safest rollover pick automatically. Punters in the group can submit their own codes, which appear on the Punters page with copy-to-clipboard support. Reply "Won" or "Lost" to any code message to update its status.</p>
+        <div style={{ marginTop: 14 }}>
+          <JoinTelegram variant="banner" />
+        </div>
       </Section>
 
       <Section icon={<Shield size={18} />} title="What we DO NOT do">
