@@ -3,6 +3,8 @@ import { Header } from "./Header";
 import { BottomNav } from "./BottomNav";
 import { Link } from "react-router-dom";
 import { Trophy, Target, Users, BarChart2 } from "lucide-react";
+import { PWAInstallPrompt } from "../common/PWAInstallPrompt";
+import { SocialLinks } from "../common/SocialLinks";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -86,17 +88,21 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </div>
 
           {/* Bottom row */}
-          <div style={{ borderTop:"1px solid var(--border)", paddingTop:20, display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:12 }}>
+          <div style={{ borderTop:"1px solid var(--border)", paddingTop:20, display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:14 }}>
             <span style={{ fontFamily:"var(--font-body)", fontSize:12, color:"var(--text-3)" }}>&copy; {new Date().getFullYear()} BetSightly · All rights reserved</span>
-            <span style={{ fontFamily:"var(--font-body)", fontSize:12, color:"var(--text-3)" }}>
-              <Link to="/about" style={{ color:"var(--text-3)", textDecoration:"none", marginRight:14 }}>About</Link>
-              Bet Responsibly · 18+
-            </span>
+            <div style={{ display:"flex", alignItems:"center", gap:14, flexWrap:"wrap" }}>
+              <SocialLinks size={15} />
+              <span style={{ fontFamily:"var(--font-body)", fontSize:12, color:"var(--text-3)" }}>
+                <Link to="/about" style={{ color:"var(--text-3)", textDecoration:"none", marginRight:14 }}>About</Link>
+                Bet Responsibly · 18+
+              </span>
+            </div>
           </div>
         </div>
       </footer>
 
       <BottomNav />
+      <PWAInstallPrompt />
 
       <style>{`
         /* Footer hidden on mobile, visible on desktop */

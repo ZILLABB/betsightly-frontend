@@ -4,6 +4,9 @@ import { Link } from "react-router-dom";
 import { usePredictions } from "../hooks/usePredictions";
 import { getWCPredictions, type WCPrediction } from "../services/worldcupService";
 import { getTeamFlag } from "../data/wcFlags";
+import { WelcomeBanner } from "../components/common/WelcomeBanner";
+import { JoinTelegram } from "../components/common/JoinTelegram";
+import { AccuracyBadge } from "../components/common/AccuracyBadge";
 import { CategoryTabs } from "../components/predictions/CategoryTabs";
 import { PredictionCard } from "../components/predictions/PredictionCard";
 import { EmptyState } from "../components/predictions/EmptyState";
@@ -199,9 +202,18 @@ export function HomePage() {
   }, [refetch]);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
+      {/* First-visit welcome banner — dismisses to localStorage */}
+      <WelcomeBanner />
+
       {/* World Cup Banner */}
       <WorldCupBanner />
+
+      {/* Live track record + Telegram CTA — side by side on desktop, stacked on mobile */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 12 }}>
+        <AccuracyBadge />
+        <JoinTelegram variant="card" />
+      </div>
 
       {/* Hero */}
       <div className="glow-bg" style={{ textAlign: "center", padding: "16px 0 0", position: "relative", zIndex: 1 }}>

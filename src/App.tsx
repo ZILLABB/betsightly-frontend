@@ -1,4 +1,4 @@
-import React, { Suspense } from "react";
+import React, { Suspense, lazy } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
@@ -7,16 +7,20 @@ import ThemeProvider from "./components/common/ThemeProvider";
 import { ErrorBoundary } from "./components/common/ErrorBoundary";
 import { Layout } from "./components/layout/Layout";
 import { Spinner } from "./components/ui/Spinner";
+
+// HomePage stays eager (always the first paint)
 import { HomePage } from "./pages/HomePage";
-import { PredictionsPage } from "./pages/PredictionsPage";
-import { ResultsPage } from "./pages/ResultsPage";
-import { RolloverPage } from "./pages/RolloverPage";
-import { SettingsPage } from "./pages/SettingsPage";
-import { NotFoundPage } from "./pages/NotFoundPage";
-import PuntersPage from "./pages/PuntersPage";
-import PunterDetailPage from "./pages/PunterDetailPage";
-import WorldCupPage from "./pages/WorldCupPage";
-import { AboutPage } from "./pages/AboutPage";
+
+// Everything else is lazy-loaded for smaller initial bundle
+const PredictionsPage = lazy(() => import("./pages/PredictionsPage").then(m => ({ default: m.PredictionsPage })));
+const ResultsPage = lazy(() => import("./pages/ResultsPage").then(m => ({ default: m.ResultsPage })));
+const RolloverPage = lazy(() => import("./pages/RolloverPage").then(m => ({ default: m.RolloverPage })));
+const SettingsPage = lazy(() => import("./pages/SettingsPage").then(m => ({ default: m.SettingsPage })));
+const NotFoundPage = lazy(() => import("./pages/NotFoundPage").then(m => ({ default: m.NotFoundPage })));
+const PuntersPage = lazy(() => import("./pages/PuntersPage"));
+const PunterDetailPage = lazy(() => import("./pages/PunterDetailPage"));
+const WorldCupPage = lazy(() => import("./pages/WorldCupPage"));
+const AboutPage = lazy(() => import("./pages/AboutPage").then(m => ({ default: m.AboutPage })));
 
 function Fallback() {
   return (
