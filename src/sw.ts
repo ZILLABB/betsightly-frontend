@@ -1,29 +1,82 @@
 /// <reference lib="webworker" />
 import { precacheAndRoute, cleanupOutdatedCaches } from "workbox-precaching";
-import { registerRoute } from "workbox-routing";
-import { NetworkFirst, CacheFirst } from "workbox-strategies";
+import { registerRoute, NavigationRoute, setCatchHandler } from "workbox-routing";
+import { NetworkFirst, CacheFirst, StaleWhileRevalidate } from "workbox-strategies";
 import { ExpirationPlugin } from "workbox-expiration";
+import { CacheableResponsePlugin } from "workbox-cacheable-response";
 
 declare let self: ServiceWorkerGlobalScope;
 
 cleanupOutdatedCaches();
 precacheAndRoute(self.__WB_MANIFEST);
 
-// API cache — network first, fall back to cache
+// ── Offline fallback ───────────────────────────────────
+// Serve /offline.html when a navigation request fails (user is offline
+// and the page isn't cached yet)
+const OFFLINE_URL = "/offline.html";
+
+// Pre-cache the offline page on install
+self.addEventListener("install", (event) => {
+  event.waitUntil(
+    caches.open("offline-fallback").then((cache) => cache.add(OFFLINE_URL))
+  );
+});
+
+setCatchHandler(async ({ event }) => {
+  if ((event as FetchEvent).request?.destination === "document") {
+    const cache = await caches.open("offline-fallback");
+    const cached = await cache.match(OFFLINE_URL);
+    return cached || Response.error();
+  }
+  return Response.error();
+});
+
+// ── API cache — network first, fall back to cached data ──
 registerRoute(
   ({ url }) => url.origin === "https://betsightly-api.onrender.com" && url.pathname.startsWith("/api/"),
   new NetworkFirst({
     cacheName: "api-cache",
-    plugins: [new ExpirationPlugin({ maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 })],
+    networkTimeoutSeconds: 8,
+    plugins: [
+      new CacheableResponsePlugin({ statuses: [0, 200] }),
+      new ExpirationPlugin({ maxEntries: 150, maxAgeSeconds: 60 * 60 * 24 }),
+    ],
   })
 );
 
-// Image cache
+// ── Font cache — cache first (fonts rarely change) ───────
+registerRoute(
+  ({ request }) => request.destination === "font",
+  new CacheFirst({
+    cacheName: "fonts-cache",
+    plugins: [
+      new CacheableResponsePlugin({ statuses: [0, 200] }),
+      new ExpirationPlugin({ maxEntries: 30, maxAgeSeconds: 60 * 60 * 24 * 365 }),
+    ],
+  })
+);
+
+// ── CSS/JS — stale while revalidate for fast loads ───────
+registerRoute(
+  ({ request }) => request.destination === "style" || request.destination === "script",
+  new StaleWhileRevalidate({
+    cacheName: "static-cache",
+    plugins: [
+      new CacheableResponsePlugin({ statuses: [0, 200] }),
+      new ExpirationPlugin({ maxEntries: 60, maxAgeSeconds: 60 * 60 * 24 * 30 }),
+    ],
+  })
+);
+
+// ── Image cache — cache first ────────────────────────────
 registerRoute(
   ({ request }) => request.destination === "image",
   new CacheFirst({
     cacheName: "images-cache",
-    plugins: [new ExpirationPlugin({ maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 30 })],
+    plugins: [
+      new CacheableResponsePlugin({ statuses: [0, 200] }),
+      new ExpirationPlugin({ maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 30 }),
+    ],
   })
 );
 

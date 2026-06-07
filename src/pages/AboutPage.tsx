@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { Shield, TrendingUp, Database, Bot, Sparkles, AlertTriangle, Trophy } from "lucide-react";
 import { JoinTelegram } from "../components/common/JoinTelegram";
+import { SEO } from "../components/common/SEO";
 
 function Section({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) {
   return (
@@ -39,6 +40,7 @@ function FAQ({ q, a }: { q: string; a: React.ReactNode }) {
 export function AboutPage() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 36, maxWidth: 760 }}>
+      <SEO title="About" description="How BetSightly works — our methodology, data sources, and the team behind the predictions." path="/about" />
       <div>
         <div className="eyebrow" style={{ marginBottom: 8 }}>About</div>
         <h1 style={{ fontSize: "clamp(28px, 5vw, 40px)", fontWeight: 800, lineHeight: 1.1 }}>

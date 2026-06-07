@@ -8,6 +8,7 @@ import {
   getWCPredictions, getWCValueBets, getWCGroups, getWCAccumulators,
   type WCPrediction, type WCValueBet, type WCGroup, type WCAccumulator,
 } from "../services/worldcupService";
+import { SEO } from "../components/common/SEO";
 import { getTeamFlag } from "../data/wcFlags";
 
 // ── Helpers ────────────────────────────────────────────────
@@ -423,6 +424,7 @@ export default function WorldCupPage() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+      <SEO title="World Cup 2026" description="FIFA World Cup 2026 predictions — match analysis, group standings, accumulators, and value bets for USA, Mexico & Canada." path="/worldcup" />
 
       {/* ── Hero ───────────────────────────────────────── */}
       <div style={{

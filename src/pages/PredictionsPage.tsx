@@ -9,6 +9,7 @@ import { AccumulatorSlip } from "../components/predictions/AccumulatorSlip";
 import { PredictionCardSkeleton } from "../components/ui/Skeleton";
 import { CATEGORIES } from "../types";
 import type { CategoryKey } from "../types";
+import { SEO } from "../components/common/SEO";
 
 const VALID_KEYS = new Set<string>(CATEGORIES.map(c => c.key));
 
@@ -30,6 +31,7 @@ export function PredictionsPage() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
+      <SEO title="Predictions" description="Today's best football predictions — 2 Odds, 5 Odds, 10 Odds, and Over 1.5 picks backed by real bookmaker odds." path="/predictions" />
       <div>
         <div className="eyebrow" style={{ marginBottom: 8 }}>Today&apos;s Picks</div>
         <h1 style={{ fontSize: 32, fontWeight: 800 }}>All Predictions</h1>

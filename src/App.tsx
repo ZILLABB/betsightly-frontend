@@ -1,5 +1,6 @@
 import React, { Suspense, lazy } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { HelmetProvider } from "react-helmet-async";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import { PreferencesProvider } from "./contexts/PreferencesProvider";
@@ -33,6 +34,7 @@ function Fallback() {
 export default function App() {
   return (
     <ErrorBoundary>
+    <HelmetProvider>
     <PreferencesProvider>
       <ThemeProvider>
     <BrowserRouter>
@@ -58,6 +60,7 @@ export default function App() {
     </BrowserRouter>
     </ThemeProvider>
     </PreferencesProvider>
+    </HelmetProvider>
     </ErrorBoundary>
   );
 }

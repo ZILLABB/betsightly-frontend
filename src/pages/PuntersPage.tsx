@@ -10,6 +10,7 @@ import { getPuntersList, type Punter } from "../services/punterService";
 import type { BettingCode } from "../types";
 import { useNavigate } from "react-router-dom";
 import { useFormatOdds } from "../hooks/useFormatOdds";
+import { SEO } from "../components/common/SEO";
 
 const BOOKMAKER_INFO: Record<string, { logo: string; color: string; url: string }> = {
   sportybet:  { logo: "https://www.sportybet.com/favicon.ico", color: "#2DB544", url: "https://www.sportybet.com" },
@@ -750,6 +751,7 @@ export default function PuntersPage() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+      <SEO title="Expert Punters" description="Follow top Nigerian betting experts. Copy their codes for Sportybet, Bet9ja, 1xBet, and more." path="/punters" />
 
       {/* Page header */}
       <div>

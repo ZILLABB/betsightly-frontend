@@ -5,6 +5,7 @@ import { PredictionCardSkeleton } from "../components/ui/Skeleton";
 import { CATEGORIES } from "../types";
 import { Repeat2, CheckCircle, XCircle, Clock, Circle, TrendingUp, Calendar, List, Zap } from "lucide-react";
 import { getTeamFlag, isWcNation, teamInitials, teamColor } from "../data/wcFlags";
+import { SEO } from "../components/common/SEO";
 
 function TeamBadge({ team, logo }: { team: string; logo?: string | null }) {
   if (isWcNation(team)) {
@@ -73,6 +74,7 @@ export function RolloverPage() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
+      <SEO title="Rollover Challenge" description="10-day rollover challenge — daily safest picks from active leagues and the World Cup. All picks must hit for the day to count." path="/rollover" />
       {/* Header */}
       <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
         <div style={{ width: 48, height: 48, borderRadius: 12, background: catMeta.faint, border: `1px solid ${catMeta.color}33`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>

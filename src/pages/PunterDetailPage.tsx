@@ -8,6 +8,7 @@ import {
 import { getPuntersList, type Punter } from "../services/punterService";
 import type { BettingCode } from "../types";
 import { useFormatOdds } from "../hooks/useFormatOdds";
+import { SEO } from "../components/common/SEO";
 
 const BOOKMAKER_INFO: Record<string, { logo: string; color: string; url: string }> = {
   sportybet:  { logo: "https://www.sportybet.com/favicon.ico", color: "#2DB544", url: "https://www.sportybet.com" },
@@ -209,6 +210,7 @@ export default function PunterDetailPage() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+      <SEO title={punter.name || "Punter"} description={`${punter.name}'s betting codes and performance stats on BetSightly.`} path={`/punters/${id}`} />
 
       {/* Back button */}
       <button onClick={() => navigate("/punters")} style={{

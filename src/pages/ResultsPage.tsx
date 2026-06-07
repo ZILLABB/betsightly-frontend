@@ -5,6 +5,7 @@ import {
 import { usePredictions } from "../hooks/usePredictions";
 import { useFormatOdds } from "../hooks/useFormatOdds";
 import { getTeamFlag, isWcNation, teamInitials, teamColor } from "../data/wcFlags";
+import { SEO } from "../components/common/SEO";
 
 function TeamBadge({ team }: { team: string }) {
   if (isWcNation(team)) {
@@ -80,6 +81,7 @@ export function ResultsPage() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
+      <SEO title="Results" description="Live results from the 10-day rollover challenge. Track win rates and prediction accuracy." path="/results" />
       <div>
         <div className="eyebrow" style={{ marginBottom: 8, display: "flex", alignItems: "center", gap: 8 }}>
           <BarChart3 size={14} color="var(--brand)" />

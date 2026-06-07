@@ -13,6 +13,7 @@ import { PredictionCard } from "../components/predictions/PredictionCard";
 import { EmptyState } from "../components/predictions/EmptyState";
 import { PredictionCardSkeleton } from "../components/ui/Skeleton";
 import { CATEGORIES } from "../types";
+import { SEO } from "../components/common/SEO";
 import type { CategoryKey } from "../types";
 
 function StatBubble({ label, value, icon, color }: { label: string; value: string; icon: React.ReactNode; color: string }) {
@@ -205,6 +206,7 @@ export function HomePage() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
+      <SEO path="/" />
       {/* First-visit welcome banner — dismisses to localStorage */}
       <WelcomeBanner />
 

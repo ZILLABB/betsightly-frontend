@@ -13,6 +13,7 @@ import {
   isPushSupported,
   getNotificationPermission,
 } from "../services/pushNotifications";
+import { SEO } from "../components/common/SEO";
 
 // ── Primitives ────────────────────────────────────────
 
@@ -189,6 +190,7 @@ export function SettingsPage() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 28, maxWidth: 560, margin: "0 auto" }}>
 
+      <SEO title="Settings" description="Customize your BetSightly experience — theme, odds format, currency, and notifications." path="/settings" />
       {/* Header */}
       <div>
         <div className="eyebrow" style={{ marginBottom: 6 }}>Preferences</div>
