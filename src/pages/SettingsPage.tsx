@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   Bell, Moon, Sun, Monitor, Info, BarChart2,
   DollarSign, Globe, RotateCcw, ChevronRight, Check, Mail, HelpCircle
@@ -6,6 +6,13 @@ import {
 import { Link } from "react-router-dom";
 import { usePreferences } from "../hooks/usePreferences";
 import type { ThemeMode, OddsFormat, Currency, Language } from "../contexts/PreferencesTypes";
+import {
+  subscribeToPush,
+  unsubscribeFromPush,
+  isPushSubscribed,
+  isPushSupported,
+  getNotificationPermission,
+} from "../services/pushNotifications";
 
 // ── Primitives ────────────────────────────────────────
 
@@ -154,6 +161,30 @@ function ThemePicker({ current, onChange }: { current: ThemeMode; onChange: (t: 
 
 export function SettingsPage() {
   const { preferences, updatePreference, resetPreferences } = usePreferences();
+  const [pushActive, setPushActive] = useState(false);
+  const [pushLoading, setPushLoading] = useState(false);
+  const pushSupported = isPushSupported();
+
+  useEffect(() => {
+    isPushSubscribed().then(setPushActive);
+  }, []);
+
+  const handlePushToggle = async (enabled: boolean) => {
+    setPushLoading(true);
+    try {
+      if (enabled) {
+        const ok = await subscribeToPush();
+        setPushActive(ok);
+        updatePreference("enableNotifications", ok);
+      } else {
+        await unsubscribeFromPush();
+        setPushActive(false);
+        updatePreference("enableNotifications", false);
+      }
+    } finally {
+      setPushLoading(false);
+    }
+  };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 28, maxWidth: 560, margin: "0 auto" }}>
@@ -203,12 +234,20 @@ export function SettingsPage() {
         <Row
           icon={<Bell size={15} color="var(--brand)" />}
           label="Push notifications"
-          sub="Get alerted when new picks are ready"
+          sub={
+            !pushSupported
+              ? "Not supported on this browser"
+              : getNotificationPermission() === "denied"
+              ? "Blocked — enable in browser settings"
+              : pushActive
+              ? "You'll be notified when new picks drop"
+              : "Get alerted when new picks are ready"
+          }
           last
         >
           <Toggle
-            on={preferences.enableNotifications}
-            onChange={v => updatePreference("enableNotifications", v)}
+            on={pushActive}
+            onChange={handlePushToggle}
           />
         </Row>
       </Section>

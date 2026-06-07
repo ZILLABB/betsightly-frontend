@@ -8,6 +8,84 @@ import {
 import { getPuntersList, type Punter } from "../services/punterService";
 import type { BettingCode } from "../types";
 
+const BOOKMAKER_INFO: Record<string, { logo: string; color: string; url: string }> = {
+  sportybet:  { logo: "https://www.sportybet.com/favicon.ico", color: "#2DB544", url: "https://www.sportybet.com" },
+  bet9ja:     { logo: "https://web.bet9ja.com/favicon.ico", color: "#1A5B2C", url: "https://www.bet9ja.com" },
+  "1xbet":    { logo: "https://1xbet.com/favicon.ico", color: "#1A6DC0", url: "https://1xbet.com" },
+  betking:    { logo: "https://www.betking.com/favicon.ico", color: "#0055A5", url: "https://www.betking.com" },
+  betway:     { logo: "https://betway.com/favicon.ico", color: "#00A826", url: "https://betway.com" },
+  "22bet":    { logo: "https://22bet.ng/favicon.ico", color: "#1B3E6F", url: "https://22bet.ng" },
+  msport:     { logo: "https://www.msport.com/favicon.ico", color: "#E63E2E", url: "https://www.msport.com" },
+  nairabet:   { logo: "https://www.nairabet.com/favicon.ico", color: "#006B3F", url: "https://www.nairabet.com" },
+  betano:     { logo: "https://www.betano.com/favicon.ico", color: "#D4213D", url: "https://www.betano.com" },
+  paripesa:   { logo: "https://paripesa.bet/favicon.ico", color: "#FFB800", url: "https://paripesa.bet" },
+};
+
+function BookmakerBadge({ name }: { name: string }) {
+  const key = name.toLowerCase().replace(/\s+/g, "");
+  const bm = BOOKMAKER_INFO[key];
+  const initial = name.charAt(0).toUpperCase();
+
+  const content = (
+    <>
+      {bm ? (
+        <img
+          src={bm.logo}
+          alt={name}
+          width={14}
+          height={14}
+          style={{ borderRadius: 3, objectFit: "contain" }}
+          onError={(e) => {
+            const target = e.currentTarget;
+            target.style.display = "none";
+            const fallback = target.nextElementSibling as HTMLElement;
+            if (fallback) fallback.style.display = "flex";
+          }}
+        />
+      ) : null}
+      <span
+        style={{
+          display: bm ? "none" : "flex",
+          width: 14, height: 14, borderRadius: 3,
+          background: bm?.color ?? "var(--surface-2)",
+          alignItems: "center", justifyContent: "center",
+          fontSize: 8, fontWeight: 700, color: "#fff",
+          flexShrink: 0,
+        }}
+      >{initial}</span>
+      {name}
+      {bm && <ExternalLink size={9} style={{ opacity: 0.5 }} />}
+    </>
+  );
+
+  if (bm) {
+    return (
+      <a
+        href={bm.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          display: "inline-flex", alignItems: "center", gap: 5,
+          fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)",
+          textDecoration: "none",
+        }}
+      >
+        {content}
+      </a>
+    );
+  }
+
+  return (
+    <span style={{
+      display: "inline-flex", alignItems: "center", gap: 5,
+      fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)",
+    }}>
+      {content}
+    </span>
+  );
+}
+
 // ── Status Badge ───────────────────────────────────────────
 function StatusBadge({ status }: { status: string }) {
   const config: Record<string, { bg: string; color: string; label: string }> = {
@@ -315,8 +393,8 @@ export default function PunterDetailPage() {
                   {c.code}
                   <Copy size={11} color={copiedId === c.id ? "var(--green)" : "var(--text-3)"} />
                 </button>
-                <span style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text-3)", flex: 1 }}>
-                  {c.bookmaker_name ?? "—"}
+                <span style={{ flex: 1 }}>
+                  {c.bookmaker_name ? <BookmakerBadge name={c.bookmaker_name} /> : "—"}
                 </span>
                 {c.odds && (
                   <span style={{

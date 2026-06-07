@@ -565,7 +565,7 @@ export default function WorldCupPage() {
       )}
 
       {tab === "groups" && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: 14 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 340px), 1fr))", gap: 14 }}>
           {Object.entries(groups).sort(([a], [b]) => a.localeCompare(b)).map(([name, g]) => (
             <GroupCard key={name} name={name} group={g} />
           ))}
