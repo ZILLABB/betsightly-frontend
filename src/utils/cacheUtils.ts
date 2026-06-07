@@ -82,16 +82,7 @@ class Cache {
    * @param tags Optional tags for cache invalidation
    */
   set<T>(key: string, data: T, ttl: number = CACHE_TTL.LONG, tags?: string[]): void {
-    // Log cache operation
-    console.log(`[CACHE] SET: ${key} (TTL: ${ttl}s)`, {
-      storageType: this.storageType,
-      dataSize: JSON.stringify(data).length,
-      ttl,
-      tags
-    });
-
     // Re-enabled caching
-    // Original implementation
     const cacheKey = this.prefix + key;
     const expiry = Date.now() + (ttl * 1000);
     const cacheItem: CacheItem<T> = { data, expiry, tags };
@@ -128,13 +119,7 @@ class Cache {
    * @returns Cached data or null if not found or expired
    */
   get<T>(key: string): T | null {
-    // Log cache operation
-    console.log(`[CACHE] GET: ${key}`, {
-      storageType: this.storageType
-    });
-
     // Re-enabled caching
-    // Original implementation
     const cacheKey = this.prefix + key;
 
     // Check memory cache first

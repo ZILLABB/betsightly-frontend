@@ -30,12 +30,7 @@ export const getOddsClass = (odds: number): string => {
   return "text-[var(--muted-foreground)]";
 };
 
-/**
- * Helper function to format odds with proper precision
- */
-export const formatOdds = (odds: number): string => {
-  return odds.toFixed(odds % 1 === 0 ? 0 : 2);
-};
+// formatOdds moved to utils/formatters.ts (supports decimal/fractional/american via useFormatOdds hook)
 
 /**
  * Helper function to generate a reason if none exists
@@ -70,7 +65,6 @@ export const generateReason = (
  */
 export function categorizePredictionsByOdds(predictions: Prediction[]): Record<string, Prediction[]> {
   if (!Array.isArray(predictions)) {
-    console.warn('Expected predictions to be an array, but got:', typeof predictions);
     return {};
   }
 

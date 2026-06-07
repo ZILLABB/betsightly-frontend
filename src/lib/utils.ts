@@ -37,10 +37,8 @@ export function formatTime(date: Date | string | undefined): string {
   }
 }
 
-export function formatOdds(odds: number | undefined): string {
-  if (odds === undefined || odds === null) return "0.00";
-  return odds.toFixed(2);
-}
+// formatOdds moved to utils/formatters.ts (supports decimal/fractional/american via useFormatOdds hook)
+export { formatOdds } from "../utils/formatters";
 
 export function getOddsClass(odds: number | undefined): string {
   if (odds === undefined || odds === null) return "odds-low";

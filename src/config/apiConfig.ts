@@ -3,7 +3,7 @@
  */
 
 // Base URL for API requests
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://betsightly-api.onrender.com/api';
 
 // Optional API key (not enforced by backend but can be sent)
 export const API_KEY = import.meta.env.VITE_API_KEY || '';

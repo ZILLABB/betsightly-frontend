@@ -68,11 +68,11 @@ export function ResultsPage() {
   async function triggerCheck() {
     setRefreshing(true);
     try {
-      const base = (import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api").replace(/\/api\/?$/, "");
+      const base = (import.meta.env.VITE_API_BASE_URL || "https://betsightly-api.onrender.com/api").replace(/\/api\/?$/, "");
       await fetch(`${base}/api/worldcup/check-results`, { method: "POST" });
       await refetch();
     } catch (e) {
-      console.error("Results check failed", e);
+      // Results check failed silently — user sees "refreshing" end
     } finally {
       setRefreshing(false);
     }

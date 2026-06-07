@@ -117,53 +117,51 @@ export async function fetchFromApi<T>(
     return cache[cacheKey].data as T;
   }
 
-  try {
+  const fetchOptions: RequestInit = {
+    method: 'GET',
+    headers: {
+      ...DEFAULT_HEADERS,
+      'Accept': 'application/json',
+      ...options.headers,
+    },
+    ...options,
+  };
 
-    // Prepare fetch options with proper headers and timeout
-    const fetchOptions: RequestInit = {
-      method: 'GET',
-      headers: {
-        ...DEFAULT_HEADERS,
-        'Accept': 'application/json',
-        ...options.headers,
-      },
-      signal: AbortSignal.timeout(API_TIMEOUT),
-      ...options,
-    };
+  const MAX_RETRIES = 2;
+  let lastError: Error | null = null;
 
-    const response = await fetch(url, fetchOptions);
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), API_TIMEOUT);
 
-    if (!response.ok) {
-      // Handle different error types
-      if (response.status === 404) {
-        throw new Error(`Endpoint not found: ${endpoint}`);
-      } else if (response.status === 429) {
-        throw new Error(`Rate limit exceeded for: ${endpoint}`);
-      } else if (response.status === 500) {
-        throw new Error(`Server error: ${endpoint}`);
-      } else if (response.status === 502) {
-        throw new Error(`External API error: ${endpoint}`);
-      } else if (response.status === 503) {
-        throw new Error(`Service unavailable (ML models may be down): ${endpoint}`);
-      } else {
-        throw new Error(`API returned status ${response.status}: ${response.statusText}`);
+      const response = await fetch(url, { ...fetchOptions, signal: controller.signal });
+      clearTimeout(timeout);
+
+      if (!response.ok) {
+        if (response.status === 404) throw new Error(`Endpoint not found: ${endpoint}`);
+        if (response.status === 429) throw new Error('Rate limit exceeded');
+        if (response.status >= 500 && attempt < MAX_RETRIES) {
+          await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+          continue;
+        }
+        throw new Error(`API error ${response.status}`);
+      }
+
+      const data = await response.json();
+      cache[cacheKey] = { data, timestamp: Date.now(), headers: response.headers };
+      return data as T;
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      if (lastError.name === 'AbortError') lastError = new Error('Request timed out');
+      if (attempt < MAX_RETRIES && !lastError.message.includes('not found')) {
+        await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+        continue;
       }
     }
-
-    const data = await response.json();
-
-    // Cache the response with headers
-    cache[cacheKey] = {
-      data,
-      timestamp: Date.now(),
-      headers: response.headers
-    };
-
-    return data as T;
-  } catch (error) {
-    console.error(`Error fetching ${endpoint}:`, error);
-    throw error;
   }
+
+  throw lastError!;
 }
 
 /**
@@ -182,7 +180,7 @@ export async function checkAPIHealth(): Promise<HealthResponse | null> {
     const response = await fetchFromApi<HealthResponse>(API_ENDPOINTS.HEALTH, {}, 60000); // 1 minute cache
     return response;
   } catch (error) {
-    console.error('API health check failed:', error);
+    if (import.meta.env.DEV) console.error('API health check failed:', error);
     return null;
   }
 }
@@ -209,7 +207,6 @@ export async function getAllCategoryPredictions(): Promise<Record<string, Predic
     );
     return adaptPredictionData(rawData);
   } catch (error) {
-    console.error('Error fetching all category predictions:', error);
     // Return empty object on error
     return {
       '2_odds': [],
@@ -233,7 +230,6 @@ export async function getAllBestPredictions(): Promise<Record<string, Prediction
     );
     return adaptPredictionData(rawData);
   } catch (error) {
-    console.error('Error fetching all best predictions:', error);
     // Return empty object on error
     return {
       '2_odds': [],
@@ -259,7 +255,6 @@ export async function getCategoryBestPredictions(category: string): Promise<Pred
     );
     return Array.isArray(data) ? data : [];
   } catch (error) {
-    console.error(`Error fetching best predictions for ${category}:`, error);
     return [];
   }
 }
@@ -296,7 +291,6 @@ export async function getRolloverPredictions(days: number = 10): Promise<Record<
 
     return formattedDays;
   } catch (error) {
-    console.error('Error fetching rollover predictions:', error);
     // Return empty object with default days on error
     const emptyDays: Record<number, Prediction[]> = {};
     for (let i = 1; i <= days; i++) {
@@ -331,7 +325,6 @@ export async function getBettingCodes(
       API_CACHE_CONFIG.BETTING_CODES_TTL
     );
   } catch (error) {
-    console.error('Error fetching betting codes:', error);
     // Return empty response on error
     return {
       betting_codes: [],
@@ -354,8 +347,6 @@ export async function getLatestBettingCodes(limit: number = 100, skip: number = 
     const response = await getBettingCodes(limit, skip);
     return response.betting_codes || [];
   } catch (error) {
-    console.error('Error fetching latest betting codes:', error);
-    // Don't silently fail - let the error bubble up so the UI can show it
     throw error;
   }
 }
@@ -375,7 +366,6 @@ export async function getPunters(limit: number = 100, skip: number = 0): Promise
       API_CACHE_CONFIG.PUNTERS_TTL
     );
   } catch (error) {
-    console.error('Error fetching punters:', error);
     return {
       items: [],
       total: 0,
@@ -401,7 +391,6 @@ export async function getBookmakers(limit: number = 100, skip: number = 0): Prom
       API_CACHE_CONFIG.BOOKMAKERS_TTL
     );
   } catch (error) {
-    console.error('Error fetching bookmakers:', error);
     return {
       items: [],
       total: 0,

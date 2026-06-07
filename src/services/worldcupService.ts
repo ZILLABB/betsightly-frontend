@@ -3,7 +3,7 @@
  */
 
 // Strip trailing /api if present — worldcup endpoints are at /api/worldcup/*
-const _raw = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const _raw = import.meta.env.VITE_API_BASE_URL || 'https://betsightly-api.onrender.com/api';
 const API_BASE = _raw.replace(/\/api\/?$/, '');
 
 export interface WCPrediction {

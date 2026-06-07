@@ -34,7 +34,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
           }}>
             <span style={{ color:colors[t.variant], flexShrink:0 }}>{icons[t.variant]}</span>
             <span style={{ flex:1 }}>{t.message}</span>
-            <button onClick={() => dismiss(t.id)} style={{ background:"none", border:"none", cursor:"pointer", color:"var(--text-3)", padding:2, flexShrink:0 }}>
+            <button onClick={() => dismiss(t.id)} aria-label="Dismiss" style={{ background:"none", border:"none", cursor:"pointer", color:"var(--text-3)", padding:2, flexShrink:0 }}>
               <X size={13} />
             </button>
           </div>

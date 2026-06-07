@@ -62,7 +62,7 @@ export function Header() {
           </Link>
 
           {/* Desktop Nav */}
-          <nav style={{ display:"flex", alignItems:"center", gap:2, flex:1, justifyContent:"center" }} className="hidden-mobile">
+          <nav aria-label="Main navigation" style={{ display:"flex", alignItems:"center", gap:2, flex:1, justifyContent:"center" }} className="hidden-mobile">
             {NAV.map(({ path, label }) => {
               const active = isActive(path);
               const isWC = path === "/worldcup";
@@ -98,7 +98,7 @@ export function Header() {
       </header>
 
       {/* Mobile overlay */}
-      <div style={{
+      <nav aria-label="Mobile navigation" role="dialog" aria-modal={open} style={{
         position:"fixed", inset:0, zIndex:49,
         background:"var(--nav-overlay)", backdropFilter:"blur(20px)",
         display:"flex", flexDirection:"column", paddingTop:80, paddingLeft:24, paddingRight:24,
@@ -127,7 +127,7 @@ export function Header() {
             </Link>
           );
         })}
-      </div>
+      </nav>
 
       <style>{`
         @media (min-width: 768px) { .hidden-mobile { display:flex !important; } .show-mobile { display:none !important; } }

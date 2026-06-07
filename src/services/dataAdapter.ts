@@ -142,7 +142,6 @@ export function adaptPredictionData(data: any): Record<string, Prediction[]> {
   } else if (data && typeof data === 'object') {
     return data;
   } else {
-    console.warn('⚠️ Unknown data format, returning empty categories');
     return {
       '2_odds': [],
       '5_odds': [],

@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { Download, X, Share2 } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import { X, Share2 } from "lucide-react";
 
 const STORAGE_KEY = "bs_pwa_dismissed_at_v1";
 const REPROMPT_AFTER_MS = 14 * 24 * 60 * 60 * 1000;
@@ -31,7 +31,7 @@ function wasDismissedRecently(): boolean {
 }
 
 export function PWAInstallPrompt() {
-  const [evt, setEvt] = useState<BeforeInstallPromptEvent | null>(null);
+  const deferredPrompt = useRef<BeforeInstallPromptEvent | null>(null);
   const [showNative, setShowNative] = useState(false);
   const [showIOS, setShowIOS] = useState(false);
 
@@ -45,7 +45,7 @@ export function PWAInstallPrompt() {
 
     const handler = (e: Event) => {
       e.preventDefault();
-      setEvt(e as BeforeInstallPromptEvent);
+      deferredPrompt.current = e as BeforeInstallPromptEvent;
       setTimeout(() => setShowNative(true), 4000);
     };
 
@@ -60,13 +60,19 @@ export function PWAInstallPrompt() {
   };
 
   const install = async () => {
-    if (!evt) return;
+    const prompt = deferredPrompt.current;
+    if (!prompt) return;
+    deferredPrompt.current = null;
     try {
-      await evt.prompt();
-      await evt.userChoice;
-    } catch {}
+      await prompt.prompt();
+      const { outcome } = await prompt.userChoice;
+      if (outcome === "accepted") {
+        setShowNative(false);
+      }
+    } catch {
+      // Browser rejected the prompt — already installed or not supported
+    }
     setShowNative(false);
-    setEvt(null);
   };
 
   const show = showNative || showIOS;
@@ -84,13 +90,14 @@ export function PWAInstallPrompt() {
         display: "flex", alignItems: "center", gap: 12,
         animation: "pwa-slide-up 280ms ease-out",
       }}>
-        <div style={{
-          width: 40, height: 40, borderRadius: 10, flexShrink: 0,
-          background: "rgba(59,130,246,0.12)", border: "1px solid rgba(59,130,246,0.22)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-        }}>
-          {showIOS ? <Share2 size={18} color="var(--brand)" /> : <Download size={18} color="var(--brand)" />}
-        </div>
+        <img
+          src="/pwa-192x192.png"
+          alt="BetSightly"
+          style={{
+            width: 40, height: 40, borderRadius: 10, flexShrink: 0,
+            objectFit: "cover",
+          }}
+        />
         <div style={{ flex: 1, minWidth: 0 }}>
           <p style={{ fontFamily: "var(--font-body)", fontSize: 13, fontWeight: 700, color: "var(--text-1)" }}>
             Install BetSightly
@@ -102,7 +109,7 @@ export function PWAInstallPrompt() {
             }
           </p>
         </div>
-        {showNative && evt && (
+        {showNative && (
           <button onClick={install} style={{
             padding: "8px 14px", borderRadius: 8, border: "none", cursor: "pointer",
             background: "var(--brand)", color: "#fff",

@@ -18,11 +18,9 @@ export type { Punter } from '../types';
  */
 export const getPuntersList = async (limit: number = 100, skip: number = 0): Promise<PaginatedResponse<Punter>> => {
   try {
-    console.log(`Fetching punters: limit=${limit}, skip=${skip}`);
 
     // Use the unified API service
     const response = await getPunters(limit, skip);
-    console.log(`Received punters response:`, response);
 
     // Handle the actual API response format
     if (response && typeof response === 'object') {
@@ -71,9 +69,7 @@ export const getPuntersList = async (limit: number = 100, skip: number = 0): Pro
  */
 export const getPuntersArray = async (limit: number = 100, skip: number = 0): Promise<Punter[]> => {
   try {
-    console.log(`Getting punters array: limit=${limit}, skip=${skip}`);
     const response = await getPuntersList(limit, skip);
-    console.log(`Punters array response:`, response);
     return response.items || [];
   } catch (error) {
     console.error('Error fetching punters array:', error);
@@ -89,7 +85,6 @@ export const getPuntersArray = async (limit: number = 100, skip: number = 0): Pr
  */
 export const getTopPunters = async (limit: number = 10): Promise<Punter[]> => {
   try {
-    console.log(`Getting top ${limit} punters`);
     const punters = await getPuntersArray(limit, 0);
     
     // Sort by success rate (descending) and popularity
