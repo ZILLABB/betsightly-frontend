@@ -71,18 +71,41 @@ export interface BettingCodesResponse {
 
 export type PredictionStatus = 'won' | 'lost' | 'pending';
 
-export interface Prediction {
-  id: string;
-  fixture_id?: number;
+export interface Fixture {
+  id: number;
   home_team: string;
   away_team: string;
   league: string;
-  date: string;
+  match_datetime: string;
+  status?: string;
+}
+
+export interface Prediction {
+  id: number | string;
+  fixture_id?: number;
+  fixture?: Fixture;
+  home_team?: string;
+  away_team?: string;
+  league?: string;
+  date?: string;
   prediction: string;
   prediction_type: string;
   confidence: number;
   odds?: number;
   status?: PredictionStatus;
+  created_at?: string;
+  updated_at?: string;
+  game?: {
+    id: string;
+    homeTeam: string;
+    awayTeam: string;
+    league: string;
+    startTime: string;
+    fixture?: Fixture;
+  };
+  gameId?: string;
+  predictionType?: string;
+  createdAt?: string;
 }
 
 export interface Game {
@@ -92,6 +115,7 @@ export interface Game {
   league: string;
   date: string;
   status?: string;
+  fixture?: Fixture;
 }
 
 // ── Prediction-specific types ───────────────────────────────────────────

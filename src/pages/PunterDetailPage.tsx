@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { getPuntersList, type Punter } from "../services/punterService";
 import type { BettingCode } from "../types";
+import { useFormatOdds } from "../hooks/useFormatOdds";
 
 const BOOKMAKER_INFO: Record<string, { logo: string; color: string; url: string }> = {
   sportybet:  { logo: "https://www.sportybet.com/favicon.ico", color: "#2DB544", url: "https://www.sportybet.com" },
@@ -125,6 +126,7 @@ export default function PunterDetailPage() {
   const [punter, setPunter] = useState<Punter | null>(null);
   const [statusFilter, setStatusFilter] = useState<"" | "pending" | "won" | "lost">("");
   const [copiedId, setCopiedId] = useState<number | null>(null);
+  const { formatOdds: fmtOdds, oddsSuffix } = useFormatOdds();
 
   const fetchPunter = useCallback(async () => {
     setLoading(true);
@@ -402,7 +404,7 @@ export default function PunterDetailPage() {
                     color: "var(--text-2)", background: "var(--surface-2)",
                     padding: "3px 8px", borderRadius: 4,
                   }}>
-                    {c.odds.toFixed(2)}x
+                    {fmtOdds(c.odds)}{oddsSuffix}
                   </span>
                 )}
                 {c.created_at && (

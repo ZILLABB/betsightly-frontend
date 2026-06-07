@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import type { GamePrediction, CategoryMeta } from "../../types";
 import { Copy, Check, Share2 } from "lucide-react";
+import { useFormatOdds } from "../../hooks/useFormatOdds";
 
 interface Props {
   games: GamePrediction[];
@@ -12,7 +13,10 @@ interface Props {
 /**
  * Generates a shareable text slip for an accumulator.
  */
-function generateSlipText(games: GamePrediction[], category: CategoryMeta, totalOdds: number, date: string): string {
+function generateSlipText(
+  games: GamePrediction[], category: CategoryMeta, totalOdds: number, date: string,
+  fmtOdds: (n: number) => string, oddsSuffix: string,
+): string {
   const lines: string[] = [];
   lines.push(`BetSightly ${category.label} Accumulator`);
   lines.push(`${date} | ${category.riskLabel}`);
@@ -22,13 +26,13 @@ function generateSlipText(games: GamePrediction[], category: CategoryMeta, total
     const odds = g.odds ?? g.real_odds ?? g.estimated_odds ?? 0;
     const pred = g.prediction || g.readable_prediction || g.prediction_value || "";
     lines.push(`${g.home_team} vs ${g.away_team}`);
-    lines.push(`  ${pred} @ ${odds.toFixed(2)}`);
+    lines.push(`  ${pred} @ ${fmtOdds(odds)}`);
     lines.push(`  ${g.league} | ${Math.round(g.confidence * 100)}% confidence`);
     lines.push("");
   }
 
   lines.push("─".repeat(32));
-  lines.push(`Total Odds: ${totalOdds.toFixed(2)}x | ${games.length} picks`);
+  lines.push(`Total Odds: ${fmtOdds(totalOdds)}${oddsSuffix} | ${games.length} picks`);
   lines.push("");
   lines.push("Powered by BetSightly AI");
 
@@ -37,9 +41,10 @@ function generateSlipText(games: GamePrediction[], category: CategoryMeta, total
 
 export function AccumulatorSlip({ games, category, totalOdds, date }: Props) {
   const [copied, setCopied] = useState(false);
+  const { formatOdds: fmtOdds, oddsSuffix } = useFormatOdds();
 
   const handleCopy = async () => {
-    const text = generateSlipText(games, category, totalOdds, date);
+    const text = generateSlipText(games, category, totalOdds, date, fmtOdds, oddsSuffix);
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
@@ -60,7 +65,7 @@ export function AccumulatorSlip({ games, category, totalOdds, date }: Props) {
   };
 
   const handleShare = async () => {
-    const text = generateSlipText(games, category, totalOdds, date);
+    const text = generateSlipText(games, category, totalOdds, date, fmtOdds, oddsSuffix);
     if (navigator.share) {
       try {
         await navigator.share({

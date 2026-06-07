@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import type { CategoryKey, CategoryMeta } from "../../types";
 import { CATEGORIES } from "../../types";
+import { useFormatOdds } from "../../hooks/useFormatOdds";
 
 interface Props {
   active: CategoryKey;
@@ -10,6 +11,7 @@ interface Props {
 
 export function CategoryTabs({ active, onChange, oddsMap = {} }: Props) {
   const [hovered, setHovered] = useState<CategoryKey | null>(null);
+  const { formatOdds: fmtOdds, oddsSuffix } = useFormatOdds();
 
   return (
     <div style={{
@@ -75,7 +77,7 @@ export function CategoryTabs({ active, onChange, oddsMap = {} }: Props) {
               lineHeight: 1.3,
             }}>
               {odds != null
-                ? `${odds.toFixed(2)}x odds`
+                ? `${fmtOdds(odds)}${oddsSuffix} odds`
                 : cat.riskLabel}
             </span>
           </button>

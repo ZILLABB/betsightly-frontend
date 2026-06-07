@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect } from "react";
 import { TrendingUp, Zap, Shield, Target, RefreshCw, Trophy, ChevronRight, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { usePredictions } from "../hooks/usePredictions";
+import { useFormatOdds } from "../hooks/useFormatOdds";
 import { getWCPredictions, type WCPrediction } from "../services/worldcupService";
 import { getTeamFlag } from "../data/wcFlags";
 import { WelcomeBanner } from "../components/common/WelcomeBanner";
@@ -176,6 +177,7 @@ export function HomePage() {
   const { data, loading, error, refetch } = usePredictions();
   const [activeKey, setActiveKey] = useState<CategoryKey>("2_odds");
   const [spinning, setSpinning] = useState(false);
+  const { formatOdds: fmtOdds, oddsSuffix } = useFormatOdds();
 
   const accumulators = data?.accumulators;
   const activeCat = accumulators?.[activeKey];
@@ -237,7 +239,7 @@ export function HomePage() {
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
         <StatBubble label="Picks today" value={loading ? "—" : String(totalGames)} icon={<Target size={19} color="var(--brand)" />} color="var(--brand)" />
         <StatBubble label="Confidence" value={loading ? "—" : `${avgConf}%`} icon={<Shield size={19} color="var(--green)" />} color="var(--green)" />
-        <StatBubble label="Top odds" value={loading ? "—" : `${(activeCat?.total_odds ?? 0).toFixed(2)}x`} icon={<TrendingUp size={19} color="var(--blue)" />} color="var(--blue)" />
+        <StatBubble label="Top odds" value={loading ? "—" : `${fmtOdds(activeCat?.total_odds ?? 0)}${oddsSuffix}`} icon={<TrendingUp size={19} color="var(--blue)" />} color="var(--blue)" />
         <StatBubble label="Categories" value={String(CATEGORIES.length)} icon={<Zap size={19} color="var(--purple)" />} color="var(--purple)" />
       </div>
 
@@ -265,7 +267,7 @@ export function HomePage() {
                 fontFamily: "var(--font-mono)", fontSize: 15, fontWeight: 700,
                 color: catMeta.color, letterSpacing: "-0.02em",
               }}>
-                {activeCat.total_odds.toFixed(2)}x
+                {fmtOdds(activeCat.total_odds)}{oddsSuffix}
               </div>
               <button
                 onClick={handleRefresh}

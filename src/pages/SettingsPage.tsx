@@ -263,10 +263,10 @@ export function SettingsPage() {
             value={preferences.currency}
             onChange={v => updatePreference("currency", v)}
             options={[
+              { value: "NGN", label: "NGN — ₦" },
               { value: "USD", label: "USD — $" },
               { value: "EUR", label: "EUR — €" },
               { value: "GBP", label: "GBP — £" },
-              { value: "NGN", label: "NGN — ₦" },
             ]}
           />
         </Row>

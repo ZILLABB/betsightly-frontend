@@ -1,6 +1,7 @@
 ﻿import React, { useState } from "react";
 import { useParams } from "react-router-dom";
 import { usePredictions } from "../hooks/usePredictions";
+import { useFormatOdds } from "../hooks/useFormatOdds";
 import { CategoryTabs } from "../components/predictions/CategoryTabs";
 import { PredictionCard } from "../components/predictions/PredictionCard";
 import { EmptyState } from "../components/predictions/EmptyState";
@@ -17,6 +18,7 @@ export function PredictionsPage() {
 
   const { data, loading, error, refetch } = usePredictions();
   const [activeKey, setActiveKey] = useState<CategoryKey>(initialKey);
+  const { formatOdds: fmtOdds, oddsSuffix } = useFormatOdds();
 
   const accumulators = data?.accumulators;
   const activeCat = accumulators?.[activeKey];
@@ -62,7 +64,7 @@ export function PredictionsPage() {
                 {activeCat.games.length} {activeCat.games.length === 1 ? "pick" : "picks"} · {activeCat.risk_level} risk
               </span>
               <div style={{ padding: "4px 12px", borderRadius: 6, background: catMeta.faint, fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 700, color: catMeta.color }}>
-                {activeCat.total_odds.toFixed(2)}x total
+                {fmtOdds(activeCat.total_odds)}{oddsSuffix} total
               </div>
             </div>
             <AccumulatorSlip

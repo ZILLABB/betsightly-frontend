@@ -41,7 +41,7 @@ export const defaultPreferences: UserPreferences = {
   showPremiumContent: true,
   enableNotifications: true,
   oddsFormat: 'decimal',
-  currency: 'USD',
+  currency: 'NGN',
   language: 'en',
   savedGameCodes: [],
   favoriteTeams: [],

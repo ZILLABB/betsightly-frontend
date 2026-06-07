@@ -9,6 +9,7 @@ import {
 import { getPuntersList, type Punter } from "../services/punterService";
 import type { BettingCode } from "../types";
 import { useNavigate } from "react-router-dom";
+import { useFormatOdds } from "../hooks/useFormatOdds";
 
 const BOOKMAKER_INFO: Record<string, { logo: string; color: string; url: string }> = {
   sportybet:  { logo: "https://www.sportybet.com/favicon.ico", color: "#2DB544", url: "https://www.sportybet.com" },
@@ -134,6 +135,7 @@ function StatusBadge({ status }: { status: string }) {
 // ── Betting Code Row ───────────────────────────────────────
 function CodeRow({ code }: { code: BettingCode }) {
   const [copied, setCopied] = useState(false);
+  const { formatOdds: fmtOdds, oddsSuffix } = useFormatOdds();
 
   const handleCopy = () => {
     navigator.clipboard.writeText(code.code).then(() => {
@@ -170,7 +172,7 @@ function CodeRow({ code }: { code: BettingCode }) {
           color: "var(--text-2)", background: "var(--surface-2)",
           padding: "2px 6px", borderRadius: 4,
         }}>
-          {code.odds.toFixed(2)}x
+          {fmtOdds(code.odds)}{oddsSuffix}
         </span>
       )}
     </div>
@@ -402,6 +404,7 @@ function PunterCard({
 
 // ── Today's Codes Section ──────────────────────────────────
 function TodaysCodes({ punters }: { punters: Punter[] }) {
+  const { formatOdds: fmtOdds, oddsSuffix } = useFormatOdds();
   const today = new Date().toISOString().slice(0, 10);
   const todayCodes: (BettingCode & { punter_name_display: string })[] = [];
 
@@ -458,7 +461,7 @@ function TodaysCodes({ punters }: { punters: Punter[] }) {
                 color: "var(--text-2)", background: "var(--surface-2)",
                 padding: "2px 6px", borderRadius: 4,
               }}>
-                {c.odds.toFixed(2)}x
+                {fmtOdds(c.odds)}{oddsSuffix}
               </span>
             )}
           </div>

@@ -17,10 +17,10 @@ import { formatLocalDateTime } from "../../utils/formatters";
 import {
   PredictionCardMode,
   PredictionCardVariant,
-  formatOdds,
   generateReason
 } from "../../utils/predictionUtils";
 import PredictionQuality from "./PredictionQuality";
+import { useFormatOdds } from "../../hooks/useFormatOdds";
 
 interface BasePredictionCardProps {
   // Data
@@ -61,6 +61,8 @@ const BasePredictionCard: React.FC<BasePredictionCardProps> = ({
   // Styling
   className = ""
 }) => {
+  const { formatOdds, oddsSuffix } = useFormatOdds();
+
   // Check if this prediction has nested predictions (common in API response)
   const nestedPredictions = safeGet(prediction, 'predictions', null) as any[] | null;
 
@@ -485,7 +487,7 @@ const BasePredictionCard: React.FC<BasePredictionCardProps> = ({
               <p className="text-xs text-amber-400 font-medium truncate">{predictionText || predictionType}</p>
             </div>
             <div className="bg-amber-500/20 text-amber-500 border border-amber-500/30 px-2 py-1 rounded-md font-bold text-xs">
-              {formatOdds(odds)}x
+              {formatOdds(odds)}{oddsSuffix}
             </div>
           </div>
 
@@ -576,7 +578,7 @@ const BasePredictionCard: React.FC<BasePredictionCardProps> = ({
               <div className="bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border border-amber-500/30 px-4 py-2 rounded-lg">
                 <div className="text-center">
                   <div className="text-xs text-amber-400 font-medium">ODDS</div>
-                  <div className="text-amber-500 font-bold text-lg">{formatOdds(odds)}x</div>
+                  <div className="text-amber-500 font-bold text-lg">{formatOdds(odds)}{oddsSuffix}</div>
                 </div>
               </div>
             </div>

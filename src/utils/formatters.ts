@@ -129,7 +129,7 @@ export const formatNumber = (value: number, options: Intl.NumberFormatOptions = 
  */
 export const formatCurrency = (
   value: number,
-  currency: string = 'USD',
+  currency: string = 'NGN',
   options: Intl.NumberFormatOptions = {}
 ): string => {
   switch (currency.toUpperCase()) {
@@ -164,13 +164,50 @@ export const formatLocalDateTime = (dateString: string | Date): string => {
 };
 
 /**
- * Format odds value
- * @param odds - The odds value to format
- * @returns Formatted odds string
+ * Convert decimal odds to fractional (e.g. 2.50 → "3/2")
  */
-export const formatOdds = (odds: number): string => {
-  if (!odds) return '0.00';
-  return odds.toFixed(2);
+const toFractional = (decimal: number): string => {
+  if (decimal <= 1) return '0/1';
+  const frac = decimal - 1;
+  const precision = 1000;
+  let num = Math.round(frac * precision);
+  let den = precision;
+  const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));
+  const d = gcd(num, den);
+  num /= d;
+  den /= d;
+  return `${num}/${den}`;
+};
+
+/**
+ * Convert decimal odds to American (e.g. 2.50 → "+150", 1.50 → "-200")
+ */
+const toAmerican = (decimal: number): string => {
+  if (decimal >= 2) return `+${Math.round((decimal - 1) * 100)}`;
+  if (decimal > 1) return `-${Math.round(100 / (decimal - 1))}`;
+  return '+0';
+};
+
+/**
+ * Format odds value respecting the user's chosen format.
+ * @param odds - The decimal odds value
+ * @param format - 'decimal' | 'fractional' | 'american' (default: 'decimal')
+ * @returns Formatted odds string (without trailing "x" — callers append that if needed)
+ */
+export const formatOdds = (
+  odds: number,
+  format: 'decimal' | 'fractional' | 'american' = 'decimal'
+): string => {
+  if (!odds || odds <= 0) return '0.00';
+  switch (format) {
+    case 'fractional':
+      return toFractional(odds);
+    case 'american':
+      return toAmerican(odds);
+    case 'decimal':
+    default:
+      return odds.toFixed(2);
+  }
 };
 
 export default {

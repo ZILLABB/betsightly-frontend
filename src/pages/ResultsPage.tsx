@@ -3,6 +3,7 @@ import {
   BarChart3, CheckCircle2, XCircle, Clock, RefreshCw, TrendingUp, Calendar, Trophy,
 } from "lucide-react";
 import { usePredictions } from "../hooks/usePredictions";
+import { useFormatOdds } from "../hooks/useFormatOdds";
 import { getTeamFlag, isWcNation, teamInitials, teamColor } from "../data/wcFlags";
 
 function TeamBadge({ team }: { team: string }) {
@@ -39,6 +40,7 @@ const STATUS: Record<string, { color: string; bg: string; label: string; icon: R
 export function ResultsPage() {
   const { data, loading, error, refetch } = usePredictions();
   const [refreshing, setRefreshing] = useState(false);
+  const { formatOdds: fmtOdds, oddsSuffix } = useFormatOdds();
   const [filter, setFilter] = useState<"all" | "won" | "lost" | "pending">("all");
 
   const chain = data?.accumulators?.rollover?.chain ?? [];
@@ -196,7 +198,7 @@ export function ResultsPage() {
                   }}>{s.icon} {s.label}</span>
                   <span style={{
                     fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 700, color: "var(--brand)",
-                  }}>{day.combined_odds.toFixed(2)}x</span>
+                  }}>{fmtOdds(day.combined_odds)}{oddsSuffix}</span>
                 </div>
                 <div style={{ paddingLeft: 42, display: "flex", flexDirection: "column", gap: 6 }}>
                   {day.picks.map((p, i) => (
@@ -215,7 +217,7 @@ export function ResultsPage() {
                       <span style={{
                         fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-3)",
                         padding: "2px 6px", borderRadius: 4, background: "rgba(255,255,255,0.04)",
-                      }}>{p.odds.toFixed(2)}x</span>
+                      }}>{fmtOdds(p.odds)}{oddsSuffix}</span>
                     </div>
                   ))}
                 </div>

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { usePredictions } from "../hooks/usePredictions";
+import { useFormatOdds } from "../hooks/useFormatOdds";
 import { PredictionCardSkeleton } from "../components/ui/Skeleton";
 import { CATEGORIES } from "../types";
 import { Repeat2, CheckCircle, XCircle, Clock, Circle, TrendingUp, Calendar, List, Zap } from "lucide-react";
@@ -50,6 +51,7 @@ function fmtDate(iso: string) {
 export function RolloverPage() {
   const { data, loading, error } = usePredictions();
   const [view, setView] = useState<"today" | "all">("today");
+  const { formatOdds: fmtOdds, oddsSuffix } = useFormatOdds();
   const rollover = data?.accumulators?.rollover;
   const catMeta = CATEGORIES.find(c => c.key === "rollover")!;
   const chain = rollover?.chain ?? [];
@@ -91,7 +93,7 @@ export function RolloverPage() {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
           <div className="card" style={{ padding: "18px 20px", borderLeft: `3px solid ${catMeta.color}` }}>
             <p style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Total payout multiplier</p>
-            <p className="stat-num" style={{ fontSize: 32, color: catMeta.color, lineHeight: 1.05 }}>{cumOdds.toFixed(2)}x</p>
+            <p className="stat-num" style={{ fontSize: 32, color: catMeta.color, lineHeight: 1.05 }}>{fmtOdds(cumOdds)}{oddsSuffix}</p>
             <p style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)", marginTop: 6 }}>If all {chain.length} days hit</p>
           </div>
 
@@ -221,7 +223,7 @@ export function RolloverPage() {
                     {/* Combined odds */}
                     <div style={{ textAlign: "right", flexShrink: 0 }}>
                       <p style={{ fontFamily: "var(--font-mono)", fontSize: 18, fontWeight: 800, color: catMeta.color, lineHeight: 1 }}>
-                        {day.combined_odds.toFixed(2)}x
+                        {fmtOdds(day.combined_odds)}{oddsSuffix}
                       </p>
                       <p style={{ fontFamily: "var(--font-body)", fontSize: 10, color: "var(--text-3)", marginTop: 3 }}>
                         avg {Math.round(day.avg_confidence * 100)}% conf
@@ -273,7 +275,7 @@ export function RolloverPage() {
                           {/* Odds + conf */}
                           <div style={{ textAlign: "right", flexShrink: 0 }}>
                             <p style={{ fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 700, color: catMeta.color, lineHeight: 1 }}>
-                              {pick.odds.toFixed(2)}x
+                              {fmtOdds(pick.odds)}{oddsSuffix}
                             </p>
                             <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, color: pick.confidence >= 0.8 ? "var(--green)" : "var(--brand)", marginTop: 2 }}>
                               {Math.round(pick.confidence * 100)}%
