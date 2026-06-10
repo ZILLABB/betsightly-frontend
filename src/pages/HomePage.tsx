@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from "react";
-import { TrendingUp, Zap, Shield, Target, RefreshCw, Trophy, ArrowRight, Flame } from "lucide-react";
+import { TrendingUp, Zap, Shield, Target, RefreshCw, ArrowRight, Flame } from "lucide-react";
 import { Link } from "react-router-dom";
 import { usePredictions } from "../hooks/usePredictions";
 import { useFormatOdds } from "../hooks/useFormatOdds";
@@ -75,9 +75,15 @@ function WorldCupBanner() {
       <div style={{ padding: "20px 22px", display: "flex", flexDirection: "column", gap: 16 }}>
         {/* Top row */}
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 14 }}>
-          <div style={{ flex: 1, minWidth: 200 }}>
+          <div style={{ flex: 1, minWidth: 200, display: "flex", alignItems: "center", gap: 14 }}>
+            <img
+              src="/wc26-emblem.png"
+              alt=""
+              style={{ height: 52, width: "auto", flexShrink: 0, filter: "drop-shadow(0 2px 8px rgba(0,0,0,0.35))" }}
+              onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
+            />
+            <div>
             <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-              <Trophy size={14} color="var(--gold)" />
               <span style={{
                 fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700,
                 letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--gold)",
@@ -96,6 +102,7 @@ function WorldCupBanner() {
             <p style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text-3)", lineHeight: 1.5 }}>
               48 teams · Real bookmaker odds
             </p>
+            </div>
           </div>
 
           <Link to="/worldcup" style={{

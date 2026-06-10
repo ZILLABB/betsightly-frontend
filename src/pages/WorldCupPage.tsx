@@ -466,19 +466,26 @@ export default function WorldCupPage() {
       }}>
         <div style={{ height: 2, background: "linear-gradient(90deg, transparent, #fbbf24 30%, #d97706 70%, transparent)" }} />
         <div style={{ padding: "28px 28px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 20 }}>
-          <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-              <Trophy size={18} color="#fbbf24" />
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", color: "#fbbf24" }}>
-                FIFA World Cup 2026
-              </span>
+          <div style={{ display: "flex", alignItems: "center", gap: 18, minWidth: 0 }}>
+            <img
+              src="/wc26-emblem.png"
+              alt="FIFA World Cup 2026"
+              style={{ height: 84, width: "auto", flexShrink: 0, filter: "drop-shadow(0 4px 16px rgba(0,0,0,0.5))" }}
+              onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
+            />
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", color: "#fbbf24" }}>
+                  FIFA World Cup 2026
+                </span>
+              </div>
+              <h1 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(22px, 4vw, 32px)", fontWeight: 800, color: "#fff", lineHeight: 1.1 }}>
+                USA · Mexico · Canada
+              </h1>
+              <p style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "rgba(255,255,255,0.4)", marginTop: 6 }}>
+                48 teams · {stats.total} matches analyzed · Real bookmaker odds
+              </p>
             </div>
-            <h1 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(22px, 4vw, 32px)", fontWeight: 800, color: "#fff", lineHeight: 1.1 }}>
-              USA · Mexico · Canada
-            </h1>
-            <p style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "rgba(255,255,255,0.4)", marginTop: 6 }}>
-              48 teams · {stats.total} matches analyzed · Real bookmaker odds
-            </p>
           </div>
           <div style={{
             padding: "14px 24px", borderRadius: 14, textAlign: "center",
