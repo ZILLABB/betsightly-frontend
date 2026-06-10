@@ -150,18 +150,29 @@ export function PredictionCard({ game, color, faint, index = 0 }: Props) {
         </span>
       </div>
 
-      {/* Bottom row: model chip + edge + bookmaker */}
+      {/* Bottom row: pick-source chip + value + bookmaker.
+          Internal identifiers (worldcup_ensemble, club_odds, ...) are mapped
+          to user-facing labels — raw model names must never reach the UI. */}
       <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-        {game.model_type && (
-          <span style={{
-            fontFamily: "var(--font-body)", fontSize: 10, fontWeight: 600,
-            letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-3)",
-            background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.04)",
-            borderRadius: 5, padding: "3px 8px",
-          }}>
-            {game.model_type}
-          </span>
-        )}
+        {(() => {
+          const MODEL_LABELS: Record<string, string> = {
+            worldcup_ensemble: "AI Pick",
+            ensemble: "AI Pick",
+            club_odds: "Market Pick",
+            odds_implied: "Market Pick",
+          };
+          const label = game.model_type ? MODEL_LABELS[game.model_type] : undefined;
+          return label ? (
+            <span style={{
+              fontFamily: "var(--font-body)", fontSize: 10, fontWeight: 600,
+              letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-3)",
+              background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.04)",
+              borderRadius: 5, padding: "3px 8px",
+            }}>
+              {label}
+            </span>
+          ) : null;
+        })()}
         {game.edge != null && game.edge > 0 && (
           <span style={{
             fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 600,
@@ -169,7 +180,7 @@ export function PredictionCard({ game, color, faint, index = 0 }: Props) {
             border: "1px solid rgba(34,197,94,0.20)", borderRadius: 5,
             padding: "3px 8px",
           }}>
-            +{(game.edge * 100).toFixed(1)}% edge
+            +{(game.edge * 100).toFixed(1)}% value
           </span>
         )}
         {game.bookmaker && (
@@ -178,16 +189,6 @@ export function PredictionCard({ game, color, faint, index = 0 }: Props) {
             color: "var(--text-3)", marginLeft: "auto",
           }}>
             via {game.bookmaker}
-          </span>
-        )}
-        {game.models_agreed != null && game.models_agreed > 0 && (
-          <span style={{
-            fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 600,
-            color: "var(--text-3)", background: "rgba(255,255,255,0.04)",
-            border: "1px solid rgba(255,255,255,0.04)", borderRadius: 5,
-            padding: "3px 8px",
-          }}>
-            {game.models_agreed} models agree
           </span>
         )}
         <ShareButton
