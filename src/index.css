@@ -39,6 +39,13 @@
   --border:      rgba(255,255,255,0.06);
   --border-brand:rgba(16,185,129,0.22);
 
+  /* Theme-safe overlays — replace hardcoded white rgba so light theme works */
+  --overlay-1:   rgba(255,255,255,0.02);
+  --overlay-2:   rgba(255,255,255,0.04);
+  --track:       rgba(255,255,255,0.08);
+  --divider:     rgba(255,255,255,0.04);
+  --border-hover:rgba(255,255,255,0.10);
+
   /* Navigation overlays — themed */
   --nav-bg-scrolled: rgba(10,10,15,0.94);
   --nav-bg-top:      rgba(10,10,15,0.6);
@@ -93,6 +100,13 @@
 
   --border:      rgba(17,17,24,0.08);
   --border-brand:rgba(5,150,105,0.22);
+
+  /* Theme-safe overlays — dark-tinted in light mode */
+  --overlay-1:   rgba(17,17,24,0.025);
+  --overlay-2:   rgba(17,17,24,0.05);
+  --track:       rgba(17,17,24,0.10);
+  --divider:     rgba(17,17,24,0.06);
+  --border-hover:rgba(17,17,24,0.16);
 
   /* Navigation overlays — light theme */
   --nav-bg-scrolled: rgba(245,245,247,0.94);
@@ -210,7 +224,7 @@
   }
 
   .card:hover {
-    border-color: rgba(255,255,255,0.10);
+    border-color: var(--border-hover);
     box-shadow: var(--shadow-lg);
     transform: translateY(-1px);
   }
@@ -300,6 +314,39 @@
 @keyframes scaleIn {
   from { opacity: 0; transform: scale(0.92); }
   to   { opacity: 1; transform: scale(1); }
+}
+@keyframes logoPulse {
+  0%, 100% { opacity: 0.55; transform: scale(0.985); }
+  50%      { opacity: 1; transform: scale(1); }
+}
+@keyframes loaderSlide {
+  0%   { left: -35%; }
+  100% { left: 100%; }
+}
+
+/* ── Brand loader ──────────────────────────────────── */
+.brand-loader {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 18px; padding: 56px 20px;
+}
+.brand-loader img {
+  height: 42px; width: auto; object-fit: contain;
+  mix-blend-mode: var(--logo-blend);
+  animation: logoPulse 1.6s ease-in-out infinite;
+}
+.brand-loader-track {
+  position: relative; width: 132px; height: 3px;
+  border-radius: 99px; background: var(--track); overflow: hidden;
+}
+.brand-loader-track::after {
+  content: ''; position: absolute; top: 0; bottom: 0; width: 35%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, transparent, var(--brand), transparent);
+  animation: loaderSlide 1.1s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+.brand-loader-msg {
+  font-family: var(--font-body); font-size: 12px; font-weight: 600;
+  color: var(--text-3); letter-spacing: 0.04em;
 }
 
 .animate-fade-up { animation: fadeUp 0.45s var(--ease) both; }
@@ -394,8 +441,31 @@
     linear-gradient(90deg, rgba(17,17,24,0.03) 1px, transparent 1px);
 }
 
-/* Light theme: header doesn't need screen blend on logo */
-.light .brand-logo { mix-blend-mode: multiply; }
+/* Light theme: logo art sits on a black plate — show it as a rounded badge */
+.light .brand-logo,
+.light .brand-loader img {
+  mix-blend-mode: normal;
+  border-radius: 10px;
+}
+
+/* Light theme: darker gradient text for contrast on white */
+.light .text-brand-gradient {
+  background: linear-gradient(135deg, #059669, #047857);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.light .text-accent-gradient {
+  background: linear-gradient(135deg, #d97706, #b45309);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Light theme: card top-edge highlight reads as a dark hairline instead */
+.light .card::before {
+  background: linear-gradient(90deg, transparent 0%, rgba(17,17,24,0.06) 30%, rgba(17,17,24,0.09) 50%, rgba(17,17,24,0.06) 70%, transparent 100%);
+}
 
 /* ── Odds glow ─────────────────────────────────────── */
 .odds-value {

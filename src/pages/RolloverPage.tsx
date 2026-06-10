@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { usePredictions } from "../hooks/usePredictions";
 import { useFormatOdds } from "../hooks/useFormatOdds";
 import { PredictionCardSkeleton } from "../components/ui/Skeleton";
+import { BrandLoader } from "../components/ui/BrandLoader";
 import { CATEGORIES } from "../types";
 import { Repeat2, CheckCircle, XCircle, Clock, Circle, TrendingUp, Calendar, List, Zap } from "lucide-react";
 import { getTeamFlag, isWcNation, teamInitials, teamColor } from "../data/wcFlags";
@@ -131,9 +132,11 @@ export function RolloverPage() {
 
       {/* Toggle + chain */}
       {loading ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {[1, 2, 3].map(i => <PredictionCardSkeleton key={i} />)}
-        </div>
+        <BrandLoader message="Loading the rollover chain...">
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {[1, 2, 3].map(i => <PredictionCardSkeleton key={i} />)}
+          </div>
+        </BrandLoader>
       ) : chain.length === 0 ? (
         <div className="card" style={{ padding: "40px 20px", textAlign: "center" }}>
           <p style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text-3)" }}>

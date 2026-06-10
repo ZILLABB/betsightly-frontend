@@ -10,7 +10,7 @@ function Section({ icon, title, children }: { icon: React.ReactNode; title: stri
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         <div style={{
           width: 36, height: 36, borderRadius: 10,
-          background: "rgba(59,130,246,0.10)", border: "1px solid rgba(59,130,246,0.18)",
+          background: "var(--brand-faint)", border: "1px solid var(--border-brand)",
           display: "flex", alignItems: "center", justifyContent: "center", color: "var(--brand)",
         }}>{icon}</div>
         <h2 style={{ fontFamily: "var(--font-display)", fontSize: 20, fontWeight: 800 }}>{title}</h2>

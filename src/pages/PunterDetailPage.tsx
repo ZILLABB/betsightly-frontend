@@ -93,7 +93,7 @@ function StatusBadge({ status }: { status: string }) {
   const config: Record<string, { bg: string; color: string; label: string }> = {
     won: { bg: "rgba(34,197,94,0.12)", color: "var(--green)", label: "Won" },
     lost: { bg: "rgba(248,113,113,0.12)", color: "var(--red)", label: "Lost" },
-    pending: { bg: "rgba(255,255,255,0.06)", color: "var(--text-3)", label: "Pending" },
+    pending: { bg: "var(--overlay-2)", color: "var(--text-3)", label: "Pending" },
   };
   const c = config[status] || config.pending;
   return (

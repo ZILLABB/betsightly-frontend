@@ -7,6 +7,7 @@ import { PredictionCard } from "../components/predictions/PredictionCard";
 import { EmptyState } from "../components/predictions/EmptyState";
 import { AccumulatorSlip } from "../components/predictions/AccumulatorSlip";
 import { PredictionCardSkeleton } from "../components/ui/Skeleton";
+import { BrandLoader } from "../components/ui/BrandLoader";
 import { CATEGORIES } from "../types";
 import type { CategoryKey } from "../types";
 import { SEO } from "../components/common/SEO";
@@ -36,9 +37,9 @@ export function PredictionsPage() {
         <div className="eyebrow" style={{ marginBottom: 8 }}>Today&apos;s Picks</div>
         <h1 style={{ fontSize: 32, fontWeight: 800 }}>All Predictions</h1>
         <p style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text-3)", marginTop: 6 }}>
-          Browse all accumulator categories for {data?.date
+          Every accumulator for {data?.date
             ? new Date(data.date + "T12:00:00Z").toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" })
-            : "today"}.
+            : "today"} — pick a tier that matches your risk appetite.
         </p>
       </div>
 
@@ -51,9 +52,11 @@ export function PredictionsPage() {
       )}
 
       {loading ? (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}>
-          {Array.from({ length: 6 }).map((_, i) => <PredictionCardSkeleton key={i} />)}
-        </div>
+        <BrandLoader message="Building today's accumulators...">
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}>
+            {Array.from({ length: 6 }).map((_, i) => <PredictionCardSkeleton key={i} />)}
+          </div>
+        </BrandLoader>
       ) : !activeCat || !activeCat.selected ? (
         <EmptyState type="no-selection" onRetry={refetch} />
       ) : !activeCat.games?.length ? (

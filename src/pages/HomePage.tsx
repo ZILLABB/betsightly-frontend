@@ -12,6 +12,7 @@ import { CategoryTabs } from "../components/predictions/CategoryTabs";
 import { PredictionCard } from "../components/predictions/PredictionCard";
 import { EmptyState } from "../components/predictions/EmptyState";
 import { PredictionCardSkeleton } from "../components/ui/Skeleton";
+import { BrandLoader } from "../components/ui/BrandLoader";
 import { CATEGORIES } from "../types";
 import { SEO } from "../components/common/SEO";
 import type { CategoryKey } from "../types";
@@ -76,10 +77,10 @@ function WorldCupBanner() {
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 14 }}>
           <div style={{ flex: 1, minWidth: 200 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-              <Trophy size={14} color="#f59e0b" />
+              <Trophy size={14} color="var(--gold)" />
               <span style={{
                 fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700,
-                letterSpacing: "0.12em", textTransform: "uppercase", color: "#f59e0b",
+                letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--gold)",
               }}>FIFA World Cup 2026</span>
             </div>
             <h2 style={{
@@ -101,7 +102,7 @@ function WorldCupBanner() {
             display: "flex", alignItems: "center", gap: 6,
             padding: "8px 16px", borderRadius: 8, textDecoration: "none",
             background: "rgba(245,158,11,0.12)", border: "1px solid rgba(245,158,11,0.20)",
-            color: "#f59e0b", fontFamily: "var(--font-body)", fontSize: 12, fontWeight: 700,
+            color: "var(--gold)", fontFamily: "var(--font-body)", fontSize: 12, fontWeight: 700,
             transition: "all 150ms ease",
           }}>
             View Picks <ArrowRight size={12} />
@@ -117,7 +118,7 @@ function WorldCupBanner() {
             {picks.map(p => (
               <Link to="/worldcup" key={p.match_id} style={{
                 padding: "10px 12px", borderRadius: 10, textDecoration: "none",
-                background: "rgba(255,255,255,0.02)", border: "1px solid var(--border)",
+                background: "var(--overlay-1)", border: "1px solid var(--border)",
                 transition: "background 150ms ease", display: "flex", flexDirection: "column", gap: 6,
               }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -126,7 +127,7 @@ function WorldCupBanner() {
                   </span>
                   <span style={{
                     fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700,
-                    color: p.confidence >= 0.6 ? "var(--green)" : "#f59e0b",
+                    color: p.confidence >= 0.6 ? "var(--green)" : "var(--gold)",
                   }}>
                     {Math.round(p.confidence * 100)}%
                   </span>
@@ -155,7 +156,7 @@ function WorldCupBanner() {
                     </span>
                   </div>
                 </div>
-                <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#f59e0b", fontWeight: 600 }}>
+                <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--gold)", fontWeight: 600 }}>
                   {p.prediction}
                 </p>
               </Link>
@@ -167,25 +168,10 @@ function WorldCupBanner() {
   );
 }
 
-// ── Loading State — animated pulse cards ──────────────
+// ── Loading State — branded logo loader + skeleton grid ──
 function LoadingState() {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <div style={{
-        display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-        padding: "24px 0 8px",
-      }}>
-        <div style={{
-          width: 6, height: 6, borderRadius: "50%", background: "var(--brand)",
-          animation: "breathe 1.2s ease-in-out infinite",
-        }} />
-        <span style={{
-          fontFamily: "var(--font-body)", fontSize: 12, fontWeight: 600,
-          color: "var(--text-3)", letterSpacing: "0.04em",
-        }}>
-          Fetching today's predictions...
-        </span>
-      </div>
+    <BrandLoader message="Fetching today's predictions...">
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 14 }}>
         {Array.from({ length: 4 }).map((_, i) => (
           <div key={i} style={{ animationDelay: `${i * 80}ms` }}>
@@ -193,7 +179,7 @@ function LoadingState() {
           </div>
         ))}
       </div>
-    </div>
+    </BrandLoader>
   );
 }
 
@@ -262,7 +248,7 @@ export function HomePage() {
         <StatBubble label="Picks today" value={loading ? "—" : String(totalGames)} icon={<Target size={17} color="var(--brand)" />} color="var(--brand)" />
         <StatBubble label="Confidence" value={loading ? "—" : `${avgConf}%`} icon={<Shield size={17} color="var(--green)" />} color="var(--green)" />
         <StatBubble label="Top odds" value={loading ? "—" : `${fmtOdds(activeCat?.total_odds ?? 0)}${oddsSuffix}`} icon={<TrendingUp size={17} color="var(--blue)" />} color="var(--blue)" />
-        <StatBubble label="Categories" value={String(CATEGORIES.length)} icon={<Flame size={17} color="#f59e0b" />} color="#f59e0b" />
+        <StatBubble label="Categories" value={String(CATEGORIES.length)} icon={<Flame size={17} color="var(--gold)" />} color="var(--gold)" />
       </div>
 
       {/* Tabs + content */}

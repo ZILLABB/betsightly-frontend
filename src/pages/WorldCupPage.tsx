@@ -9,6 +9,7 @@ import {
   type WCPrediction, type WCValueBet, type WCGroup, type WCAccumulator,
 } from "../services/worldcupService";
 import { SEO } from "../components/common/SEO";
+import { BrandLoader } from "../components/ui/BrandLoader";
 import { getTeamFlag } from "../data/wcFlags";
 
 // ── Helpers ────────────────────────────────────────────────
@@ -23,14 +24,14 @@ const fmtTime = (iso: string) => new Date(iso).toLocaleTimeString("en-GB", { hou
 const daysUntil = (iso: string) => Math.max(0, Math.ceil((new Date(iso).getTime() - Date.now()) / 86400000));
 
 const RISK: Record<string, { bg: string; c: string }> = {
-  very_low: { bg: "rgba(34,197,94,0.10)", c: "#22c55e" },
-  low: { bg: "rgba(34,197,94,0.10)", c: "#22c55e" },
-  medium: { bg: "rgba(245,158,11,0.10)", c: "#f59e0b" },
-  high: { bg: "rgba(248,113,113,0.10)", c: "#f87171" },
+  very_low: { bg: "var(--green-faint)", c: "var(--green)" },
+  low: { bg: "var(--green-faint)", c: "var(--green)" },
+  medium: { bg: "var(--gold-faint)", c: "var(--gold)" },
+  high: { bg: "var(--red-faint)", c: "var(--red)" },
 };
 
 const MKT_COLORS: Record<string, string> = {
-  match_result: "#f59e0b", goals: "#22c55e", btts: "#60a5fa", double_chance: "#a78bfa",
+  match_result: "var(--gold)", goals: "var(--green)", btts: "var(--blue)", double_chance: "var(--purple)",
 };
 const MKT_LABELS: Record<string, string> = {
   match_result: "Result", goals: "Goals", btts: "BTTS", double_chance: "DC",
@@ -45,7 +46,7 @@ function ConfRing({ value, size = 40, color }: { value: number; size?: number; c
   return (
     <div style={{ position: "relative", width: size, height: size, flexShrink: 0 }}>
       <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}>
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={4} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--track)" strokeWidth={4} />
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={4}
           strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round"
           style={{ transition: "stroke-dashoffset 0.6s ease" }} />
@@ -62,21 +63,21 @@ function ConfRing({ value, size = 40, color }: { value: number; size?: number; c
 function ProbBar({ h, d, a }: { h: number; d: number; a: number }) {
   return (
     <div style={{ display: "flex", gap: 2, height: 4, borderRadius: 2, overflow: "hidden" }}>
-      <div style={{ flex: h, background: "#22c55e", minWidth: 2, transition: "flex 300ms" }} />
-      <div style={{ flex: d, background: "rgba(255,255,255,0.2)", minWidth: 2, transition: "flex 300ms" }} />
-      <div style={{ flex: a, background: "#f87171", minWidth: 2, transition: "flex 300ms" }} />
+      <div style={{ flex: h, background: "var(--green)", minWidth: 2, transition: "flex 300ms" }} />
+      <div style={{ flex: d, background: "var(--track)", minWidth: 2, transition: "flex 300ms" }} />
+      <div style={{ flex: a, background: "var(--red)", minWidth: 2, transition: "flex 300ms" }} />
     </div>
   );
 }
 
 // ── Market Tag ─────────────────────────────────────────────
 function MktTag({ market }: { market: string }) {
-  const c = MKT_COLORS[market] || "#999";
+  const c = MKT_COLORS[market] || "var(--text-3)";
   return (
     <span style={{
       fontFamily: "var(--font-mono)", fontSize: 8, fontWeight: 700,
       padding: "1px 5px", borderRadius: 3, letterSpacing: "0.08em",
-      background: `${c}18`, color: c, textTransform: "uppercase",
+      background: `color-mix(in srgb, ${c} 10%, transparent)`, color: c, textTransform: "uppercase",
     }}>{MKT_LABELS[market] || market}</span>
   );
 }
@@ -85,7 +86,6 @@ function MktTag({ market }: { market: string }) {
 function MatchCard({ p }: { p: WCPrediction }) {
   const [open, setOpen] = useState(false);
   const risk = RISK[p.risk_level] || RISK.medium;
-  const confColor = p.confidence >= 0.65 ? "#22c55e" : p.confidence >= 0.48 ? "#f59e0b" : "#f87171";
   const tips = p.top_tips ?? [{ tip: p.prediction, market: p.prediction_market || "match_result", confidence: p.confidence }];
 
   return (
@@ -130,40 +130,76 @@ function MatchCard({ p }: { p: WCPrediction }) {
         {/* Prob bar */}
         <ProbBar h={p.probabilities.home_win} d={p.probabilities.draw} a={p.probabilities.away_win} />
         <div style={{ display: "flex", justifyContent: "space-between", marginTop: 3, marginBottom: 10 }}>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "#22c55e" }}>{Math.round(p.probabilities.home_win * 100)}%</span>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--green)" }}>{Math.round(p.probabilities.home_win * 100)}%</span>
           <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--text-3)" }}>{Math.round(p.probabilities.draw * 100)}%</span>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "#f87171" }}>{Math.round(p.probabilities.away_win * 100)}%</span>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--red)" }}>{Math.round(p.probabilities.away_win * 100)}%</span>
         </div>
 
-        {/* Tips */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          {tips.map((tip, i) => (
-            <div key={i} style={{
-              display: "flex", alignItems: "center", gap: 8, padding: "6px 10px",
-              borderRadius: 8,
-              background: i === 0 ? "rgba(245,158,11,0.05)" : "transparent",
-              border: i === 0 ? "1px solid rgba(245,158,11,0.10)" : "1px solid transparent",
-            }}>
-              <MktTag market={tip.market} />
-              <span style={{
-                fontFamily: "var(--font-body)", fontSize: i === 0 ? 12 : 11,
-                fontWeight: i === 0 ? 700 : 500, color: i === 0 ? "var(--text-1)" : "var(--text-2)",
-                flex: 1,
-              }}>{tip.tip}</span>
-              <ConfRing value={tip.confidence} size={i === 0 ? 34 : 28} color={tip.confidence >= 0.6 ? "#22c55e" : "#f59e0b"} />
+        {/* Best pick — one clear recommendation per game */}
+        {tips[0] && (
+          <div style={{
+            display: "flex", alignItems: "center", gap: 10, padding: "10px 12px",
+            borderRadius: 10,
+            background: "var(--gold-faint)",
+            border: "1px solid rgba(245,158,11,0.18)",
+          }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
+                <span style={{
+                  fontFamily: "var(--font-mono)", fontSize: 8, fontWeight: 700,
+                  letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--gold)",
+                }}>Best pick</span>
+                <MktTag market={tips[0].market} />
+              </div>
+              <p style={{
+                fontFamily: "var(--font-body)", fontSize: 13, fontWeight: 700,
+                color: "var(--text-1)", lineHeight: 1.3,
+              }}>{tips[0].tip}</p>
             </div>
-          ))}
-        </div>
+            <ConfRing value={tips[0].confidence} size={38} color={tips[0].confidence >= 0.6 ? "var(--green)" : "var(--gold)"} />
+          </div>
+        )}
 
-        {/* Chevron */}
-        <div style={{ display: "flex", justifyContent: "center", marginTop: 6, opacity: 0.3 }}>
-          {open ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-        </div>
+        {/* Secondary options — collapsed by default */}
+        {tips.length > 1 && (
+          <div style={{ display: "flex", justifyContent: "center", marginTop: 8 }}>
+            <span style={{
+              fontFamily: "var(--font-body)", fontSize: 10, fontWeight: 600,
+              color: "var(--text-3)", display: "inline-flex", alignItems: "center", gap: 4,
+            }}>
+              {open ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
+              {open ? "Hide details" : `${tips.length - 1} more option${tips.length > 2 ? "s" : ""} + stats`}
+            </span>
+          </div>
+        )}
+        {tips.length <= 1 && (
+          <div style={{ display: "flex", justifyContent: "center", marginTop: 6, opacity: 0.3 }}>
+            {open ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+          </div>
+        )}
       </div>
 
       {/* Expanded */}
       {open && (
         <div style={{ padding: "0 16px 14px", borderTop: "1px solid var(--border)" }}>
+          {/* Other tips */}
+          {tips.length > 1 && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 4, paddingTop: 12 }}>
+              <p style={{ fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 700, color: "var(--text-3)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 2 }}>
+                Other options
+              </p>
+              {tips.slice(1).map((tip, i) => (
+                <div key={i} style={{
+                  display: "flex", alignItems: "center", gap: 8, padding: "6px 10px",
+                  borderRadius: 8, background: "var(--overlay-1)",
+                }}>
+                  <MktTag market={tip.market} />
+                  <span style={{ fontFamily: "var(--font-body)", fontSize: 11, fontWeight: 500, color: "var(--text-2)", flex: 1 }}>{tip.tip}</span>
+                  <ConfRing value={tip.confidence} size={28} color={tip.confidence >= 0.6 ? "var(--green)" : "var(--gold)"} />
+                </div>
+              ))}
+            </div>
+          )}
           {/* Goals stats */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6, padding: "12px 0" }}>
             {[
@@ -172,7 +208,7 @@ function MatchCard({ p }: { p: WCPrediction }) {
               { l: "Over 1.5", v: `${Math.round(p.goals.over_1_5_prob * 100)}%` },
               { l: "BTTS", v: `${Math.round(p.goals.btts_prob * 100)}%` },
             ].map(s => (
-              <div key={s.l} style={{ textAlign: "center", padding: "8px 4px", background: "rgba(255,255,255,0.02)", borderRadius: 8 }}>
+              <div key={s.l} style={{ textAlign: "center", padding: "8px 4px", background: "var(--overlay-1)", borderRadius: 8 }}>
                 <p style={{ fontFamily: "var(--font-mono)", fontSize: 15, fontWeight: 700, color: "var(--text-1)" }}>{s.v}</p>
                 <p style={{ fontFamily: "var(--font-body)", fontSize: 9, color: "var(--text-3)", marginTop: 2 }}>{s.l}</p>
               </div>
@@ -181,19 +217,19 @@ function MatchCard({ p }: { p: WCPrediction }) {
           {/* Value bets */}
           {p.value_bets.length > 0 && (
             <div>
-              <p style={{ fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 700, color: "#22c55e", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 6 }}>
+              <p style={{ fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 700, color: "var(--green)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 6 }}>
                 Value Bets
               </p>
               {p.value_bets.map((vb, i) => (
                 <div key={i} style={{
                   display: "flex", alignItems: "center", justifyContent: "space-between",
                   padding: "5px 8px", borderRadius: 6, marginBottom: 3,
-                  background: "rgba(34,197,94,0.04)", border: "1px solid rgba(34,197,94,0.08)",
+                  background: "var(--green-faint)", border: "1px solid rgba(16,185,129,0.12)",
                 }}>
                   <span style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-1)" }}>{vb.bet}</span>
                   <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
                     <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-3)" }}>@{vb.odds}</span>
-                    <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, color: "#22c55e" }}>+{(vb.edge * 100).toFixed(1)}%</span>
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, color: "var(--green)" }}>+{(vb.edge * 100).toFixed(1)}%</span>
                   </div>
                 </div>
               ))}
@@ -219,7 +255,7 @@ function GroupCard({ name, group }: { name: string; group: WCGroup }) {
       }}>
         <span style={{
           fontFamily: "var(--font-display)", fontSize: 16, fontWeight: 800,
-          color: "#fbbf24", width: 28, textAlign: "center",
+          color: "var(--gold)", width: 28, textAlign: "center",
         }}>
           {name}
         </span>
@@ -237,7 +273,7 @@ function GroupCard({ name, group }: { name: string; group: WCGroup }) {
         {group.matches.map(p => (
           <div key={p.match_id} style={{
             display: "flex", alignItems: "center", gap: 8, padding: "8px 6px",
-            borderBottom: "1px solid rgba(255,255,255,0.03)",
+            borderBottom: "1px solid var(--divider)",
           }}>
             <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-3)", width: 40, flexShrink: 0 }}>
               {fmtDate(p.commence_time).slice(0, 6)}
@@ -247,9 +283,9 @@ function GroupCard({ name, group }: { name: string; group: WCGroup }) {
             </p>
             <div style={{ textAlign: "right", flexShrink: 0 }}>
               <MktTag market={p.prediction_market || "match_result"} />
-              <p style={{ fontFamily: "var(--font-body)", fontSize: 11, fontWeight: 700, color: "#fbbf24", marginTop: 2 }}>{p.prediction}</p>
+              <p style={{ fontFamily: "var(--font-body)", fontSize: 11, fontWeight: 700, color: "var(--gold)", marginTop: 2 }}>{p.prediction}</p>
             </div>
-            <ConfRing value={p.confidence} size={28} color={p.confidence >= 0.6 ? "#22c55e" : "#f59e0b"} />
+            <ConfRing value={p.confidence} size={28} color={p.confidence >= 0.6 ? "var(--green)" : "var(--gold)"} />
           </div>
         ))}
         {group.matches.length === 0 && <p style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)", padding: 10 }}>TBD</p>}
@@ -290,7 +326,7 @@ function AccuSlip({ label, accu, color }: { label: string; accu: WCAccumulator; 
           <div key={i} style={{
             display: "flex", alignItems: "center", gap: 10,
             padding: "10px 18px",
-            borderBottom: i < accu.picks.length - 1 ? "1px solid rgba(255,255,255,0.03)" : "none",
+            borderBottom: i < accu.picks.length - 1 ? "1px solid var(--divider)" : "none",
           }}>
             <span style={{
               fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700,
@@ -305,7 +341,7 @@ function AccuSlip({ label, accu, color }: { label: string; accu: WCAccumulator; 
                 <span style={{ fontFamily: "var(--font-body)", fontSize: 12, fontWeight: 700, color }}>{pick.tip}</span>
               </div>
             </div>
-            <ConfRing value={pick.confidence} size={32} color={pick.confidence >= 0.6 ? "#22c55e" : color} />
+            <ConfRing value={pick.confidence} size={32} color={pick.confidence >= 0.6 ? "var(--green)" : color} />
           </div>
         ))}
       </div>
@@ -323,18 +359,18 @@ function VBRow({ vb }: { vb: WCValueBet }) {
   return (
     <div style={{
       display: "flex", alignItems: "center", gap: 10,
-      padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.03)",
+      padding: "10px 0", borderBottom: "1px solid var(--divider)",
     }}>
       <span style={{
         fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 700,
-        color: "#22c55e", background: "rgba(34,197,94,0.10)",
+        color: "var(--green)", background: "var(--green-faint)",
         padding: "3px 8px", borderRadius: 4, whiteSpace: "nowrap",
       }}>+{(vb.edge * 100).toFixed(1)}%</span>
       <div style={{ flex: 1, minWidth: 0 }}>
         <p style={{ fontFamily: "var(--font-body)", fontSize: 12, fontWeight: 600, color: "var(--text-1)" }}>{vb.bet}</p>
         <p style={{ fontFamily: "var(--font-body)", fontSize: 10, color: "var(--text-3)" }}>{vb.match}</p>
       </div>
-      <span style={{ fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 700, color: "#f59e0b" }}>@{vb.odds}</span>
+      <span style={{ fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 700, color: "var(--gold)" }}>@{vb.odds}</span>
     </div>
   );
 }
@@ -403,15 +439,11 @@ export default function WorldCupPage() {
   const days = daysUntil(firstMatch);
 
   if (loading) return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      <div className="skeleton" style={{ height: 100, borderRadius: 16 }} />
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
-        {[1, 2, 3, 4].map(i => <div key={i} className="skeleton" style={{ height: 60, borderRadius: 12 }} />)}
-      </div>
+    <BrandLoader message="Analyzing World Cup fixtures...">
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 14 }}>
         {[1, 2, 3, 4, 5, 6].map(i => <div key={i} className="skeleton" style={{ height: 200, borderRadius: 14 }} />)}
       </div>
-    </div>
+    </BrandLoader>
   );
 
   if (error) return (
@@ -491,8 +523,8 @@ export default function WorldCupPage() {
               display: "flex", alignItems: "center", gap: 5, padding: "8px 14px", borderRadius: 8,
               border: "none", cursor: "pointer",
               fontFamily: "var(--font-body)", fontSize: 12, fontWeight: 600,
-              background: tab === t.k ? "rgba(245,158,11,0.12)" : "transparent",
-              color: tab === t.k ? "#fbbf24" : "var(--text-3)",
+              background: tab === t.k ? "var(--gold-faint)" : "transparent",
+              color: tab === t.k ? "var(--gold)" : "var(--text-3)",
               transition: "all 150ms",
             }}>
               {t.ic} {t.l}
@@ -504,9 +536,9 @@ export default function WorldCupPage() {
           <button onClick={() => setShowFilters(!showFilters)} style={{
             display: "flex", alignItems: "center", gap: 5, padding: "8px 14px", borderRadius: 8,
             cursor: "pointer", fontFamily: "var(--font-body)", fontSize: 12, fontWeight: 600,
-            border: (dateFilter || riskFilter) ? "1px solid var(--brand)" : "1px solid var(--border)",
-            background: (dateFilter || riskFilter) ? "rgba(245,158,11,0.08)" : "transparent",
-            color: (dateFilter || riskFilter) ? "#fbbf24" : "var(--text-3)",
+            border: (dateFilter || riskFilter) ? "1px solid rgba(245,158,11,0.35)" : "1px solid var(--border)",
+            background: (dateFilter || riskFilter) ? "var(--gold-faint)" : "transparent",
+            color: (dateFilter || riskFilter) ? "var(--gold)" : "var(--text-3)",
           }}>
             <Filter size={12} /> Filters
           </button>
@@ -551,7 +583,7 @@ export default function WorldCupPage() {
           {grouped.map(([date, matches]) => (
             <div key={date}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, padding: "4px 0" }}>
-                <Calendar size={12} color="#fbbf24" />
+                <Calendar size={12} color="var(--gold)" />
                 <h3 style={{ fontFamily: "var(--font-display)", fontSize: 14, fontWeight: 700, color: "var(--text-1)" }}>
                   {fmtDate(date + "T00:00:00Z")}
                 </h3>
@@ -582,6 +614,7 @@ export default function WorldCupPage() {
             </p>
           )}
           {Object.entries(accumulators).map(([key, accu]) => {
+            // AccuSlip builds hex-alpha suffixes (`${color}08`), so these stay literal hex
             const colors: Record<string, string> = { safe: "#22c55e", moderate: "#f59e0b", bold: "#f87171" };
             return <AccuSlip key={key} label={key} accu={accu} color={colors[key] || "#f59e0b"} />;
           })}
@@ -595,9 +628,9 @@ export default function WorldCupPage() {
           border: "1px solid var(--border)",
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
-            <Zap size={14} color="#22c55e" />
+            <Zap size={14} color="var(--green)" />
             <h3 style={{ fontFamily: "var(--font-display)", fontSize: 15, fontWeight: 700, color: "var(--text-1)" }}>Value Bets</h3>
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#22c55e", background: "rgba(34,197,94,0.10)", padding: "2px 8px", borderRadius: 4 }}>{valueBets.length}</span>
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--green)", background: "var(--green-faint)", padding: "2px 8px", borderRadius: 4 }}>{valueBets.length}</span>
           </div>
           <p style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)", marginBottom: 14, lineHeight: 1.5 }}>
             Where our model probability beats the bookmaker implied probability.

@@ -10,7 +10,7 @@ export function PredictionCardSkeleton() {
       {/* Top strip */}
       <div style={{
         display: "flex", justifyContent: "space-between", padding: "10px 16px",
-        background: "rgba(255,255,255,0.02)", borderBottom: "1px solid var(--border)",
+        background: "var(--overlay-1)", borderBottom: "1px solid var(--border)",
       }}>
         <Skeleton width={90} height={12} />
         <Skeleton width={50} height={12} />

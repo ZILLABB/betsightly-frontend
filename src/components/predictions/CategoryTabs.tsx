@@ -42,11 +42,11 @@ export function CategoryTabs({ active, onChange, oddsMap = {} }: Props) {
               gap: 6,
               padding: "14px 20px",
               borderRadius: "var(--radius-lg)",
-              border: `1px solid ${isActive ? cat.color + "55" : isHov ? "rgba(255,255,255,0.12)" : "var(--border)"}`,
+              border: `1px solid ${isActive ? cat.color + "55" : isHov ? "var(--border-hover)" : "var(--border)"}`,
               background: isActive
                 ? cat.faint
                 : isHov
-                ? "rgba(255,255,255,0.03)"
+                ? "var(--overlay-1)"
                 : "transparent",
               cursor: "pointer",
               transition: "all 180ms var(--ease)",

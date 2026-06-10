@@ -57,7 +57,7 @@ export function PredictionCard({ game, color, faint, index = 0 }: Props) {
       <div style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
         padding: "10px 16px",
-        background: "rgba(255,255,255,0.02)",
+        background: "var(--overlay-1)",
         borderBottom: "1px solid var(--border)",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>

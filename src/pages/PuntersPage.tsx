@@ -11,6 +11,7 @@ import type { BettingCode } from "../types";
 import { useNavigate } from "react-router-dom";
 import { useFormatOdds } from "../hooks/useFormatOdds";
 import { SEO } from "../components/common/SEO";
+import { BrandLoader } from "../components/ui/BrandLoader";
 
 const BOOKMAKER_INFO: Record<string, { logo: string; color: string; url: string }> = {
   sportybet:  { logo: "https://www.sportybet.com/favicon.ico", color: "#2DB544", url: "https://www.sportybet.com" },
@@ -114,7 +115,7 @@ function StatusBadge({ status }: { status: string }) {
   const config: Record<string, { bg: string; color: string; label: string }> = {
     won: { bg: "rgba(34,197,94,0.12)", color: "var(--green)", label: "Won" },
     lost: { bg: "rgba(248,113,113,0.12)", color: "var(--red)", label: "Lost" },
-    pending: { bg: "rgba(255,255,255,0.06)", color: "var(--text-3)", label: "Pending" },
+    pending: { bg: "var(--overlay-2)", color: "var(--text-3)", label: "Pending" },
   };
   const c = config[status] || config.pending;
   return (
@@ -956,13 +957,13 @@ export default function PuntersPage() {
 
       {/* Content */}
       {loading ? (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="card" style={{ padding: 20, height: 220 }}>
-              <div style={{ width: 48, height: 48, borderRadius: 12, background: "var(--surface-2)", animation: "pulse 1.5s ease infinite" }} />
-            </div>
-          ))}
-        </div>
+        <BrandLoader message="Rounding up the punters...">
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="skeleton" style={{ height: 220, borderRadius: 14 }} />
+            ))}
+          </div>
+        </BrandLoader>
       ) : viewMode === "leaderboard" ? (
         filtered.length > 0 ? (
           <div className="card" style={{ padding: 0, overflow: "hidden" }}>

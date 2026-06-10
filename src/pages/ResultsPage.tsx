@@ -6,6 +6,7 @@ import { usePredictions } from "../hooks/usePredictions";
 import { useFormatOdds } from "../hooks/useFormatOdds";
 import { getTeamFlag, isWcNation, teamInitials, teamColor } from "../data/wcFlags";
 import { SEO } from "../components/common/SEO";
+import { BrandLoader } from "../components/ui/BrandLoader";
 
 function TeamBadge({ team }: { team: string }) {
   if (isWcNation(team)) {
@@ -85,14 +86,14 @@ export function ResultsPage() {
       <div>
         <div className="eyebrow" style={{ marginBottom: 8, display: "flex", alignItems: "center", gap: 8 }}>
           <BarChart3 size={14} color="var(--brand)" />
-          Results & History
+          Track Record
         </div>
         <h1 style={{ fontSize: "clamp(28px, 5vw, 40px)", fontWeight: 800, lineHeight: 1.1 }}>
-          How are we <span className="text-brand-gradient">doing?</span>
+          Every pick, <span className="text-brand-gradient">settled in public</span>
         </h1>
         <p style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text-3)", marginTop: 10, maxWidth: 540, lineHeight: 1.7 }}>
-          Live results from the 10-day rollover challenge. Results auto-update every 6 hours;
-          you can force a check below.
+          Rollover days are graded automatically against final scores — wins and losses both stay
+          on the board. Results refresh every 6 hours, or force a check anytime.
         </p>
       </div>
 
@@ -155,11 +156,13 @@ export function ResultsPage() {
 
       {/* Day list */}
       {loading && chain.length === 0 ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {[1, 2, 3].map(i => (
-            <div key={i} className="card" style={{ height: 80, opacity: 0.5 }} />
-          ))}
-        </div>
+        <BrandLoader message="Settling the books...">
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {[1, 2, 3].map(i => (
+              <div key={i} className="skeleton" style={{ height: 80, borderRadius: 14 }} />
+            ))}
+          </div>
+        </BrandLoader>
       ) : filtered.length === 0 ? (
         <div className="card" style={{ padding: "40px 20px", textAlign: "center" }}>
           <Trophy size={28} color="var(--text-3)" style={{ marginBottom: 12 }} />
@@ -218,7 +221,7 @@ export function ResultsPage() {
                       </span>
                       <span style={{
                         fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-3)",
-                        padding: "2px 6px", borderRadius: 4, background: "rgba(255,255,255,0.04)",
+                        padding: "2px 6px", borderRadius: 4, background: "var(--overlay-2)",
                       }}>{fmtOdds(p.odds)}{oddsSuffix}</span>
                     </div>
                   ))}
