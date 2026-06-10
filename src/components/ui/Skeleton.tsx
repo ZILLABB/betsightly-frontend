@@ -1,4 +1,4 @@
-﻿import React from "react";
+import React from "react";
 
 export function Skeleton({ width="100%", height=16, radius=8, style }: { width?: string|number; height?: number; radius?: number; style?: React.CSSProperties }) {
   return <div className="skeleton" style={{ width, height, borderRadius:radius, ...style }} />;
@@ -6,38 +6,44 @@ export function Skeleton({ width="100%", height=16, radius=8, style }: { width?:
 
 export function PredictionCardSkeleton() {
   return (
-    <div className="card" style={{ padding:20, display:"flex", flexDirection:"column", gap:16 }}>
-      <div style={{ display:"flex", justifyContent:"space-between" }}>
-        <Skeleton width={100} height={13} />
-        <Skeleton width={70} height={20} radius={99} />
+    <div className="card animate-fade-up" style={{ padding: 0, overflow: "hidden" }}>
+      {/* Top strip */}
+      <div style={{
+        display: "flex", justifyContent: "space-between", padding: "10px 16px",
+        background: "rgba(255,255,255,0.02)", borderBottom: "1px solid var(--border)",
+      }}>
+        <Skeleton width={90} height={12} />
+        <Skeleton width={50} height={12} />
       </div>
-      <div style={{ display:"flex", alignItems:"center", gap:12, justifyContent:"center", padding:"8px 0" }}>
-        <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:8 }}>
-          <Skeleton width={48} height={48} radius={99} />
-          <Skeleton width={80} height={12} />
+
+      {/* Teams row */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "16px 16px 12px" }}>
+        <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 8 }}>
+          <Skeleton width={32} height={22} radius={4} />
+          <Skeleton width={90} height={14} />
         </div>
-        <Skeleton width={32} height={20} />
-        <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:8 }}>
-          <Skeleton width={48} height={48} radius={99} />
-          <Skeleton width={80} height={12} />
-        </div>
-      </div>
-      <div style={{ display:"flex", justifyContent:"space-between", padding:"8px 0", borderTop:"1px solid rgba(255,255,255,0.05)" }}>
-        <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-          <Skeleton width={70} height={11} />
-          <Skeleton width={140} height={16} />
-        </div>
-        <div style={{ display:"flex", flexDirection:"column", gap:8, alignItems:"flex-end" }}>
-          <Skeleton width={40} height={11} />
-          <Skeleton width={60} height={24} />
+        <Skeleton width={28} height={18} radius={6} />
+        <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, justifyContent: "flex-end" }}>
+          <Skeleton width={90} height={14} />
+          <Skeleton width={32} height={22} radius={4} />
         </div>
       </div>
-      <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
-        <div style={{ display:"flex", justifyContent:"space-between" }}>
-          <Skeleton width={80} height={11} />
-          <Skeleton width={30} height={11} />
+
+      {/* Prediction bar */}
+      <div style={{ margin: "0 16px 14px", padding: "10px 14px", borderRadius: 10, background: "var(--surface-2)" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            <Skeleton width={120} height={14} />
+            <Skeleton width={80} height={10} />
+          </div>
+          <Skeleton width={50} height={24} radius={6} />
         </div>
-        <Skeleton height={5} radius={99} />
+      </div>
+
+      {/* Bottom chips */}
+      <div style={{ display: "flex", gap: 6, padding: "0 16px 12px" }}>
+        <Skeleton width={60} height={20} radius={5} />
+        <Skeleton width={75} height={20} radius={5} />
       </div>
     </div>
   );

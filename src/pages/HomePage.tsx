@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from "react";
-import { TrendingUp, Zap, Shield, Target, RefreshCw, Trophy, ChevronRight, ArrowRight } from "lucide-react";
+import { TrendingUp, Zap, Shield, Target, RefreshCw, Trophy, ArrowRight, Flame } from "lucide-react";
 import { Link } from "react-router-dom";
 import { usePredictions } from "../hooks/usePredictions";
 import { useFormatOdds } from "../hooks/useFormatOdds";
@@ -20,40 +20,36 @@ function StatBubble({ label, value, icon, color }: { label: string; value: strin
   return (
     <div className="card" style={{
       "--card-accent": color,
-      padding: "20px 22px",
+      padding: "16px 18px",
       display: "flex",
       alignItems: "center",
-      gap: 14,
+      gap: 12,
       flex: 1,
       minWidth: 140,
-      borderTop: `2px solid ${color}22`,
     } as React.CSSProperties}>
       <div style={{
-        width: 42, height: 42, borderRadius: 11,
-        background: `${color}15`,
-        border: `1px solid ${color}25`,
+        width: 38, height: 38, borderRadius: 10,
+        background: `${color}10`,
         display: "flex", alignItems: "center", justifyContent: "center",
         flexShrink: 0,
-        boxShadow: `0 0 20px ${color}10, inset 0 0 12px ${color}08`,
       }}>
         {icon}
       </div>
       <div>
-        <p className="stat-num" style={{ fontSize: 24, lineHeight: 1.1 }}>{value}</p>
-        <p style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text-3)", marginTop: 3 }}>{label}</p>
+        <p className="stat-num" style={{ fontSize: 22, lineHeight: 1.1 }}>{value}</p>
+        <p style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)", marginTop: 2 }}>{label}</p>
       </div>
     </div>
   );
 }
 
-// ── World Cup Banner ───────────────────────────────────────
+// ── World Cup Banner ───────────────────────────────────
 function WorldCupBanner() {
   const [picks, setPicks] = useState<WCPrediction[]>([]);
 
   useEffect(() => {
     getWCPredictions(0.5)
       .then(preds => {
-        // Get next 3 upcoming matches with highest confidence
         const now = new Date().toISOString();
         const upcoming = preds
           .filter(p => p.commence_time >= now)
@@ -67,28 +63,28 @@ function WorldCupBanner() {
   const daysToGo = Math.max(0, Math.ceil((new Date("2026-06-11T19:00:00Z").getTime() - Date.now()) / 86400000));
 
   return (
-    <div style={{
-      borderRadius: 20, overflow: "hidden", position: "relative",
-      background: "linear-gradient(135deg, #1a1a3e 0%, #0d1b2a 50%, #1b2838 100%)",
-      border: "1px solid rgba(255,215,0,0.12)",
+    <div className="animate-fade-up" style={{
+      borderRadius: 16, overflow: "hidden", position: "relative",
+      background: "linear-gradient(135deg, var(--surface) 0%, var(--surface-2) 100%)",
+      border: "1px solid var(--border)",
     }}>
-      {/* Gold accent line */}
-      <div style={{ height: 2, background: "linear-gradient(90deg, transparent, #fbbf24, #d97706, transparent)" }} />
+      {/* Subtle gold accent line */}
+      <div style={{ height: 2, background: "linear-gradient(90deg, transparent, rgba(245,158,11,0.5), rgba(245,158,11,0.3), transparent)" }} />
 
-      <div style={{ padding: "24px 28px", display: "flex", flexDirection: "column", gap: 20 }}>
+      <div style={{ padding: "20px 22px", display: "flex", flexDirection: "column", gap: 16 }}>
         {/* Top row */}
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 14 }}>
           <div style={{ flex: 1, minWidth: 200 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-              <Trophy size={16} color="#fbbf24" />
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+              <Trophy size={14} color="#f59e0b" />
               <span style={{
                 fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700,
-                letterSpacing: "0.15em", textTransform: "uppercase", color: "#fbbf24",
+                letterSpacing: "0.12em", textTransform: "uppercase", color: "#f59e0b",
               }}>FIFA World Cup 2026</span>
             </div>
             <h2 style={{
-              fontFamily: "var(--font-display)", fontSize: "clamp(20px, 4vw, 28px)",
-              fontWeight: 800, color: "#fff", lineHeight: 1.15, marginBottom: 6,
+              fontFamily: "var(--font-display)", fontSize: "clamp(18px, 3.5vw, 24px)",
+              fontWeight: 800, color: "var(--text-1)", lineHeight: 1.2, marginBottom: 4,
             }}>
               {daysToGo > 0 ? (
                 <>{daysToGo} day{daysToGo !== 1 ? "s" : ""} until kickoff</>
@@ -96,79 +92,106 @@ function WorldCupBanner() {
                 <>The World Cup is here!</>
               )}
             </h2>
-            <p style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "rgba(255,255,255,0.5)", lineHeight: 1.5 }}>
-              72 matches analyzed · 48 teams · Real bookmaker odds
+            <p style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text-3)", lineHeight: 1.5 }}>
+              48 teams · Real bookmaker odds
             </p>
           </div>
 
           <Link to="/worldcup" style={{
-            display: "flex", alignItems: "center", gap: 8,
-            padding: "10px 20px", borderRadius: 10, textDecoration: "none",
-            background: "linear-gradient(135deg, #fbbf24, #d97706)",
-            color: "#000", fontFamily: "var(--font-body)", fontSize: 13, fontWeight: 700,
-            transition: "transform 150ms ease, box-shadow 150ms ease",
-            boxShadow: "0 4px 20px rgba(251,191,36,0.25)",
+            display: "flex", alignItems: "center", gap: 6,
+            padding: "8px 16px", borderRadius: 8, textDecoration: "none",
+            background: "rgba(245,158,11,0.12)", border: "1px solid rgba(245,158,11,0.20)",
+            color: "#f59e0b", fontFamily: "var(--font-body)", fontSize: 12, fontWeight: 700,
+            transition: "all 150ms ease",
           }}>
-            View Predictions <ArrowRight size={14} />
+            View Picks <ArrowRight size={12} />
           </Link>
         </div>
 
         {/* Top picks strip */}
         {picks.length > 0 && (
           <div style={{
-            display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-            gap: 10,
+            display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
+            gap: 8,
           }}>
             {picks.map(p => (
               <Link to="/worldcup" key={p.match_id} style={{
-                padding: "12px 14px", borderRadius: 10, textDecoration: "none",
-                background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)",
-                transition: "background 150ms ease", display: "flex", flexDirection: "column", gap: 8,
+                padding: "10px 12px", borderRadius: 10, textDecoration: "none",
+                background: "rgba(255,255,255,0.02)", border: "1px solid var(--border)",
+                transition: "background 150ms ease", display: "flex", flexDirection: "column", gap: 6,
               }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <span style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "rgba(255,255,255,0.4)" }}>
+                  <span style={{ fontFamily: "var(--font-body)", fontSize: 10, color: "var(--text-3)" }}>
                     {new Date(p.commence_time).toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" })}
                   </span>
                   <span style={{
                     fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700,
-                    color: p.confidence >= 0.6 ? "#22c55e" : "#fbbf24",
+                    color: p.confidence >= 0.6 ? "var(--green)" : "#f59e0b",
                   }}>
                     {Math.round(p.confidence * 100)}%
                   </span>
                 </div>
-                {/* Teams stacked with flags */}
-                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
                     <img
                       src={getTeamFlag(p.home_team, p.home_team_logo, 40)}
                       alt=""
-                      style={{ width: 18, height: 13, objectFit: "cover", borderRadius: 2, flexShrink: 0 }}
+                      style={{ width: 16, height: 12, objectFit: "cover", borderRadius: 2, flexShrink: 0 }}
                       onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
                     />
-                    <span style={{ fontFamily: "var(--font-body)", fontSize: 12, fontWeight: 600, color: "#fff", lineHeight: 1.3 }}>
+                    <span style={{ fontFamily: "var(--font-body)", fontSize: 11, fontWeight: 600, color: "var(--text-1)", lineHeight: 1.2 }}>
                       {p.home_team}
                     </span>
                   </div>
-                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "rgba(255,255,255,0.3)", paddingLeft: 6 }}>vs</span>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
                     <img
                       src={getTeamFlag(p.away_team, p.away_team_logo, 40)}
                       alt=""
-                      style={{ width: 18, height: 13, objectFit: "cover", borderRadius: 2, flexShrink: 0 }}
+                      style={{ width: 16, height: 12, objectFit: "cover", borderRadius: 2, flexShrink: 0 }}
                       onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
                     />
-                    <span style={{ fontFamily: "var(--font-body)", fontSize: 12, fontWeight: 600, color: "#fff", lineHeight: 1.3 }}>
+                    <span style={{ fontFamily: "var(--font-body)", fontSize: 11, fontWeight: 600, color: "var(--text-1)", lineHeight: 1.2 }}>
                       {p.away_team}
                     </span>
                   </div>
                 </div>
-                <p style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#fbbf24", fontWeight: 600 }}>
+                <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#f59e0b", fontWeight: 600 }}>
                   {p.prediction}
                 </p>
               </Link>
             ))}
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+// ── Loading State — animated pulse cards ──────────────
+function LoadingState() {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <div style={{
+        display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+        padding: "24px 0 8px",
+      }}>
+        <div style={{
+          width: 6, height: 6, borderRadius: "50%", background: "var(--brand)",
+          animation: "breathe 1.2s ease-in-out infinite",
+        }} />
+        <span style={{
+          fontFamily: "var(--font-body)", fontSize: 12, fontWeight: 600,
+          color: "var(--text-3)", letterSpacing: "0.04em",
+        }}>
+          Fetching today's predictions...
+        </span>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 14 }}>
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} style={{ animationDelay: `${i * 80}ms` }}>
+            <PredictionCardSkeleton />
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -205,68 +228,65 @@ export function HomePage() {
   }, [refetch]);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
       <SEO path="/" />
-      {/* First-visit welcome banner — dismisses to localStorage */}
       <WelcomeBanner />
-
-      {/* World Cup Banner */}
       <WorldCupBanner />
 
-      {/* Live track record + Telegram CTA — side by side on desktop, stacked on mobile */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 12 }}>
+      {/* Live track record + Telegram CTA */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 10 }}>
         <AccuracyBadge />
         <JoinTelegram variant="card" />
       </div>
 
-      {/* Hero */}
-      <div className="glow-bg" style={{ textAlign: "center", padding: "16px 0 0", position: "relative", zIndex: 1 }}>
-        <div className="eyebrow" style={{ marginBottom: 14, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-          <div style={{ width: 24, height: 1, background: "linear-gradient(90deg, transparent, var(--brand))" }} />
+      {/* Hero — cleaner */}
+      <div className="glow-bg" style={{ textAlign: "center", padding: "12px 0 0", position: "relative", zIndex: 1 }}>
+        <div className="eyebrow" style={{ marginBottom: 10, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+          <div style={{ width: 20, height: 1, background: "linear-gradient(90deg, transparent, var(--brand))" }} />
           {data?.date
             ? new Date(data.date + "T12:00:00Z").toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" })
             : new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}
-          <div style={{ width: 24, height: 1, background: "linear-gradient(90deg, var(--brand), transparent)" }} />
+          <div style={{ width: 20, height: 1, background: "linear-gradient(90deg, var(--brand), transparent)" }} />
         </div>
-        <h1 style={{ fontSize: "clamp(30px, 6vw, 52px)", fontWeight: 800, lineHeight: 1.08, marginBottom: 16 }}>
+        <h1 style={{ fontSize: "clamp(28px, 5.5vw, 46px)", fontWeight: 800, lineHeight: 1.08, marginBottom: 10 }}>
           Today&apos;s{" "}
           <span className="text-brand-gradient">Smart Picks</span>
         </h1>
-        <p style={{ fontFamily: "var(--font-body)", fontSize: 16, color: "var(--text-2)", maxWidth: 480, margin: "0 auto", lineHeight: 1.7 }}>
+        <p style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text-2)", maxWidth: 440, margin: "0 auto", lineHeight: 1.6 }}>
           Curated accumulators backed by real bookmaker odds and statistical analysis.
         </p>
       </div>
 
       {/* Stats row */}
-      <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-        <StatBubble label="Picks today" value={loading ? "—" : String(totalGames)} icon={<Target size={19} color="var(--brand)" />} color="var(--brand)" />
-        <StatBubble label="Confidence" value={loading ? "—" : `${avgConf}%`} icon={<Shield size={19} color="var(--green)" />} color="var(--green)" />
-        <StatBubble label="Top odds" value={loading ? "—" : `${fmtOdds(activeCat?.total_odds ?? 0)}${oddsSuffix}`} icon={<TrendingUp size={19} color="var(--blue)" />} color="var(--blue)" />
-        <StatBubble label="Categories" value={String(CATEGORIES.length)} icon={<Zap size={19} color="var(--purple)" />} color="var(--purple)" />
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+        <StatBubble label="Picks today" value={loading ? "—" : String(totalGames)} icon={<Target size={17} color="var(--brand)" />} color="var(--brand)" />
+        <StatBubble label="Confidence" value={loading ? "—" : `${avgConf}%`} icon={<Shield size={17} color="var(--green)" />} color="var(--green)" />
+        <StatBubble label="Top odds" value={loading ? "—" : `${fmtOdds(activeCat?.total_odds ?? 0)}${oddsSuffix}`} icon={<TrendingUp size={17} color="var(--blue)" />} color="var(--blue)" />
+        <StatBubble label="Categories" value={String(CATEGORIES.length)} icon={<Flame size={17} color="#f59e0b" />} color="#f59e0b" />
       </div>
 
       {/* Tabs + content */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
         <CategoryTabs active={activeKey} onChange={setActiveKey} oddsMap={oddsMap} />
 
         {/* Category header */}
         {!loading && activeCat && (
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
+          <div className="animate-fade-in" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
             <div>
-              <h2 style={{ fontSize: 22, fontWeight: 700, color: catMeta.color, letterSpacing: "-0.02em" }}>
+              <h2 style={{ fontSize: 20, fontWeight: 700, color: catMeta.color, letterSpacing: "-0.02em" }}>
                 {catMeta.label} Accumulator
               </h2>
               {activeCat.reason && (
-                <p style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text-3)", marginTop: 4 }}>
+                <p style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text-3)", marginTop: 3 }}>
                   {activeCat.reason}
                 </p>
               )}
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <div style={{
-                padding: "6px 16px", borderRadius: 8,
-                background: catMeta.faint, border: `1px solid ${catMeta.color}33`,
-                fontFamily: "var(--font-mono)", fontSize: 15, fontWeight: 700,
+                padding: "5px 14px", borderRadius: 8,
+                background: catMeta.faint, border: `1px solid ${catMeta.color}20`,
+                fontFamily: "var(--font-mono)", fontSize: 14, fontWeight: 700,
                 color: catMeta.color, letterSpacing: "-0.02em",
               }}>
                 {fmtOdds(activeCat.total_odds)}{oddsSuffix}
@@ -277,13 +297,13 @@ export function HomePage() {
                 className="refresh-btn"
                 style={{
                   display: "flex", alignItems: "center", justifyContent: "center",
-                  width: 36, height: 36, borderRadius: 8,
+                  width: 34, height: 34, borderRadius: 8,
                   border: "1px solid var(--border)", background: "transparent",
                   cursor: "pointer", color: "var(--text-3)",
                   transition: "all 180ms ease",
                 }}
               >
-                <RefreshCw size={14} style={spinning ? { animation: "spin 0.5s ease" } : undefined} />
+                <RefreshCw size={13} style={spinning ? { animation: "spin 0.5s ease" } : undefined} />
               </button>
             </div>
           </div>
@@ -292,9 +312,9 @@ export function HomePage() {
         {/* Error banner */}
         {error && (
           <div style={{
-            padding: "12px 16px", borderRadius: "var(--radius-md)",
-            background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.2)",
-            fontFamily: "var(--font-body)", fontSize: 13, color: "var(--red)",
+            padding: "10px 14px", borderRadius: "var(--radius-md)",
+            background: "var(--red-faint)", border: "1px solid rgba(248,113,113,0.15)",
+            fontFamily: "var(--font-body)", fontSize: 12, color: "var(--red)",
           }}>
             {error}
           </div>
@@ -302,15 +322,13 @@ export function HomePage() {
 
         {/* Cards grid */}
         {loading ? (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}>
-            {Array.from({ length: 4 }).map((_, i) => <PredictionCardSkeleton key={i} />)}
-          </div>
+          <LoadingState />
         ) : !activeCat || !activeCat.selected ? (
           <EmptyState type="no-selection" />
         ) : !activeCat.games?.length ? (
           <EmptyState type="empty" />
         ) : (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 14 }}>
             {activeCat.games.map((game, i) => (
               <PredictionCard
                 key={game.fixture_id}

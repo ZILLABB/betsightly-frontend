@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
 import {
   Bell, Moon, Sun, Monitor, Info, BarChart2,
-  DollarSign, Globe, RotateCcw, ChevronRight, Check, Mail, HelpCircle
+  DollarSign, RotateCcw, ChevronRight, Check, Mail, HelpCircle
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { usePreferences } from "../hooks/usePreferences";
-import type { ThemeMode, OddsFormat, Currency, Language } from "../contexts/PreferencesTypes";
+import type { ThemeMode, OddsFormat, Currency } from "../contexts/PreferencesTypes";
 import {
   subscribeToPush,
   unsubscribeFromPush,
@@ -260,6 +260,7 @@ export function SettingsPage() {
           icon={<DollarSign size={15} color="var(--green)" />}
           label="Currency"
           sub="Used for stake and payout displays"
+          last
         >
           <Select<Currency>
             value={preferences.currency}
@@ -269,23 +270,6 @@ export function SettingsPage() {
               { value: "USD", label: "USD — $" },
               { value: "EUR", label: "EUR — €" },
               { value: "GBP", label: "GBP — £" },
-            ]}
-          />
-        </Row>
-        <Row
-          icon={<Globe size={15} color="var(--purple)" />}
-          label="Language"
-          sub="App display language"
-          last
-        >
-          <Select<Language>
-            value={preferences.language}
-            onChange={v => updatePreference("language", v)}
-            options={[
-              { value: "en", label: "English" },
-              { value: "fr", label: "Français" },
-              { value: "es", label: "Español" },
-              { value: "de", label: "Deutsch" },
             ]}
           />
         </Row>

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
-import { X, Share2 } from "lucide-react";
+import { X, Share2, Download } from "lucide-react";
 
-const STORAGE_KEY = "bs_pwa_dismissed_at_v1";
+const STORAGE_KEY = "bs_pwa_dismissed_at_v2";
 const REPROMPT_AFTER_MS = 14 * 24 * 60 * 60 * 1000;
 
 type BeforeInstallPromptEvent = Event & {
@@ -34,13 +34,14 @@ export function PWAInstallPrompt() {
   const deferredPrompt = useRef<BeforeInstallPromptEvent | null>(null);
   const [showNative, setShowNative] = useState(false);
   const [showIOS, setShowIOS] = useState(false);
+  const [installing, setInstalling] = useState(false);
 
   useEffect(() => {
     if (isStandalone() || wasDismissedRecently()) return;
 
     if (isIOS()) {
-      setTimeout(() => setShowIOS(true), 4000);
-      return;
+      const timer = setTimeout(() => setShowIOS(true), 4000);
+      return () => clearTimeout(timer);
     }
 
     const handler = (e: Event) => {
@@ -61,18 +62,24 @@ export function PWAInstallPrompt() {
 
   const install = async () => {
     const prompt = deferredPrompt.current;
-    if (!prompt) return;
-    deferredPrompt.current = null;
+    if (!prompt) {
+      dismiss();
+      return;
+    }
+    setInstalling(true);
     try {
       await prompt.prompt();
       const { outcome } = await prompt.userChoice;
       if (outcome === "accepted") {
-        setShowNative(false);
+        deferredPrompt.current = null;
       }
     } catch {
-      // Browser rejected the prompt — already installed or not supported
+      // Browser rejected — already installed or not supported
+    } finally {
+      setInstalling(false);
+      deferredPrompt.current = null;
+      setShowNative(false);
     }
-    setShowNative(false);
   };
 
   const show = showNative || showIOS;
@@ -80,24 +87,22 @@ export function PWAInstallPrompt() {
 
   return (
     <>
-      <div className="pwa-install-prompt" style={{
+      <div className="pwa-install-prompt animate-fade-up" style={{
         position: "fixed", left: 16, right: 16,
         bottom: "calc(72px + max(16px, env(safe-area-inset-bottom)))",
-        zIndex: 60, maxWidth: 480, margin: "0 auto",
+        zIndex: 60, maxWidth: 420, margin: "0 auto",
         background: "var(--surface)", border: "1px solid var(--border)",
-        borderRadius: 14, padding: "14px 16px",
-        boxShadow: "var(--shadow-lg)",
+        borderRadius: 16, padding: "16px 18px",
+        boxShadow: "0 12px 40px rgba(0,0,0,0.4)",
         display: "flex", alignItems: "center", gap: 12,
-        animation: "pwa-slide-up 280ms ease-out",
       }}>
-        <img
-          src="/pwa-192x192.png"
-          alt="BetSightly"
-          style={{
-            width: 40, height: 40, borderRadius: 10, flexShrink: 0,
-            objectFit: "cover",
-          }}
-        />
+        <div style={{
+          width: 42, height: 42, borderRadius: 11, flexShrink: 0,
+          background: "var(--brand-faint)", border: "1px solid var(--border-brand)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          <Download size={18} color="var(--brand)" />
+        </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <p style={{ fontFamily: "var(--font-body)", fontSize: 13, fontWeight: 700, color: "var(--text-1)" }}>
             Install BetSightly
@@ -105,18 +110,23 @@ export function PWAInstallPrompt() {
           <p style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)", marginTop: 2 }}>
             {showIOS
               ? <>Tap <Share2 size={10} style={{ verticalAlign: "middle" }} /> then <strong>"Add to Home Screen"</strong></>
-              : "Add to your home screen for instant access."
+              : "Get instant access from your home screen"
             }
           </p>
         </div>
         {showNative && (
-          <button onClick={install} style={{
-            padding: "8px 14px", borderRadius: 8, border: "none", cursor: "pointer",
-            background: "var(--brand)", color: "#fff",
-            fontFamily: "var(--font-body)", fontSize: 12, fontWeight: 700,
-            whiteSpace: "nowrap",
-          }}>
-            Install
+          <button
+            onClick={install}
+            disabled={installing}
+            style={{
+              padding: "8px 16px", borderRadius: 8, border: "none", cursor: "pointer",
+              background: "var(--brand)", color: "#fff",
+              fontFamily: "var(--font-body)", fontSize: 12, fontWeight: 700,
+              whiteSpace: "nowrap", opacity: installing ? 0.7 : 1,
+              transition: "opacity 150ms ease",
+            }}
+          >
+            {installing ? "..." : "Install"}
           </button>
         )}
         <button onClick={dismiss} aria-label="Dismiss" style={{
@@ -129,10 +139,6 @@ export function PWAInstallPrompt() {
         </button>
       </div>
       <style>{`
-        @keyframes pwa-slide-up {
-          from { transform: translateY(40px); opacity: 0; }
-          to   { transform: translateY(0); opacity: 1; }
-        }
         @media (min-width: 768px) {
           .pwa-install-prompt {
             bottom: auto !important;

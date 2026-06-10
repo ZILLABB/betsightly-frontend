@@ -4,25 +4,25 @@
 
 :root {
   /* ── Brand Colors ─────────────────────────────────── */
-  --brand-50:  #fffbeb;
-  --brand-100: #fef3c7;
-  --brand-200: #fde68a;
-  --brand-300: #fcd34d;
-  --brand-400: #60a5fa;
-  --brand-500: #3b82f6;   /* Primary brand */
-  --brand-600: #2563eb;
-  --brand-700: #b45309;
-  --brand-800: #92400e;
-  --brand-900: #78350f;
+  --brand-50:  #ecfdf5;
+  --brand-100: #d1fae5;
+  --brand-200: #a7f3d0;
+  --brand-300: #6ee7b7;
+  --brand-400: #34d399;
+  --brand-500: #10b981;   /* Primary brand — emerald */
+  --brand-600: #059669;
+  --brand-700: #047857;
+  --brand-800: #065f46;
+  --brand-900: #064e3b;
 
   /* ── Surface Scale (dark-first) ───────────────────── */
   --surface-0:  #000000;
-  --surface-1:  #0a0a12;
-  --surface-2:  #111120;
-  --surface-3:  #18182c;
-  --surface-4:  #1e1e35;
-  --surface-5:  #252540;
-  --surface-6:  #2e2e50;
+  --surface-1:  #0a0a0f;
+  --surface-2:  #14141e;
+  --surface-3:  #1a1a28;
+  --surface-4:  #222233;
+  --surface-5:  #2a2a3c;
+  --surface-6:  #333348;
 
   /* ── Text Scale ────────────────────────────────────── */
   --text-primary:   #ffffff;
@@ -32,19 +32,19 @@
   --text-inverse:   #000000;
 
   /* ── Semantic Status ───────────────────────────────── */
-  --color-success:     #22c55e;
-  --color-success-bg:  rgba(34,197,94,0.12);
-  --color-warning:     #3b82f6;
-  --color-warning-bg:  rgba(59,130,246,0.12);
+  --color-success:     #10b981;
+  --color-success-bg:  rgba(16,185,129,0.10);
+  --color-warning:     #f59e0b;
+  --color-warning-bg:  rgba(245,158,11,0.10);
   --color-error:       #ef4444;
-  --color-error-bg:    rgba(239,68,68,0.12);
-  --color-info:        #60a5fa;
-  --color-info-bg:     rgba(96,165,250,0.12);
+  --color-error-bg:    rgba(239,68,68,0.10);
+  --color-info:        #38bdf8;
+  --color-info-bg:     rgba(56,189,248,0.10);
 
   /* ── Borders ───────────────────────────────────────── */
-  --border-subtle:  rgba(255,255,255,0.07);
-  --border-default: rgba(59,130,246,0.18);
-  --border-strong:  rgba(59,130,246,0.35);
+  --border-subtle:  rgba(255,255,255,0.05);
+  --border-default: rgba(255,255,255,0.06);
+  --border-strong:  rgba(16,185,129,0.25);
 
   /* ── Spacing ───────────────────────────────────────── */
   --sp-1:  0.25rem;
@@ -97,8 +97,8 @@
   --shadow-md:    0 4px 12px rgba(0,0,0,0.5);
   --shadow-lg:    0 8px 24px rgba(0,0,0,0.6);
   --shadow-xl:    0 16px 40px rgba(0,0,0,0.7);
-  --shadow-brand: 0 0 24px rgba(59,130,246,0.2);
-  --shadow-brand-hover: 0 0 40px rgba(59,130,246,0.35);
+  --shadow-brand: 0 0 24px rgba(16,185,129,0.15);
+  --shadow-brand-hover: 0 0 40px rgba(16,185,129,0.25);
 
   /* ── Transitions ───────────────────────────────────── */
   --ease-fast:   150ms ease;
@@ -123,7 +123,7 @@
   --popover:             var(--surface-4);
   --popover-foreground:  var(--text-primary);
   --primary:             var(--brand-500);
-  --primary-foreground:  var(--text-inverse);
+  --primary-foreground:  #ffffff;
   --secondary:           var(--surface-1);
   --secondary-foreground:var(--text-primary);
   --muted:               var(--surface-1);
@@ -140,23 +140,23 @@
 
 /* ── Light theme ──────────────────────────────────── */
 .light {
-  --background:          #f8f9fc;
-  --foreground:          #0f0f1a;
+  --background:          #f5f5f7;
+  --foreground:          #111118;
   --card:                #ffffff;
-  --card-foreground:     #0f0f1a;
+  --card-foreground:     #111118;
   --popover:             #ffffff;
-  --popover-foreground:  #0f0f1a;
+  --popover-foreground:  #111118;
   --primary:             var(--brand-500);
   --primary-foreground:  #ffffff;
-  --secondary:           #f1f5f9;
-  --secondary-foreground:#0f0f1a;
-  --muted:               #f1f5f9;
+  --secondary:           #f0f0f4;
+  --secondary-foreground:#111118;
+  --muted:               #f0f0f4;
   --muted-foreground:    #64748b;
-  --accent:              #f1f5f9;
-  --accent-foreground:   #0f0f1a;
+  --accent:              #f0f0f4;
+  --accent-foreground:   #111118;
   --destructive:         var(--color-error);
   --destructive-foreground: #ffffff;
-  --border:              #e2e8f0;
+  --border:              #e2e4eb;
   --input:               #ffffff;
   --ring:                var(--brand-500);
 }

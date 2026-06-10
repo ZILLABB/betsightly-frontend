@@ -1,26 +1,32 @@
 /// <reference lib="webworker" />
 import { precacheAndRoute, cleanupOutdatedCaches } from "workbox-precaching";
-import { registerRoute, NavigationRoute, setCatchHandler } from "workbox-routing";
+import { registerRoute, setCatchHandler } from "workbox-routing";
 import { NetworkFirst, CacheFirst, StaleWhileRevalidate } from "workbox-strategies";
 import { ExpirationPlugin } from "workbox-expiration";
 import { CacheableResponsePlugin } from "workbox-cacheable-response";
 
 declare let self: ServiceWorkerGlobalScope;
 
+// Immediately activate new service workers — don't wait for all tabs to close.
+// This ensures deploy updates are picked up on the next navigation/reload.
+self.addEventListener("install", (event) => {
+  event.waitUntil(
+    Promise.all([
+      caches.open("offline-fallback").then((cache) => cache.add("/offline.html")),
+      self.skipWaiting(),
+    ])
+  );
+});
+
+self.addEventListener("activate", (event) => {
+  event.waitUntil(self.clients.claim());
+});
+
 cleanupOutdatedCaches();
 precacheAndRoute(self.__WB_MANIFEST);
 
 // ── Offline fallback ───────────────────────────────────
-// Serve /offline.html when a navigation request fails (user is offline
-// and the page isn't cached yet)
 const OFFLINE_URL = "/offline.html";
-
-// Pre-cache the offline page on install
-self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open("offline-fallback").then((cache) => cache.add(OFFLINE_URL))
-  );
-});
 
 setCatchHandler(async ({ event }) => {
   if ((event as FetchEvent).request?.destination === "document") {
@@ -56,14 +62,15 @@ registerRoute(
   })
 );
 
-// ── CSS/JS — stale while revalidate for fast loads ───────
+// ── CSS/JS — network first so deploys are picked up fast ──
 registerRoute(
   ({ request }) => request.destination === "style" || request.destination === "script",
-  new StaleWhileRevalidate({
+  new NetworkFirst({
     cacheName: "static-cache",
+    networkTimeoutSeconds: 4,
     plugins: [
       new CacheableResponsePlugin({ statuses: [0, 200] }),
-      new ExpirationPlugin({ maxEntries: 60, maxAgeSeconds: 60 * 60 * 24 * 30 }),
+      new ExpirationPlugin({ maxEntries: 60, maxAgeSeconds: 60 * 60 * 24 * 7 }),
     ],
   })
 );
@@ -109,7 +116,7 @@ self.addEventListener("push", (event) => {
   }
 });
 
-// Notification click handler — open the app to the relevant page
+// Notification click handler
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
   const url = event.notification.data?.url || "/predictions";

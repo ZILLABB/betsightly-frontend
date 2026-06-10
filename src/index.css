@@ -8,40 +8,42 @@
 
 /* ── Design Tokens ──────────────────────────────────── */
 :root {
-  --bg:          #07071a;
-  --bg-mid:      #0c0c22;
-  --surface:     #111130;
-  --surface-2:   #181840;
-  --surface-3:   #1e1e4a;
+  --bg:          #0a0a0f;
+  --bg-mid:      #0e0e16;
+  --surface:     #14141e;
+  --surface-2:   #1a1a28;
+  --surface-3:   #222233;
 
-  --brand:       #3b82f6;
-  --brand-dim:   #2563eb;
-  --brand-faint: rgba(59,130,246,0.08);
-  --brand-glow:  rgba(59,130,246,0.22);
-  --accent:      #fbbf24;
+  --brand:       #10b981;
+  --brand-dim:   #059669;
+  --brand-faint: rgba(16,185,129,0.08);
+  --brand-glow:  rgba(16,185,129,0.18);
+  --accent:      #f59e0b;
   --accent-dim:  #d97706;
 
-  --green:       #22c55e;
-  --green-faint: rgba(34,197,94,0.10);
-  --blue:        #60a5fa;
-  --blue-faint:  rgba(96,165,250,0.10);
+  --green:       #10b981;
+  --green-faint: rgba(16,185,129,0.10);
+  --blue:        #38bdf8;
+  --blue-faint:  rgba(56,189,248,0.10);
   --purple:      #a78bfa;
   --purple-faint:rgba(167,139,250,0.10);
   --red:         #f87171;
   --red-faint:   rgba(248,113,113,0.10);
+  --gold:        #f59e0b;
+  --gold-faint:  rgba(245,158,11,0.10);
 
-  --text-1: #f1f1ff;
-  --text-2: rgba(241,241,255,0.65);
-  --text-3: rgba(241,241,255,0.38);
+  --text-1: #eaeaf0;
+  --text-2: rgba(234,234,240,0.62);
+  --text-3: rgba(234,234,240,0.36);
 
-  --border:      rgba(255,255,255,0.07);
-  --border-brand:rgba(59,130,246,0.25);
+  --border:      rgba(255,255,255,0.06);
+  --border-brand:rgba(16,185,129,0.22);
 
   /* Navigation overlays — themed */
-  --nav-bg-scrolled: rgba(7,7,26,0.92);
-  --nav-bg-top:      rgba(7,7,26,0.6);
-  --nav-overlay:     rgba(7,7,26,0.98);
-  --nav-hover:       rgba(255,255,255,0.05);
+  --nav-bg-scrolled: rgba(10,10,15,0.94);
+  --nav-bg-top:      rgba(10,10,15,0.6);
+  --nav-overlay:     rgba(10,10,15,0.98);
+  --nav-hover:       rgba(255,255,255,0.04);
   --logo-blend:      screen;
   --shadow-md:       0 4px 12px rgba(0,0,0,0.3);
   --shadow-lg:       0 8px 32px rgba(0,0,0,0.5);
@@ -61,44 +63,45 @@
 
 /* ── Light theme overrides ──────────────────────────── */
 .light {
-  /* Warm off-white background — not pure white */
-  --bg:          #f7f6f1;
-  --bg-mid:      #efede4;
+  --bg:          #f5f5f7;
+  --bg-mid:      #ededf0;
   --surface:     #ffffff;
-  --surface-2:   #f0ede4;
-  --surface-3:   #e6e1d2;
+  --surface-2:   #f0f0f4;
+  --surface-3:   #e4e4ec;
 
-  --brand:       #1e40af;
-  --brand-dim:   #1e3a8a;
-  --brand-faint: rgba(30,64,175,0.08);
-  --brand-glow:  rgba(30,64,175,0.18);
-  --accent:      #b45309;
-  --accent-dim:  #92400e;
+  --brand:       #059669;
+  --brand-dim:   #047857;
+  --brand-faint: rgba(5,150,105,0.07);
+  --brand-glow:  rgba(5,150,105,0.15);
+  --accent:      #d97706;
+  --accent-dim:  #b45309;
 
-  --green:       #15803d;
-  --green-faint: rgba(21,128,61,0.10);
-  --blue:        #1e40af;
-  --blue-faint:  rgba(30,64,175,0.10);
-  --purple:      #6d28d9;
-  --purple-faint:rgba(109,40,217,0.10);
-  --red:         #b91c1c;
-  --red-faint:   rgba(185,28,28,0.10);
+  --green:       #059669;
+  --green-faint: rgba(5,150,105,0.08);
+  --blue:        #0284c7;
+  --blue-faint:  rgba(2,132,199,0.08);
+  --purple:      #7c3aed;
+  --purple-faint:rgba(124,58,237,0.08);
+  --red:         #dc2626;
+  --red-faint:   rgba(220,38,38,0.08);
+  --gold:        #d97706;
+  --gold-faint:  rgba(217,119,6,0.08);
 
-  --text-1: #1a1815;
-  --text-2: rgba(26,24,21,0.72);
-  --text-3: rgba(26,24,21,0.48);
+  --text-1: #111118;
+  --text-2: rgba(17,17,24,0.65);
+  --text-3: rgba(17,17,24,0.42);
 
-  --border:      rgba(26,24,21,0.10);
-  --border-brand:rgba(30,64,175,0.25);
+  --border:      rgba(17,17,24,0.08);
+  --border-brand:rgba(5,150,105,0.22);
 
   /* Navigation overlays — light theme */
-  --nav-bg-scrolled: rgba(247,246,241,0.92);
-  --nav-bg-top:      rgba(247,246,241,0.65);
-  --nav-overlay:     rgba(247,246,241,0.98);
-  --nav-hover:       rgba(26,24,21,0.05);
+  --nav-bg-scrolled: rgba(245,245,247,0.94);
+  --nav-bg-top:      rgba(245,245,247,0.65);
+  --nav-overlay:     rgba(245,245,247,0.98);
+  --nav-hover:       rgba(17,17,24,0.04);
   --logo-blend:      multiply;
-  --shadow-md:       0 4px 16px rgba(26,24,21,0.06);
-  --shadow-lg:       0 12px 32px rgba(26,24,21,0.10);
+  --shadow-md:       0 4px 16px rgba(17,17,24,0.06);
+  --shadow-lg:       0 12px 32px rgba(17,17,24,0.10);
 }
 
 /* ── Base reset ─────────────────────────────────────── */
@@ -165,14 +168,14 @@
   .font-mono     { font-family: var(--font-mono); }
 
   .text-brand-gradient {
-    background: linear-gradient(135deg, #60a5fa, #3b82f6);
+    background: linear-gradient(135deg, #34d399, #10b981);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
   }
 
   .text-accent-gradient {
-    background: linear-gradient(135deg, #fbbf24, #d97706);
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -207,12 +210,9 @@
   }
 
   .card:hover {
-    border-color: color-mix(in srgb, var(--card-accent) 35%, transparent);
-    box-shadow:
-      0 0 0 1px color-mix(in srgb, var(--card-accent) 20%, transparent),
-      var(--shadow-lg),
-      0 0 40px color-mix(in srgb, var(--card-accent) 8%, transparent);
-    transform: translateY(-2px);
+    border-color: rgba(255,255,255,0.10);
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-1px);
   }
 
   .card:hover::before {
@@ -245,9 +245,9 @@
     position: absolute;
     inset: -60px -40px;
     background:
-      radial-gradient(ellipse 50% 50% at 50% 0%, rgba(59,130,246,0.08) 0%, transparent 70%),
-      radial-gradient(circle at 30% 20%, rgba(34,197,94,0.04) 0%, transparent 50%),
-      radial-gradient(circle at 70% 20%, rgba(59,130,246,0.04) 0%, transparent 50%);
+      radial-gradient(ellipse 50% 50% at 50% 0%, rgba(16,185,129,0.06) 0%, transparent 70%),
+      radial-gradient(circle at 30% 20%, rgba(56,189,248,0.03) 0%, transparent 50%),
+      radial-gradient(circle at 70% 20%, rgba(16,185,129,0.03) 0%, transparent 50%);
     pointer-events: none;
   }
   .glow-bg::after {
@@ -255,8 +255,8 @@
     position: absolute;
     inset: 0;
     background-image:
-      linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+      linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
     background-size: 60px 60px;
     mask-image: radial-gradient(ellipse 60% 50% at 50% 30%, black 0%, transparent 70%);
     -webkit-mask-image: radial-gradient(ellipse 60% 50% at 50% 30%, black 0%, transparent 70%);
@@ -266,12 +266,16 @@
 
 /* ── Animations ─────────────────────────────────────── */
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(14px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(16px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 @keyframes fadeIn {
   from { opacity: 0; }
   to   { opacity: 1; }
+}
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
 }
 @keyframes shimmer {
   from { background-position: -200% 0; }
@@ -289,9 +293,19 @@
   0%, 100% { opacity: 0.6; transform: scale(1); }
   50%      { opacity: 1; transform: scale(1.6); }
 }
+@keyframes breathe {
+  0%, 100% { opacity: 0.4; }
+  50%      { opacity: 0.7; }
+}
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
 
-.animate-fade-up { animation: fadeUp 0.4s var(--ease) both; }
-.animate-fade-in { animation: fadeIn 0.3s var(--ease) both; }
+.animate-fade-up { animation: fadeUp 0.45s var(--ease) both; }
+.animate-fade-in { animation: fadeIn 0.35s var(--ease) both; }
+.animate-slide-in { animation: slideInRight 0.4s var(--ease) both; }
+.animate-scale-in { animation: scaleIn 0.3s var(--ease) both; }
 .animate-spin    { animation: spin 0.6s ease both; }
 
 .skeleton {
@@ -361,8 +375,8 @@
 /* ── Light theme background mesh ───────────────────── */
 .light body {
   background:
-    radial-gradient(ellipse 80% 60% at 20% 0%, rgba(30,64,175,0.05) 0%, transparent 60%),
-    radial-gradient(ellipse 70% 50% at 80% 100%, rgba(180,83,9,0.04) 0%, transparent 60%),
+    radial-gradient(ellipse 80% 60% at 20% 0%, rgba(5,150,105,0.04) 0%, transparent 60%),
+    radial-gradient(ellipse 70% 50% at 80% 100%, rgba(217,119,6,0.03) 0%, transparent 60%),
     var(--bg) !important;
 }
 .light body::after { opacity: 0.03; }
@@ -370,14 +384,14 @@
 /* Light theme: glow-bg gradient adapts */
 .light .glow-bg::before {
   background:
-    radial-gradient(ellipse 50% 50% at 50% 0%, rgba(30,64,175,0.08) 0%, transparent 70%),
-    radial-gradient(circle at 30% 20%, rgba(21,128,61,0.05) 0%, transparent 50%),
-    radial-gradient(circle at 70% 20%, rgba(30,64,175,0.05) 0%, transparent 50%);
+    radial-gradient(ellipse 50% 50% at 50% 0%, rgba(5,150,105,0.06) 0%, transparent 70%),
+    radial-gradient(circle at 30% 20%, rgba(2,132,199,0.04) 0%, transparent 50%),
+    radial-gradient(circle at 70% 20%, rgba(5,150,105,0.04) 0%, transparent 50%);
 }
 .light .glow-bg::after {
   background-image:
-    linear-gradient(rgba(26,24,21,0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(26,24,21,0.04) 1px, transparent 1px);
+    linear-gradient(rgba(17,17,24,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(17,17,24,0.03) 1px, transparent 1px);
 }
 
 /* Light theme: header doesn't need screen blend on logo */

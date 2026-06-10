@@ -66,8 +66,8 @@ export function Header() {
             {NAV.map(({ path, label }) => {
               const active = isActive(path);
               const isWC = path === "/worldcup";
-              const activeColor = isWC ? "#fbbf24" : "var(--brand)";
-              const activeBg = isWC ? "rgba(251,191,36,0.10)" : "rgba(59,130,246,0.10)";
+              const activeColor = isWC ? "#f59e0b" : "var(--brand)";
+              const activeBg = isWC ? "rgba(245,158,11,0.08)" : "var(--brand-faint)";
               return (
                 <Link key={path} to={path} style={{
                   padding:"7px 14px", borderRadius:8,
@@ -110,8 +110,8 @@ export function Header() {
         {NAV.map(({ path, label, icon: Icon }) => {
           const active = isActive(path);
           const isWC = path === "/worldcup";
-          const c = isWC ? "#fbbf24" : "var(--brand)";
-          const bg = isWC ? "rgba(251,191,36,0.10)" : "rgba(59,130,246,0.10)";
+          const c = isWC ? "#f59e0b" : "var(--brand)";
+          const bg = isWC ? "rgba(245,158,11,0.08)" : "var(--brand-faint)";
           return (
             <Link key={path} to={path} onClick={() => setOpen(false)} style={{
               display:"flex", alignItems:"center", gap:14,

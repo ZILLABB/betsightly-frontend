@@ -26,8 +26,8 @@ export function BottomNav() {
         {NAV.map(({ path, label, icon: Icon }) => {
           const active = isActive(path);
           const isWC = path === "/worldcup";
-          const activeColor = isWC ? "#fbbf24" : "var(--brand)";
-          const activeBg = isWC ? "rgba(251,191,36,0.15)" : "rgba(59,130,246,0.15)";
+          const activeColor = isWC ? "#f59e0b" : "var(--brand)";
+          const activeBg = isWC ? "rgba(245,158,11,0.12)" : "var(--brand-faint)";
           return (
             <Link key={path} to={path} style={{
               flex:1, display:"flex", flexDirection:"column", alignItems:"center", gap:4,
