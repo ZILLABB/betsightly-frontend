@@ -435,8 +435,33 @@ export default function WorldCupPage() {
     avgConf: predictions.length ? Math.round(predictions.reduce((s, p) => s + p.confidence, 0) / predictions.length * 100) : 0,
   }), [predictions]);
 
-  const firstMatch = predictions[0]?.commence_time || "2026-06-11T19:00:00Z";
-  const days = daysUntil(firstMatch);
+  // Phase-aware hero stat: countdown before the Cup, games-today during,
+  // next-matchday on rest days, wrap-up after the final.
+  const heroStat = useMemo(() => {
+    const now = new Date();
+    const todayKey = now.toISOString().slice(0, 10);
+    const kickoff = new Date(predictions[0]?.commence_time || "2026-06-11T19:00:00Z");
+    if (now > new Date("2026-07-19T23:59:59Z")) {
+      return { value: "FT", label: "tournament over" };
+    }
+    if (now < kickoff && kickoff.toISOString().slice(0, 10) !== todayKey) {
+      const d = daysUntil(kickoff.toISOString());
+      return { value: String(d), label: d === 1 ? "day to go" : "days to go" };
+    }
+    const todayCount = predictions.filter(p => p.commence_time.slice(0, 10) === todayKey).length;
+    if (todayCount > 0) {
+      return { value: String(todayCount), label: todayCount === 1 ? "game today" : "games today" };
+    }
+    const nextDate = predictions
+      .map(p => p.commence_time.slice(0, 10))
+      .filter(d => d > todayKey)
+      .sort()[0];
+    if (nextDate) {
+      const nice = new Date(nextDate + "T12:00:00Z").toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
+      return { value: nice, label: "next matchday" };
+    }
+    return { value: "—", label: "no fixtures" };
+  }, [predictions]);
 
   if (loading) return (
     <BrandLoader message="Analyzing World Cup fixtures...">
@@ -492,9 +517,9 @@ export default function WorldCupPage() {
             padding: "14px 24px", borderRadius: 14, textAlign: "center",
             background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,215,0,0.12)",
           }}>
-            <p style={{ fontFamily: "var(--font-display)", fontSize: 36, fontWeight: 800, color: "#fbbf24", lineHeight: 1 }}>{days}</p>
+            <p style={{ fontFamily: "var(--font-display)", fontSize: heroStat.value.length > 3 ? 24 : 36, fontWeight: 800, color: "#fbbf24", lineHeight: 1 }}>{heroStat.value}</p>
             <p style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "rgba(255,255,255,0.4)", marginTop: 4, textTransform: "uppercase", letterSpacing: "0.12em" }}>
-              days to go
+              {heroStat.label}
             </p>
           </div>
         </div>

@@ -45,12 +45,60 @@ function StatBubble({ label, value, icon, color }: { label: string; value: strin
 }
 
 // ── World Cup Banner ───────────────────────────────────
+const WC_KICKOFF = new Date("2026-06-11T19:00:00Z");
+const WC_FINAL_END = new Date("2026-07-19T23:59:59Z");
+
+/** Phase-aware headline + subtitle so the banner is never stale:
+ *  countdown → kickoff day → matchday / rest day → post-final. */
+function wcBannerContent(allPreds: WCPrediction[]): { headline: string; sub: string } {
+  const now = new Date();
+  const todayKey = now.toISOString().slice(0, 10);
+
+  if (now > WC_FINAL_END) {
+    return {
+      headline: "World Cup 2026 has ended",
+      sub: "Relive every pick and result on the World Cup page",
+    };
+  }
+
+  if (now < WC_KICKOFF) {
+    const kickoffToday = WC_KICKOFF.toISOString().slice(0, 10) === todayKey;
+    if (kickoffToday) {
+      const t = WC_KICKOFF.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+      return { headline: "Kickoff today!", sub: `Mexico vs South Africa · ${t} · 48 teams` };
+    }
+    const days = Math.ceil((WC_KICKOFF.getTime() - now.getTime()) / 86400000);
+    return { headline: `${days} day${days !== 1 ? "s" : ""} until kickoff`, sub: "48 teams · Real bookmaker odds" };
+  }
+
+  // Tournament running — describe today (or the next matchday) from real fixtures
+  const todayGames = allPreds.filter(p => p.commence_time.slice(0, 10) === todayKey);
+  if (todayGames.length > 0) {
+    const n = todayGames.length;
+    return {
+      headline: `Matchday — ${n} game${n !== 1 ? "s" : ""} today`,
+      sub: "Fresh picks below · Real bookmaker odds",
+    };
+  }
+  const nextDate = allPreds
+    .map(p => p.commence_time.slice(0, 10))
+    .filter(d => d > todayKey)
+    .sort()[0];
+  if (nextDate) {
+    const nice = new Date(nextDate + "T12:00:00Z").toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" });
+    return { headline: "Tournament in progress", sub: `Next matchday: ${nice}` };
+  }
+  return { headline: "Tournament in progress", sub: "48 teams · Real bookmaker odds" };
+}
+
 function WorldCupBanner() {
   const [picks, setPicks] = useState<WCPrediction[]>([]);
+  const [allPreds, setAllPreds] = useState<WCPrediction[]>([]);
 
   useEffect(() => {
     getWCPredictions(0.5)
       .then(preds => {
+        setAllPreds(preds);
         const now = new Date().toISOString();
         const upcoming = preds
           .filter(p => p.commence_time >= now)
@@ -61,7 +109,7 @@ function WorldCupBanner() {
       .catch(() => {});
   }, []);
 
-  const daysToGo = Math.max(0, Math.ceil((new Date("2026-06-11T19:00:00Z").getTime() - Date.now()) / 86400000));
+  const { headline, sub } = wcBannerContent(allPreds);
 
   return (
     <div className="animate-fade-up" style={{
@@ -101,14 +149,10 @@ function WorldCupBanner() {
               fontFamily: "var(--font-display)", fontSize: "clamp(18px, 3.5vw, 24px)",
               fontWeight: 800, color: "var(--text-1)", lineHeight: 1.2, marginBottom: 4,
             }}>
-              {daysToGo > 0 ? (
-                <>{daysToGo} day{daysToGo !== 1 ? "s" : ""} until kickoff</>
-              ) : (
-                <>The World Cup is here!</>
-              )}
+              {headline}
             </h2>
             <p style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text-3)", lineHeight: 1.5 }}>
-              48 teams · Real bookmaker odds
+              {sub}
             </p>
             </div>
           </div>
