@@ -127,7 +127,10 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     color-scheme: dark;
+    /* Paint overscroll rubber-band areas in the theme bg, not browser default */
+    background: var(--bg);
   }
+  html.light { color-scheme: light; }
 
   body {
     background: var(--bg);

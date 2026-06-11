@@ -1,11 +1,22 @@
 ﻿import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, Home, Target, BarChart2, RefreshCw, Settings, Users, Trophy } from "lucide-react";
+import { Menu, X, Home, Target, BarChart2, RefreshCw, Settings, Users } from "lucide-react";
+
+/* Official WC26 emblem as a nav icon — theme-conditional variant */
+function WCEmblem({ size = 20, style }: { size?: number; style?: React.CSSProperties }) {
+  const common: React.CSSProperties = { height: size + 3, width: "auto", objectFit: "contain", ...style };
+  return (
+    <>
+      <img src="/wc26-emblem-dark.svg" alt="" className="show-on-dark" style={common} />
+      <img src="/wc26-emblem.png" alt="" className="show-on-light" style={common} />
+    </>
+  );
+}
 
 const NAV = [
   { path:"/", label:"Home", icon:Home },
   { path:"/predictions", label:"Predictions", icon:Target },
-  { path:"/worldcup", label:"World Cup", icon:Trophy },
+  { path:"/worldcup", label:"World Cup", icon:WCEmblem },
   { path:"/results", label:"Results", icon:BarChart2 },
   { path:"/rollover", label:"Rollover", icon:RefreshCw },
   { path:"/punters", label:"Punters", icon:Users },

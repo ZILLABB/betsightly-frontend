@@ -6,6 +6,17 @@ interface ThemeProviderProps {
 }
 
 /**
+ * Keep the browser chrome (status bar, overscroll rubber-band areas on
+ * mobile) in sync with the app theme. Without this the meta theme-color
+ * stays whatever index.html shipped, which shows as colored bands when
+ * dragging the page past its edges.
+ */
+const setThemeColorMeta = (isDark: boolean) => {
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute('content', isDark ? '#0a0a0f' : '#f5f5f7');
+};
+
+/**
  * ThemeProvider component that applies the selected theme to the HTML element
  * This component should be placed at the root of the application
  */
@@ -23,6 +34,7 @@ const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
         // Apply the selected theme
         if (theme === 'light') {
           document.documentElement.classList.add('light');
+          setThemeColorMeta(false);
           // Force a small delay to ensure styles are properly applied
           setTimeout(() => {
             document.body.style.backgroundColor = 'var(--background)';
@@ -30,9 +42,11 @@ const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
           }, 10);
         } else if (theme === 'dark') {
           document.documentElement.classList.add('dark');
+          setThemeColorMeta(true);
         } else if (theme === 'system') {
           // Check system preference
           const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          setThemeColorMeta(prefersDark);
           if (prefersDark) {
             document.documentElement.classList.add('dark');
           } else {
@@ -49,6 +63,7 @@ const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
           const handleChange = (e: MediaQueryListEvent) => {
             document.documentElement.classList.remove('light', 'dark');
             document.documentElement.classList.add(e.matches ? 'dark' : 'light');
+            setThemeColorMeta(e.matches);
 
             // Force a small delay to ensure styles are properly applied
             if (!e.matches) {
