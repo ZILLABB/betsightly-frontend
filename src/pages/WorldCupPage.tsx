@@ -464,19 +464,20 @@ export default function WorldCupPage() {
         background: "linear-gradient(135deg, #1a1a3e 0%, #0d1b2a 40%, #162232 100%)",
         border: "1px solid rgba(255,215,0,0.10)",
       }}>
-        <div style={{ height: 2, background: "linear-gradient(90deg, transparent, #fbbf24 30%, #d97706 70%, transparent)" }} />
+        {/* Tri-host accent — Canada red, USA blue, Mexico green (We Are 26) */}
+        <div style={{ height: 3, background: "linear-gradient(90deg, transparent 2%, #e63946 25%, #3a86ff 50%, #2a9d8f 75%, transparent 98%)" }} />
         <div style={{ padding: "28px 28px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 20 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 18, minWidth: 0 }}>
             <img
-              src="/wc26-emblem.png"
-              alt="FIFA World Cup 2026"
+              src="/wc26-emblem-dark.svg"
+              alt="FIFA World Cup 26"
               style={{ height: 84, width: "auto", flexShrink: 0, filter: "drop-shadow(0 4px 16px rgba(0,0,0,0.5))" }}
               onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
             />
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
                 <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", color: "#fbbf24" }}>
-                  FIFA World Cup 2026
+                  FIFA World Cup 26 · We Are 26
                 </span>
               </div>
               <h1 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(22px, 4vw, 32px)", fontWeight: 800, color: "#fff", lineHeight: 1.1 }}>

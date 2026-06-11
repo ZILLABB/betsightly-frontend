@@ -448,6 +448,11 @@
   border-radius: 10px;
 }
 
+/* Theme-conditional images (e.g. WC emblem: black art for light bg, white for dark) */
+.show-on-light { display: none !important; }
+.light .show-on-light { display: block !important; }
+.light .show-on-dark { display: none !important; }
+
 /* Light theme: darker gradient text for contrast on white */
 .light .text-brand-gradient {
   background: linear-gradient(135deg, #059669, #047857);

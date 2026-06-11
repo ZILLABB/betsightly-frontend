@@ -77,9 +77,17 @@ function WorldCupBanner() {
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 14 }}>
           <div style={{ flex: 1, minWidth: 200, display: "flex", alignItems: "center", gap: 14 }}>
             <img
+              src="/wc26-emblem-dark.svg"
+              alt=""
+              className="show-on-dark"
+              style={{ height: 52, width: "auto", flexShrink: 0, filter: "drop-shadow(0 2px 8px rgba(0,0,0,0.35))" }}
+              onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
+            />
+            <img
               src="/wc26-emblem.png"
               alt=""
-              style={{ height: 52, width: "auto", flexShrink: 0, filter: "drop-shadow(0 2px 8px rgba(0,0,0,0.35))" }}
+              className="show-on-light"
+              style={{ height: 52, width: "auto", flexShrink: 0 }}
               onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
             />
             <div>
