@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { X, Share2, Download } from "lucide-react";
+import { X, Share2, Download, MoreVertical } from "lucide-react";
 
 const STORAGE_KEY = "bs_pwa_dismissed_at_v2";
 const REPROMPT_AFTER_MS = 14 * 24 * 60 * 60 * 1000;
@@ -30,60 +30,93 @@ function wasDismissedRecently(): boolean {
   }
 }
 
+/**
+ * Install prompt with three modes, because browsers differ:
+ *  - "native":  Chrome/Edge on Android + desktop — beforeinstallprompt fired,
+ *               the Install button triggers the real OS dialog.
+ *  - "ios":     iOS Safari/Chrome — Apple never fires beforeinstallprompt;
+ *               show Share → Add to Home Screen instructions instead.
+ *  - "manual":  Android Firefox / Samsung Internet / Opera, or Chrome when it
+ *               withholds the event (recently dismissed native prompt, install
+ *               criteria pending) — show browser-menu instructions so the card
+ *               is never a dead button.
+ */
 export function PWAInstallPrompt() {
   const deferredPrompt = useRef<BeforeInstallPromptEvent | null>(null);
-  const [showNative, setShowNative] = useState(false);
-  const [showIOS, setShowIOS] = useState(false);
+  const [mode, setMode] = useState<"native" | "ios" | "manual" | null>(null);
   const [installing, setInstalling] = useState(false);
 
   useEffect(() => {
     if (isStandalone() || wasDismissedRecently()) return;
 
     if (isIOS()) {
-      const timer = setTimeout(() => setShowIOS(true), 4000);
+      const timer = setTimeout(() => setMode("ios"), 4000);
       return () => clearTimeout(timer);
     }
 
     const handler = (e: Event) => {
       e.preventDefault();
       deferredPrompt.current = e as BeforeInstallPromptEvent;
-      setTimeout(() => setShowNative(true), 4000);
+      setMode(m => (m === null || m === "manual" ? "native" : m));
     };
-
     window.addEventListener("beforeinstallprompt", handler);
-    return () => window.removeEventListener("beforeinstallprompt", handler);
+
+    // Only nag mobile users with manual instructions — desktop browsers
+    // without the event (Safari/Firefox) get nothing rather than noise.
+    const isMobile = /Android|Mobile/i.test(navigator.userAgent);
+    const fallback = setTimeout(() => {
+      if (!deferredPrompt.current && isMobile) setMode(m => m ?? "manual");
+    }, 8000);
+
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handler);
+      clearTimeout(fallback);
+    };
   }, []);
 
   const dismiss = () => {
     try { localStorage.setItem(STORAGE_KEY, String(Date.now())); } catch {}
-    setShowNative(false);
-    setShowIOS(false);
+    setMode(null);
   };
 
   const install = async () => {
     const prompt = deferredPrompt.current;
     if (!prompt) {
-      dismiss();
+      // Chrome gave us nothing to call — fall back to instructions
+      // instead of a button that silently does nothing.
+      setMode("manual");
       return;
     }
     setInstalling(true);
     try {
       await prompt.prompt();
       const { outcome } = await prompt.userChoice;
+      deferredPrompt.current = null;
       if (outcome === "accepted") {
-        deferredPrompt.current = null;
+        setMode(null);
+      } else {
+        dismiss(); // user said no in the OS dialog — don't re-nag for 14 days
       }
     } catch {
-      // Browser rejected — already installed or not supported
+      // prompt() already consumed earlier, or browser refused — show the
+      // manual path rather than dead-ending.
+      deferredPrompt.current = null;
+      setMode("manual");
     } finally {
       setInstalling(false);
-      deferredPrompt.current = null;
-      setShowNative(false);
     }
   };
 
-  const show = showNative || showIOS;
-  if (!show) return null;
+  if (!mode) return null;
+
+  const subtitle =
+    mode === "ios" ? (
+      <>Tap <Share2 size={10} style={{ verticalAlign: "middle" }} /> then <strong>"Add to Home Screen"</strong></>
+    ) : mode === "manual" ? (
+      <>Open the browser menu <MoreVertical size={10} style={{ verticalAlign: "middle" }} /> and tap <strong>"Add to Home Screen"</strong></>
+    ) : (
+      "Get instant access from your home screen"
+    );
 
   return (
     <>
@@ -108,13 +141,10 @@ export function PWAInstallPrompt() {
             Install BetSightly
           </p>
           <p style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)", marginTop: 2 }}>
-            {showIOS
-              ? <>Tap <Share2 size={10} style={{ verticalAlign: "middle" }} /> then <strong>"Add to Home Screen"</strong></>
-              : "Get instant access from your home screen"
-            }
+            {subtitle}
           </p>
         </div>
-        {showNative && (
+        {mode === "native" && (
           <button
             onClick={install}
             disabled={installing}
