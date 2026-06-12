@@ -37,10 +37,8 @@ export function PredictionCard({ game, color, faint, index = 0 }: Props) {
   const displayOdds = game.odds ?? game.real_odds ?? game.estimated_odds ?? 0;
   const displayPrediction = game.prediction || game.readable_prediction || game.prediction_value || "";
 
-  // SportyBet has no public per-fixture deep link (share codes are their own
-  // ids, not ours) — send users to the page with the booking-code box instead.
   const sportyBetUrl = game.bookmaker?.toLowerCase().includes("sportybet")
-    ? "https://www.sportybet.com/ng/my_accounts/bet_history/sport_bets"
+    ? "https://www.sportybet.com/ng"
     : null;
 
   return (

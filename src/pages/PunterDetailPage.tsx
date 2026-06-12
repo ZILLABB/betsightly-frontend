@@ -11,8 +11,7 @@ import { useFormatOdds } from "../hooks/useFormatOdds";
 import { SEO } from "../components/common/SEO";
 
 const BOOKMAKER_INFO: Record<string, { logo: string; color: string; url: string }> = {
-  // Deep-link straight to the page with the booking-code box, not the homepage
-  sportybet:  { logo: "https://www.sportybet.com/favicon.ico", color: "#2DB544", url: "https://www.sportybet.com/ng/my_accounts/bet_history/sport_bets" },
+  sportybet:  { logo: "https://www.sportybet.com/favicon.ico", color: "#2DB544", url: "https://www.sportybet.com/ng" },
   bet9ja:     { logo: "https://web.bet9ja.com/favicon.ico", color: "#1A5B2C", url: "https://www.bet9ja.com" },
   "1xbet":    { logo: "https://1xbet.com/favicon.ico", color: "#1A6DC0", url: "https://1xbet.com" },
   betking:    { logo: "https://www.betking.com/favicon.ico", color: "#0055A5", url: "https://www.betking.com" },
