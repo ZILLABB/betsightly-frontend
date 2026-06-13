@@ -1,7 +1,7 @@
 import { Helmet } from "react-helmet-async";
 
 const SITE_NAME = "BetSightly";
-const BASE_URL = "https://betsightly-frontend.vercel.app";
+const BASE_URL = "https://betsightly.com";
 const DEFAULT_DESC = "Data-driven football predictions backed by real bookmaker odds. Daily picks, rollover challenge, and full World Cup 2026 coverage.";
 const DEFAULT_IMAGE = `${BASE_URL}/og-image.svg`;
 
