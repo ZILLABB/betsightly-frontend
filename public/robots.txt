@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://betsightly.com/sitemap.xml
+Sitemap: https://www.betsightly.com/sitemap.xml
