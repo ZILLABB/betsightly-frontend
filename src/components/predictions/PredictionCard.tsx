@@ -78,6 +78,8 @@ export function PredictionCard({ game, color, faint, index = 0 }: Props) {
         </div>
         <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-3)" }}>
           {new Date(game.date).toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}
+          {" · "}
+          {new Date(game.date).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false })}
         </span>
       </div>
 

@@ -265,7 +265,7 @@ export function RolloverPage() {
                             <p style={{ fontFamily: "var(--font-body)", fontSize: 12, fontWeight: 600, color: "var(--text-1)" }}>
                               {pick.home_team} <span style={{ color: "var(--text-3)" }}>vs</span> {pick.away_team}
                             </p>
-                            <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2, flexWrap: "wrap" }}>
                               <span style={{
                                 fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 700,
                                 padding: "1px 5px", borderRadius: 3,
@@ -275,6 +275,11 @@ export function RolloverPage() {
                               <span style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-2)", fontWeight: 600 }}>
                                 {pick.prediction}
                               </span>
+                              {pick.commence_time && (
+                                <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--text-3)" }}>
+                                  ⏱ {new Date(pick.commence_time).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false })}
+                                </span>
+                              )}
                             </div>
                           </div>
                           {/* Odds + conf */}
