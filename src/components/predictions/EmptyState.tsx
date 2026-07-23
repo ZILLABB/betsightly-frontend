@@ -14,7 +14,7 @@ export function EmptyState({ type, message, onRetry }: Props) {
       icon: <Calendar size={40} strokeWidth={1.5} color="var(--text-3)" />,
       title: "No matches for this category today",
       sub: message || "Odds refresh every 6 hours. New matches may appear later today or in the next match day.",
-      hint: "Other categories may still have picks. Try checking the World Cup tab — 72 matches with full coverage.",
+      hint: "Other categories may still have picks. Busy match days (weekends) fill every tier.",
     },
     error: {
       icon: <AlertCircle size={40} strokeWidth={1.5} color="var(--red)" />,
@@ -26,7 +26,7 @@ export function EmptyState({ type, message, onRetry }: Props) {
       icon: <Calendar size={40} strokeWidth={1.5} color="var(--text-3)" />,
       title: "No safe picks for this category right now",
       sub: message || "We only show picks when our model is highly confident. Days without safe matches are skipped rather than padded with risky bets.",
-      hint: "The Rollover chain auto-skips ahead. Or check World Cup for fixed-schedule picks.",
+      hint: "The Rollover chain auto-skips ahead to the next day with safe matches.",
     },
   };
 

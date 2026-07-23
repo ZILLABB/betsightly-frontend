@@ -1,10 +1,6 @@
 ﻿import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Home, Target, Users, Settings } from "lucide-react";
-
-/* WC 2026 tab shows the official emblem instead of a generic trophy icon —
-   white variant in dark theme, black in light. Accepts the same size/style
-   props the lucide icons get so the NAV map stays uniform. */
+import { Home, Target, Users, Settings, RefreshCw } from "lucide-react";
 
 const NAV = [
   { path:"/", label:"Home", icon:Home },

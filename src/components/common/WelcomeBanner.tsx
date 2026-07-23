@@ -69,7 +69,7 @@ export function WelcomeBanner() {
         and only show you picks where multiple independent signals agree. Daily picks for
         <strong style={{ color: "var(--text-1)" }}> 2 Odds</strong>, <strong style={{ color: "var(--text-1)" }}>5 Odds</strong>,
         <strong style={{ color: "var(--text-1)" }}> 10 Odds</strong>, a <strong style={{ color: "var(--text-1)" }}>10-day rollover challenge</strong>,
-        and full <strong style={{ color: "var(--text-1)" }}>World Cup 2026</strong> coverage. Free, no signup.
+        and coverage across <strong style={{ color: "var(--text-1)" }}>19 leagues worldwide</strong>. Free, no signup.
       </p>
 
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
