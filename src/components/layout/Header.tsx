@@ -3,20 +3,10 @@ import { Link, useLocation } from "react-router-dom";
 import { Menu, X, Home, Target, BarChart2, RefreshCw, Settings, Users } from "lucide-react";
 
 /* Official WC26 emblem as a nav icon — theme-conditional variant */
-function WCEmblem({ size = 20, style }: { size?: number; style?: React.CSSProperties }) {
-  const common: React.CSSProperties = { height: size + 3, width: "auto", objectFit: "contain", ...style };
-  return (
-    <>
-      <img src="/wc26-emblem-dark.svg" alt="" className="show-on-dark" style={common} />
-      <img src="/wc26-emblem.png" alt="" className="show-on-light" style={common} />
-    </>
-  );
-}
 
 const NAV = [
   { path:"/", label:"Home", icon:Home },
   { path:"/predictions", label:"Predictions", icon:Target },
-  { path:"/worldcup", label:"World Cup", icon:WCEmblem },
   { path:"/results", label:"Results", icon:BarChart2 },
   { path:"/rollover", label:"Rollover", icon:RefreshCw },
   { path:"/punters", label:"Punters", icon:Users },
@@ -76,7 +66,7 @@ export function Header() {
           <nav aria-label="Main navigation" style={{ display:"flex", alignItems:"center", gap:2, flex:1, justifyContent:"center" }} className="hidden-mobile">
             {NAV.map(({ path, label }) => {
               const active = isActive(path);
-              const isWC = path === "/worldcup";
+              const isWC = false;
               const activeColor = isWC ? "#f59e0b" : "var(--brand)";
               const activeBg = isWC ? "rgba(245,158,11,0.08)" : "var(--brand-faint)";
               return (
@@ -120,7 +110,7 @@ export function Header() {
       }}>
         {NAV.map(({ path, label, icon: Icon }) => {
           const active = isActive(path);
-          const isWC = path === "/worldcup";
+          const isWC = false;
           const c = isWC ? "#f59e0b" : "var(--brand)";
           const bg = isWC ? "rgba(245,158,11,0.08)" : "var(--brand-faint)";
           return (

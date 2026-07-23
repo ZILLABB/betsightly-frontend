@@ -1,10 +1,7 @@
-import React, { useState, useCallback, useEffect } from "react";
-import { TrendingUp, Zap, Shield, Target, RefreshCw, ArrowRight, Flame } from "lucide-react";
-import { Link } from "react-router-dom";
+import React, { useState, useCallback } from "react";
+import { TrendingUp, Shield, Target, RefreshCw, Flame } from "lucide-react";
 import { usePredictions } from "../hooks/usePredictions";
 import { useFormatOdds } from "../hooks/useFormatOdds";
-import { getWCPredictions, type WCPrediction } from "../services/worldcupService";
-import { getTeamFlag } from "../data/wcFlags";
 import { WelcomeBanner } from "../components/common/WelcomeBanner";
 import { JoinTelegram } from "../components/common/JoinTelegram";
 import { AccuracyBadge } from "../components/common/AccuracyBadge";
@@ -39,189 +36,6 @@ function StatBubble({ label, value, icon, color }: { label: string; value: strin
       <div>
         <p className="stat-num" style={{ fontSize: 22, lineHeight: 1.1 }}>{value}</p>
         <p style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)", marginTop: 2 }}>{label}</p>
-      </div>
-    </div>
-  );
-}
-
-// ── World Cup Banner ───────────────────────────────────
-const WC_KICKOFF = new Date("2026-06-11T19:00:00Z");
-const WC_FINAL_END = new Date("2026-07-19T23:59:59Z");
-
-/** Phase-aware headline + subtitle so the banner is never stale:
- *  countdown → kickoff day → matchday / rest day → post-final. */
-function wcBannerContent(allPreds: WCPrediction[]): { headline: string; sub: string } {
-  const now = new Date();
-  const todayKey = now.toISOString().slice(0, 10);
-
-  if (now > WC_FINAL_END) {
-    return {
-      headline: "World Cup 2026 has ended",
-      sub: "Relive every pick and result on the World Cup page",
-    };
-  }
-
-  if (now < WC_KICKOFF) {
-    const kickoffToday = WC_KICKOFF.toISOString().slice(0, 10) === todayKey;
-    if (kickoffToday) {
-      const t = WC_KICKOFF.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
-      return { headline: "Kickoff today!", sub: `Mexico vs South Africa · ${t} · 48 teams` };
-    }
-    const days = Math.ceil((WC_KICKOFF.getTime() - now.getTime()) / 86400000);
-    return { headline: `${days} day${days !== 1 ? "s" : ""} until kickoff`, sub: "48 teams · Real bookmaker odds" };
-  }
-
-  // Tournament running — describe today (or the next matchday) from real fixtures
-  const todayGames = allPreds.filter(p => p.commence_time.slice(0, 10) === todayKey);
-  if (todayGames.length > 0) {
-    const n = todayGames.length;
-    return {
-      headline: `Matchday — ${n} game${n !== 1 ? "s" : ""} today`,
-      sub: "Fresh picks below · Real bookmaker odds",
-    };
-  }
-  const nextDate = allPreds
-    .map(p => p.commence_time.slice(0, 10))
-    .filter(d => d > todayKey)
-    .sort()[0];
-  if (nextDate) {
-    const nice = new Date(nextDate + "T12:00:00Z").toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" });
-    return { headline: "Tournament in progress", sub: `Next matchday: ${nice}` };
-  }
-  return { headline: "Tournament in progress", sub: "48 teams · Real bookmaker odds" };
-}
-
-function WorldCupBanner() {
-  const [picks, setPicks] = useState<WCPrediction[]>([]);
-  const [allPreds, setAllPreds] = useState<WCPrediction[]>([]);
-
-  useEffect(() => {
-    getWCPredictions(0.5)
-      .then(preds => {
-        setAllPreds(preds);
-        const now = new Date().toISOString();
-        const upcoming = preds
-          .filter(p => p.commence_time >= now)
-          .sort((a, b) => b.confidence - a.confidence)
-          .slice(0, 3);
-        setPicks(upcoming.length ? upcoming : preds.slice(0, 3));
-      })
-      .catch(() => {});
-  }, []);
-
-  const { headline, sub } = wcBannerContent(allPreds);
-
-  return (
-    <div className="animate-fade-up" style={{
-      borderRadius: 16, overflow: "hidden", position: "relative",
-      background: "linear-gradient(135deg, var(--surface) 0%, var(--surface-2) 100%)",
-      border: "1px solid var(--border)",
-    }}>
-      {/* Subtle gold accent line */}
-      <div style={{ height: 2, background: "linear-gradient(90deg, transparent, rgba(245,158,11,0.5), rgba(245,158,11,0.3), transparent)" }} />
-
-      <div style={{ padding: "20px 22px", display: "flex", flexDirection: "column", gap: 16 }}>
-        {/* Top row */}
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 14 }}>
-          <div style={{ flex: 1, minWidth: 200, display: "flex", alignItems: "center", gap: 14 }}>
-            <img
-              src="/wc26-emblem-dark.svg"
-              alt=""
-              className="show-on-dark"
-              style={{ height: 52, width: "auto", flexShrink: 0, filter: "drop-shadow(0 2px 8px rgba(0,0,0,0.35))" }}
-              onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
-            />
-            <img
-              src="/wc26-emblem.png"
-              alt=""
-              className="show-on-light"
-              style={{ height: 52, width: "auto", flexShrink: 0 }}
-              onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
-            />
-            <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-              <span style={{
-                fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700,
-                letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--gold)",
-              }}>FIFA World Cup 2026</span>
-            </div>
-            <h2 style={{
-              fontFamily: "var(--font-display)", fontSize: "clamp(18px, 3.5vw, 24px)",
-              fontWeight: 800, color: "var(--text-1)", lineHeight: 1.2, marginBottom: 4,
-            }}>
-              {headline}
-            </h2>
-            <p style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text-3)", lineHeight: 1.5 }}>
-              {sub}
-            </p>
-            </div>
-          </div>
-
-          <Link to="/worldcup" style={{
-            display: "flex", alignItems: "center", gap: 6,
-            padding: "8px 16px", borderRadius: 8, textDecoration: "none",
-            background: "rgba(245,158,11,0.12)", border: "1px solid rgba(245,158,11,0.20)",
-            color: "var(--gold)", fontFamily: "var(--font-body)", fontSize: 12, fontWeight: 700,
-            transition: "all 150ms ease",
-          }}>
-            View Picks <ArrowRight size={12} />
-          </Link>
-        </div>
-
-        {/* Top picks strip */}
-        {picks.length > 0 && (
-          <div style={{
-            display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
-            gap: 8,
-          }}>
-            {picks.map(p => (
-              <Link to="/worldcup" key={p.match_id} style={{
-                padding: "10px 12px", borderRadius: 10, textDecoration: "none",
-                background: "var(--overlay-1)", border: "1px solid var(--border)",
-                transition: "background 150ms ease", display: "flex", flexDirection: "column", gap: 6,
-              }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <span style={{ fontFamily: "var(--font-body)", fontSize: 10, color: "var(--text-3)" }}>
-                    {new Date(p.commence_time).toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" })}
-                  </span>
-                  <span style={{
-                    fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700,
-                    color: p.confidence >= 0.6 ? "var(--green)" : "var(--gold)",
-                  }}>
-                    {Math.round(p.confidence * 100)}%
-                  </span>
-                </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                    <img
-                      src={getTeamFlag(p.home_team, p.home_team_logo, 40)}
-                      alt=""
-                      style={{ width: 16, height: 12, objectFit: "cover", borderRadius: 2, flexShrink: 0 }}
-                      onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
-                    />
-                    <span style={{ fontFamily: "var(--font-body)", fontSize: 11, fontWeight: 600, color: "var(--text-1)", lineHeight: 1.2 }}>
-                      {p.home_team}
-                    </span>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                    <img
-                      src={getTeamFlag(p.away_team, p.away_team_logo, 40)}
-                      alt=""
-                      style={{ width: 16, height: 12, objectFit: "cover", borderRadius: 2, flexShrink: 0 }}
-                      onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
-                    />
-                    <span style={{ fontFamily: "var(--font-body)", fontSize: 11, fontWeight: 600, color: "var(--text-1)", lineHeight: 1.2 }}>
-                      {p.away_team}
-                    </span>
-                  </div>
-                </div>
-                <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--gold)", fontWeight: 600 }}>
-                  {p.prediction}
-                </p>
-              </Link>
-            ))}
-          </div>
-        )}
       </div>
     </div>
   );
@@ -276,7 +90,6 @@ export function HomePage() {
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
       <SEO path="/" />
       <WelcomeBanner />
-      <WorldCupBanner />
 
       {/* Live track record + Telegram CTA */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 10 }}>

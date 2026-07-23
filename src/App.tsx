@@ -20,7 +20,6 @@ const SettingsPage = lazy(() => import("./pages/SettingsPage").then(m => ({ defa
 const NotFoundPage = lazy(() => import("./pages/NotFoundPage").then(m => ({ default: m.NotFoundPage })));
 const PuntersPage = lazy(() => import("./pages/PuntersPage"));
 const PunterDetailPage = lazy(() => import("./pages/PunterDetailPage"));
-const WorldCupPage = lazy(() => import("./pages/WorldCupPage"));
 const AboutPage = lazy(() => import("./pages/AboutPage").then(m => ({ default: m.AboutPage })));
 
 function Fallback() {
@@ -46,7 +45,6 @@ export default function App() {
             <Route path="/predictions/:category" element={<PredictionsPage />} />
             <Route path="/results" element={<ResultsPage />} />
             <Route path="/rollover" element={<RolloverPage />} />
-            <Route path="/worldcup" element={<WorldCupPage />} />
             <Route path="/punters" element={<PuntersPage />} />
             <Route path="/punters/:id" element={<PunterDetailPage />} />
             <Route path="/about" element={<AboutPage />} />

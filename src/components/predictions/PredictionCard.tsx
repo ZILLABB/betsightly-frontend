@@ -158,7 +158,8 @@ export function PredictionCard({ game, color, faint, index = 0 }: Props) {
       }}>
         {(() => {
           const MODEL_LABELS: Record<string, string> = {
-            worldcup_ensemble: "AI Pick",
+            elo_engine: "AI Pick",
+            leagues_safe: "AI Pick",
             ensemble: "AI Pick",
             club_odds: "Market Pick",
             odds_implied: "Market Pick",

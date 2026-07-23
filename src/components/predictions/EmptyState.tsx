@@ -95,12 +95,12 @@ export function EmptyState({ type, message, onRetry }: Props) {
           <p style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text-3)", lineHeight: 1.6 }}>
             {cfg.hint}
           </p>
-          <Link to="/worldcup" style={{
+          <Link to="/rollover" style={{
             display: "inline-flex", alignItems: "center", gap: 6,
             fontFamily: "var(--font-body)", fontSize: 12, fontWeight: 700,
             color: "#fbbf24", textDecoration: "none",
           }}>
-            <Trophy size={12} /> View World Cup picks <ArrowRight size={12} />
+            <Trophy size={12} /> View the rollover challenge <ArrowRight size={12} />
           </Link>
         </div>
       )}

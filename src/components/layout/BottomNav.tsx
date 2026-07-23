@@ -5,20 +5,11 @@ import { Home, Target, Users, Settings } from "lucide-react";
 /* WC 2026 tab shows the official emblem instead of a generic trophy icon —
    white variant in dark theme, black in light. Accepts the same size/style
    props the lucide icons get so the NAV map stays uniform. */
-function WCEmblem({ size = 20, style }: { size?: number; style?: React.CSSProperties }) {
-  const common: React.CSSProperties = { height: size + 3, width: "auto", objectFit: "contain", ...style };
-  return (
-    <>
-      <img src="/wc26-emblem-dark.svg" alt="" className="show-on-dark" style={common} />
-      <img src="/wc26-emblem.png" alt="" className="show-on-light" style={common} />
-    </>
-  );
-}
 
 const NAV = [
   { path:"/", label:"Home", icon:Home },
   { path:"/predictions", label:"Picks", icon:Target },
-  { path:"/worldcup", label:"WC 2026", icon:WCEmblem },
+  { path:"/rollover", label:"Rollover", icon:RefreshCw },
   { path:"/punters", label:"Punters", icon:Users },
   { path:"/settings", label:"Settings", icon:Settings },
 ];
@@ -38,7 +29,7 @@ export function BottomNav() {
       }} className="bottom-nav">
         {NAV.map(({ path, label, icon: Icon }) => {
           const active = isActive(path);
-          const isWC = path === "/worldcup";
+          const isWC = false;
           const activeColor = isWC ? "#f59e0b" : "var(--brand)";
           const activeBg = isWC ? "rgba(245,158,11,0.12)" : "var(--brand-faint)";
           return (

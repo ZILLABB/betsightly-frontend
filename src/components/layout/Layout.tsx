@@ -46,16 +46,16 @@ export function Layout({ children }: { children: React.ReactNode }) {
               </div>
             </div>
 
-            {/* World Cup */}
+            {/* Leagues */}
             <div>
               <h4 style={{ fontFamily:"var(--font-body)", fontSize:11, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.1em", color:"var(--text-2)", marginBottom:12 }}>
-                World Cup 2026
+                Leagues
               </h4>
               <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-                <Link to="/worldcup" style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text-3)", textDecoration:"none" }}>All Predictions</Link>
-                <Link to="/worldcup?tab=groups" style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text-3)", textDecoration:"none" }}>Groups</Link>
-                <Link to="/worldcup?tab=accumulators" style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text-3)", textDecoration:"none" }}>Accumulators</Link>
-                <Link to="/worldcup?tab=value" style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text-3)", textDecoration:"none" }}>Value Bets</Link>
+                <Link to="/predictions" style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text-3)", textDecoration:"none" }}>All Predictions</Link>
+                <Link to="/predictions/5_odds" style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text-3)", textDecoration:"none" }}>5 Odds</Link>
+                <Link to="/predictions/10_odds" style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text-3)", textDecoration:"none" }}>10 Odds</Link>
+                <Link to="/predictions/over_1_5" style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text-3)", textDecoration:"none" }}>Over 1.5</Link>
               </div>
             </div>
 
