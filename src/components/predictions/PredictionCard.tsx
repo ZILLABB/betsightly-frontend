@@ -32,6 +32,35 @@ interface Props {
   index?: number;
 }
 
+const FORM_COLORS: Record<string, string> = {
+  W: "var(--green)",
+  D: "var(--text-3)",
+  L: "var(--red)",
+};
+
+function FormRun({ form, align = "flex-start" }: { form?: string | null; align?: string }) {
+  if (!form) return <span style={{ flex: 1 }} />;
+  return (
+    <div style={{ flex: 1, display: "flex", gap: 3, justifyContent: align }}>
+      {form.split("").slice(-5).map((r, i) => (
+        <span
+          key={i}
+          title={r === "W" ? "Win" : r === "L" ? "Loss" : "Draw"}
+          style={{
+            width: 14, height: 14, borderRadius: 3,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 700,
+            color: "#fff", background: FORM_COLORS[r] ?? "var(--text-3)",
+            opacity: 0.85,
+          }}
+        >
+          {r}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 export function PredictionCard({ game, color, faint, index = 0 }: Props) {
   const pct = Math.round(game.confidence * 100);
   const displayOdds = game.odds ?? game.real_odds ?? game.estimated_odds ?? 0;
@@ -118,6 +147,20 @@ export function PredictionCard({ game, color, faint, index = 0 }: Props) {
         </div>
       </div>
 
+      {/* Recent form — most recent result last */}
+      {(game.match_info?.home_form || game.match_info?.away_form) && (
+        <div style={{
+          padding: "0 16px 10px", display: "flex", alignItems: "center",
+          justifyContent: "space-between", gap: 10,
+        }}>
+          <FormRun form={game.match_info?.home_form} />
+          <span style={{ fontFamily: "var(--font-body)", fontSize: 9, color: "var(--text-3)", letterSpacing: "0.06em" }}>
+            LAST 5
+          </span>
+          <FormRun form={game.match_info?.away_form} align="flex-end" />
+        </div>
+      )}
+
       {/* Prediction + Odds bar */}
       <div style={{
         margin: "0 16px 14px",
@@ -143,13 +186,30 @@ export function PredictionCard({ game, color, faint, index = 0 }: Props) {
         </div>
 
         {/* Odds pill */}
-        <div style={{
-          fontFamily: "var(--font-mono)", fontSize: 20, fontWeight: 800,
-          color, flexShrink: 0, letterSpacing: "-0.03em", lineHeight: 1,
-        }}>
-          {displayOdds.toFixed(2)}
+        <div style={{ flexShrink: 0, textAlign: "right" }}>
+          <div style={{
+            fontFamily: "var(--font-mono)", fontSize: 20, fontWeight: 800,
+            color, letterSpacing: "-0.03em", lineHeight: 1,
+          }}>
+            {displayOdds.toFixed(2)}
+          </div>
+          <div style={{ fontFamily: "var(--font-body)", fontSize: 9, color: "var(--text-3)", marginTop: 3 }}>
+            {game.odds_are_real ? (game.odds_provider ?? "live price") : "est. price"}
+          </div>
         </div>
       </div>
+
+      {/* Venue / kickoff */}
+      {(game.match_info?.venue || game.match_info?.city) && (
+        <div style={{
+          padding: "0 16px 12px",
+          fontFamily: "var(--font-body)", fontSize: 10, color: "var(--text-3)",
+          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+        }}>
+          {[game.match_info.venue, game.match_info.city].filter(Boolean).join(" · ")}
+          {game.match_info.broadcast ? ` · ${game.match_info.broadcast}` : ""}
+        </div>
+      )}
 
       {/* Bottom row: chips + actions */}
       <div style={{

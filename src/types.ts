@@ -145,6 +145,25 @@ export interface GamePrediction {
   home_team_logo?: string;
   away_team_logo?: string;
   league_logo?: string;
+  /** True when `odds` is a live sportsbook price, not our own fair price. */
+  odds_are_real?: boolean;
+  odds_provider?: string;
+  match_info?: MatchInfo;
+}
+
+export interface MatchInfo {
+  kickoff_utc?: string;
+  venue?: string | null;
+  city?: string | null;
+  country?: string | null;
+  broadcast?: string | null;
+  /** Last five results, most recent last, e.g. "WWLDW". */
+  home_form?: string | null;
+  away_form?: string | null;
+  home_record?: string | null;
+  away_record?: string | null;
+  home_elo?: number | null;
+  away_elo?: number | null;
 }
 
 export interface RolloverPick {
