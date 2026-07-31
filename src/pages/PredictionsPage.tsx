@@ -64,13 +64,18 @@ export function PredictionsPage() {
       ) : (
         <>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
               <span style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text-3)" }}>
                 {activeCat.games.length} {activeCat.games.length === 1 ? "pick" : "picks"} · {activeCat.risk_level} risk
               </span>
               <div style={{ padding: "4px 12px", borderRadius: 6, background: catMeta.faint, fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 700, color: catMeta.color }}>
                 {fmtOdds(activeCat.total_odds)}{oddsSuffix} total
               </div>
+              {typeof activeCat.hit_probability === "number" && (
+                <span style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text-3)" }}>
+                  lands ~{Math.round(activeCat.hit_probability * 100)}% of the time
+                </span>
+              )}
             </div>
             <AccumulatorSlip
               games={activeCat.games}

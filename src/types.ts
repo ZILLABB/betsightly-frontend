@@ -176,6 +176,8 @@ export interface CategoryData {
   games: GamePrediction[];
   total_odds: number;
   risk_level: string;
+  /** Chance every leg on the slip lands. A 10x slip is ~15%, not a safe bet. */
+  hit_probability?: number;
   reason?: string;
   // Rollover-specific fields
   chain?: RolloverChainDay[];

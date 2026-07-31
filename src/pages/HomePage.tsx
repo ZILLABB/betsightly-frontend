@@ -139,6 +139,15 @@ export function HomePage() {
                   {activeCat.reason}
                 </p>
               )}
+              {typeof activeCat.hit_probability === "number" && activeCat.games?.length > 0 && (
+                <p style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text-3)", marginTop: 3 }}>
+                  All {activeCat.games.length} legs land about{" "}
+                  <strong style={{ color: "var(--text-2)" }}>
+                    {Math.round(activeCat.hit_probability * 100)}%
+                  </strong>{" "}
+                  of the time — bigger payouts win less often.
+                </p>
+              )}
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <div style={{
