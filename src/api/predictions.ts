@@ -79,4 +79,54 @@ export const api = {
 
   getAccumulatorResults: (date?: string) =>
     request<ResultsResponse>(`/accumulators/results${date ? `?target_date=${date}` : ''}`),
+
+  /** Settled history for every category (banker, 2/5/10 odds, over 1.5). */
+  getLeagueResults: (days = 30) =>
+    request<LeagueResultsResponse>(`/leagues/results?days=${days}`),
 };
+
+export interface SettledLeg {
+  match_id?: string;
+  home_team: string;
+  away_team: string;
+  league?: string;
+  commence_time?: string;
+  prediction: string;
+  market?: string;
+  market_group?: string;
+  odds?: number;
+  odds_are_real?: boolean;
+  confidence?: number;
+  home_team_logo?: string | null;
+  away_team_logo?: string | null;
+  status: 'pending' | 'won' | 'lost' | 'void';
+}
+
+export interface SettledSlip {
+  date: string;
+  category: string;
+  status: 'pending' | 'won' | 'lost' | 'void';
+  total_odds: number;
+  hit_probability: number;
+  picks: SettledLeg[];
+  settled_at?: string | null;
+}
+
+export interface CategoryPerformance {
+  won: number;
+  lost: number;
+  settled: number;
+  win_rate: number;
+  staked: number;
+  returned: number;
+  profit: number;
+  roi: number;
+}
+
+export interface LeagueResultsResponse {
+  status: string;
+  days: number;
+  summary: Record<string, CategoryPerformance>;
+  history: SettledSlip[];
+  by_date: Record<string, Record<string, SettledSlip>>;
+}

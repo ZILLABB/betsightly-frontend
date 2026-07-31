@@ -149,6 +149,22 @@ export interface GamePrediction {
   odds_are_real?: boolean;
   odds_provider?: string;
   match_info?: MatchInfo;
+  /** Kickoff time (UTC ISO). */
+  kickoff?: string;
+  market?: string;
+  league_slug?: string;
+  venue?: string | null;
+  venue_city?: string | null;
+  broadcast?: string[];
+  /** Last five results, most recent last, e.g. "WWLDW". */
+  home_form?: string | null;
+  away_form?: string | null;
+  home_record?: string | null;
+  away_record?: string | null;
+  expected_goals?: number;
+  expected_home_goals?: number;
+  expected_away_goals?: number;
+  elo_agreement?: string | null;
 }
 
 export interface MatchInfo {
@@ -209,6 +225,7 @@ export interface AccumulatorResponse {
   status: string;
   date: string;
   accumulators: {
+    banker: CategoryData;
     '2_odds': CategoryData;
     '5_odds': CategoryData;
     '10_odds': CategoryData;
@@ -217,7 +234,7 @@ export interface AccumulatorResponse {
   };
 }
 
-export type CategoryKey = '2_odds' | '5_odds' | '10_odds' | 'over_1_5' | 'rollover';
+export type CategoryKey = 'banker' | '2_odds' | '5_odds' | '10_odds' | 'over_1_5' | 'rollover';
 
 export interface CategoryMeta {
   key: CategoryKey;
@@ -230,6 +247,15 @@ export interface CategoryMeta {
 }
 
 export const CATEGORIES: CategoryMeta[] = [
+  {
+    key: 'banker',
+    label: 'Banker',
+    shortLabel: 'Bank',
+    description: 'One or two picks · highest reliability',
+    color: '#22d3ee',
+    faint: 'rgba(34,211,238,0.08)',
+    riskLabel: 'Most Reliable',
+  },
   {
     key: '2_odds',
     label: '2 Odds',
