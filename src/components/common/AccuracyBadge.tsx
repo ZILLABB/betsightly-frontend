@@ -1,26 +1,53 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { TrendingUp, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import { usePredictions } from "../../hooks/usePredictions";
+import { api } from "../../api/predictions";
 
 /**
  * Compact accuracy badge for the homepage hero / about page.
- * Reads the same rollover chain the Results page uses.
  *
- * Shows N/A gracefully until enough days have resolved.
+ * Sums settled slips across every category rather than the rollover chain
+ * alone. The chain is one product of several, and a badge labelled "live
+ * track record" that reports only its results misrepresents the site — most
+ * visibly right after a chain has had a bad run.
+ *
+ * Falls back to the chain when no category slips have settled yet, and
+ * renders nothing at all until something real exists to report.
  */
 export function AccuracyBadge({ compact = false }: { compact?: boolean }) {
   const { data, loading } = usePredictions();
   const chain = data?.accumulators?.rollover?.chain ?? [];
+  const [slipStats, setSlipStats] = useState<{ won: number; lost: number } | null>(null);
 
-  const won = chain.filter(d => d.status === "won").length;
-  const lost = chain.filter(d => d.status === "lost").length;
+  useEffect(() => {
+    let alive = true;
+    api.getLeagueResults(60)
+      .then(r => {
+        if (!alive) return;
+        const s = Object.values(r.summary ?? {});
+        if (s.length) {
+          setSlipStats({
+            won: s.reduce((a, c) => a + c.won, 0),
+            lost: s.reduce((a, c) => a + c.lost, 0),
+          });
+        }
+      })
+      .catch(() => { /* fall back to the chain below */ });
+    return () => { alive = false; };
+  }, []);
+
+  const chainWon = chain.filter(d => d.status === "won").length;
+  const chainLost = chain.filter(d => d.status === "lost").length;
   const pending = chain.filter(d => d.status === "pending").length;
+
+  const won = slipStats ? slipStats.won + chainWon : chainWon;
+  const lost = slipStats ? slipStats.lost + chainLost : chainLost;
   const resolved = won + lost;
   const rate = resolved > 0 ? Math.round((won / resolved) * 100) : null;
 
-  // Hide entirely while loading or when chain is empty
-  if (loading || chain.length === 0) return null;
+  // Nothing settled yet — say nothing rather than publish "0%"
+  if (loading || resolved === 0) return null;
 
   const ratePos = rate !== null && rate >= 50;
   const color = rate === null ? "var(--text-2)" : ratePos ? "var(--green)" : "var(--text-1)";
@@ -70,7 +97,7 @@ export function AccuracyBadge({ compact = false }: { compact?: boolean }) {
         <p style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)", marginTop: 2 }}>
           {rate === null
             ? "Rollover starting — first results land soon"
-            : `over ${resolved} resolved day${resolved !== 1 ? "s" : ""}`}
+            : `over ${resolved} settled slip${resolved !== 1 ? "s" : ""}`}
         </p>
       </div>
     </Link>
