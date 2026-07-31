@@ -85,8 +85,9 @@ export function RolloverPage() {
           <div className="eyebrow" style={{ marginBottom: 6 }}>10-day safe challenge</div>
           <h1 style={{ fontSize: 30, fontWeight: 800 }}>Rollover</h1>
           <p style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text-3)", marginTop: 4, maxWidth: 560, lineHeight: 1.6 }}>
-            Each day stacks 2–5 of the safest picks (all ≥70% confidence) into a 2–3x daily multiplier.
-            All picks on a day must hit for that day to count. The chain fills toward 10 days as upcoming fixtures are confirmed.
+            Each day takes two or three of the day&apos;s most reliable picks, aiming for roughly
+            2x. Every pick on a day must land for that day to count — which is why the day is kept
+            short: four legs at 75% land 32% of the time, two at 85% land 72%.
           </p>
         </div>
       </div>
@@ -95,9 +96,19 @@ export function RolloverPage() {
       {chain.length > 0 && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
           <div className="card" style={{ padding: "18px 20px", borderLeft: `3px solid ${catMeta.color}` }}>
-            <p style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Total payout multiplier</p>
-            <p className="stat-num" style={{ fontSize: 32, color: catMeta.color, lineHeight: 1.05 }}>{fmtOdds(cumOdds)}{oddsSuffix}</p>
-            <p style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)", marginTop: 6 }}>If all {chain.length} days hit · builds to 10</p>
+            <p style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Today&apos;s multiplier</p>
+            <p className="stat-num" style={{ fontSize: 32, color: catMeta.color, lineHeight: 1.05 }}>
+              {todaysDay ? `${fmtOdds(todaysDay.combined_odds)}${oddsSuffix}` : "—"}
+            </p>
+            {/* The compounded figure runs into four digits by day ten. Shown
+                as a caption rather than a headline: a 1,700x number presented
+                as the payout reads as a scam, and the daily multiplier is the
+                one a user actually stakes against. */}
+            <p style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)", marginTop: 6 }}>
+              {cumOdds > 0
+                ? `${fmtOdds(cumOdds)}${oddsSuffix} compounded if all ${chain.length} days land`
+                : `Builds over ${rollover?.target_days ?? 10} days`}
+            </p>
           </div>
 
           <div className="card" style={{ padding: "18px 20px" }}>
@@ -304,10 +315,10 @@ export function RolloverPage() {
           <div style={{ marginTop: 18, padding: "12px 16px", background: "var(--surface-2)", borderRadius: 10, display: "flex", alignItems: "flex-start", gap: 10 }}>
             <TrendingUp size={14} color="var(--text-3)" style={{ marginTop: 2, flexShrink: 0 }} />
             <p style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text-3)", lineHeight: 1.6 }}>
-              Each day stacks 2–5 of the safest matches available — across active club leagues and the World Cup —
-              all at ≥70% confidence, combining to a 2–3x daily multiplier. No match appears more than once.
-              The chain fills toward 10 days as upcoming fixtures are confirmed (knockout matchups only exist once
-              the previous round is played). Lose any single pick on any day and the chain breaks.
+              Each day takes two or three of the most reliable picks available across 91 leagues, chosen
+              as the combination most likely to actually reach the target rather than the most confident-looking
+              legs stacked together. No match appears more than once, and no day uses more legs than it needs —
+              every extra leg is another chance to lose. Lose any single pick on any day and the chain breaks.
             </p>
           </div>
         </div>

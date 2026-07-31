@@ -6,6 +6,8 @@ import { CategoryTabs } from "../components/predictions/CategoryTabs";
 import { PredictionCard } from "../components/predictions/PredictionCard";
 import { EmptyState } from "../components/predictions/EmptyState";
 import { AccumulatorSlip } from "../components/predictions/AccumulatorSlip";
+import { StakeCalculator } from "../components/predictions/StakeCalculator";
+import { LeagueFilter } from "../components/predictions/LeagueFilter";
 import { PredictionCardSkeleton } from "../components/ui/Skeleton";
 import { BrandLoader } from "../components/ui/BrandLoader";
 import { CATEGORIES } from "../types";
@@ -15,6 +17,7 @@ import { SEO } from "../components/common/SEO";
 const VALID_KEYS = new Set<string>(CATEGORIES.map(c => c.key));
 
 export function PredictionsPage() {
+  const [leagueFilter, setLeagueFilter] = React.useState<string | null>(null);
   const { category } = useParams<{ category?: string }>();
   const initialKey: CategoryKey = category && VALID_KEYS.has(category) ? (category as CategoryKey) : "2_odds";
 
@@ -84,10 +87,25 @@ export function PredictionsPage() {
               date={data?.date ?? new Date().toISOString().slice(0, 10)}
             />
           </div>
+          <StakeCalculator
+            totalOdds={activeCat.total_odds}
+            hitProbability={activeCat.hit_probability}
+            color={catMeta.color}
+          />
+
+          <LeagueFilter
+            games={activeCat.games}
+            active={leagueFilter}
+            onChange={setLeagueFilter}
+            color={catMeta.color}
+          />
+
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}>
-            {activeCat.games.map((game, i) => (
-              <PredictionCard key={game.fixture_id} game={game} color={catMeta.color} faint={catMeta.faint} index={i} />
-            ))}
+            {activeCat.games
+              .filter(g => !leagueFilter || g.league === leagueFilter)
+              .map((game, i) => (
+                <PredictionCard key={game.fixture_id} game={game} color={catMeta.color} faint={catMeta.faint} index={i} />
+              ))}
           </div>
         </>
       )}

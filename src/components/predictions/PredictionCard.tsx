@@ -61,6 +61,60 @@ function FormRun({ form, align = "flex-start" }: { form?: string | null; align?:
   );
 }
 
+/**
+ * Kickoff stamp that becomes a countdown inside the last few hours.
+ *
+ * A date on its own is nearly useless on a betting card — what a user needs to
+ * know is whether there is still time to place the bet. Inside 3 hours this
+ * counts down and turns amber; once the match is under way it says so, so a
+ * stale card cannot be mistaken for a live one.
+ */
+function KickoffStamp({ iso }: { iso?: string }) {
+  const [now, setNow] = React.useState(() => Date.now());
+
+  const ts = iso ? new Date(iso).getTime() : NaN;
+  const mins = Number.isNaN(ts) ? NaN : Math.round((ts - now) / 60000);
+  const ticking = !Number.isNaN(mins) && mins >= 0 && mins <= 180;
+
+  React.useEffect(() => {
+    if (!ticking) return;
+    const id = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(id);
+  }, [ticking]);
+
+  if (Number.isNaN(ts)) return null;
+
+  if (mins < 0) {
+    return (
+      <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-3)" }}>
+        in play
+      </span>
+    );
+  }
+
+  if (mins <= 180) {
+    const label = mins < 60 ? `${mins}m` : `${Math.floor(mins / 60)}h ${mins % 60}m`;
+    return (
+      <span style={{
+        fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700,
+        color: "var(--gold)", padding: "2px 6px", borderRadius: 4,
+        background: "rgba(245,158,11,0.10)",
+      }}>
+        {label}
+      </span>
+    );
+  }
+
+  const d = new Date(ts);
+  return (
+    <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-3)" }}>
+      {d.toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}
+      {" · "}
+      {d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false })}
+    </span>
+  );
+}
+
 export function PredictionCard({ game, color, faint, index = 0 }: Props) {
   const pct = Math.round(game.confidence * 100);
   const displayOdds = game.odds ?? game.real_odds ?? game.estimated_odds ?? 0;
@@ -105,11 +159,7 @@ export function PredictionCard({ game, color, faint, index = 0 }: Props) {
             {game.league}
           </span>
         </div>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-3)" }}>
-          {new Date(game.date).toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}
-          {" · "}
-          {new Date(game.date).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false })}
-        </span>
+        <KickoffStamp iso={game.kickoff || game.date} />
       </div>
 
       {/* Teams — horizontal layout */}

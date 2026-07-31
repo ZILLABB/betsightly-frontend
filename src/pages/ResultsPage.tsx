@@ -8,7 +8,7 @@ import { getTeamFlag, isWcNation, teamInitials, teamColor } from "../data/wcFlag
 import { SEO } from "../components/common/SEO";
 import { BrandLoader } from "../components/ui/BrandLoader";
 import { CATEGORIES } from "../types";
-import { api, type LeagueResultsResponse, type SettledSlip } from "../api/predictions";
+import { api, type LeagueResultsResponse, type SettledSlip, type CalibrationResponse } from "../api/predictions";
 
 function TeamBadge({ team }: { team: string }) {
   if (isWcNation(team)) {
@@ -50,6 +50,7 @@ export function ResultsPage() {
 
   const [league, setLeague] = useState<LeagueResultsResponse | null>(null);
   const [leagueLoading, setLeagueLoading] = useState(true);
+  const [calib, setCalib] = useState<CalibrationResponse | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -57,6 +58,14 @@ export function ResultsPage() {
       .then(r => { if (alive) setLeague(r); })
       .catch(() => { /* section renders its own empty state */ })
       .finally(() => { if (alive) setLeagueLoading(false); });
+    return () => { alive = false; };
+  }, []);
+
+  useEffect(() => {
+    let alive = true;
+    api.getCalibration(180)
+      .then(r => { if (alive) setCalib(r); })
+      .catch(() => { /* section hides itself when there is no sample */ });
     return () => { alive = false; };
   }, []);
 
@@ -219,6 +228,52 @@ export function ResultsPage() {
                   }}>
                     {s.profit > 0 ? "+" : ""}{s.profit.toFixed(2)}u · ROI {(s.roi * 100).toFixed(0)}%
                   </p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Calibration — the only real test of a stated probability */}
+      {showingCategories && calib && calib.total_legs >= 10 && (
+        <div className="card" style={{ padding: "18px 20px" }}>
+          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 6 }}>
+            <p style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+              Are our percentages honest?
+            </p>
+            {calib.bias !== null && (
+              <p style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: Math.abs(calib.bias) <= 0.05 ? "var(--green)" : "var(--gold)" }}>
+                {Math.abs(calib.bias) <= 0.05
+                  ? "well calibrated"
+                  : calib.bias > 0 ? `over-confident by ${(calib.bias * 100).toFixed(1)}pts` : `under-confident by ${(-calib.bias * 100).toFixed(1)}pts`}
+              </p>
+            )}
+          </div>
+          <p style={{ fontFamily: "var(--font-body)", fontSize: 12.5, color: "var(--text-3)", lineHeight: 1.7, marginBottom: 16 }}>
+            When we say 70%, does it happen 70% of the time? Measured across {calib.total_legs} settled
+            picks. The grey bar is what we promised; the coloured bar is what actually happened.
+          </p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {calib.buckets.filter(b => b.sample > 0).map(b => {
+              const actual = b.actual ?? 0;
+              const ok = Math.abs(actual - b.predicted) <= 0.08;
+              return (
+                <div key={b.range}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-2)" }}>{b.range}</span>
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-3)" }}>
+                      {Math.round(actual * 100)}% actual · {b.sample} pick{b.sample !== 1 ? "s" : ""}
+                    </span>
+                  </div>
+                  {/* promised */}
+                  <div style={{ height: 6, borderRadius: 3, background: "var(--surface-2)", overflow: "hidden", marginBottom: 3 }}>
+                    <div style={{ width: `${b.predicted * 100}%`, height: "100%", background: "var(--text-3)", opacity: 0.45 }} />
+                  </div>
+                  {/* actual */}
+                  <div style={{ height: 6, borderRadius: 3, background: "var(--surface-2)", overflow: "hidden" }}>
+                    <div style={{ width: `${actual * 100}%`, height: "100%", background: ok ? "var(--green)" : "var(--gold)" }} />
+                  </div>
                 </div>
               );
             })}

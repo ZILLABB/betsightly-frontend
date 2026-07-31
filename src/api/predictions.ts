@@ -83,7 +83,62 @@ export const api = {
   /** Settled history for every category (banker, 2/5/10 odds, over 1.5). */
   getLeagueResults: (days = 30) =>
     request<LeagueResultsResponse>(`/leagues/results?days=${days}`),
+
+  /** Predicted confidence vs measured hit rate. */
+  getCalibration: (days = 180) =>
+    request<CalibrationResponse>(`/leagues/calibration?days=${days}`),
+
+  /** Real-odds picks ranked by expected value / house edge. */
+  getValueBets: (daysAhead = 3) =>
+    request<ValueBetsResponse>(`/leagues/value-bets?days_ahead=${daysAhead}`),
 };
+
+export interface CalibrationBucket {
+  range: string;
+  low: number;
+  high: number;
+  predicted: number;
+  actual: number | null;
+  sample: number;
+}
+
+export interface CalibrationResponse {
+  status: string;
+  buckets: CalibrationBucket[];
+  total_legs: number;
+  hit_rate: number | null;
+  avg_predicted: number | null;
+  bias: number | null;
+}
+
+export interface ValueBet {
+  match_id: string;
+  home_team: string;
+  away_team: string;
+  home_team_logo?: string | null;
+  away_team_logo?: string | null;
+  league: string;
+  kickoff: string;
+  prediction: string;
+  market: string;
+  market_group: string;
+  confidence: number;
+  odds: number;
+  odds_provider?: string | null;
+  edge: number | null;
+  expected_value: number;
+  fair_odds: number | null;
+  house_edge: number;
+  positive_ev: boolean;
+}
+
+export interface ValueBetsResponse {
+  status: string;
+  count: number;
+  positive_ev_count: number;
+  best_expected_value: number | null;
+  value_bets: ValueBet[];
+}
 
 export interface SettledLeg {
   match_id?: string;

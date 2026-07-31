@@ -65,6 +65,27 @@
   --radius-xl:  20px;
   --radius-2xl: 28px;
 
+  /* ── Type scale ──────────────────────────────────────
+     Six steps on a ~1.25 ratio. Components had drifted to twelve ad-hoc
+     sizes including an 11.2px rounding artifact, which is what makes a
+     layout read as assembled rather than designed. */
+  --fs-xs:   11px;   /* meta, labels, timestamps */
+  --fs-sm:   13px;   /* secondary copy */
+  --fs-base: 15px;   /* body */
+  --fs-md:   19px;   /* card titles */
+  --fs-lg:   24px;   /* section headings */
+  --fs-xl:   31px;   /* page headings */
+  --fs-2xl:  44px;   /* hero */
+
+  /* ── Spacing (8px grid, with a 4px half-step) ──────── */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+
   --ease: cubic-bezier(0.4,0,0.2,1);
 }
 
@@ -184,11 +205,15 @@
   .font-body     { font-family: var(--font-body); }
   .font-mono     { font-family: var(--font-mono); }
 
+  /* Kept as a class so call sites are unchanged, but rendered as a solid
+     brand colour. Gradient-filled headings are the single loudest "generated
+     template" signal left in the type, and the display face carries the
+     emphasis on its own. */
   .text-brand-gradient {
-    background: linear-gradient(135deg, #34d399, #10b981);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
+    color: var(--brand);
+    background: none;
+    -webkit-background-clip: initial;
+    background-clip: initial;
   }
 
   .text-accent-gradient {
@@ -458,10 +483,10 @@
 
 /* Light theme: darker gradient text for contrast on white */
 .light .text-brand-gradient {
-  background: linear-gradient(135deg, #059669, #047857);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: var(--brand);
+  background: none;
+  -webkit-background-clip: initial;
+  background-clip: initial;
 }
 .light .text-accent-gradient {
   background: linear-gradient(135deg, #d97706, #b45309);

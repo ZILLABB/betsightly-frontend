@@ -246,23 +246,42 @@ export interface CategoryMeta {
   riskLabel: string;
 }
 
+/**
+ * Categories are ordered safest-first and coloured along a single green-to-amber
+ * risk axis rather than each getting its own hue.
+ *
+ * Six competing saturated colours is the strongest "generated" tell a UI can
+ * have, and it also wastes colour: when every tab is a different bright hue,
+ * hue carries no meaning beyond "which tab". Here green means reliable and
+ * amber means risky, so the palette says something true before a word is read,
+ * and red/green stay free to mean lost/won.
+ */
 export const CATEGORIES: CategoryMeta[] = [
   {
     key: 'banker',
     label: 'Banker',
     shortLabel: 'Bank',
     description: 'One or two picks · highest reliability',
-    color: '#22d3ee',
-    faint: 'rgba(34,211,238,0.08)',
+    color: '#34d399',
+    faint: 'rgba(52,211,153,0.09)',
     riskLabel: 'Most Reliable',
+  },
+  {
+    key: 'over_1_5',
+    label: 'Over 1.5',
+    shortLabel: '1.5+',
+    description: '2+ goals · very safe picks',
+    color: '#10b981',
+    faint: 'rgba(16,185,129,0.08)',
+    riskLabel: 'Very Safe',
   },
   {
     key: '2_odds',
     label: '2 Odds',
     shortLabel: '2x',
     description: 'Safe picks · high confidence',
-    color: '#10b981',
-    faint: 'rgba(16,185,129,0.08)',
+    color: '#059669',
+    faint: 'rgba(5,150,105,0.10)',
     riskLabel: 'Low Risk',
   },
   {
@@ -270,27 +289,18 @@ export const CATEGORIES: CategoryMeta[] = [
     label: '5 Odds',
     shortLabel: '5x',
     description: 'Balanced risk & reward',
-    color: '#38bdf8',
-    faint: 'rgba(56,189,248,0.08)',
+    color: '#fbbf24',
+    faint: 'rgba(251,191,36,0.08)',
     riskLabel: 'Medium Risk',
   },
   {
     key: '10_odds',
     label: '10 Odds',
     shortLabel: '10x',
-    description: 'High reward accumulator',
+    description: 'Long shot · rarely lands',
     color: '#f59e0b',
-    faint: 'rgba(245,158,11,0.07)',
+    faint: 'rgba(245,158,11,0.08)',
     riskLabel: 'High Risk',
-  },
-  {
-    key: 'over_1_5',
-    label: 'Over 1.5',
-    shortLabel: '1.5+',
-    description: '2+ goals · very safe picks',
-    color: '#a78bfa',
-    faint: 'rgba(167,139,250,0.08)',
-    riskLabel: 'Very Safe',
   },
   {
     key: 'rollover',

@@ -56,6 +56,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 <Link to="/predictions/5_odds" style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text-3)", textDecoration:"none" }}>5 Odds</Link>
                 <Link to="/predictions/10_odds" style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text-3)", textDecoration:"none" }}>10 Odds</Link>
                 <Link to="/predictions/over_1_5" style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text-3)", textDecoration:"none" }}>Over 1.5</Link>
+                <Link to="/value" style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text-3)", textDecoration:"none" }}>Best Priced</Link>
               </div>
             </div>
 
