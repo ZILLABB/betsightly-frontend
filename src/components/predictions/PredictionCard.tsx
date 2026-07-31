@@ -126,7 +126,7 @@ export function PredictionCard({ game, color, faint, index = 0 }: Props) {
 
   return (
     <div
-      className="card animate-fade-up"
+      className="card animate-fade-up pred-card"
       style={{
         "--card-accent": color,
         padding: 0,
@@ -199,7 +199,7 @@ export function PredictionCard({ game, color, faint, index = 0 }: Props) {
 
       {/* Recent form — most recent result last */}
       {(game.match_info?.home_form || game.match_info?.away_form) && (
-        <div style={{
+        <div className="pred-form" style={{
           padding: "0 16px 10px", display: "flex", alignItems: "center",
           justifyContent: "space-between", gap: 10,
         }}>
@@ -249,9 +249,10 @@ export function PredictionCard({ game, color, faint, index = 0 }: Props) {
         </div>
       </div>
 
-      {/* Venue / kickoff */}
+      {/* Venue / kickoff — hidden on mobile, where the row costs more height
+          than the information is worth on a card you scroll past. */}
       {(game.match_info?.venue || game.match_info?.city) && (
-        <div style={{
+        <div className="pred-venue" style={{
           padding: "0 16px 12px",
           fontFamily: "var(--font-body)", fontSize: 10, color: "var(--text-3)",
           overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
@@ -262,7 +263,7 @@ export function PredictionCard({ game, color, faint, index = 0 }: Props) {
       )}
 
       {/* Bottom row: chips + actions */}
-      <div style={{
+      <div className="pred-actions" style={{
         display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap",
         padding: "0 16px 12px",
       }}>

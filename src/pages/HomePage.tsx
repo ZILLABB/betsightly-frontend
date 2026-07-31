@@ -87,7 +87,7 @@ export function HomePage() {
   }, [refetch]);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+    <div className="page-stack" style={{ display: "flex", flexDirection: "column", gap: 24 }}>
       <SEO path="/" />
       <WelcomeBanner />
 

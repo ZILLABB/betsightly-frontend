@@ -48,7 +48,7 @@ export default function ValuePage() {
   const anyPositive = (data?.positive_ev_count ?? 0) > 0;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+    <div className="page-stack" style={{ display: "flex", flexDirection: "column", gap: 24 }}>
       <SEO
         title="Best Priced"
         description="Every pick ranked by how much of your stake the bookmaker keeps, with the fair price shown alongside the quoted one."

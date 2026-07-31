@@ -514,3 +514,51 @@
   opacity: 0.06;
   z-index: -1;
 }
+
+/* ──────────────────────────────────────────────────────────
+   Mobile
+   The stylesheet had exactly one breakpoint, so phones were being served
+   the desktop layout at 375px: a prediction card ran 252px tall and the
+   first one began 792px down — a full screen of header, tabs and tools
+   before any actual pick. These rules cut the card to the four things that
+   decide a bet (who, when, what, price) and pull the picks up the page.
+   ────────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+
+  /* Venue, stadium and broadcast are the first things to go — interesting
+     on a match page, pure height on a card you scroll past. */
+  .pred-card .pred-venue { display: none; }
+
+  /* Recent form stays: it is the one row that changes how a pick reads. */
+  .pred-card .pred-form { padding-bottom: 6px; }
+
+  .pred-card .pred-actions { padding-top: 2px !important; padding-bottom: 10px !important; }
+
+  /* Tighter internal rhythm throughout the card */
+  .pred-card > div:first-child { padding: 10px 14px !important; }
+  .pred-card > div:nth-child(2) { padding: 12px 14px 8px !important; }
+
+  /* Single column, snug gutters — 300px minimum forced awkward reflow */
+  .cards-grid {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
+  /* Page rhythm: the desktop 24-28px stack is too airy on a phone */
+  .page-stack { gap: 16px !important; }
+
+  /* Secondary tools sit below the picks on mobile. On a phone the picks are
+     the product; a calculator above them is a wall to climb first. */
+  .tool-panel { order: 5; }
+  .picks-grid { order: 2; }
+  .filter-row { order: 1; }
+
+  /* Headings step down a notch so they stop eating the first screen */
+  h1 { font-size: clamp(24px, 7vw, 30px) !important; }
+}
+
+/* Very small phones */
+@media (max-width: 380px) {
+  .pred-card > div:first-child,
+  .pred-card > div:nth-child(2) { padding-left: 12px !important; padding-right: 12px !important; }
+}

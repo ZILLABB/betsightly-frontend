@@ -74,7 +74,7 @@ export function RolloverPage() {
   const cumOdds = rollover?.cumulative_odds ?? rollover?.total_odds ?? 0;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
+    <div className="page-stack" style={{ display: "flex", flexDirection: "column", gap: 28 }}>
       <SEO title="Rollover Challenge" description="10-day rollover challenge — daily safest picks from active leagues and the World Cup. All picks must hit for the day to count." path="/rollover" />
       {/* Header */}
       <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>

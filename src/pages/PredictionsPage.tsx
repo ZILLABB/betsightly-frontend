@@ -34,7 +34,7 @@ export function PredictionsPage() {
     : {};
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
+    <div className="page-stack" style={{ display: "flex", flexDirection: "column", gap: 32 }}>
       <SEO title="Predictions" description="Today's best football predictions — 2 Odds, 5 Odds, 10 Odds, and Over 1.5 picks backed by real bookmaker odds." path="/predictions" />
       <div>
         <div className="eyebrow" style={{ marginBottom: 8 }}>Today&apos;s Picks</div>
@@ -65,7 +65,7 @@ export function PredictionsPage() {
       ) : !activeCat.games?.length ? (
         <EmptyState type="empty" />
       ) : (
-        <>
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
               <span style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text-3)" }}>
@@ -87,27 +87,31 @@ export function PredictionsPage() {
               date={data?.date ?? new Date().toISOString().slice(0, 10)}
             />
           </div>
+          <div className="tool-panel">
           <StakeCalculator
             totalOdds={activeCat.total_odds}
             hitProbability={activeCat.hit_probability}
             color={catMeta.color}
           />
+          </div>
 
+          <div className="filter-row">
           <LeagueFilter
             games={activeCat.games}
             active={leagueFilter}
             onChange={setLeagueFilter}
             color={catMeta.color}
           />
+          </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}>
+          <div className="cards-grid picks-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}>
             {activeCat.games
               .filter(g => !leagueFilter || g.league === leagueFilter)
               .map((game, i) => (
                 <PredictionCard key={game.fixture_id} game={game} color={catMeta.color} faint={catMeta.faint} index={i} />
               ))}
           </div>
-        </>
+        </div>
       )}
     </div>
   );

@@ -120,7 +120,7 @@ export function ResultsPage() {
   const showingCategories = tab === "categories";
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
+    <div className="page-stack" style={{ display: "flex", flexDirection: "column", gap: 28 }}>
       <SEO title="Results" description="Settled results for every BetSightly category — banker, 2 odds, 5 odds, 10 odds, over 1.5 and the rollover chain." path="/results" />
 
       <div>
