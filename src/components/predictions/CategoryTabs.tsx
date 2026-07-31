@@ -76,7 +76,9 @@ export function CategoryTabs({ active, onChange, oddsMap = {} }: Props) {
               color: isActive ? "var(--text-2)" : "var(--text-3)",
               lineHeight: 1.3,
             }}>
-              {odds != null
+              {/* A tier with nothing to show reads "0.00x odds" otherwise,
+                  which looks like a bug rather than a thin match day. */}
+              {odds != null && odds > 0
                 ? `${fmtOdds(odds)}${oddsSuffix} odds`
                 : cat.riskLabel}
             </span>
