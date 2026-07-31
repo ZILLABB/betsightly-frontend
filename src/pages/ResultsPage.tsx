@@ -250,7 +250,7 @@ export function ResultsPage() {
               </p>
             )}
           </div>
-          <p style={{ fontFamily: "var(--font-body)", fontSize: 12.5, color: "var(--text-3)", lineHeight: 1.7, marginBottom: 16 }}>
+          <p style={{ fontFamily: "var(--font-body)", fontSize: 12.5, color: "var(--text-2)", lineHeight: 1.7, marginBottom: 16 }}>
             When we say 70%, does it happen 70% of the time? Measured across {calib.total_legs} settled
             picks. The grey bar is what we promised; the coloured bar is what actually happened.
           </p>

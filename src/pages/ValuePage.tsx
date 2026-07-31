@@ -81,7 +81,7 @@ export default function ValuePage() {
               ? `${data?.positive_ev_count} pick${data?.positive_ev_count === 1 ? "" : "s"} currently priced above fair value`
               : "No pick here is priced to make money right now"}
           </p>
-          <p style={{ fontFamily: "var(--font-body)", fontSize: 12.5, color: "var(--text-3)", lineHeight: 1.7 }}>
+          <p style={{ fontFamily: "var(--font-body)", fontSize: 12.5, color: "var(--text-2)", lineHeight: 1.7 }}>
             The bookmaker we read prices runs roughly a 9% margin on these leagues, and our
             probabilities are built from that same book&apos;s prices — so they land close to its
             own view and cannot systematically beat it. That makes every pick below negative
