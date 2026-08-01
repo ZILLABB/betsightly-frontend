@@ -7,7 +7,7 @@ import { Menu, X, Home, Target, BarChart2, RefreshCw, Settings, Users, Scale } f
 const NAV = [
   { path:"/", label:"Home", icon:Home },
   { path:"/predictions", label:"Predictions", icon:Target },
-  { path:"/value", label:"Best Priced", icon:Scale },
+  { path:"/value", label:"Value", icon:Scale },
   { path:"/results", label:"Results", icon:BarChart2 },
   { path:"/rollover", label:"Rollover", icon:RefreshCw },
   { path:"/punters", label:"Punters", icon:Users },

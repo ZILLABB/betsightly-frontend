@@ -50,7 +50,7 @@ export default function ValuePage() {
   return (
     <div className="page-stack" style={{ display: "flex", flexDirection: "column", gap: 24 }}>
       <SEO
-        title="Best Priced"
+        title="Value Bets"
         description="Every pick ranked by how much of your stake the bookmaker keeps, with the fair price shown alongside the quoted one."
         path="/value"
       />
@@ -61,15 +61,16 @@ export default function ValuePage() {
           Pricing
         </div>
         <h1 style={{ fontSize: "clamp(28px, 5vw, 40px)", fontWeight: 800, lineHeight: 1.1 }}>
-          Best <span className="text-brand-gradient">priced</span> picks
+          Value <span className="text-brand-gradient">bets</span>
         </h1>
-        <p style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text-3)", marginTop: 10, maxWidth: 620, lineHeight: 1.7 }}>
-          Every pick with a live quoted price, ranked by how much of your stake the bookmaker keeps.
-          The fair price is what the odds would be with no margin at all.
+        <p className="page-intro" style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text-2)", marginTop: 10, maxWidth: 620, lineHeight: 1.7 }}>
+          Bets where one bookmaker is offering a better price than the rest of the market agrees is
+          fair. We compare every book we can reach{data?.books_compared ? ` — up to ${data.books_compared} on a single match` : ""},
+          take the median of their de-vigged views as the true probability, and flag anyone pricing above it.
         </p>
       </div>
 
-      {/* The honest framing. This page would be a lie without it. */}
+      {/* The framing still matters — the edges are real but thin and caveated. */}
       <div className="card" style={{
         padding: "16px 18px", display: "flex", gap: 12, alignItems: "flex-start",
         borderLeft: `3px solid ${anyPositive ? "var(--green)" : "var(--gold)"}`,
@@ -78,21 +79,20 @@ export default function ValuePage() {
         <div>
           <p style={{ fontFamily: "var(--font-body)", fontSize: 13, fontWeight: 700, color: "var(--text-1)", marginBottom: 6 }}>
             {anyPositive
-              ? `${data?.positive_ev_count} pick${data?.positive_ev_count === 1 ? "" : "s"} currently priced above fair value`
-              : "No pick here is priced to make money right now"}
+              ? `${data?.positive_ev_count} bet${data?.positive_ev_count === 1 ? "" : "s"} priced above fair value right now`
+              : "Nothing is priced above fair value right now"}
           </p>
           <p style={{ fontFamily: "var(--font-body)", fontSize: 12.5, color: "var(--text-2)", lineHeight: 1.7 }}>
-            The bookmaker we read prices runs roughly a 9% margin on these leagues, and our
-            probabilities are built from that same book&apos;s prices — so they land close to its
-            own view and cannot systematically beat it. That makes every pick below negative
-            expected value today, and we would rather show you the number than hide it.
+            Sticking to one bookmaker, none of these would exist — a single book takes roughly 9% on
+            these leagues, which no set of picks overcomes. Taken across the whole market the margin
+            effectively disappears, and the edge is simply one book disagreeing with the other forty.
             {" "}
-            <strong style={{ color: "var(--text-2)" }}>
-              What it is still good for: a pick costing 2% is far better than one costing 9%.
+            <strong style={{ color: "var(--text-1)" }}>
+              You have to place the bet at the book named on the row for the edge to exist.
             </strong>
             {" "}
-            Real profit needs a sharper book or several books to shop between — the single
-            biggest lever available to you.
+            Two things to know: exchanges quote before commission, which takes 2–5% off a thin edge,
+            and the best price on a market is often the one with the smallest maximum stake.
           </p>
         </div>
       </div>
@@ -165,6 +165,19 @@ export default function ValuePage() {
                     fair price
                   </p>
                 </div>
+
+                {/* Where to place it. Without the book the edge is unusable. */}
+                {b.odds_provider && (
+                  <div style={{ minWidth: 108 }}>
+                    <p style={{ fontFamily: "var(--font-body)", fontSize: 12, fontWeight: 700, color: "var(--text-1)" }}>
+                      {b.odds_provider}
+                    </p>
+                    <p style={{ fontFamily: "var(--font-body)", fontSize: 9.5, color: "var(--text-3)", marginTop: 2 }}>
+                      best of {b.book_count ?? "?"} books
+                      {b.is_exchange ? " · pre-commission" : ""}
+                    </p>
+                  </div>
+                )}
 
                 <div style={{
                   minWidth: 76, textAlign: "right",

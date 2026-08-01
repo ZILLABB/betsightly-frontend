@@ -130,6 +130,8 @@ export interface ValueBet {
   fair_odds: number | null;
   house_edge: number;
   positive_ev: boolean;
+  book_count?: number;
+  is_exchange?: boolean;
 }
 
 export interface ValueBetsResponse {
@@ -137,6 +139,7 @@ export interface ValueBetsResponse {
   count: number;
   positive_ev_count: number;
   best_expected_value: number | null;
+  books_compared?: number;
   value_bets: ValueBet[];
 }
 
