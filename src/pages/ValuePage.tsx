@@ -65,7 +65,7 @@ export default function ValuePage() {
         </h1>
         <p className="page-intro" style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text-2)", marginTop: 10, maxWidth: 620, lineHeight: 1.7 }}>
           Bets where one bookmaker is offering a better price than the rest of the market agrees is
-          fair. We compare every book we can reach{data?.books_compared ? ` — up to ${data.books_compared} on a single match` : ""},
+          fair. We compare every book we can reach{data?.books_compared ? ` — up to ${data.books_compared} on a single match — ` : ", "}
           take the median of their de-vigged views as the true probability, and flag anyone pricing above it.
         </p>
       </div>
