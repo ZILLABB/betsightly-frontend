@@ -555,6 +555,24 @@
 
   /* Headings step down a notch so they stop eating the first screen */
   h1 { font-size: clamp(24px, 7vw, 30px) !important; }
+
+  /* The page intro is orientation copy, not a pick. It reads fine on a wide
+     screen and costs a visible chunk of the first screen on a phone. */
+  .page-intro { font-size: 12.5px !important; margin-top: 4px !important; }
+
+  /* The slip summary wrapped to four lines on mobile — "N picks · risk",
+     the odds chip, the hit-rate sentence and the copy button each taking
+     their own row. Kept on one scrollable line so the picks start higher. */
+  .slip-meta {
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    gap: 8px !important;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .slip-meta::-webkit-scrollbar { display: none; }
+  .slip-meta > div { flex-wrap: nowrap !important; flex-shrink: 0; }
+  .slip-meta span, .slip-meta div { white-space: nowrap; }
 }
 
 /* Very small phones */

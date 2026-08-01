@@ -39,7 +39,7 @@ export function PredictionsPage() {
       <div>
         <div className="eyebrow" style={{ marginBottom: 8 }}>Today&apos;s Picks</div>
         <h1 style={{ fontSize: 32, fontWeight: 800 }}>All Predictions</h1>
-        <p style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text-3)", marginTop: 6 }}>
+        <p className="page-intro" style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text-3)", marginTop: 6 }}>
           Every accumulator for {data?.date
             ? new Date(data.date + "T12:00:00Z").toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" })
             : "today"} — pick a tier that matches your risk appetite.
@@ -66,7 +66,7 @@ export function PredictionsPage() {
         <EmptyState type="empty" />
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+          <div className="slip-meta" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
               <span style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text-3)" }}>
                 {activeCat.games.length} {activeCat.games.length === 1 ? "pick" : "picks"} · {activeCat.risk_level} risk
