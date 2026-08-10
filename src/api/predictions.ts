@@ -71,8 +71,17 @@ export interface ResultsResponse {
 /* ── API ─────────────────────────────────────────────── */
 
 export const api = {
+  /** The day's card: banker, 2/5/10 odds, over 1.5 and the rollover chain.
+   *
+   * This has to be the leagues engine. `/accumulators/today` is the retired
+   * pipeline — it has no banker tier and returns no games, odds or hit
+   * probability at all, only {selected, reason, recommendation}, and it is not
+   * what gets published at 08:00 WAT, locked, or calibrated. AccumulatorResponse
+   * was migrated to the leagues shape but this call was left pointing at the old
+   * path, so the Predictions page has been rendering a response that cannot
+   * satisfy its own type and every tier reads as empty. */
   getTodaysAccumulators: () =>
-    request<AccumulatorResponse>('/accumulators/today'),
+    request<AccumulatorResponse>('/leagues/daily-accumulators'),
 
   getPredictionHistory: (days = 14) =>
     request<HistoryResponse>(`/daily-predictions/history?days=${days}`),
