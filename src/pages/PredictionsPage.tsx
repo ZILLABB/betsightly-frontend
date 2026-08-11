@@ -80,6 +80,7 @@ export function PredictionsPage() {
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <div className="slip-meta" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
             <span style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text-3)" }}>
               {activeCat.games.length} {activeCat.games.length === 1 ? "pick" : "picks"}
               {isSingles ? " · bet separately" : ` · ${activeCat.risk_level} risk`}
