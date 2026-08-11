@@ -28,9 +28,22 @@ export function PredictionsPage() {
   const accumulators = data?.accumulators;
   const activeCat = accumulators?.[activeKey];
   const catMeta = CATEGORIES.find(c => c.key === activeKey)!;
+  // Over 1.5 is a list of independent bets rather than one slip, so the
+  // combined price, the joint probability and the slip tools do not apply.
+  const isSingles = activeCat?.presentation === "singles";
 
   const oddsMap = accumulators
     ? (Object.fromEntries(CATEGORIES.map(c => [c.key, accumulators[c.key]?.total_odds])) as Partial<Record<CategoryKey, number>>)
+    : {};
+
+  // Singles tiers advertise how many picks they hold rather than a combined
+  // price, since combining them is not what the tier is offering.
+  const singlesMap = accumulators
+    ? (Object.fromEntries(
+        CATEGORIES
+          .filter(c => accumulators[c.key]?.presentation === "singles")
+          .map(c => [c.key, accumulators[c.key]?.games?.length ?? 0])
+      ) as Partial<Record<CategoryKey, number>>)
     : {};
 
   return (
@@ -46,7 +59,7 @@ export function PredictionsPage() {
         </p>
       </div>
 
-      <CategoryTabs active={activeKey} onChange={setActiveKey} oddsMap={oddsMap} />
+      <CategoryTabs active={activeKey} onChange={setActiveKey} oddsMap={oddsMap} singlesMap={singlesMap} />
 
       {error && (
         <div style={{ padding: "12px 16px", borderRadius: "var(--radius-md)", background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.2)", fontFamily: "var(--font-body)", fontSize: 13, color: "var(--red)" }}>
@@ -67,33 +80,44 @@ export function PredictionsPage() {
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <div className="slip-meta" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-              <span style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text-3)" }}>
-                {activeCat.games.length} {activeCat.games.length === 1 ? "pick" : "picks"} · {activeCat.risk_level} risk
-              </span>
+            <span style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text-3)" }}>
+              {activeCat.games.length} {activeCat.games.length === 1 ? "pick" : "picks"}
+              {isSingles ? " · bet separately" : ` · ${activeCat.risk_level} risk`}
+            </span>
+            {/* A singles tier has no combined price, because combining is not
+                what is being suggested. Showing "9.4x total" next to ten
+                independent bets invites exactly the accumulator we avoided. */}
+            {!isSingles && (
               <div style={{ padding: "4px 12px", borderRadius: 6, background: catMeta.faint, fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 700, color: catMeta.color }}>
                 {fmtOdds(activeCat.total_odds)}{oddsSuffix} total
               </div>
-              {typeof activeCat.hit_probability === "number" && (
-                <span style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text-3)" }}>
-                  lands ~{Math.round(activeCat.hit_probability * 100)}% of the time
-                </span>
-              )}
+            )}
+            {typeof activeCat.hit_probability === "number" && (
+              <span style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text-3)" }}>
+                {isSingles
+                  ? `each lands ~${Math.round(activeCat.hit_probability * 100)}% of the time`
+                  : `lands ~${Math.round(activeCat.hit_probability * 100)}% of the time`}
+              </span>
+            )}
             </div>
-            <AccumulatorSlip
-              games={activeCat.games}
-              category={catMeta}
+            {!isSingles && (
+              <AccumulatorSlip
+                games={activeCat.games}
+                category={catMeta}
+                totalOdds={activeCat.total_odds}
+                date={data?.date ?? new Date().toISOString().slice(0, 10)}
+              />
+            )}
+          </div>
+          {!isSingles && (
+            <div className="tool-panel">
+            <StakeCalculator
               totalOdds={activeCat.total_odds}
-              date={data?.date ?? new Date().toISOString().slice(0, 10)}
+              hitProbability={activeCat.hit_probability}
+              color={catMeta.color}
             />
-          </div>
-          <div className="tool-panel">
-          <StakeCalculator
-            totalOdds={activeCat.total_odds}
-            hitProbability={activeCat.hit_probability}
-            color={catMeta.color}
-          />
-          </div>
+            </div>
+          )}
 
           <div className="filter-row">
           <LeagueFilter

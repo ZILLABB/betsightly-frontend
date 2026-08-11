@@ -211,8 +211,15 @@ export interface CategoryData {
   games: GamePrediction[];
   total_odds: number;
   risk_level: string;
-  /** Chance every leg on the slip lands. A 10x slip is ~15%, not a safe bet. */
+  /** For an accumulator, the chance every leg lands — a 10x slip is ~15%, not
+   *  a safe bet. For a `singles` tier, the average chance of one pick landing. */
   hit_probability?: number;
+  /** How the tier is meant to be staked. `singles` means every pick is its own
+   *  bet, so the combined odds and joint probability must not be the headline —
+   *  ten 70% picks land together 2.8% of the time, and showing that as the
+   *  tier's number would state a risk nobody is actually taking. Absent means
+   *  accumulator, which is how every other tier works. */
+  presentation?: "accumulator" | "singles";
   reason?: string;
   // Rollover-specific fields
   chain?: RolloverChainDay[];

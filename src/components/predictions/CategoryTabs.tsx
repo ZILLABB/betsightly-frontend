@@ -7,9 +7,13 @@ interface Props {
   active: CategoryKey;
   onChange: (key: CategoryKey) => void;
   oddsMap?: Partial<Record<CategoryKey, number>>;
+  /** Tiers whose picks are independent bets rather than one slip. Their tab
+   *  shows a pick count, because a combined multiplier across bets nobody is
+   *  being asked to combine is a number that means nothing. */
+  singlesMap?: Partial<Record<CategoryKey, number>>;
 }
 
-export function CategoryTabs({ active, onChange, oddsMap = {} }: Props) {
+export function CategoryTabs({ active, onChange, oddsMap = {}, singlesMap = {} }: Props) {
   const [hovered, setHovered] = useState<CategoryKey | null>(null);
   const { formatOdds: fmtOdds, oddsSuffix } = useFormatOdds();
 
@@ -25,6 +29,7 @@ export function CategoryTabs({ active, onChange, oddsMap = {} }: Props) {
         const isActive = cat.key === active;
         const isHov = hovered === cat.key;
         const odds = oddsMap[cat.key];
+        const singlesCount = singlesMap[cat.key];
 
         return (
           <button
@@ -78,7 +83,9 @@ export function CategoryTabs({ active, onChange, oddsMap = {} }: Props) {
             }}>
               {/* A tier with nothing to show reads "0.00x odds" otherwise,
                   which looks like a bug rather than a thin match day. */}
-              {odds != null && odds > 0
+              {singlesCount != null && singlesCount > 0
+                ? `${singlesCount} pick${singlesCount === 1 ? "" : "s"}`
+                : odds != null && odds > 0
                 ? `${fmtOdds(odds)}${oddsSuffix} odds`
                 : cat.riskLabel}
             </span>
