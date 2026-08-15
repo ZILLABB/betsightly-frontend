@@ -92,6 +92,11 @@ export const api = {
   getBookableNow: () =>
     request<BookableNowResponse>('/leagues/bookable-now'),
 
+  /** Live scores for today's fixtures, keyed by match_id. Fetched apart from
+   *  the card because the card is frozen at 08:00 and a score is not. */
+  getLiveScores: () =>
+    request<LiveScoresResponse>('/leagues/live-scores'),
+
   getPredictionHistory: (days = 14) =>
     request<HistoryResponse>(`/daily-predictions/history?days=${days}`),
 
@@ -118,6 +123,22 @@ export interface BookableNowResponse {
   date?: string;
   kickoffs_remaining?: number;
   accumulators?: AccumulatorResponse["accumulators"];
+}
+
+export interface LiveScoresResponse {
+  status: string;
+  count: number;
+  scores: Record<string, {
+    home_score: number | null;
+    away_score: number | null;
+    state: string;
+    state_label: string;
+    detail?: string | null;
+    clock?: string | null;
+    live: boolean;
+    finished: boolean;
+  }>;
+  leagues: string[];
 }
 
 export interface CalibrationBucket {

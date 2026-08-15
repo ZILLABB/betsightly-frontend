@@ -25,11 +25,25 @@ function TeamBadge({ team, logo }: { team: string; logo?: string | null }) {
   );
 }
 
+export interface LiveScore {
+  home_score: number | null;
+  away_score: number | null;
+  state: "pre" | "in" | "post" | string;
+  state_label: string;
+  detail?: string | null;
+  clock?: string | null;
+  live: boolean;
+  finished: boolean;
+}
+
 interface Props {
   game: GamePrediction;
   color: string;
   faint: string;
   index?: number;
+  /** Live score for this fixture, when one is available. Supplied separately
+   *  from the card because the card is frozen at 08:00 and a score is not. */
+  score?: LiveScore;
 }
 
 const FORM_COLORS: Record<string, string> = {
@@ -115,7 +129,33 @@ function KickoffStamp({ iso }: { iso?: string }) {
   );
 }
 
-export function PredictionCard({ game, color, faint, index = 0 }: Props) {
+/** Score and match state, shown only once a match is under way or finished. */
+function ScoreStamp({ score }: { score: LiveScore }) {
+  if (score.home_score == null || score.away_score == null) return null;
+  const live = score.live;
+  return (
+    <span style={{
+      display: "inline-flex", alignItems: "center", gap: 6,
+      fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 700,
+      padding: "2px 8px", borderRadius: 5,
+      background: live ? "rgba(239,68,68,0.12)" : "var(--surface-2)",
+      color: live ? "var(--red, #ef4444)" : "var(--text-2)",
+    }}>
+      {live && (
+        <span style={{
+          width: 6, height: 6, borderRadius: "50%",
+          background: "var(--red, #ef4444)", flexShrink: 0,
+        }} />
+      )}
+      {score.home_score}–{score.away_score}
+      <span style={{ fontWeight: 500, opacity: 0.8 }}>
+        {live ? (score.clock || "live") : "FT"}
+      </span>
+    </span>
+  );
+}
+
+export function PredictionCard({ game, color, faint, index = 0, score }: Props) {
   const pct = Math.round(game.confidence * 100);
   const displayOdds = game.odds ?? game.real_odds ?? game.estimated_odds ?? 0;
   const displayPrediction = game.prediction || game.readable_prediction || game.prediction_value || "";
@@ -159,7 +199,11 @@ export function PredictionCard({ game, color, faint, index = 0 }: Props) {
             {game.league}
           </span>
         </div>
-        <KickoffStamp iso={game.kickoff || game.date} />
+        {/* Once a match is under way the score is the useful thing, not a
+            countdown to a kick-off that already happened. */}
+        {score && (score.live || score.finished) && score.home_score != null
+          ? <ScoreStamp score={score} />
+          : <KickoffStamp iso={game.kickoff || game.date} />}
       </div>
 
       {/* Teams — horizontal layout */}

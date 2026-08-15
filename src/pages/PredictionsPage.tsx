@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import { usePredictions } from "../hooks/usePredictions";
 import { useFormatOdds } from "../hooks/useFormatOdds";
 import { CategoryTabs } from "../components/predictions/CategoryTabs";
-import { PredictionCard } from "../components/predictions/PredictionCard";
+import { PredictionCard, type LiveScore } from "../components/predictions/PredictionCard";
 import { EmptyState } from "../components/predictions/EmptyState";
 import { AccumulatorSlip } from "../components/predictions/AccumulatorSlip";
 import { StakeCalculator } from "../components/predictions/StakeCalculator";
@@ -33,6 +33,20 @@ export function PredictionsPage() {
   const [showBookable, setShowBookable] = useState(false);
   const [bookable, setBookable] = useState<BookableNowResponse | null>(null);
   const [bookableLoading, setBookableLoading] = useState(false);
+
+  // Scores are fetched apart from the card and refreshed on a timer: the card
+  // is frozen at 08:00, a score is not, and merging them would mean choosing
+  // between a stale score and a card that rewrites itself.
+  const [scores, setScores] = useState<Record<string, LiveScore>>({});
+  React.useEffect(() => {
+    let alive = true;
+    const load = () => api.getLiveScores()
+      .then(r => { if (alive) setScores(r.scores || {}); })
+      .catch(() => { /* scores are an extra; the card stands without them */ });
+    load();
+    const id = setInterval(load, 90_000);
+    return () => { alive = false; clearInterval(id); };
+  }, []);
 
   const published = data?.accumulators;
   const startedCount = React.useMemo(() => {
@@ -183,7 +197,7 @@ export function PredictionsPage() {
             {activeCat.games
               .filter(g => !leagueFilter || g.league === leagueFilter)
               .map((game, i) => (
-                <PredictionCard key={game.fixture_id} game={game} color={catMeta.color} faint={catMeta.faint} index={i} />
+                <PredictionCard key={game.fixture_id} game={game} color={catMeta.color} faint={catMeta.faint} index={i} score={scores[game.match_id]} />
               ))}
           </div>
         </div>
