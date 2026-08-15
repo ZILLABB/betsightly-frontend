@@ -13,6 +13,7 @@ import { BrandLoader } from "../components/ui/BrandLoader";
 import { CATEGORIES } from "../types";
 import type { CategoryKey } from "../types";
 import { SEO } from "../components/common/SEO";
+import { api, type BookableNowResponse } from "../api/predictions";
 
 const VALID_KEYS = new Set<string>(CATEGORIES.map(c => c.key));
 
@@ -25,7 +26,33 @@ export function PredictionsPage() {
   const [activeKey, setActiveKey] = useState<CategoryKey>(initialKey);
   const { formatOdds: fmtOdds, oddsSuffix } = useFormatOdds();
 
-  const accumulators = data?.accumulators;
+  // The morning card is frozen, so by the afternoon some legs have kicked off.
+  // Rather than rewrite the card — which would change the slip under anyone who
+  // already booked it — a separate still-bookable slip is offered, and only
+  // once something has actually started.
+  const [showBookable, setShowBookable] = useState(false);
+  const [bookable, setBookable] = useState<BookableNowResponse | null>(null);
+  const [bookableLoading, setBookableLoading] = useState(false);
+
+  const published = data?.accumulators;
+  const startedCount = React.useMemo(() => {
+    if (!published) return 0;
+    return CATEGORIES.reduce(
+      (n, c) => n + (published[c.key]?.games?.filter(g => g.started).length ?? 0), 0);
+  }, [published]);
+
+  React.useEffect(() => {
+    if (!showBookable || bookable || bookableLoading) return;
+    setBookableLoading(true);
+    api.getBookableNow()
+      .then(setBookable)
+      .catch(() => setBookable({ status: "error", available: false }))
+      .finally(() => setBookableLoading(false));
+  }, [showBookable, bookable, bookableLoading]);
+
+  const accumulators = showBookable && bookable?.available
+    ? bookable.accumulators
+    : published;
   const activeCat = accumulators?.[activeKey];
   const catMeta = CATEGORIES.find(c => c.key === activeKey)!;
   // Over 1.5 is a list of independent bets rather than one slip, so the
@@ -58,6 +85,29 @@ export function PredictionsPage() {
             : "today"} — pick a tier that matches your risk appetite.
         </p>
       </div>
+
+      {/* Only offered once something has actually kicked off — before that the
+          published card is fully bookable and a second slip is just noise. */}
+      {startedCount > 0 && (
+        <div className="card" style={{
+          padding: "12px 16px", display: "flex", alignItems: "center",
+          justifyContent: "space-between", gap: 12, flexWrap: "wrap",
+          borderLeft: "3px solid var(--gold)",
+        }}>
+          <span style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text-2)" }}>
+            {showBookable
+              ? "Showing a slip built from matches that haven't started. This one isn't part of the published record."
+              : `${startedCount} ${startedCount === 1 ? "pick has" : "picks have"} already kicked off — today's card was published at 08:00 and doesn't change.`}
+          </span>
+          <button
+            className="btn-ghost"
+            style={{ fontFamily: "var(--font-body)", fontSize: 13, fontWeight: 600, whiteSpace: "nowrap" }}
+            onClick={() => setShowBookable(v => !v)}
+          >
+            {bookableLoading ? "Loading…" : showBookable ? "Back to today's card" : "Show what I can still bet"}
+          </button>
+        </div>
+      )}
 
       <CategoryTabs active={activeKey} onChange={setActiveKey} oddsMap={oddsMap} singlesMap={singlesMap} />
 

@@ -83,6 +83,15 @@ export const api = {
   getTodaysAccumulators: () =>
     request<AccumulatorResponse>('/leagues/daily-accumulators'),
 
+  /** A slip rebuilt from fixtures that have not kicked off yet.
+   *
+   * The published card is frozen at 08:00 so it cannot change under anyone who
+   * booked it, which means a visitor arriving mid-afternoon may find legs
+   * already under way. This gives them something they can still place. It is
+   * not archived and not settled — only the 08:00 card carries the record. */
+  getBookableNow: () =>
+    request<BookableNowResponse>('/leagues/bookable-now'),
+
   getPredictionHistory: (days = 14) =>
     request<HistoryResponse>(`/daily-predictions/history?days=${days}`),
 
@@ -101,6 +110,15 @@ export const api = {
   getValueBets: (daysAhead = 3) =>
     request<ValueBetsResponse>(`/leagues/value-bets?days_ahead=${daysAhead}`),
 };
+
+export interface BookableNowResponse {
+  status: string;
+  available: boolean;
+  reason?: string;
+  date?: string;
+  kickoffs_remaining?: number;
+  accumulators?: AccumulatorResponse["accumulators"];
+}
 
 export interface CalibrationBucket {
   range: string;
