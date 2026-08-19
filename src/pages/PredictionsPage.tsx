@@ -8,6 +8,7 @@ import { EmptyState } from "../components/predictions/EmptyState";
 import { AccumulatorSlip } from "../components/predictions/AccumulatorSlip";
 import { StakeCalculator } from "../components/predictions/StakeCalculator";
 import { LeagueFilter } from "../components/predictions/LeagueFilter";
+import { AllSlips } from "../components/predictions/AllSlips";
 import { PredictionCardSkeleton } from "../components/ui/Skeleton";
 import { BrandLoader } from "../components/ui/BrandLoader";
 import { CATEGORIES } from "../types";
@@ -30,6 +31,9 @@ export function PredictionsPage() {
   // Rather than rewrite the card — which would change the slip under anyone who
   // already booked it — a separate still-bookable slip is offered, and only
   // once something has actually started.
+  // "What is on today" is the question people actually arrive with, and the
+  // tab bar answers it one slip at a time. This shows every tier at once.
+  const [showAll, setShowAll] = useState(false);
   const [showBookable, setShowBookable] = useState(false);
   const [bookable, setBookable] = useState<BookableNowResponse | null>(null);
   const [bookableLoading, setBookableLoading] = useState(false);
@@ -123,7 +127,24 @@ export function PredictionsPage() {
         </div>
       )}
 
-      <CategoryTabs active={activeKey} onChange={setActiveKey} oddsMap={oddsMap} singlesMap={singlesMap} />
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+        <CategoryTabs active={activeKey} onChange={setActiveKey} oddsMap={oddsMap} singlesMap={singlesMap} />
+        <button
+          className="btn-ghost"
+          style={{ fontFamily: "var(--font-body)", fontSize: 13, fontWeight: 600, whiteSpace: "nowrap" }}
+          onClick={() => setShowAll(v => !v)}
+        >
+          {showAll ? "Show one tier" : "See all slips"}
+        </button>
+      </div>
+
+      {showAll && accumulators && (
+        <AllSlips
+          accumulators={accumulators}
+          scores={scores}
+          onOpen={(k) => { setActiveKey(k); setShowAll(false); }}
+        />
+      )}
 
       {error && (
         <div style={{ padding: "12px 16px", borderRadius: "var(--radius-md)", background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.2)", fontFamily: "var(--font-body)", fontSize: 13, color: "var(--red)" }}>
@@ -131,7 +152,7 @@ export function PredictionsPage() {
         </div>
       )}
 
-      {loading ? (
+      {showAll ? null : loading ? (
         <BrandLoader message="Building today's accumulators...">
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}>
             {Array.from({ length: 6 }).map((_, i) => <PredictionCardSkeleton key={i} />)}
