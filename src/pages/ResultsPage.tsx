@@ -93,13 +93,24 @@ export function ResultsPage() {
     return { total: chain.length, won, lost, resolved, winRate: resolved ? Math.round(won / resolved * 100) : 0 };
   }, [chain]);
 
+  // Over 1.5 is a list of singles and is counted in individual picks; every
+  // other tier is one slip. Summing them into a single "settled slips" figure
+  // reported ten separate bets as ten slips — 94 Over 1.5 picks were being
+  // added to 69 real slips and the total labelled 163 slips.
   const overall = useMemo(() => {
     const s = league?.summary ?? {};
-    const won = Object.values(s).reduce((a, c) => a + c.won, 0);
-    const lost = Object.values(s).reduce((a, c) => a + c.lost, 0);
-    const profit = Object.values(s).reduce((a, c) => a + c.profit, 0);
-    const settled = won + lost;
-    return { won, lost, settled, winRate: settled ? Math.round(won / settled * 100) : 0, profit };
+    const cats = Object.values(s);
+    const acc = (rows: typeof cats) => {
+      const won = rows.reduce((a, c) => a + c.won, 0);
+      const lost = rows.reduce((a, c) => a + c.lost, 0);
+      const profit = rows.reduce((a, c) => a + c.profit, 0);
+      const settled = won + lost;
+      return { won, lost, settled, profit,
+               winRate: settled ? Math.round((won / settled) * 100) : 0 };
+    };
+    const slips = acc(cats.filter(c => c.unit !== "pick"));
+    const picks = acc(cats.filter(c => c.unit === "pick"));
+    return { slips, picks, profit: Number((slips.profit + picks.profit).toFixed(2)) };
   }, [league]);
 
   async function triggerCheck() {
@@ -155,26 +166,32 @@ export function ResultsPage() {
         {showingCategories ? (
           <>
             <div className="card" style={{ padding: "18px 20px", borderLeft: "3px solid var(--brand)" }}>
-              <p style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Settled slips</p>
-              <p className="stat-num" style={{ fontSize: 28 }}>{overall.settled}</p>
-              <p style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)", marginTop: 4 }}>last 30 days</p>
+              <p style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Settled</p>
+              <p className="stat-num" style={{ fontSize: 28 }}>{overall.slips.settled}</p>
+              <p style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)", marginTop: 4 }}>
+                slips{overall.picks.settled ? ` · ${overall.picks.settled} singles` : ""}
+              </p>
             </div>
             <div className="card" style={{ padding: "18px 20px", borderLeft: "3px solid var(--green)" }}>
               <p style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--green)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Won</p>
-              <p className="stat-num" style={{ fontSize: 28, color: "var(--green)" }}>{overall.won}</p>
-              <p style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)", marginTop: 4 }}>slips</p>
+              <p className="stat-num" style={{ fontSize: 28, color: "var(--green)" }}>{overall.slips.won}</p>
+              <p style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)", marginTop: 4 }}>
+                slips{overall.picks.won ? ` · ${overall.picks.won} singles` : ""}
+              </p>
             </div>
             <div className="card" style={{ padding: "18px 20px", borderLeft: "3px solid var(--red)" }}>
               <p style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--red)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Lost</p>
-              <p className="stat-num" style={{ fontSize: 28, color: "var(--red)" }}>{overall.lost}</p>
-              <p style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)", marginTop: 4 }}>slips</p>
+              <p className="stat-num" style={{ fontSize: 28, color: "var(--red)" }}>{overall.slips.lost}</p>
+              <p style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)", marginTop: 4 }}>
+                slips{overall.picks.lost ? ` · ${overall.picks.lost} singles` : ""}
+              </p>
             </div>
             <div className="card" style={{ padding: "18px 20px" }}>
               <p style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Profit</p>
               <p className="stat-num" style={{ fontSize: 28, color: overall.profit > 0 ? "var(--green)" : overall.profit < 0 ? "var(--red)" : "var(--text-1)" }}>
                 {overall.profit > 0 ? "+" : ""}{overall.profit.toFixed(2)}
               </p>
-              <p style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)", marginTop: 4 }}>units · 1 per slip</p>
+              <p style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)", marginTop: 4 }}>units · 1 per bet</p>
             </div>
           </>
         ) : (

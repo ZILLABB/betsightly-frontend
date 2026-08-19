@@ -219,6 +219,9 @@ export interface SettledSlip {
 }
 
 export interface CategoryPerformance {
+  /** "slip" — the whole accumulator is one bet. "pick" — each leg is its own
+   *  bet, so won/lost count individual picks and must not be added to slips. */
+  unit?: "slip" | "pick";
   won: number;
   lost: number;
   settled: number;
