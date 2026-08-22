@@ -122,6 +122,11 @@ export interface Game {
 
 export interface GamePrediction {
   fixture_id: number;
+  /** When this pick entered the card. Picks added after first publication
+   *  carry a later stamp and `added_later`, so the morning card stays
+   *  distinguishable from anything that appeared during the day. */
+  added_at?: string;
+  added_later?: boolean;
   home_team: string;
   away_team: string;
   league: string;
@@ -220,6 +225,9 @@ export interface CategoryData {
    *  tier's number would state a risk nobody is actually taking. Absent means
    *  accumulator, which is how every other tier works. */
   presentation?: "accumulator" | "singles";
+  /** Bumped whenever the tier is extended after first publication. */
+  revision?: number;
+  last_updated_at?: string;
   reason?: string;
   // Rollover-specific fields
   chain?: RolloverChainDay[];
@@ -231,6 +239,12 @@ export interface CategoryData {
 export interface AccumulatorResponse {
   status: string;
   date: string;
+  /** When the card was first built, and how many times it has been rebuilt.
+   *  A rebuild used to replace the day's card leaving no trace, so someone
+   *  refreshing a tier could not tell what had changed. */
+  first_published_at?: string;
+  last_updated_at?: string;
+  revision?: number;
   accumulators: {
     banker: CategoryData;
     '2_odds': CategoryData;

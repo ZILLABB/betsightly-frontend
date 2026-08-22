@@ -99,9 +99,14 @@ function KickoffStamp({ iso }: { iso?: string }) {
   if (Number.isNaN(ts)) return null;
 
   if (mins < 0) {
+    // A football match lasts about two hours. Past that with no score in hand
+    // the honest label is that we are waiting on the result, not that the game
+    // is still being played — a fixture whose score never arrived used to read
+    // "in play" indefinitely.
+    const overdue = mins < -150;
     return (
       <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-3)" }}>
-        in play
+        {overdue ? "awaiting result" : "in play"}
       </span>
     );
   }
@@ -198,6 +203,21 @@ export function PredictionCard({ game, color, faint, index = 0, score }: Props) 
           }}>
             {game.league}
           </span>
+          {/* Only later picks are marked. The morning card is the default
+              reading, so badging everything would say nothing. */}
+          {game.added_later && game.added_at && (
+            <span
+              title={`Added after the card was first published`}
+              style={{
+                fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 700,
+                color: "var(--gold)", background: "rgba(245,158,11,0.12)",
+                padding: "1px 6px", borderRadius: 4, whiteSpace: "nowrap",
+              }}
+            >
+              added {new Date(game.added_at).toLocaleTimeString("en-GB",
+                { hour: "2-digit", minute: "2-digit" })}
+            </span>
+          )}
         </div>
         {/* Once a match is under way the score is the useful thing, not a
             countdown to a kick-off that already happened. */}
