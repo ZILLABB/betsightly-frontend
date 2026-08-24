@@ -211,6 +211,25 @@ export interface RolloverChainDay {
   status: 'pending' | 'won' | 'lost' | 'void';
 }
 
+/**
+ * A SportyBet booking code for one tier.
+ *
+ * `active` is the only status carrying a code. The others exist so the card
+ * can say why a tier has none rather than silently omitting the row — a
+ * missing code with no explanation reads as a bug, and `stale` in particular
+ * needs saying out loud, because someone may have copied the old one.
+ */
+export interface TierBooking {
+  status: "active" | "unavailable" | "failed" | "invalid" | "stale";
+  share_code?: string | null;
+  share_url?: string;
+  legs?: number;
+  /** When the code was created — the prices in it are the prices from then. */
+  priced_at?: string;
+  expires_at?: string | null;
+  reason?: string;
+}
+
 export interface CategoryData {
   selected: boolean;
   games: GamePrediction[];
@@ -225,6 +244,8 @@ export interface CategoryData {
    *  tier's number would state a risk nobody is actually taking. Absent means
    *  accumulator, which is how every other tier works. */
   presentation?: "accumulator" | "singles";
+  /** The SportyBet slip for this exact tier, when one could be created. */
+  booking?: TierBooking;
   /** Bumped whenever the tier is extended after first publication. */
   revision?: number;
   last_updated_at?: string;
