@@ -111,12 +111,12 @@ export default function BookingCode({
         </code>
       </div>
 
-      {/* Grows to fill the row once it wraps, which is what happens on a
-          phone. `marginLeft: auto` alone left two 30px-tall buttons stranded
-          against the right edge — correct on a desktop, awkward under a
-          thumb. */}
-      <div style={{ display: "flex", gap: 8, marginLeft: "auto",
-                    flex: "1 1 200px", justifyContent: "flex-end" }}>
+      {/* Sized to their content on a wide screen and stretched to fill the
+          row only once it wraps on a phone — see .booking-actions in
+          index.css. Stretching unconditionally made two buttons span the
+          whole desktop width. */}
+      <div className="booking-actions"
+           style={{ display: "flex", gap: 8, marginLeft: "auto" }}>
         <button
           type="button"
           onClick={copy}
@@ -124,9 +124,8 @@ export default function BookingCode({
             fontFamily: "var(--font-body)",
             fontSize: 14,
             fontWeight: 600,
-            padding: "10px 16px",
+            padding: "10px 18px",
             minHeight: 44,
-            flex: "1 1 auto",
             borderRadius: 6,
             border: `1px solid ${category.color}55`,
             background: "transparent",
@@ -145,9 +144,8 @@ export default function BookingCode({
               fontFamily: "var(--font-body)",
               fontSize: 14,
               fontWeight: 600,
-              padding: "10px 16px",
+              padding: "10px 18px",
               minHeight: 44,
-              flex: "1 1 auto",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",

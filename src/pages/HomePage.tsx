@@ -8,6 +8,7 @@ import { AccuracyBadge } from "../components/common/AccuracyBadge";
 import { CategoryTabs } from "../components/predictions/CategoryTabs";
 import { PredictionCard } from "../components/predictions/PredictionCard";
 import { EmptyState } from "../components/predictions/EmptyState";
+import BookingCode from "../components/predictions/BookingCode";
 import { PredictionCardSkeleton } from "../components/ui/Skeleton";
 import { BrandLoader } from "../components/ui/BrandLoader";
 import { CATEGORIES } from "../types";
@@ -175,6 +176,11 @@ export function HomePage() {
             </div>
           </div>
         )}
+
+        {/* The same code the Predictions page carries. The home page is where
+            most visitors land, and sending them to another screen to copy six
+            characters is the step where they stop. */}
+        {activeCat && <BookingCode booking={activeCat.booking} category={catMeta} />}
 
         {/* Error banner */}
         {error && (
