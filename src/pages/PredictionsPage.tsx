@@ -9,6 +9,7 @@ import { AccumulatorSlip } from "../components/predictions/AccumulatorSlip";
 import { StakeCalculator } from "../components/predictions/StakeCalculator";
 import { LeagueFilter } from "../components/predictions/LeagueFilter";
 import { AllSlips } from "../components/predictions/AllSlips";
+import BookingCode from "../components/predictions/BookingCode";
 import { PredictionCardSkeleton } from "../components/ui/Skeleton";
 import { BrandLoader } from "../components/ui/BrandLoader";
 import { CATEGORIES } from "../types";
@@ -194,6 +195,11 @@ export function PredictionsPage() {
                 date={data?.date ?? new Date().toISOString().slice(0, 10)}
               />
             )}
+            {/* Shown for singles too. Ten Over 1.5 picks are ten separate
+                bets, and the code loads all ten into the slip at once —
+                SportyBet decides single or multiple at staking time, not
+                here, so this does not turn the tier into an accumulator. */}
+            <BookingCode booking={activeCat.booking} category={catMeta} />
           </div>
           {!isSingles && (
             <div className="tool-panel">
