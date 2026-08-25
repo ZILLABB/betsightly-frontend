@@ -149,7 +149,7 @@ export default function BookingCode({
         )}
       </div>
 
-      {priced && (
+      {(priced || booking.partial) && (
         <span
           style={{
             fontFamily: "var(--font-body)",
@@ -158,7 +158,12 @@ export default function BookingCode({
             width: "100%",
           }}
         >
-          Priced at {priced}. Odds move — check the slip before you stake.
+          {booking.partial && booking.legs
+            ? `Covers ${booking.legs} of ${booking.legs + (booking.unbooked?.length ?? 0)} picks — the rest aren't on SportyBet. `
+            : ""}
+          {priced
+            ? `Priced at ${priced}. Odds move — check the slip before you stake.`
+            : "Check the slip before you stake."}
         </span>
       )}
     </div>

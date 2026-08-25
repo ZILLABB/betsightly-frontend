@@ -224,6 +224,13 @@ export interface TierBooking {
   share_code?: string | null;
   share_url?: string;
   legs?: number;
+  /** True when a singles tier booked only the picks that were available.
+   *  Ten Over 1.5 picks are ten bets, so a code holding seven of them is
+   *  seven of those bets — but the card has to say so rather than implying
+   *  the code carries everything on screen. */
+  partial?: boolean;
+  /** Fixtures the bookmaker had no counterpart for. */
+  unbooked?: string[];
   /** When the code was created — the prices in it are the prices from then. */
   priced_at?: string;
   expires_at?: string | null;
