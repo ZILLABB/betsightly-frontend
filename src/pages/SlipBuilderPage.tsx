@@ -36,8 +36,18 @@ export default function SlipBuilderPage() {
     setSlip(null);
     try {
       setSlip(await api.buildSlip(target, horizon));
-    } catch {
-      setError("Could not build a slip just now. Try again in a moment.");
+    } catch (e) {
+      // Say what actually went wrong. A generic line here hid a GET being sent
+      // to a POST route for a whole release — the page said "try again in a
+      // moment" while every attempt was failing the same way.
+      const err = e as Error & { status?: number; name?: string };
+      setError(
+        err?.name === "AbortError"
+          ? "That took longer than expected — the server may be waking up. Try once more."
+          : err?.message
+            ? `Could not build a slip: ${err.message}`
+            : "Could not build a slip just now. Try again in a moment.",
+      );
     } finally {
       setLoading(false);
     }
@@ -118,7 +128,16 @@ export default function SlipBuilderPage() {
         {loading ? "Building…" : `Build a ${target} odds slip`}
       </button>
 
-      {loading && <BrandLoader />}
+      {loading && (
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <BrandLoader />
+          <span style={{ fontFamily: "var(--font-body)", fontSize: 13,
+                         color: "var(--text-3)" }}>
+            Searching {horizon === "week" ? "a week" : "today"}'s fixtures — this
+            can take a moment on the first run.
+          </span>
+        </div>
+      )}
 
       {error && (
         <div style={{ padding: "12px 16px", borderRadius: 8,

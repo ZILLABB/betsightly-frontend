@@ -2,12 +2,41 @@ import type { AccumulatorResponse, GamePrediction, TierBooking } from '../types'
 
 const BASE = import.meta.env.VITE_API_BASE_URL || 'https://betsightly-api.onrender.com/api';
 
-async function request<T>(path: string): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, {
-    headers: { Accept: 'application/json' },
-  });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json() as Promise<T>;
+/** Requests that build something can take a while — the slip builder runs the
+ *  whole model pipeline on a cold instance — so the timeout is per call rather
+ *  than one number for everything. */
+const DEFAULT_TIMEOUT = 30_000;
+
+async function request<T>(
+  path: string,
+  init?: RequestInit & { timeoutMs?: number },
+): Promise<T> {
+  const { timeoutMs = DEFAULT_TIMEOUT, ...rest } = init ?? {};
+  const ctrl = new AbortController();
+  const timer = window.setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const res = await fetch(`${BASE}${path}`, {
+      ...rest,
+      headers: { Accept: 'application/json', ...(rest.headers ?? {}) },
+      signal: ctrl.signal,
+    });
+    if (!res.ok) {
+      // Carry the status and whatever the server said. This helper used to
+      // throw a bare "HTTP 405", which is what turned a GET sent to a POST
+      // route into an unexplained "could not build a slip" on screen.
+      let detail = '';
+      try {
+        const body = await res.json();
+        detail = body?.detail || body?.reason || body?.message || '';
+      } catch { /* body was not json */ }
+      const err = new Error(detail || `HTTP ${res.status}`);
+      (err as Error & { status?: number }).status = res.status;
+      throw err;
+    }
+    return res.json() as Promise<T>;
+  } finally {
+    window.clearTimeout(timer);
+  }
 }
 
 /* ── History types ───────────────────────────────────── */
@@ -105,7 +134,9 @@ export const api = {
   buildSlip: (target: number, horizon: "today" | "week" = "week") =>
     request<BuiltSlip>(
       `/leagues/slip-builder/generate?target=${target}&horizon=${horizon}`,
-      { method: "POST" }),
+      // Generous: on a cold instance this runs the pipeline across a week of
+      // fixtures before it can answer.
+      { method: "POST", timeoutMs: 240_000 }),
 
   getSlipTargets: () => request<SlipTargets>('/leagues/slip-builder/targets'),
 
