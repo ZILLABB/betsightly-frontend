@@ -195,12 +195,17 @@ export function PredictionsPage() {
                 date={data?.date ?? new Date().toISOString().slice(0, 10)}
               />
             )}
-            {/* Shown for singles too. Ten Over 1.5 picks are ten separate
-                bets, and the code loads all ten into the slip at once —
-                SportyBet decides single or multiple at staking time, not
-                here, so this does not turn the tier into an accumulator. */}
-            <BookingCode booking={activeCat.booking} category={catMeta} />
           </div>
+          {/* Outside `.slip-meta`, which scrolls horizontally on narrow
+              screens. Nested inside it the panel measured 817px wide in a
+              347px viewport and sat at x=519 — present, correct, and off the
+              side of the phone, so it read as missing entirely.
+
+              Shown for singles too. Ten Over 1.5 picks are ten separate bets,
+              and the code loads all of them into the slip at once — SportyBet
+              decides single or multiple at staking time, not here, so this
+              does not turn the tier into an accumulator. */}
+          <BookingCode booking={activeCat.booking} category={catMeta} />
           {!isSingles && (
             <div className="tool-panel">
             <StakeCalculator

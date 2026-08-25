@@ -99,26 +99,34 @@ export default function BookingCode({
         <code
           style={{
             fontFamily: "var(--font-mono)",
-            fontSize: 18,
+            fontSize: 20,
             fontWeight: 700,
-            letterSpacing: ".08em",
+            letterSpacing: ".10em",
             color: category.color,
             userSelect: "all",
+            wordBreak: "break-all",
           }}
         >
           {booking.share_code}
         </code>
       </div>
 
-      <div style={{ display: "flex", gap: 8, marginLeft: "auto" }}>
+      {/* Grows to fill the row once it wraps, which is what happens on a
+          phone. `marginLeft: auto` alone left two 30px-tall buttons stranded
+          against the right edge — correct on a desktop, awkward under a
+          thumb. */}
+      <div style={{ display: "flex", gap: 8, marginLeft: "auto",
+                    flex: "1 1 200px", justifyContent: "flex-end" }}>
         <button
           type="button"
           onClick={copy}
           style={{
             fontFamily: "var(--font-body)",
-            fontSize: 13,
+            fontSize: 14,
             fontWeight: 600,
-            padding: "6px 14px",
+            padding: "10px 16px",
+            minHeight: 44,
+            flex: "1 1 auto",
             borderRadius: 6,
             border: `1px solid ${category.color}55`,
             background: "transparent",
@@ -135,13 +143,19 @@ export default function BookingCode({
             rel="noopener noreferrer"
             style={{
               fontFamily: "var(--font-body)",
-              fontSize: 13,
+              fontSize: 14,
               fontWeight: 600,
-              padding: "6px 14px",
+              padding: "10px 16px",
+              minHeight: 44,
+              flex: "1 1 auto",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
               borderRadius: 6,
               background: category.color,
               color: "#fff",
               textDecoration: "none",
+              whiteSpace: "nowrap",
             }}
           >
             Open SportyBet
