@@ -1,12 +1,12 @@
 ﻿import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Home, Target, Users, Settings, RefreshCw } from "lucide-react";
+import { Home, Target, Settings, RefreshCw, Sliders } from "lucide-react";
 
 const NAV = [
   { path:"/", label:"Home", icon:Home },
   { path:"/predictions", label:"Picks", icon:Target },
   { path:"/rollover", label:"Rollover", icon:RefreshCw },
-  { path:"/punters", label:"Punters", icon:Users },
+  { path:"/build-slip", label:"Build", icon:Sliders },
   { path:"/settings", label:"Settings", icon:Settings },
 ];
 

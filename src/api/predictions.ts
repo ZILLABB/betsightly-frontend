@@ -1,4 +1,4 @@
-import type { AccumulatorResponse } from '../types';
+import type { AccumulatorResponse, GamePrediction, TierBooking } from '../types';
 
 const BASE = import.meta.env.VITE_API_BASE_URL || 'https://betsightly-api.onrender.com/api';
 
@@ -97,6 +97,18 @@ export const api = {
   getLiveScores: () =>
     request<LiveScoresResponse>('/leagues/live-scores'),
 
+  /** Build a slip to a requested multiplier and book it.
+   *
+   * `horizon` is a real choice, not a setting. "today" settles tonight from a
+   * single day's fixtures; "week" draws on seven days, which contains better
+   * picks and lands roughly twice as often, but takes a week to resolve. */
+  buildSlip: (target: number, horizon: "today" | "week" = "week") =>
+    request<BuiltSlip>(
+      `/leagues/slip-builder/generate?target=${target}&horizon=${horizon}`,
+      { method: "POST" }),
+
+  getSlipTargets: () => request<SlipTargets>('/leagues/slip-builder/targets'),
+
   getPredictionHistory: (days = 14) =>
     request<HistoryResponse>(`/daily-predictions/history?days=${days}`),
 
@@ -115,6 +127,40 @@ export const api = {
   getValueBets: (daysAhead = 3) =>
     request<ValueBetsResponse>(`/leagues/value-bets?days_ahead=${daysAhead}`),
 };
+
+/** A slip built to a requested multiplier. */
+export interface BuiltSlip {
+  status: "success" | "unavailable" | "error";
+  target: number;
+  horizon?: "today" | "week";
+  odds?: number;
+  legs?: number;
+  /** The chance every leg lands. A 50x slip is a few percent, not a good bet
+   *  dressed up — showing it is the difference between a product and a lure. */
+  hit_probability?: number;
+  /** What the slip returns per unit staked, on average, once the bookmaker's
+   *  cut is counted. Falls as the slip lengthens. */
+  expected_return?: number;
+  avg_confidence?: number;
+  first_kickoff?: string | null;
+  last_kickoff?: string | null;
+  games?: GamePrediction[];
+  booking?: TierBooking;
+  /** Present when the target could not be reached honestly. */
+  reason?: string;
+  best_reachable?: number;
+  cached?: boolean;
+}
+
+export interface SlipTargets {
+  status: string;
+  targets: number[];
+  min: number;
+  max: number;
+  max_legs: number;
+  horizons: string[];
+  note: string;
+}
 
 export interface BookableNowResponse {
   status: string;

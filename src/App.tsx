@@ -22,6 +22,7 @@ const PuntersPage = lazy(() => import("./pages/PuntersPage"));
 const PunterDetailPage = lazy(() => import("./pages/PunterDetailPage"));
 const AboutPage = lazy(() => import("./pages/AboutPage").then(m => ({ default: m.AboutPage })));
 const ValuePage = lazy(() => import("./pages/ValuePage"));
+const SlipBuilderPage = lazy(() => import("./pages/SlipBuilderPage"));
 
 function Fallback() {
   return (
@@ -44,6 +45,7 @@ export default function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/predictions" element={<PredictionsPage />} />
             <Route path="/predictions/:category" element={<PredictionsPage />} />
+            <Route path="/build-slip" element={<SlipBuilderPage />} />
             <Route path="/results" element={<ResultsPage />} />
             <Route path="/rollover" element={<RolloverPage />} />
             <Route path="/value" element={<ValuePage />} />
