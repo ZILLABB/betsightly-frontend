@@ -105,12 +105,12 @@ export function HomePage() {
               : new Date().toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })}
           </div>
           <h1 id="home-title">
-            Read the market.<br />
-            <span>Back the signal.</span>
+            Today&apos;s<br />
+            <span>Smart Picks.</span>
           </h1>
           <p>
-            Daily football selections shaped by current bookmaker prices,
-            calibrated probabilities, and a transparent results history.
+            Curated accumulators backed by real bookmaker odds and statistical
+            analysis, with every published result tracked transparently.
           </p>
           <div className="home-hero-actions">
             <Link to="/predictions" className="hero-action hero-action-primary">

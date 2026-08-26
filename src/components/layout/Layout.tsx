@@ -2,7 +2,6 @@
 import { Header } from "./Header";
 import { BottomNav } from "./BottomNav";
 import { Link } from "react-router-dom";
-import { TrendingUp } from "lucide-react";
 import { PWAInstallPrompt } from "../common/PWAInstallPrompt";
 import { SocialLinks } from "../common/SocialLinks";
 
@@ -26,8 +25,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             {/* Brand */}
             <div>
               <Link to="/" className="brand-lockup" style={{ marginBottom: 12 }} aria-label="BetSightly home">
-                <span className="brand-mark"><TrendingUp size={18} strokeWidth={2.6} /></span>
-                <span className="brand-word">Bet<span>Sightly</span></span>
+                <span className="brand-image brand-image-footer" aria-hidden="true" />
               </Link>
               <p style={{ fontFamily:"var(--font-body)", fontSize:12, color:"var(--text-3)", lineHeight:1.6, maxWidth:320 }}>
                 Sports predictions backed by real bookmaker odds and statistical analysis. For informational purposes only.

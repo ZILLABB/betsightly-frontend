@@ -1,6 +1,6 @@
 ﻿import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, Home, Target, BarChart2, RefreshCw, Settings, Users, Scale, Sliders, Radio, TrendingUp } from "lucide-react";
+import { Menu, X, Home, Target, BarChart2, RefreshCw, Settings, Users, Scale, Sliders, Radio } from "lucide-react";
 
 /* Official WC26 emblem as a nav icon — theme-conditional variant */
 
@@ -58,8 +58,7 @@ export function Header() {
           
           {/* Logo */}
           <Link to="/" className="brand-lockup" aria-label="BetSightly home">
-            <span className="brand-mark"><TrendingUp size={18} strokeWidth={2.6} /></span>
-            <span className="brand-word">Bet<span>Sightly</span></span>
+            <span className="brand-image" aria-hidden="true" />
           </Link>
 
           {/* Desktop Nav */}
