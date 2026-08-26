@@ -20,7 +20,7 @@ export function CategoryTabs({ active, onChange, oddsMap = {}, singlesMap = {} }
   return (
     <div style={{
       display: "flex",
-      gap: 8,
+      gap: 6,
       overflowX: "auto",
       paddingBottom: 4,
       scrollbarWidth: "none",
@@ -44,8 +44,9 @@ export function CategoryTabs({ active, onChange, oddsMap = {}, singlesMap = {} }
               display: "flex",
               flexDirection: "column",
               alignItems: "flex-start",
-              gap: 6,
-              padding: "14px 20px",
+              gap: 4,
+              minHeight: 56,
+              padding: "9px 16px",
               borderRadius: "var(--radius-lg)",
               border: `1px solid ${isActive ? cat.color + "55" : isHov ? "var(--border-hover)" : "var(--border)"}`,
               background: isActive
@@ -56,7 +57,7 @@ export function CategoryTabs({ active, onChange, oddsMap = {}, singlesMap = {} }
               cursor: "pointer",
               transition: "all 180ms var(--ease)",
               outline: "none",
-              minWidth: 110,
+              minWidth: 98,
               color: isActive ? cat.color : "var(--text-3)",
             }}
           >

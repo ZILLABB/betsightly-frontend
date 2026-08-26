@@ -47,7 +47,9 @@ export function ShareButton({ text, url, label = "Share", compact = false }: Pro
       onClick={handleShare}
       style={{
         display: "inline-flex", alignItems: "center", gap: 6,
-        padding: compact ? "5px 8px" : "6px 12px",
+        minWidth: compact ? 40 : undefined, minHeight: 40,
+        justifyContent: "center",
+        padding: compact ? "8px" : "8px 14px",
         borderRadius: 6, border: "1px solid var(--border)",
         background: copied ? "rgba(34,197,94,0.10)" : "transparent",
         color: copied ? "var(--green)" : "var(--text-3)",
@@ -57,7 +59,7 @@ export function ShareButton({ text, url, label = "Share", compact = false }: Pro
       title={copied ? "Copied!" : "Share this pick"}
       aria-label="Share pick"
     >
-      {copied ? <Check size={12} /> : <Share2 size={12} />}
+      {copied ? <Check size={15} /> : <Share2 size={15} />}
       {!compact && (copied ? "Copied" : label)}
     </button>
   );

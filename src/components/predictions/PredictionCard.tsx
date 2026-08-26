@@ -164,6 +164,8 @@ export function PredictionCard({ game, color, faint, index = 0, score }: Props) 
   const pct = Math.round(game.confidence * 100);
   const displayOdds = game.odds ?? game.real_odds ?? game.estimated_odds ?? 0;
   const displayPrediction = game.prediction || game.readable_prediction || game.prediction_value || "";
+  const priceImplied = game.market_implied_probability
+    ?? (game.odds_are_real && displayOdds > 0 ? 1 / displayOdds : null);
 
   const sportyBetUrl = game.bookmaker?.toLowerCase().includes("sportybet")
     ? "https://www.sportybet.com/ng"
@@ -312,6 +314,49 @@ export function PredictionCard({ game, color, faint, index = 0, score }: Props) 
           </div>
         </div>
       </div>
+
+      {/* Evidence is visible on demand without making every card taller. */}
+      <details style={{ margin: "-4px 16px 12px" }}>
+        <summary style={{
+          minHeight: 40, display: "flex", alignItems: "center",
+          cursor: "pointer", color: "var(--text-2)",
+          fontFamily: "var(--font-body)", fontSize: 11, fontWeight: 700,
+          listStyle: "none", userSelect: "none",
+        }}>
+          Why this pick?
+        </summary>
+        <div style={{
+          display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+          gap: 8, padding: "10px 12px", borderRadius: 9,
+          background: "var(--surface-2)", border: "1px solid var(--border)",
+          fontFamily: "var(--font-body)", fontSize: 10, color: "var(--text-3)",
+        }}>
+          <span>Our estimate<br /><strong style={{ color: "var(--text-1)" }}>{pct}%</strong></span>
+          <span>Book price implies<br /><strong style={{ color: "var(--text-1)" }}>
+            {priceImplied != null
+              ? `${Math.round(priceImplied * 100)}%`
+              : "Not available"}
+          </strong></span>
+          <span>Expected goals<br /><strong style={{ color: "var(--text-1)" }}>
+            {game.expected_goals != null ? game.expected_goals.toFixed(2) : "Not available"}
+          </strong></span>
+          <span>Settled evidence<br /><strong style={{ color: "var(--text-1)" }}>
+            {game.calibration_sample != null
+              ? `${game.calibration_sample} similar picks`
+              : "Not recorded on this card"}
+          </strong></span>
+          <span style={{ gridColumn: "1 / -1" }}>
+            Signals used: {(game.model_sources?.length
+              ? game.model_sources
+              : [game.model_type === "market_poisson" ? "market + Poisson" : "statistical model"]
+            ).join(", ")}.
+            {game.ml_confidence != null && ` ML estimate: ${Math.round(game.ml_confidence * 100)}%.`}
+          </span>
+          <span style={{ gridColumn: "1 / -1", lineHeight: 1.45 }}>
+            Probabilities are estimates, not guarantees. No pick can promise a profit.
+          </span>
+        </div>
+      </details>
 
       {/* Venue / kickoff — hidden on mobile, where the row costs more height
           than the information is worth on a card you scroll past. */}

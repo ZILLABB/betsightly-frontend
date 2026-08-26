@@ -17,12 +17,12 @@ export function Button({ variant="primary", size="md", loading, children, disabl
     pointerEvents: disabled || loading ? "none" : "auto",
   };
   const sizes: Record<string, React.CSSProperties> = {
-    sm: { fontSize:13, padding:"7px 14px", borderRadius:8 },
-    md: { fontSize:14, padding:"10px 20px", borderRadius:10 },
-    lg: { fontSize:16, padding:"13px 28px", borderRadius:12 },
+    sm: { fontSize:13, minHeight:40, padding:"7px 14px", borderRadius:8 },
+    md: { fontSize:14, minHeight:44, padding:"10px 20px", borderRadius:10 },
+    lg: { fontSize:16, minHeight:48, padding:"12px 24px", borderRadius:12 },
   };
   const variants: Record<string, React.CSSProperties> = {
-    primary:   { background:"linear-gradient(135deg,#34d399,#059669)", color:"#000", boxShadow:"0 2px 12px rgba(16,185,129,0.35)" },
+    primary:   { background:"var(--brand)", color:"#fff", boxShadow:"0 2px 12px var(--brand-faint)" },
     secondary: { background:"var(--overlay-2)", color:"var(--text-1)", border:"1px solid var(--border)" },
     ghost:     { background:"transparent", color:"var(--text-2)" },
     outline:   { background:"transparent", color:"var(--brand)", border:"1px solid var(--border-brand)" },

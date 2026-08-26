@@ -142,6 +142,14 @@ export interface GamePrediction {
   risk_score?: number;
   risk_level?: string;
   models_agreed?: number;
+  models_used?: number;
+  model_sources?: string[];
+  raw_confidence?: number;
+  ml_confidence?: number | null;
+  market_implied_probability?: number | null;
+  calibration_group?: string;
+  calibration_sample?: number;
+  safe_tier_eligible?: boolean;
   edge?: number;
   expected_value?: number;
   bookmaker?: string;

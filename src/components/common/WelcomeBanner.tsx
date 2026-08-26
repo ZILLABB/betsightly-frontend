@@ -32,25 +32,25 @@ export function WelcomeBanner() {
       borderRadius: 16, overflow: "hidden", position: "relative",
       background: "linear-gradient(135deg, rgba(59,130,246,0.12) 0%, rgba(34,197,94,0.08) 100%)",
       border: "1px solid rgba(59,130,246,0.18)",
-      padding: "20px 24px 22px",
+      padding: "14px 56px 14px 18px",
     }}>
       <button
         onClick={dismiss}
         aria-label="Dismiss welcome message"
         style={{
-          position: "absolute", top: 12, right: 12,
-          width: 28, height: 28, borderRadius: 8,
+          position: "absolute", top: 8, right: 8,
+          width: 44, height: 44, borderRadius: 10,
           background: "transparent", border: "1px solid var(--border)",
           color: "var(--text-3)", cursor: "pointer",
           display: "inline-flex", alignItems: "center", justifyContent: "center",
         }}
       >
-        <X size={14} />
+        <X size={17} />
       </button>
 
-      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 7 }}>
         <div style={{
-          width: 36, height: 36, borderRadius: 10,
+          width: 32, height: 32, borderRadius: 9,
           background: "rgba(59,130,246,0.15)", border: "1px solid rgba(59,130,246,0.25)",
           display: "flex", alignItems: "center", justifyContent: "center",
         }}>
@@ -63,26 +63,26 @@ export function WelcomeBanner() {
 
       <p style={{
         fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text-2)",
-        lineHeight: 1.7, marginBottom: 14, maxWidth: 720,
+        lineHeight: 1.55, marginBottom: 10, maxWidth: 760,
       }}>
-        We pull live odds from real bookmakers, run them through statistical models,
-        and only show you picks where multiple independent signals agree. Daily picks for
+        We compare live bookmaker prices with statistical models and publish only picks
+        that clear our confidence and evidence checks. Daily picks for
         <strong style={{ color: "var(--text-1)" }}> 2 Odds</strong>, <strong style={{ color: "var(--text-1)" }}>5 Odds</strong>,
-        <strong style={{ color: "var(--text-1)" }}> 10 Odds</strong>, a <strong style={{ color: "var(--text-1)" }}>10-day rollover challenge</strong>,
+        <strong style={{ color: "var(--text-1)" }}> 10 Odds</strong>, a <strong style={{ color: "var(--text-1)" }}>3-day rollover challenge</strong>,
         and coverage across <strong style={{ color: "var(--text-1)" }}>91 leagues worldwide</strong>. Free, no signup.
       </p>
 
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
         <Link to="/about" onClick={dismiss} style={{
           display: "inline-flex", alignItems: "center", gap: 6,
-          padding: "8px 16px", borderRadius: 8, textDecoration: "none",
+          minHeight: 40, padding: "8px 14px", borderRadius: 8, textDecoration: "none",
           background: "var(--brand)", color: "#fff",
           fontFamily: "var(--font-body)", fontSize: 13, fontWeight: 700,
         }}>
           How it works <ArrowRight size={13} />
         </Link>
         <button onClick={dismiss} style={{
-          padding: "8px 16px", borderRadius: 8, cursor: "pointer",
+          minHeight: 40, padding: "8px 14px", borderRadius: 8, cursor: "pointer",
           background: "var(--surface)", border: "1px solid var(--border)",
           color: "var(--text-2)",
           fontFamily: "var(--font-body)", fontSize: 13, fontWeight: 600,
