@@ -72,7 +72,6 @@ docker run -p 80:80 -d betsightly-frontend
 
 ## Environment Variables
 - `VITE_API_BASE_URL`: URL of the backend API
-- `VITE_FOOTBALL_API_KEY`: API key for Football Data API
 
 ## License
 This project is proprietary and confidential.

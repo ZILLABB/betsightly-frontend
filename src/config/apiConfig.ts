@@ -5,12 +5,6 @@
 // Base URL for API requests
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://betsightly-api.onrender.com/api';
 
-// Optional API key (not enforced by backend but can be sent)
-export const API_KEY = import.meta.env.VITE_API_KEY || '';
-
-// Football API key (if still needed)
-export const FOOTBALL_API_KEY = import.meta.env.VITE_FOOTBALL_API_KEY || '';
-
 // API request timeout in milliseconds (30 seconds for ML predictions)
 export const API_TIMEOUT = parseInt(import.meta.env.VITE_API_TIMEOUT || '30000');
 
@@ -119,7 +113,6 @@ export const API_CACHE_CONFIG = {
 // Request headers
 export const DEFAULT_HEADERS = {
   'Content-Type': 'application/json',
-  ...(API_KEY && { 'X-API-Key': API_KEY }),
 };
 
 // Rate limiting configuration
@@ -130,8 +123,6 @@ export const RATE_LIMIT = {
 
 export default {
   API_BASE_URL,
-  API_KEY,
-  FOOTBALL_API_KEY,
   API_TIMEOUT,
   API_ENDPOINTS,
   API_VERSION,

@@ -17,8 +17,8 @@ export default defineConfig({
         name: 'BetSightly - Smart Betting Predictions',
         short_name: 'BetSightly',
         description: 'Smart betting predictions and analysis platform with AI-powered insights',
-        theme_color: '#0a0a0f',
-        background_color: '#0a0a0f',
+        theme_color: '#07100e',
+        background_color: '#07100e',
         display: 'standalone',
         orientation: 'portrait',
         start_url: '/',
@@ -81,7 +81,7 @@ export default defineConfig({
   // Resolve aliases
   resolve: {
     alias: {
-      '@': resolve(__dirname, './src'),
+      '@': resolve(import.meta.dirname, './src'),
     },
   },
   // Build options

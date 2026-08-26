@@ -1,6 +1,6 @@
 ﻿import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, Home, Target, BarChart2, RefreshCw, Settings, Users, Scale, Sliders } from "lucide-react";
+import { Menu, X, Home, Target, BarChart2, RefreshCw, Settings, Users, Scale, Sliders, Radio, TrendingUp } from "lucide-react";
 
 /* Official WC26 emblem as a nav icon — theme-conditional variant */
 
@@ -41,7 +41,9 @@ export function Header() {
     return () => { document.body.style.overflow = ""; };
   }, [open]);
 
-  const isActive = (p: string) => location.pathname === p;
+  const isActive = (p: string) => p === "/"
+    ? location.pathname === "/"
+    : location.pathname === p || location.pathname.startsWith(`${p}/`);
 
   return (
     <>
@@ -52,16 +54,12 @@ export function Header() {
         backdropFilter:"blur(20px)",
         transition:"all 250ms ease",
       }}>
-        <div style={{ maxWidth:1200, margin:"0 auto", padding:"0 20px", height:64, display:"flex", alignItems:"center", justifyContent:"space-between", gap:24 }}>
+        <div style={{ maxWidth:1200, margin:"0 auto", padding:"0 20px", height:70, display:"flex", alignItems:"center", justifyContent:"space-between", gap:20 }}>
           
           {/* Logo */}
-          <Link to="/" style={{ display:"flex", alignItems:"center", textDecoration:"none", flexShrink:0 }}>
-            <img
-              src="/logo.png"
-              alt="BetSightly"
-              className="brand-logo"
-              style={{ height:44, width:"auto", objectFit:"contain" }}
-            />
+          <Link to="/" className="brand-lockup" aria-label="BetSightly home">
+            <span className="brand-mark"><TrendingUp size={18} strokeWidth={2.6} /></span>
+            <span className="brand-word">Bet<span>Sightly</span></span>
           </Link>
 
           {/* Desktop Nav */}
@@ -87,6 +85,10 @@ export function Header() {
               );
             })}
           </nav>
+
+          <div className="hidden-mobile header-live-pill" aria-label="Prediction service status">
+            <Radio size={13} /> Live
+          </div>
 
           {/* Mobile toggle */}
           <button

@@ -2,13 +2,13 @@
 import { Header } from "./Header";
 import { BottomNav } from "./BottomNav";
 import { Link } from "react-router-dom";
-import { Trophy, Target, Users, BarChart2 } from "lucide-react";
+import { TrendingUp } from "lucide-react";
 import { PWAInstallPrompt } from "../common/PWAInstallPrompt";
 import { SocialLinks } from "../common/SocialLinks";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ minHeight:"100vh", display:"flex", flexDirection:"column", background:"var(--bg)" }}>
+    <div className="app-shell" style={{ minHeight:"100vh", display:"flex", flexDirection:"column" }}>
       <Header />
       <main style={{ flex:1, maxWidth:1200, margin:"0 auto", width:"100%", padding:"28px 20px 28px" }} className="main-area">
         {children}
@@ -25,8 +25,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr", gap:32 }} className="footer-grid">
             {/* Brand */}
             <div>
-              <Link to="/" style={{ display:"inline-flex", alignItems:"center", textDecoration:"none", marginBottom: 12 }}>
-                <img src="/logo.png" alt="BetSightly" className="brand-logo" style={{ height:32, width:"auto", objectFit:"contain" }} />
+              <Link to="/" className="brand-lockup" style={{ marginBottom: 12 }} aria-label="BetSightly home">
+                <span className="brand-mark"><TrendingUp size={18} strokeWidth={2.6} /></span>
+                <span className="brand-word">Bet<span>Sightly</span></span>
               </Link>
               <p style={{ fontFamily:"var(--font-body)", fontSize:12, color:"var(--text-3)", lineHeight:1.6, maxWidth:320 }}>
                 Sports predictions backed by real bookmaker odds and statistical analysis. For informational purposes only.

@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from "react";
-import { TrendingUp, Shield, Target, RefreshCw, Flame } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Activity, ArrowRight, CircleCheck, Flame, RefreshCw, Shield, Sliders, Target, TrendingUp } from "lucide-react";
 import { usePredictions } from "../hooks/usePredictions";
 import { useFormatOdds } from "../hooks/useFormatOdds";
 import { WelcomeBanner } from "../components/common/WelcomeBanner";
@@ -17,7 +18,7 @@ import type { CategoryKey } from "../types";
 
 function StatBubble({ label, value, icon, color }: { label: string; value: string; icon: React.ReactNode; color: string }) {
   return (
-    <div className="card" style={{
+    <div className="card metric-card" style={{
       "--card-accent": color,
       padding: "16px 18px",
       display: "flex",
@@ -92,32 +93,71 @@ export function HomePage() {
       <SEO path="/" />
       <WelcomeBanner />
 
+      {/* Product hero */}
+      <section className="home-hero" aria-labelledby="home-title">
+        <div className="home-hero-copy">
+          <div className="market-status">
+            <span className="market-status-dot" />
+            Models online
+            <span aria-hidden="true">·</span>
+            {data?.date
+              ? new Date(data.date + "T12:00:00Z").toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" })
+              : new Date().toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })}
+          </div>
+          <h1 id="home-title">
+            Read the market.<br />
+            <span>Back the signal.</span>
+          </h1>
+          <p>
+            Daily football selections shaped by current bookmaker prices,
+            calibrated probabilities, and a transparent results history.
+          </p>
+          <div className="home-hero-actions">
+            <Link to="/predictions" className="hero-action hero-action-primary">
+              Explore today&apos;s picks <ArrowRight size={16} />
+            </Link>
+            <Link to="/build-slip" className="hero-action hero-action-secondary">
+              <Sliders size={16} /> Build a slip
+            </Link>
+          </div>
+          <div className="trust-row" aria-label="Product principles">
+            <span><CircleCheck size={14} /> Real odds</span>
+            <span><CircleCheck size={14} /> Calibrated confidence</span>
+            <span><CircleCheck size={14} /> Results tracked</span>
+          </div>
+        </div>
+
+        <aside className="signal-panel" aria-label="Selection process">
+          <div className="signal-panel-head">
+            <div>
+              <span>Selection engine</span>
+              <strong>Signal quality</strong>
+            </div>
+            <Activity size={18} />
+          </div>
+          <div className="signal-score">
+            <strong>{loading ? "—" : `${avgConf}%`}</strong>
+            <span>Average confidence in the active card</span>
+          </div>
+          <div className="signal-list">
+            <div><span>Probability model</span><b>Calibrated</b></div>
+            <div><span>Market scan</span><b>Current</b></div>
+            <div><span>Risk filter</span><b>Applied</b></div>
+          </div>
+          <div className="signal-foot">
+            <Shield size={14} /> No result is guaranteed. Stake responsibly.
+          </div>
+        </aside>
+      </section>
+
       {/* Live track record + Telegram CTA */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 10 }}>
+      <div className="home-support-grid">
         <AccuracyBadge />
         <JoinTelegram variant="card" />
       </div>
 
-      {/* Hero — cleaner */}
-      <div className="glow-bg" style={{ textAlign: "center", padding: "12px 0 0", position: "relative", zIndex: 1 }}>
-        <div className="eyebrow" style={{ marginBottom: 10, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-          <div style={{ width: 20, height: 1, background: "linear-gradient(90deg, transparent, var(--brand))" }} />
-          {data?.date
-            ? new Date(data.date + "T12:00:00Z").toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" })
-            : new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}
-          <div style={{ width: 20, height: 1, background: "linear-gradient(90deg, var(--brand), transparent)" }} />
-        </div>
-        <h1 style={{ fontSize: "clamp(28px, 5.5vw, 46px)", fontWeight: 800, lineHeight: 1.08, marginBottom: 10 }}>
-          Today&apos;s{" "}
-          <span className="text-brand-gradient">Smart Picks</span>
-        </h1>
-        <p style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text-2)", maxWidth: 440, margin: "0 auto", lineHeight: 1.6 }}>
-          Curated accumulators backed by real bookmaker odds and statistical analysis.
-        </p>
-      </div>
-
       {/* Stats row */}
-      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+      <div className="metric-grid">
         <StatBubble label="Picks today" value={loading ? "—" : String(totalGames)} icon={<Target size={17} color="var(--brand)" />} color="var(--brand)" />
         <StatBubble label="Confidence" value={loading ? "—" : `${avgConf}%`} icon={<Shield size={17} color="var(--green)" />} color="var(--green)" />
         <StatBubble label="Top odds" value={loading ? "—" : `${fmtOdds(activeCat?.total_odds ?? 0)}${oddsSuffix}`} icon={<TrendingUp size={17} color="var(--blue)" />} color="var(--blue)" />
