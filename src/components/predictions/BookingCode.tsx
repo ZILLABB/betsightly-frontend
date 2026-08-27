@@ -26,6 +26,12 @@ export default function BookingCode({
 
   if (!booking) return null;
 
+  const bookingStatus = booking.booking_status ?? (
+    booking.status === "active" ? (booking.partial ? "PARTIAL" : "FULL") :
+    booking.status === "invalid" ? "VALIDATION_FAILED" :
+    booking.status === "failed" ? "BOOKING_FAILED" : "UNAVAILABLE"
+  );
+
   const label: Record<TierBooking["status"], string> = {
     active: "",
     stale: "This tier changed after the code was made — regenerate before staking.",
@@ -47,7 +53,17 @@ export default function BookingCode({
           color: "var(--text-3)",
         }}
       >
-        {label[booking.status] ?? "No booking code for this tier."}
+        {booking.reason || label[booking.status] || "No valid SportyBet ticket could be created for this tier."}
+        {!!booking.excluded_legs?.length && (
+          <ul style={{ margin: "8px 0 0", paddingLeft: 18 }}>
+            {booking.excluded_legs.map((leg, index) => (
+              <li key={`${leg.match_id ?? index}-${leg.market ?? "selection"}`}>
+                {leg.home_team} vs {leg.away_team} — {leg.prediction ?? leg.market}
+                {leg.sportybet_availability?.status ? ` (${leg.sportybet_availability.status})` : ""}
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     );
   }
@@ -94,7 +110,7 @@ export default function BookingCode({
             fontWeight: 600,
           }}
         >
-          SportyBet
+          SportyBet {booking.ticket_type === "accumulator" ? "accumulator" : "booking"}
         </span>
         <code
           style={{
@@ -124,8 +140,8 @@ export default function BookingCode({
             fontFamily: "var(--font-body)",
             fontSize: 14,
             fontWeight: 600,
-            padding: "10px 18px",
-            minHeight: 44,
+            padding: "8px 14px",
+            minHeight: 40,
             borderRadius: 6,
             border: `1px solid ${category.color}55`,
             background: "transparent",
@@ -144,8 +160,8 @@ export default function BookingCode({
               fontFamily: "var(--font-body)",
               fontSize: 14,
               fontWeight: 600,
-              padding: "10px 18px",
-              minHeight: 44,
+              padding: "8px 14px",
+              minHeight: 40,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -161,6 +177,40 @@ export default function BookingCode({
         )}
       </div>
 
+      <div style={{ width: "100%", fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text-2)" }}>
+        {bookingStatus === "FULL" && `${booking.booked_leg_count ?? booking.legs ?? 0}/${booking.original_leg_count ?? booking.legs ?? 0} selections booked.`}
+        {bookingStatus === "REBUILT_FULL" && `${booking.booked_leg_count ?? booking.legs ?? 0}/${booking.original_leg_count ?? booking.legs ?? 0} selections booked · ${booking.replacement_count ?? booking.replacements?.length ?? 0} unavailable selection(s) replaced.`}
+        {bookingStatus === "PARTIAL" && `${booking.booked_leg_count ?? booking.legs ?? 0}/${booking.original_leg_count ?? 0} selections booked · partial ticket.`}
+        {booking.actual_sportybet_odds ? ` Actual SportyBet odds: ${booking.actual_sportybet_odds.toFixed(2)}.` : ""}
+      </div>
+
+      {!!booking.replacements?.length && (
+        <details style={{ width: "100%", fontFamily: "var(--font-body)", fontSize: 12 }}>
+          <summary style={{ cursor: "pointer", color: category.color }}>View replacements</summary>
+          <ul style={{ margin: "8px 0 0", paddingLeft: 18, color: "var(--text-3)" }}>
+            {booking.replacements.map((item, index) => (
+              <li key={index}>
+                {item.original_leg?.home_team} vs {item.original_leg?.away_team} → {item.replacement_leg?.home_team} vs {item.replacement_leg?.away_team} ({item.reason})
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
+
+      {!!booking.excluded_legs?.length && (
+        <details style={{ width: "100%", fontFamily: "var(--font-body)", fontSize: 12 }}>
+          <summary style={{ cursor: "pointer", color: category.color }}>View excluded selections</summary>
+          <ul style={{ margin: "8px 0 0", paddingLeft: 18, color: "var(--text-3)" }}>
+            {booking.excluded_legs.map((leg, index) => (
+              <li key={`${leg.match_id ?? index}-${leg.market ?? "selection"}`}>
+                {leg.home_team} vs {leg.away_team} — {leg.prediction ?? leg.market}
+                {leg.sportybet_availability?.failure_reason ? `: ${leg.sportybet_availability.failure_reason}` : ""}
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
+
       {(priced || booking.partial) && (
         <span
           style={{
@@ -170,8 +220,8 @@ export default function BookingCode({
             width: "100%",
           }}
         >
-          {booking.partial && booking.legs
-            ? `Covers ${booking.legs} of ${booking.legs + (booking.unbooked?.length ?? 0)} picks — the rest aren't on SportyBet. `
+          {bookingStatus === "PARTIAL"
+            ? `This code contains only the selections listed as booked above. `
             : ""}
           {priced
             ? `Priced at ${priced}. Odds move — check the slip before you stake.`

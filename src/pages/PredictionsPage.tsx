@@ -201,10 +201,9 @@ export function PredictionsPage() {
               347px viewport and sat at x=519 — present, correct, and off the
               side of the phone, so it read as missing entirely.
 
-              Shown for singles too. Ten Over 1.5 picks are ten separate bets,
-              and the code loads all of them into the slip at once — SportyBet
-              decides single or multiple at staking time, not here, so this
-              does not turn the tier into an accumulator. */}
+              Shown for singles too. The predictions remain independent
+              singles, but one SportyBet share code containing several of them
+              is explicitly labelled as an accumulator ticket. */}
           <BookingCode booking={activeCat.booking} category={catMeta} />
           {!isSingles && (
             <div className="tool-panel">

@@ -233,6 +233,8 @@ export interface RolloverChainDay {
  */
 export interface TierBooking {
   status: "active" | "unavailable" | "failed" | "invalid" | "stale";
+  booking_status?: "FULL" | "REBUILT_FULL" | "PARTIAL" | "UNAVAILABLE" |
+    "BOOKING_FAILED" | "VALIDATION_FAILED";
   share_code?: string | null;
   share_url?: string;
   legs?: number;
@@ -247,6 +249,23 @@ export interface TierBooking {
   priced_at?: string;
   expires_at?: string | null;
   reason?: string;
+  original_leg_count?: number;
+  booked_leg_count?: number;
+  excluded_leg_count?: number;
+  replacement_count?: number;
+  predicted_tier_odds?: number | null;
+  actual_sportybet_odds?: number | null;
+  board_snapshot_id?: string | null;
+  ticket_type?: "accumulator" | "single";
+  replacements?: Array<{
+    original_leg?: Partial<GamePrediction> & { sportybet_availability?: { status?: string } };
+    replacement_leg?: Partial<GamePrediction>;
+    reason?: string;
+  }>;
+  excluded_legs?: Array<Partial<GamePrediction> & {
+    sportybet_availability?: { status?: string; failure_reason?: string };
+  }>;
+  readback_validation?: "PASSED" | "FAILED";
 }
 
 export interface CategoryData {
@@ -263,6 +282,7 @@ export interface CategoryData {
    *  tier's number would state a risk nobody is actually taking. Absent means
    *  accumulator, which is how every other tier works. */
   presentation?: "accumulator" | "singles";
+  sportybet_ticket_type?: "accumulator" | "single";
   /** The SportyBet slip for this exact tier, when one could be created. */
   booking?: TierBooking;
   /** Bumped whenever the tier is extended after first publication. */
