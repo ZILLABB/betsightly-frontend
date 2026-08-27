@@ -95,7 +95,7 @@ export default function SlipBuilderPage() {
         ))}
       </div>
 
-      <div>
+      <div style={{ marginTop: 16 }}>
         <p style={{ fontFamily: "var(--font-body)", fontSize: 12, fontWeight: 600,
                     letterSpacing: ".06em", textTransform: "uppercase",
                     color: "var(--text-3)", margin: "0 0 8px" }}>
@@ -115,7 +115,7 @@ export default function SlipBuilderPage() {
                     color: "var(--text-3)", margin: "8px 0 0", maxWidth: "60ch" }}>
           {horizon === "today"
             ? "Every leg kicks off today, so you know tonight. Drawn from one day's fixtures, so the picks are a little weaker."
-            : "Legs spread across the next seven days. A bigger board holds better picks — it lands roughly twice as often — but it takes the week to resolve."}
+            : "Legs can spread across seven WAT calendar days. The larger board usually offers higher-confidence choices, but the slip takes longer to resolve."}
         </p>
       </div>
 
@@ -166,18 +166,25 @@ export default function SlipBuilderPage() {
               <Stat label="Legs" value={String(slip.legs)} />
               <Stat label="Lands"
                     value={`${((slip.hit_probability ?? 0) * 100).toFixed(2)}%`} />
-              <Stat label="Returns per ₦100"
+              <Stat label="Model-estimated return per ₦100"
                     value={`₦${Math.round((slip.expected_return ?? 0) * 100)}`} />
             </div>
             {/* The sentence the rest of the industry leaves out. */}
             <p style={{ fontFamily: "var(--font-body)", fontSize: 13,
                         color: "var(--text-3)", margin: "14px 0 0", maxWidth: "64ch" }}>
-              All {slip.legs} legs must land, which happens about{" "}
+              All {slip.legs} legs must land, which the model estimates happens about{" "}
               {((slip.hit_probability ?? 0) * 100).toFixed(2)}% of the time. Staked
-              repeatedly, a slip this long returns around ₦
-              {Math.round((slip.expected_return ?? 0) * 100)} of every ₦100 — the
-              bookmaker's margin, once per leg. Shorter slips give up less of it.
+              repeatedly at the displayed prices, that estimate implies around ₦
+              {Math.round((slip.expected_return ?? 0) * 100)} returned per ₦100 staked.
+              This is a probability estimate, not a promised profit.
             </p>
+            {slip.first_kickoff && slip.last_kickoff && (
+              <p style={{ fontFamily: "var(--font-body)", fontSize: 12,
+                          color: "var(--text-3)", margin: "8px 0 0" }}>
+                Runs from {new Date(slip.first_kickoff).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" })}
+                {slip.last_kickoff !== slip.first_kickoff && ` to ${new Date(slip.last_kickoff).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" })}`}.
+              </p>
+            )}
           </div>
 
           <BookingCode booking={slip.booking} category={accent} />

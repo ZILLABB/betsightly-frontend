@@ -42,6 +42,9 @@ const MARKET_COLORS: Record<string, { c: string; l: string }> = {
   goals: { c: "var(--green)", l: "Goals" },
   btts: { c: "var(--purple)", l: "BTTS" },
   double_chance: { c: "var(--accent)", l: "DC" },
+  dnb: { c: "var(--blue)", l: "DNB" },
+  team_goals_home: { c: "var(--green)", l: "Team goals" },
+  team_goals_away: { c: "var(--green)", l: "Team goals" },
 };
 
 function fmtDate(iso: string) {
@@ -57,44 +60,51 @@ export function RolloverPage() {
   const rollover = data?.accumulators?.rollover;
   const catMeta = CATEGORIES.find(c => c.key === "rollover")!;
   const chain = rollover?.chain ?? [];
-  const targetDays = rollover?.target_days ?? 10;
+  const targetDays = rollover?.target_days ?? 3;
 
   // Stats
   const wonDays = chain.filter(d => d.status === "won").length;
   const lostDays = chain.filter(d => d.status === "lost").length;
-  const completedDays = wonDays + lostDays;
-  const pendingDays = chain.length - completedDays;
-  const isAlive = lostDays === 0;
+  const voidDays = chain.filter(d => d.status === "void").length;
+  const pendingDays = chain.filter(d => d.status === "pending").length;
+  const isAlive = lostDays === 0 && voidDays === 0;
+  const isComplete = chain.length >= targetDays && pendingDays === 0;
+  const legacyChain = chain.some(day =>
+    day.picks.some(pick => pick.safe_tier_eligible !== true),
+  );
 
   // Find today's day slot (first pending day whose date is >= today)
-  const today = new Date().toISOString().slice(0, 10);
-  const todaysDay = chain.find(d => d.date >= today && d.status === "pending");
+  const today = new Date(Date.now() + 60 * 60 * 1000).toISOString().slice(0, 10);
+  const todaysDay = isAlive
+    ? chain.find(d => d.date >= today && d.status === "pending")
+    : undefined;
+  const visibleDays = view === "today" ? (todaysDay ? [todaysDay] : []) : chain;
 
   // Cumulative odds
   const cumOdds = rollover?.cumulative_odds ?? rollover?.total_odds ?? 0;
 
   return (
     <div className="page-stack" style={{ display: "flex", flexDirection: "column", gap: 28 }}>
-      <SEO title="Rollover Challenge" description="10-day rollover challenge — daily safest picks from active leagues and the World Cup. All picks must hit for the day to count." path="/rollover" />
+      <SEO title="Rollover Challenge" description="3-day rollover challenge using evidence-backed daily picks. Every leg must land for the chain to continue." path="/rollover" />
       {/* Header */}
       <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
         <div style={{ width: 48, height: 48, borderRadius: 12, background: catMeta.faint, border: `1px solid ${catMeta.color}33`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
           <Repeat2 size={22} color={catMeta.color} />
         </div>
         <div>
-          <div className="eyebrow" style={{ marginBottom: 6 }}>10-day safe challenge</div>
+          <div className="eyebrow" style={{ marginBottom: 6 }}>{targetDays}-day evidence challenge</div>
           <h1 style={{ fontSize: 30, fontWeight: 800 }}>Rollover</h1>
           <p style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text-3)", marginTop: 4, maxWidth: 560, lineHeight: 1.6 }}>
-            Each day takes two or three of the day&apos;s most reliable picks, aiming for roughly
-            2x. Every pick on a day must land for that day to count — which is why the day is kept
-            short: four legs at 75% land 32% of the time, two at 85% land 72%.
+            Each day uses up to six evidence-backed picks to reach 2x–3x.
+            Every leg must land for the day to count. If the board cannot support that
+            range honestly, the challenge waits instead of adding an unproven pick.
           </p>
         </div>
       </div>
 
       {/* Stat cards */}
       {chain.length > 0 && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12 }}>
           <div className="card" style={{ padding: "18px 20px", borderLeft: `3px solid ${catMeta.color}` }}>
             <p style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Today&apos;s multiplier</p>
             <p className="stat-num" style={{ fontSize: 32, color: catMeta.color, lineHeight: 1.05 }}>
@@ -106,8 +116,10 @@ export function RolloverPage() {
                 one a user actually stakes against. */}
             <p style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)", marginTop: 6 }}>
               {cumOdds > 0
-                ? `${fmtOdds(cumOdds)}${oddsSuffix} compounded if all ${chain.length} days land`
-                : `Builds over ${rollover?.target_days ?? 10} days`}
+                ? lostDays > 0
+                  ? `${fmtOdds(cumOdds)}${oddsSuffix} was scheduled across ${chain.length} days`
+                  : `${fmtOdds(cumOdds)}${oddsSuffix} compounded if all ${chain.length} days land`
+                : `Builds over ${targetDays} days`}
             </p>
           </div>
 
@@ -120,9 +132,11 @@ export function RolloverPage() {
           <div className="card" style={{ padding: "18px 20px" }}>
             <p style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Chain status</p>
             <p className="stat-num" style={{ fontSize: 22, color: isAlive ? "var(--green)" : "var(--red)", lineHeight: 1.05 }}>
-              {isAlive ? (completedDays === chain.length ? "Completed" : "Active") : "Broken"}
+              {lostDays > 0 ? "Broken" : voidDays > 0 ? "Ended" : isComplete ? "Completed" : "Active"}
             </p>
-            <p style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)", marginTop: 6 }}>Safest picks only</p>
+            <p style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)", marginTop: 6 }}>
+              {legacyChain ? "Previous selection rules" : "Evidence-backed picks"}
+            </p>
           </div>
 
           {todaysDay && (
@@ -141,6 +155,15 @@ export function RolloverPage() {
         </div>
       )}
 
+      {legacyChain && chain.length > 0 && (
+        <div style={{ padding: "11px 14px", borderRadius: 9,
+                      background: "var(--gold-faint)", border: "1px solid rgba(245,158,11,0.22)",
+                      fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text-2)", lineHeight: 1.55 }}>
+          This existing chain was created under the previous rules, so it remains visible as part of the record.
+          New chains require each market&apos;s own settled evidence and stay between 2x and 3x.
+        </div>
+      )}
+
       {/* Toggle + chain */}
       {loading ? (
         <BrandLoader message="Loading the rollover chain...">
@@ -151,7 +174,7 @@ export function RolloverPage() {
       ) : chain.length === 0 ? (
         <div className="card" style={{ padding: "40px 20px", textAlign: "center" }}>
           <p style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text-3)" }}>
-            No rollover chain yet. The challenge begins when WC matches are scheduled.
+            No rollover chain yet. A challenge begins when the upcoming board has enough evidence-backed picks.
           </p>
         </div>
       ) : (
@@ -166,7 +189,7 @@ export function RolloverPage() {
                 onClick={() => setView("today")}
                 style={{
                   display: "inline-flex", alignItems: "center", gap: 4,
-                  padding: "5px 12px", borderRadius: 6, border: "none", cursor: "pointer",
+                  minHeight: 40, padding: "7px 12px", borderRadius: 6, border: "none", cursor: "pointer",
                   fontFamily: "var(--font-body)", fontSize: 11, fontWeight: 600,
                   background: view === "today" ? "var(--surface)" : "transparent",
                   color: view === "today" ? "var(--brand)" : "var(--text-3)",
@@ -179,7 +202,7 @@ export function RolloverPage() {
                 onClick={() => setView("all")}
                 style={{
                   display: "inline-flex", alignItems: "center", gap: 4,
-                  padding: "5px 12px", borderRadius: 6, border: "none", cursor: "pointer",
+                  minHeight: 40, padding: "7px 12px", borderRadius: 6, border: "none", cursor: "pointer",
                   fontFamily: "var(--font-body)", fontSize: 11, fontWeight: 600,
                   background: view === "all" ? "var(--surface)" : "transparent",
                   color: view === "all" ? "var(--brand)" : "var(--text-3)",
@@ -193,7 +216,22 @@ export function RolloverPage() {
 
           {/* Days */}
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            {(view === "today" && todaysDay ? [todaysDay] : chain).map(day => {
+            {visibleDays.length === 0 && (
+              <div className="card" style={{ padding: "24px 18px", textAlign: "center" }}>
+                <p style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text-2)", lineHeight: 1.55 }}>
+                  {lostDays > 0
+                    ? "This chain has ended. Open the full chain to review every result; a new challenge starts with the next published card."
+                    : "There is no active rollover slot today. We wait when the board cannot reach the target with evidence-backed picks."}
+                </p>
+                <button type="button" onClick={() => setView("all")} style={{
+                  minHeight: 40, marginTop: 12, padding: "8px 14px", borderRadius: 8,
+                  border: "1px solid var(--border)", background: "var(--surface-2)",
+                  color: "var(--text-1)", fontFamily: "var(--font-body)", fontWeight: 700,
+                  cursor: "pointer",
+                }}>View full chain</button>
+              </div>
+            )}
+            {visibleDays.map(day => {
               const status = STATUS_CONFIG[day.status] || STATUS_CONFIG.pending;
               const isToday = todaysDay?.date === day.date;
 
@@ -242,7 +280,7 @@ export function RolloverPage() {
                         {fmtOdds(day.combined_odds)}{oddsSuffix}
                       </p>
                       <p style={{ fontFamily: "var(--font-body)", fontSize: 10, color: "var(--text-3)", marginTop: 3 }}>
-                        avg {Math.round(day.avg_confidence * 100)}% conf
+                        lands ~{Math.round((day.hit_probability ?? day.avg_confidence) * 100)}%
                       </p>
                     </div>
                     <div style={{
@@ -315,10 +353,9 @@ export function RolloverPage() {
           <div style={{ marginTop: 18, padding: "12px 16px", background: "var(--surface-2)", borderRadius: 10, display: "flex", alignItems: "flex-start", gap: 10 }}>
             <TrendingUp size={14} color="var(--text-3)" style={{ marginTop: 2, flexShrink: 0 }} />
             <p style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text-3)", lineHeight: 1.6 }}>
-              Each day takes two or three of the most reliable picks available across 91 leagues, chosen
-              as the combination most likely to actually reach the target rather than the most confident-looking
-              legs stacked together. No match appears more than once, and no day uses more legs than it needs —
-              every extra leg is another chance to lose. Lose any single pick on any day and the chain breaks.
+              Each day uses the highest-probability combination of up to six evidence-backed picks to land between 2x and 3x.
+              No match appears more than once. Every extra leg is another chance to lose, and one
+              losing leg ends the chain. Probabilities describe risk; they do not guarantee a return.
             </p>
           </div>
         </div>

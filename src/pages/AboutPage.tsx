@@ -61,13 +61,13 @@ export function AboutPage() {
       </Section>
 
       <Section icon={<TrendingUp size={18} />} title="How we pick the safest matches">
-        <p>For every match, we run three independent estimates and only show picks where they agree:</p>
+        <p>Each market is routed only through models that were trained or designed for it:</p>
         <ol style={{ marginTop: 8, paddingLeft: 20, display: "flex", flexDirection: "column", gap: 6 }}>
           <li><strong>Bookmaker implied probability</strong> — the average of all bookmaker odds, stripped of margin. Aggregating across multiple books cancels out individual mispricings.</li>
           <li><strong>ELO ratings</strong> — a 426-team registry covering Europe's Big-5 leagues, Segunda/Championship/Serie B, the Eredivisie, Primeira Liga, and more.</li>
-          <li><strong>Statistical models</strong> — XGBoost, LightGBM, and CatBoost trained on tens of thousands of historical matches for match result, Over 1.5, Over 2.5, and BTTS.</li>
+          <li><strong>Statistical models</strong> — XGBoost, LightGBM, CatBoost, and a neural network trained on tens of thousands of historical matches. The live ensemble currently supports match result, Over 1.5, and Over 2.5.</li>
         </ol>
-        <p style={{ marginTop: 12 }}>When all three agree on a market (Over 1.5, double chance, or strong favourite Win), the pick is flagged. When they strongly disagree, we drop it entirely.</p>
+        <p style={{ marginTop: 12 }}>Not every model evaluates every market. A severe disagreement from a compatible trained model drops the pick; unsupported models are shown as unavailable rather than counted as agreement.</p>
       </Section>
 
       <Section icon={<Sparkles size={18} />} title="The categories">
@@ -75,8 +75,8 @@ export function AboutPage() {
           <li><strong>2 Odds</strong> — 2–3 high-confidence picks combining to ~2x</li>
           <li><strong>5 Odds</strong> — 4–5 picks combining to ~5x</li>
           <li><strong>10 Odds</strong> — 5–7 picks combining to ~10x</li>
-          <li><strong>Over 1.5</strong> — only goals markets, all very safe</li>
-          <li><strong>Rollover</strong> — a 10-day chain. Each day has 1–3 picks; all must hit. Cumulative payout often exceeds 100x if every day wins.</li>
+          <li><strong>Over 1.5</strong> — evidence-backed Over 1.5 picks presented as individual singles</li>
+          <li><strong>Rollover</strong> — a 3-day challenge. Each day uses up to 6 evidence-backed picks to reach 2x–3x; every leg must hit.</li>
         </ul>
       </Section>
 

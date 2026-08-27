@@ -129,8 +129,8 @@ export const api = {
   /** Build a slip to a requested multiplier and book it.
    *
    * `horizon` is a real choice, not a setting. "today" settles tonight from a
-   * single day's fixtures; "week" draws on seven days, which contains better
-   * picks and lands roughly twice as often, but takes a week to resolve. */
+   * single WAT calendar day; "week" draws on seven WAT dates, which provides
+   * a larger qualifying board but takes longer to resolve. */
   buildSlip: (target: number, horizon: "today" | "week" = "week") =>
     request<BuiltSlip>(
       `/leagues/slip-builder/generate?target=${target}&horizon=${horizon}`,
@@ -169,8 +169,7 @@ export interface BuiltSlip {
   /** The chance every leg lands. A 50x slip is a few percent, not a good bet
    *  dressed up — showing it is the difference between a product and a lure. */
   hit_probability?: number;
-  /** What the slip returns per unit staked, on average, once the bookmaker's
-   *  cut is counted. Falls as the slip lengthens. */
+  /** Model-estimated return per unit: joint hit probability × displayed odds. */
   expected_return?: number;
   avg_confidence?: number;
   first_kickoff?: string | null;

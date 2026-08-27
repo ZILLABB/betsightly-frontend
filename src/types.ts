@@ -207,6 +207,9 @@ export interface RolloverPick {
   prediction: string;
   odds: number;
   confidence: number;
+  market_key?: string;
+  safe_tier_eligible?: boolean;
+  calibration_sample?: number;
   status?: 'pending' | 'won' | 'lost' | 'void';
 }
 
@@ -216,6 +219,7 @@ export interface RolloverChainDay {
   picks: RolloverPick[];
   combined_odds: number;
   avg_confidence: number;
+  hit_probability?: number;
   status: 'pending' | 'won' | 'lost' | 'void';
 }
 
