@@ -396,16 +396,6 @@ export function PredictionCard({ game, color, faint, index = 0, score }: Props) 
             </span>
           ) : null;
         })()}
-        {game.edge != null && game.edge > 0 && (
-          <span style={{
-            fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 600,
-            color: "var(--green)", background: "var(--green-faint)",
-            border: "1px solid rgba(16,185,129,0.15)", borderRadius: 5,
-            padding: "3px 8px",
-          }}>
-            +{(game.edge * 100).toFixed(1)}% value
-          </span>
-        )}
         {game.bookmaker && (
           <span style={{
             fontFamily: "var(--font-body)", fontSize: 10, fontWeight: 500,

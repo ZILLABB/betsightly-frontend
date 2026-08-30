@@ -266,6 +266,10 @@ export interface TierBooking {
     sportybet_availability?: { status?: string; failure_reason?: string };
   }>;
   readback_validation?: "PASSED" | "FAILED";
+  code_reused?: boolean;
+  leg_fingerprint?: string;
+  booking_variant_fingerprint?: string;
+  sportybet_selection_fingerprint?: string;
 }
 
 export interface CategoryData {

@@ -81,7 +81,7 @@ export function AboutPage() {
       </Section>
 
       <Section icon={<Trophy size={18} />} title="World Cup 2026">
-        <p>The dedicated World Cup tab covers all 72 matches with predictions, group-stage tables, value bets and an accumulator builder. Picks for WC come from bookmaker odds + tournament-specific base rates.</p>
+        <p>The dedicated World Cup tab covers all 72 matches with predictions, group-stage tables and an accumulator builder. Picks for WC come from bookmaker odds + tournament-specific base rates.</p>
       </Section>
 
       <Section icon={<Bot size={18} />} title="The Telegram bot">
@@ -94,7 +94,7 @@ export function AboutPage() {
       <Section icon={<Shield size={18} />} title="What we DO NOT do">
         <ul style={{ paddingLeft: 20, display: "flex", flexDirection: "column", gap: 6 }}>
           <li>We don't accept bets or move money. The site is informational.</li>
-          <li>We don't chase value bets where the bookmaker is "wrong" — we only show picks where multiple independent signals agree.</li>
+          <li>We only show picks where multiple independent signals agree.</li>
           <li>We don't guarantee results. Probability is probability; even 90% picks lose 1 in 10 times.</li>
         </ul>
       </Section>

@@ -21,7 +21,6 @@ const NotFoundPage = lazy(() => import("./pages/NotFoundPage").then(m => ({ defa
 const PuntersPage = lazy(() => import("./pages/PuntersPage"));
 const PunterDetailPage = lazy(() => import("./pages/PunterDetailPage"));
 const AboutPage = lazy(() => import("./pages/AboutPage").then(m => ({ default: m.AboutPage })));
-const ValuePage = lazy(() => import("./pages/ValuePage"));
 const SlipBuilderPage = lazy(() => import("./pages/SlipBuilderPage"));
 
 function Fallback() {
@@ -48,7 +47,6 @@ export default function App() {
             <Route path="/build-slip" element={<SlipBuilderPage />} />
             <Route path="/results" element={<ResultsPage />} />
             <Route path="/rollover" element={<RolloverPage />} />
-            <Route path="/value" element={<ValuePage />} />
             <Route path="/punters" element={<PuntersPage />} />
             <Route path="/punters/:id" element={<PunterDetailPage />} />
             <Route path="/about" element={<AboutPage />} />

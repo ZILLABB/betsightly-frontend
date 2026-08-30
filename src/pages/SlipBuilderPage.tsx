@@ -5,6 +5,7 @@ import BookingCode from "../components/predictions/BookingCode";
 import { BrandLoader } from "../components/ui/BrandLoader";
 import { SEO } from "../components/common/SEO";
 import { CATEGORIES } from "../types";
+import { trackBookingEvent } from "../services/bookingTracking";
 
 /**
  * Ask for a multiplier; get the qualifying slip most likely to reach it.
@@ -30,12 +31,36 @@ export default function SlipBuilderPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const build = async () => {
+  const build = async (regenerate = false) => {
+    if (regenerate && !window.confirm(
+      "Regenerating creates a fresh SportyBet code and may change the selections or odds. Continue?",
+    )) return;
+    if (regenerate) {
+      trackBookingEvent("code_regenerated", {
+        source: "generator", tier: `${target}_${horizon}`,
+        legCount: slip?.booking?.booked_leg_count ?? slip?.legs,
+        fingerprint: slip?.booking?.sportybet_selection_fingerprint,
+      });
+    }
     setLoading(true);
     setError(null);
     setSlip(null);
     try {
-      setSlip(await api.buildSlip(target, horizon));
+      const result = await api.buildSlip(target, horizon, regenerate);
+      setSlip(result);
+      const booking = result.booking;
+      if (booking?.status === "active" && booking.share_code && !result.cached) {
+        const context = {
+          source: "generator" as const,
+          tier: `${target}_${horizon}`,
+          legCount: booking.booked_leg_count ?? result.legs,
+          fingerprint: booking.sportybet_selection_fingerprint,
+        };
+        if (!booking.code_reused) trackBookingEvent("code_generated", context);
+        if (booking.readback_validation === "PASSED") {
+          trackBookingEvent("code_validated", context);
+        }
+      }
     } catch (e) {
       // Say what actually went wrong. A generic line here hid a GET being sent
       // to a POST route for a whole release — the page said "try again in a
@@ -119,7 +144,7 @@ export default function SlipBuilderPage() {
         </p>
       </div>
 
-      <button type="button" onClick={build} disabled={loading}
+      <button type="button" onClick={() => build(false)} disabled={loading}
               style={{ padding: "14px 22px", minHeight: 48, borderRadius: 10,
                        border: "none", background: accent.color, color: "#fff",
                        fontFamily: "var(--font-body)", fontSize: 15,
@@ -187,7 +212,31 @@ export default function SlipBuilderPage() {
             )}
           </div>
 
-          <BookingCode booking={slip.booking} category={accent} />
+          <BookingCode
+            booking={slip.booking}
+            category={accent}
+            tracking={{
+              source: "generator",
+              tier: `${target}_${horizon}`,
+              legCount: slip.booking?.booked_leg_count ?? slip.legs,
+              fingerprint: slip.booking?.sportybet_selection_fingerprint,
+            }}
+          />
+
+          {slip.booking?.status === "active" && (
+            <div style={{ display: "flex", alignItems: "center", gap: 10,
+                          flexWrap: "wrap" }}>
+              <button type="button" className="btn-ghost"
+                      onClick={() => build(true)} disabled={loading}
+                      style={{ fontSize: 13, padding: "8px 12px" }}>
+                Regenerate slip and code
+              </button>
+              <span style={{ fontFamily: "var(--font-body)", fontSize: 12,
+                             color: "var(--text-3)" }}>
+                Rechecks live availability and creates a fresh code.
+              </span>
+            </div>
+          )}
 
           <div style={{ display: "grid", gap: 12 }}>
             {(slip.games ?? []).map((g, i) => (

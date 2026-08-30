@@ -204,7 +204,17 @@ export function PredictionsPage() {
               Shown for singles too. The predictions remain independent
               singles, but one SportyBet share code containing several of them
               is explicitly labelled as an accumulator ticket. */}
-          <BookingCode booking={activeCat.booking} category={catMeta} />
+          <BookingCode
+            booking={activeCat.booking}
+            category={catMeta}
+            tracking={{
+              source: showBookable ? "bookable_now" : "daily_card",
+              tier: activeKey,
+              legCount: activeCat.booking?.booked_leg_count ?? activeCat.games.length,
+              fingerprint: activeCat.booking?.booking_variant_fingerprint,
+            }}
+            onShowBookable={showBookable ? undefined : () => setShowBookable(true)}
+          />
           {!isSingles && (
             <div className="tool-panel">
             <StakeCalculator

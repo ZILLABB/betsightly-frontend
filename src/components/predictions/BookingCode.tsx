@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { CategoryMeta, TierBooking } from "../../types";
+import { trackBookingEvent, type BookingEventContext } from "../../services/bookingTracking";
 
 /**
  * The SportyBet code for a tier, with a copy button.
@@ -18,11 +19,22 @@ import type { CategoryMeta, TierBooking } from "../../types";
 export default function BookingCode({
   booking,
   category,
+  tracking,
+  onShowBookable,
 }: {
   booking?: TierBooking;
   category: CategoryMeta;
+  tracking?: BookingEventContext;
+  onShowBookable?: () => void;
 }) {
   const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (booking?.status === "active" && booking.share_code && tracking) {
+      trackBookingEvent("code_displayed", tracking);
+    }
+  }, [booking?.share_code, booking?.status, tracking?.source, tracking?.tier,
+      tracking?.legCount, tracking?.fingerprint]);
 
   if (!booking) return null;
 
@@ -53,6 +65,9 @@ export default function BookingCode({
           color: "var(--text-3)",
         }}
       >
+        <strong style={{ display: "block", color: "var(--text-1)", marginBottom: 4 }}>
+          Slip ready, code unavailable
+        </strong>
         {booking.reason || label[booking.status] || "No valid SportyBet ticket could be created for this tier."}
         {!!booking.excluded_legs?.length && (
           <ul style={{ margin: "8px 0 0", paddingLeft: 18 }}>
@@ -63,6 +78,12 @@ export default function BookingCode({
               </li>
             ))}
           </ul>
+        )}
+        {onShowBookable && (
+          <button type="button" className="btn-ghost" onClick={onShowBookable}
+                  style={{ display: "block", marginTop: 10, fontSize: 13 }}>
+            Show what I can still bet
+          </button>
         )}
       </div>
     );
@@ -79,6 +100,7 @@ export default function BookingCode({
     try {
       await navigator.clipboard.writeText(booking.share_code as string);
       setCopied(true);
+      if (tracking) trackBookingEvent("code_copied", tracking);
       window.setTimeout(() => setCopied(false), 2000);
     } catch {
       setCopied(false);
@@ -99,7 +121,11 @@ export default function BookingCode({
         flexWrap: "wrap",
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+        <strong style={{ fontFamily: "var(--font-body)", fontSize: 13,
+                         color: "var(--text-1)" }}>
+          Code ready
+        </strong>
         <span
           style={{
             fontFamily: "var(--font-body)",
@@ -156,6 +182,7 @@ export default function BookingCode({
             href={booking.share_url}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => tracking && trackBookingEvent("sportybet_open_clicked", tracking)}
             style={{
               fontFamily: "var(--font-body)",
               fontSize: 14,

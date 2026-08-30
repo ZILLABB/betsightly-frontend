@@ -131,9 +131,9 @@ export const api = {
    * `horizon` is a real choice, not a setting. "today" settles tonight from a
    * single WAT calendar day; "week" draws on seven WAT dates, which provides
    * a larger qualifying board but takes longer to resolve. */
-  buildSlip: (target: number, horizon: "today" | "week" = "week") =>
+  buildSlip: (target: number, horizon: "today" | "week" = "week", refresh = false) =>
     request<BuiltSlip>(
-      `/leagues/slip-builder/generate?target=${target}&horizon=${horizon}`,
+      `/leagues/slip-builder/generate?target=${target}&horizon=${horizon}${refresh ? "&refresh=true" : ""}`,
       // Generous: on a cold instance this runs the pipeline across a week of
       // fixtures before it can answer.
       { method: "POST", timeoutMs: 240_000 }),
@@ -154,9 +154,6 @@ export const api = {
   getCalibration: (days = 180) =>
     request<CalibrationResponse>(`/leagues/calibration?days=${days}`),
 
-  /** Real-odds picks ranked by expected value / house edge. */
-  getValueBets: (daysAhead = 3) =>
-    request<ValueBetsResponse>(`/leagues/value-bets?days_ahead=${daysAhead}`),
 };
 
 /** A slip built to a requested multiplier. */
@@ -233,38 +230,6 @@ export interface CalibrationResponse {
   hit_rate: number | null;
   avg_predicted: number | null;
   bias: number | null;
-}
-
-export interface ValueBet {
-  match_id: string;
-  home_team: string;
-  away_team: string;
-  home_team_logo?: string | null;
-  away_team_logo?: string | null;
-  league: string;
-  kickoff: string;
-  prediction: string;
-  market: string;
-  market_group: string;
-  confidence: number;
-  odds: number;
-  odds_provider?: string | null;
-  edge: number | null;
-  expected_value: number;
-  fair_odds: number | null;
-  house_edge: number;
-  positive_ev: boolean;
-  book_count?: number;
-  is_exchange?: boolean;
-}
-
-export interface ValueBetsResponse {
-  status: string;
-  count: number;
-  positive_ev_count: number;
-  best_expected_value: number | null;
-  books_compared?: number;
-  value_bets: ValueBet[];
 }
 
 export interface SettledLeg {
