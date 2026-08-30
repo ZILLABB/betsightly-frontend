@@ -39,6 +39,13 @@ export function PredictionsPage() {
   const [showBookable, setShowBookable] = useState(false);
   const [bookable, setBookable] = useState<BookableNowResponse | null>(null);
   const [bookableLoading, setBookableLoading] = useState(false);
+  const requestBookableSlip = React.useCallback(() => {
+    // Availability and booking codes are time-sensitive.  A second request
+    // must not revive the response that was built before the user returned to
+    // the published card (or before a fixture was suspended on SportyBet).
+    setBookable(null);
+    setShowBookable(true);
+  }, []);
 
   // Scores are fetched apart from the card and refreshed on a timer: the card
   // is frozen at 08:00, a score is not, and merging them would mean choosing
@@ -170,8 +177,7 @@ export function PredictionsPage() {
                 setShowBookable(false);
                 return;
               }
-              if (bookableUnavailable) setBookable(null);
-              setShowBookable(true);
+              requestBookableSlip();
             }}
           >
             {bookableLoading
@@ -268,7 +274,7 @@ export function PredictionsPage() {
               legCount: activeCat.booking?.booked_leg_count ?? activeCat.games.length,
               fingerprint: activeCat.booking?.booking_variant_fingerprint,
             }}
-            onShowBookable={viewingBookable ? undefined : () => setShowBookable(true)}
+            onShowBookable={viewingBookable ? undefined : requestBookableSlip}
           />
           {!isSingles && (
             <div className="tool-panel">
