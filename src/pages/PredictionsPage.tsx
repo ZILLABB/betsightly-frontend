@@ -1,5 +1,6 @@
 ﻿import React, { useState } from "react";
 import { useParams } from "react-router-dom";
+import { ArrowRight, Clock3, RotateCcw } from "lucide-react";
 import { usePredictions } from "../hooks/usePredictions";
 import { useFormatOdds } from "../hooks/useFormatOdds";
 import { CategoryTabs } from "../components/predictions/CategoryTabs";
@@ -69,7 +70,9 @@ export function PredictionsPage() {
       .finally(() => setBookableLoading(false));
   }, [showBookable, bookable, bookableLoading]);
 
-  const accumulators = showBookable && bookable?.available
+  const viewingBookable = showBookable && bookable?.available === true;
+  const bookableUnavailable = showBookable && bookable?.available === false;
+  const accumulators = viewingBookable
     ? bookable.accumulators
     : published;
   const activeCat = accumulators?.[activeKey];
@@ -109,21 +112,73 @@ export function PredictionsPage() {
           published card is fully bookable and a second slip is just noise. */}
       {startedCount > 0 && (
         <div className="card" style={{
-          padding: "12px 16px", display: "flex", alignItems: "center",
-          justifyContent: "space-between", gap: 12, flexWrap: "wrap",
-          borderLeft: "3px solid var(--gold)",
+          padding: "16px 18px", display: "flex", alignItems: "center",
+          justifyContent: "space-between", gap: 16, flexWrap: "wrap",
+          border: viewingBookable
+            ? "1px solid color-mix(in srgb, var(--gold) 55%, var(--border))"
+            : "1px solid var(--border)",
+          borderLeft: "4px solid var(--gold)",
+          background: viewingBookable
+            ? "color-mix(in srgb, var(--gold) 7%, var(--surface))"
+            : "var(--surface)",
         }}>
-          <span style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text-2)" }}>
-            {showBookable
-              ? "Showing a slip built from matches that haven't started. This one isn't part of the published record."
-              : `${startedCount} ${startedCount === 1 ? "pick has" : "picks have"} already kicked off — today's card was published at 08:00 and doesn't change.`}
-          </span>
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 12, flex: "1 1 360px" }}>
+            <span aria-hidden="true" style={{
+              width: 38, height: 38, flex: "0 0 38px", borderRadius: "50%",
+              display: "grid", placeItems: "center", color: "var(--gold)",
+              background: "color-mix(in srgb, var(--gold) 13%, transparent)",
+            }}>
+              <Clock3 size={19} strokeWidth={2.2} />
+            </span>
+            <div style={{ fontFamily: "var(--font-body)" }}>
+              <strong style={{ display: "block", fontSize: 14, color: "var(--text-1)", marginBottom: 3 }}>
+                {bookableLoading
+                  ? "Building an available-now slip"
+                  : viewingBookable
+                    ? "You’re viewing the available-now slip"
+                    : bookableUnavailable
+                      ? "No available-now slip could be built"
+                      : `${startedCount} ${startedCount === 1 ? "pick has" : "picks have"} already started`}
+              </strong>
+              <span style={{ display: "block", fontSize: 13, lineHeight: 1.5, color: "var(--text-2)" }}>
+                {bookableLoading
+                  ? "Checking the remaining fixtures and their SportyBet availability."
+                  : viewingBookable
+                    ? "Only matches that have not started are included. This does not change today’s published record."
+                    : bookableUnavailable
+                      ? (bookable?.reason || "The remaining fixtures could not produce a valid SportyBet-ready slip. You can try the check again.")
+                      : "Build a fresh slip using only matches that can still be booked. Today’s published card stays unchanged."}
+              </span>
+            </div>
+          </div>
           <button
-            className="btn-ghost"
-            style={{ fontFamily: "var(--font-body)", fontSize: 13, fontWeight: 600, whiteSpace: "nowrap" }}
-            onClick={() => setShowBookable(v => !v)}
+            type="button"
+            disabled={bookableLoading}
+            aria-pressed={viewingBookable}
+            style={{
+              minHeight: 42, padding: "10px 16px", borderRadius: 8,
+              display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8,
+              fontFamily: "var(--font-body)", fontSize: 13, fontWeight: 700,
+              whiteSpace: "nowrap", cursor: bookableLoading ? "wait" : "pointer",
+              border: viewingBookable ? "1px solid var(--border)" : "1px solid var(--gold)",
+              background: viewingBookable ? "transparent" : "var(--gold)",
+              color: viewingBookable ? "var(--text-1)" : "#16120a",
+              opacity: bookableLoading ? 0.7 : 1,
+            }}
+            onClick={() => {
+              if (viewingBookable) {
+                setShowBookable(false);
+                return;
+              }
+              if (bookableUnavailable) setBookable(null);
+              setShowBookable(true);
+            }}
           >
-            {bookableLoading ? "Loading…" : showBookable ? "Back to today's card" : "Show what I can still bet"}
+            {bookableLoading
+              ? "Building…"
+              : viewingBookable
+                ? <><RotateCcw size={15} /> Back to published card</>
+                : <>{bookableUnavailable ? "Try again" : "Build available slip"} <ArrowRight size={15} /></>}
           </button>
         </div>
       )}
@@ -208,12 +263,12 @@ export function PredictionsPage() {
             booking={activeCat.booking}
             category={catMeta}
             tracking={{
-              source: showBookable ? "bookable_now" : "daily_card",
+              source: viewingBookable ? "bookable_now" : "daily_card",
               tier: activeKey,
               legCount: activeCat.booking?.booked_leg_count ?? activeCat.games.length,
               fingerprint: activeCat.booking?.booking_variant_fingerprint,
             }}
-            onShowBookable={showBookable ? undefined : () => setShowBookable(true)}
+            onShowBookable={viewingBookable ? undefined : () => setShowBookable(true)}
           />
           {!isSingles && (
             <div className="tool-panel">

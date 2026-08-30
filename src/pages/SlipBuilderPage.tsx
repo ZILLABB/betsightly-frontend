@@ -221,6 +221,8 @@ export default function SlipBuilderPage() {
               legCount: slip.booking?.booked_leg_count ?? slip.legs,
               fingerprint: slip.booking?.sportybet_selection_fingerprint,
             }}
+            onShowBookable={slip.booking?.status === "active" ? undefined : () => build(true)}
+            fallbackActionLabel="Try another bookable slip"
           />
 
           {slip.booking?.status === "active" && (

@@ -21,11 +21,13 @@ export default function BookingCode({
   category,
   tracking,
   onShowBookable,
+  fallbackActionLabel = "Show what I can still bet",
 }: {
   booking?: TierBooking;
   category: CategoryMeta;
   tracking?: BookingEventContext;
   onShowBookable?: () => void;
+  fallbackActionLabel?: string;
 }) {
   const [copied, setCopied] = useState(false);
 
@@ -80,9 +82,15 @@ export default function BookingCode({
           </ul>
         )}
         {onShowBookable && (
-          <button type="button" className="btn-ghost" onClick={onShowBookable}
-                  style={{ display: "block", marginTop: 10, fontSize: 13 }}>
-            Show what I can still bet
+          <button type="button" onClick={onShowBookable}
+                  style={{
+                    display: "inline-flex", alignItems: "center", justifyContent: "center",
+                    marginTop: 12, minHeight: 40, padding: "8px 14px", borderRadius: 7,
+                    border: `1px solid ${category.color}`, background: category.color,
+                    color: "#fff", fontFamily: "var(--font-body)", fontSize: 13,
+                    fontWeight: 700, cursor: "pointer",
+                  }}>
+            {fallbackActionLabel}
           </button>
         )}
       </div>
