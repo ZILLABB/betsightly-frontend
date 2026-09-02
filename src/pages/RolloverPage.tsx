@@ -7,6 +7,7 @@ import { CATEGORIES } from "../types";
 import { Repeat2, CheckCircle, XCircle, Clock, Circle, TrendingUp, Calendar, List, Zap } from "lucide-react";
 import { getTeamFlag, isWcNation, teamInitials, teamColor } from "../data/wcFlags";
 import { SEO } from "../components/common/SEO";
+import BookingCode from "../components/predictions/BookingCode";
 
 function TeamBadge({ team, logo }: { team: string; logo?: string | null }) {
   if (isWcNation(team)) {
@@ -61,6 +62,7 @@ export function RolloverPage() {
   const catMeta = CATEGORIES.find(c => c.key === "rollover")!;
   const chain = rollover?.chain ?? [];
   const targetDays = rollover?.target_days ?? 3;
+  const completionProbability = rollover?.completion_probability;
 
   // Stats
   const wonDays = chain.filter(d => d.status === "won").length;
@@ -118,7 +120,7 @@ export function RolloverPage() {
               {cumOdds > 0
                 ? lostDays > 0
                   ? `${fmtOdds(cumOdds)}${oddsSuffix} was scheduled across ${chain.length} days`
-                  : `${fmtOdds(cumOdds)}${oddsSuffix} compounded if all ${chain.length} days land`
+                  : `${fmtOdds(cumOdds)}${oddsSuffix} compounded if all ${chain.length} days land${completionProbability != null ? ` · model chance ${Math.round(completionProbability * 100)}%` : ""}`
                 : `Builds over ${targetDays} days`}
             </p>
           </div>
@@ -344,6 +346,18 @@ export function RolloverPage() {
                       );
                     })}
                   </div>
+                  {isToday && (
+                    <BookingCode
+                      booking={rollover?.booking}
+                      category={catMeta}
+                      tracking={{
+                        source: "daily_card",
+                        tier: "rollover",
+                        legCount: rollover?.booking?.booked_leg_count ?? day.picks.length,
+                        fingerprint: rollover?.booking?.booking_variant_fingerprint,
+                      }}
+                    />
+                  )}
                 </div>
               );
             })}

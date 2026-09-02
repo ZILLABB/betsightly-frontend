@@ -278,5 +278,6 @@ export interface LeagueResultsResponse {
   days: number;
   summary: Record<string, CategoryPerformance>;
   history: SettledSlip[];
+  rollover_history?: import("../types").RolloverChainDay[];
   by_date: Record<string, Record<string, SettledSlip>>;
 }

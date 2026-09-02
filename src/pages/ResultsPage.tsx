@@ -71,9 +71,12 @@ export function ResultsPage() {
 
   const chain = data?.accumulators?.rollover?.chain ?? [];
 
+  const rolloverHistory = league?.rollover_history?.length
+    ? league.rollover_history
+    : chain;
   const sortedChain = useMemo(
-    () => [...chain].sort((a, b) => b.date.localeCompare(a.date)),
-    [chain]
+    () => [...rolloverHistory].sort((a, b) => b.date.localeCompare(a.date)),
+    [rolloverHistory]
   );
   const filteredChain = useMemo(
     () => filter === "all" ? sortedChain : sortedChain.filter(d => d.status === filter),
@@ -87,11 +90,11 @@ export function ResultsPage() {
   }, [league, filter]);
 
   const chainStats = useMemo(() => {
-    const won = chain.filter(d => d.status === "won").length;
-    const lost = chain.filter(d => d.status === "lost").length;
+    const won = rolloverHistory.filter(d => d.status === "won").length;
+    const lost = rolloverHistory.filter(d => d.status === "lost").length;
     const resolved = won + lost;
-    return { total: chain.length, won, lost, resolved, winRate: resolved ? Math.round(won / resolved * 100) : 0 };
-  }, [chain]);
+    return { total: rolloverHistory.length, won, lost, resolved, winRate: resolved ? Math.round(won / resolved * 100) : 0 };
+  }, [rolloverHistory]);
 
   // Over 1.5 is a list of singles and is counted in individual picks; every
   // other tier is one slip. Summing them into a single "settled slips" figure
@@ -116,8 +119,10 @@ export function ResultsPage() {
   async function triggerCheck() {
     setRefreshing(true);
     try {
-      const base = (import.meta.env.VITE_API_BASE_URL || "https://betsightly-api.onrender.com/api").replace(/\/api\/?$/, "");
-      await fetch(`${base}/api/leagues/check-results`, { method: "POST" });
+      // Result settlement is an authenticated server job. The public page
+      // cannot run it (the old POST always returned 401), so this action
+      // refreshes the latest already-verified results instead of pretending
+      // to trigger a privileged operation.
       await refetch();
       const fresh = await api.getLeagueResults(30);
       setLeague(fresh);
@@ -439,7 +444,7 @@ export function ResultsPage() {
             {filteredChain.map(day => {
               const s = STATUS[day.status] || STATUS.pending;
               return (
-                <div key={`${day.date}-${day.day_number}`} className="card" style={{ padding: "16px 18px", borderLeft: `3px solid ${s.color}` }}>
+                <div key={`${day.chain_start_date ?? "current"}-${day.date}-${day.day_number}`} className="card" style={{ padding: "16px 18px", borderLeft: `3px solid ${s.color}` }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8, flexWrap: "wrap" }}>
                     <span style={{
                       width: 30, height: 30, borderRadius: 8,

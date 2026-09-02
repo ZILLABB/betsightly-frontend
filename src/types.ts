@@ -214,6 +214,7 @@ export interface RolloverPick {
 }
 
 export interface RolloverChainDay {
+  chain_start_date?: string;
   day_number: number;
   date: string;
   picks: RolloverPick[];
@@ -298,6 +299,8 @@ export interface CategoryData {
   chain_length?: number;
   target_days?: number;
   cumulative_odds?: number;
+  /** Model estimate that every scheduled day in the chain lands. */
+  completion_probability?: number;
 }
 
 export interface AccumulatorResponse {
