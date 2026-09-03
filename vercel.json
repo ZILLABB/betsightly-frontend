@@ -2,6 +2,7 @@
   "rewrites": [
     { "source": "/robots.txt", "destination": "/robots.txt" },
     { "source": "/sitemap.xml", "destination": "/sitemap.xml" },
+    { "source": "/api/growth/track", "destination": "https://betsightly-api.onrender.com/api/growth/track" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
