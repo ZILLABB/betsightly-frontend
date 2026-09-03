@@ -5,7 +5,7 @@ import BookingCode from "../components/predictions/BookingCode";
 import { BrandLoader } from "../components/ui/BrandLoader";
 import { SEO } from "../components/common/SEO";
 import { CATEGORIES } from "../types";
-import { trackBookingEvent } from "../services/bookingTracking";
+import { trackBookingEvent, trackProductEvent } from "../services/bookingTracking";
 
 /**
  * Ask for a multiplier; get the qualifying slip most likely to reach it.
@@ -49,6 +49,20 @@ export default function SlipBuilderPage() {
       const result = await api.buildSlip(target, horizon, regenerate);
       setSlip(result);
       const booking = result.booking;
+      if (result.status === "success") {
+        trackProductEvent("builder_generated", {
+          source: "generator", tier: horizon, targetOdds: target,
+          legCount: result.legs, bookingStatus: booking?.booking_status,
+          actualOdds: booking?.actual_sportybet_odds,
+        });
+        if (booking?.status === "active") {
+          trackProductEvent("builder_bookable", {
+            source: "generator", tier: horizon, targetOdds: target,
+            legCount: result.legs, bookingStatus: booking.booking_status,
+            actualOdds: booking.actual_sportybet_odds,
+          });
+        }
+      }
       if (booking?.status === "active" && booking.share_code && !result.cached) {
         const context = {
           source: "generator" as const,
@@ -113,7 +127,12 @@ export default function SlipBuilderPage() {
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
         {TARGETS.map(t => (
-          <button key={t} type="button" onClick={() => setTarget(t)}
+          <button key={t} type="button" onClick={() => {
+                    setTarget(t);
+                    trackProductEvent("builder_target_selected", {
+                      source: "generator", targetOdds: t, tier: horizon,
+                    });
+                  }}
                   style={{ ...pill(t === target), minWidth: 68 }}>
             {t} odds
           </button>
@@ -220,6 +239,9 @@ export default function SlipBuilderPage() {
               tier: `${target}_${horizon}`,
               legCount: slip.booking?.booked_leg_count ?? slip.legs,
               fingerprint: slip.booking?.sportybet_selection_fingerprint,
+              targetOdds: target,
+              bookingStatus: slip.booking?.booking_status,
+              actualOdds: slip.booking?.actual_sportybet_odds,
             }}
             onShowBookable={slip.booking?.status === "active" ? undefined : () => build(true)}
             fallbackActionLabel="Try another bookable slip"

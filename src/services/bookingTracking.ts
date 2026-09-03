@@ -1,11 +1,13 @@
 import { API_BASE_URL } from "../config/apiConfig";
 
-export type BookingEvent =
-  | "code_generated"
-  | "code_validated"
-  | "code_displayed"
-  | "code_copied"
-  | "sportybet_open_clicked"
+export type ProductEvent =
+  | "pageview" | "prediction_viewed" | "rollover_viewed" | "builder_opened"
+  | "builder_target_selected" | "builder_generated" | "builder_bookable"
+  | "booking_code_generated" | "booking_code_validated" | "booking_code_viewed"
+  | "booking_code_copied" | "sportybet_open_clicked" | "fallback_shown"
+  | "replacement_used" | "partial_booking_created" | "results_viewed"
+  | "telegram_join_clicked" | "replacement_details_opened"
+  | "code_generated" | "code_validated" | "code_displayed" | "code_copied"
   | "code_regenerated";
 
 export interface BookingEventContext {
@@ -13,28 +15,69 @@ export interface BookingEventContext {
   tier?: string;
   legCount?: number;
   fingerprint?: string;
+  targetOdds?: number;
+  bookingStatus?: string;
+  actualOdds?: number;
 }
 
-/** Best-effort product analytics. Tracking must never block booking. */
-export function trackBookingEvent(
-  event: BookingEvent,
-  context: BookingEventContext,
-): void {
-  const contentTag = [context.source, context.tier, context.legCount]
-    .filter(value => value !== undefined && value !== "")
-    .join(":")
-    .slice(0, 64);
+const safeStorage = (storage: Storage, key: string): string => {
+  try {
+    let value = storage.getItem(key);
+    if (!value) {
+      value = crypto.randomUUID();
+      storage.setItem(key, value);
+    }
+    return value;
+  } catch {
+    return crypto.randomUUID();
+  }
+};
 
+const visitorId = safeStorage(localStorage, "betsightly_visitor_id");
+const sessionId = safeStorage(sessionStorage, "betsightly_session_id");
+
+/** First-party product analytics. It never blocks the action being measured. */
+export function trackProductEvent(
+  event: ProductEvent,
+  context: Partial<BookingEventContext> & Record<string, unknown> = {},
+): void {
+  const params = new URLSearchParams(window.location.search);
+  const eventId = crypto.randomUUID();
   void fetch(`${API_BASE_URL}/growth/track`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     keepalive: true,
     body: JSON.stringify({
       event,
+      event_id: eventId,
+      visitor_id: visitorId,
+      session_id: sessionId,
       path: window.location.pathname,
-      content_tag: contentTag,
-      ref: context.fingerprint?.slice(0, 64),
       referrer: document.referrer,
+      utm_source: params.get("utm_source"),
+      utm_medium: params.get("utm_medium"),
+      utm_campaign: params.get("utm_campaign"),
+      utm_content: params.get("utm_content"),
+      ref: context.fingerprint ?? params.get("ref"),
+      tier: context.tier,
+      target_odds: context.targetOdds,
+      booking_status: context.bookingStatus,
+      leg_count: context.legCount,
+      actual_odds: context.actualOdds,
+      content_tag: context.source,
+      metadata: Object.fromEntries(
+        Object.entries(context).filter(([key]) => ![
+          "fingerprint", "tier", "targetOdds", "bookingStatus",
+          "legCount", "actualOdds", "source",
+        ].includes(key)),
+      ),
     }),
   }).catch(() => undefined);
+}
+
+export function trackBookingEvent(
+  event: ProductEvent,
+  context: BookingEventContext,
+): void {
+  trackProductEvent(event, context);
 }

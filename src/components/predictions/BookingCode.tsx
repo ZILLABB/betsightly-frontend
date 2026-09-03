@@ -33,7 +33,15 @@ export default function BookingCode({
 
   useEffect(() => {
     if (booking?.status === "active" && booking.share_code && tracking) {
-      trackBookingEvent("code_displayed", tracking);
+      trackBookingEvent("booking_code_viewed", {
+        ...tracking,
+        bookingStatus: booking.booking_status,
+        actualOdds: booking.actual_sportybet_odds,
+      });
+    } else if (booking && booking.status !== "active" && tracking) {
+      trackBookingEvent("fallback_shown", {
+        ...tracking, bookingStatus: booking.booking_status ?? booking.status,
+      });
     }
   }, [booking?.share_code, booking?.status, tracking?.source, tracking?.tier,
       tracking?.legCount, tracking?.fingerprint]);
@@ -108,7 +116,9 @@ export default function BookingCode({
     try {
       await navigator.clipboard.writeText(booking.share_code as string);
       setCopied(true);
-      if (tracking) trackBookingEvent("code_copied", tracking);
+      if (tracking) trackBookingEvent("booking_code_copied", {
+        ...tracking, bookingStatus, actualOdds: booking.actual_sportybet_odds,
+      });
       window.setTimeout(() => setCopied(false), 2000);
     } catch {
       setCopied(false);
@@ -190,7 +200,9 @@ export default function BookingCode({
             href={booking.share_url}
             target="_blank"
             rel="noopener noreferrer"
-            onClick={() => tracking && trackBookingEvent("sportybet_open_clicked", tracking)}
+            onClick={() => tracking && trackBookingEvent("sportybet_open_clicked", {
+              ...tracking, bookingStatus, actualOdds: booking.actual_sportybet_odds,
+            })}
             style={{
               fontFamily: "var(--font-body)",
               fontSize: 14,

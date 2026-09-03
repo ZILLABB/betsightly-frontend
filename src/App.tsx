@@ -1,5 +1,5 @@
-import React, { Suspense, lazy } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import React, { Suspense, lazy, useEffect } from "react";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
@@ -11,6 +11,7 @@ import { Spinner } from "./components/ui/Spinner";
 
 // HomePage stays eager (always the first paint)
 import { HomePage } from "./pages/HomePage";
+import { trackProductEvent, type ProductEvent } from "./services/bookingTracking";
 
 // Everything else is lazy-loaded for smaller initial bundle
 const PredictionsPage = lazy(() => import("./pages/PredictionsPage").then(m => ({ default: m.PredictionsPage })));
@@ -31,6 +32,20 @@ function Fallback() {
   );
 }
 
+function ProductAnalytics() {
+  const location = useLocation();
+  useEffect(() => {
+    trackProductEvent("pageview");
+    const featureEvent: ProductEvent | undefined =
+      location.pathname.startsWith("/predictions") ? "prediction_viewed" :
+      location.pathname.startsWith("/rollover") ? "rollover_viewed" :
+      location.pathname.startsWith("/build-slip") ? "builder_opened" :
+      location.pathname.startsWith("/results") ? "results_viewed" : undefined;
+    if (featureEvent) trackProductEvent(featureEvent);
+  }, [location.pathname]);
+  return null;
+}
+
 export default function App() {
   return (
     <ErrorBoundary>
@@ -38,6 +53,7 @@ export default function App() {
     <PreferencesProvider>
       <ThemeProvider>
     <BrowserRouter>
+      <ProductAnalytics />
       <Layout>
         <Suspense fallback={<Fallback />}>
           <Routes>
