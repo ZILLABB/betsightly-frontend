@@ -41,6 +41,7 @@ export default function BookingCode({
     } else if (booking && booking.status !== "active" && tracking) {
       trackBookingEvent("fallback_shown", {
         ...tracking, bookingStatus: booking.booking_status ?? booking.status,
+        failure_category: booking.booking_status ?? booking.status,
       });
     }
   }, [booking?.share_code, booking?.status, tracking?.source, tracking?.tier,
@@ -119,6 +120,29 @@ export default function BookingCode({
       if (tracking) trackBookingEvent("booking_code_copied", {
         ...tracking, bookingStatus, actualOdds: booking.actual_sportybet_odds,
       });
+      if (tracking && bookingStatus === "REBUILT_FULL") {
+        const usedAlternativeMarket = booking.replacements?.some((item) =>
+          item.original_leg?.fixture_id != null &&
+          item.original_leg.fixture_id === item.replacement_leg?.fixture_id,
+        ) ?? false;
+        trackBookingEvent("replacement_used", {
+          ...tracking, bookingStatus, actualOdds: booking.actual_sportybet_odds,
+          replacement_type: usedAlternativeMarket ? "same_fixture_market" : "replacement_fixture",
+          replacement_count: booking.replacement_count ?? booking.replacements?.length ?? 0,
+        });
+        if (usedAlternativeMarket) {
+          trackBookingEvent("alternative_market_used", {
+            ...tracking, bookingStatus, actualOdds: booking.actual_sportybet_odds,
+            replacement_type: "same_fixture_market",
+            replacement_count: booking.replacement_count ?? booking.replacements?.length ?? 0,
+          });
+        }
+      } else if (tracking && bookingStatus === "PARTIAL") {
+        trackBookingEvent("partial_booking_used", {
+          ...tracking, bookingStatus, actualOdds: booking.actual_sportybet_odds,
+          replacement_type: "partial",
+        });
+      }
       window.setTimeout(() => setCopied(false), 2000);
     } catch {
       setCopied(false);
@@ -200,7 +224,7 @@ export default function BookingCode({
             href={booking.share_url}
             target="_blank"
             rel="noopener noreferrer"
-            onClick={() => tracking && trackBookingEvent("sportybet_open_clicked", {
+            onClick={() => tracking && trackBookingEvent("sportybet_opened", {
               ...tracking, bookingStatus, actualOdds: booking.actual_sportybet_odds,
             })}
             style={{
@@ -232,7 +256,14 @@ export default function BookingCode({
       </div>
 
       {!!booking.replacements?.length && (
-        <details style={{ width: "100%", fontFamily: "var(--font-body)", fontSize: 12 }}>
+        <details onToggle={(event) => {
+          if ((event.currentTarget as HTMLDetailsElement).open && tracking) {
+            trackBookingEvent("replacement_details_opened", {
+              ...tracking, bookingStatus, actualOdds: booking.actual_sportybet_odds,
+              replacement_count: booking.replacement_count ?? booking.replacements?.length ?? 0,
+            });
+          }
+        }} style={{ width: "100%", fontFamily: "var(--font-body)", fontSize: 12 }}>
           <summary style={{ cursor: "pointer", color: category.color }}>View replacements</summary>
           <ul style={{ margin: "8px 0 0", paddingLeft: 18, color: "var(--text-3)" }}>
             {booking.replacements.map((item, index) => (

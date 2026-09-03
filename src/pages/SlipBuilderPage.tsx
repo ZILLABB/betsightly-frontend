@@ -35,13 +35,10 @@ export default function SlipBuilderPage() {
     if (regenerate && !window.confirm(
       "Regenerating creates a fresh SportyBet code and may change the selections or odds. Continue?",
     )) return;
-    if (regenerate) {
-      trackBookingEvent("code_regenerated", {
-        source: "generator", tier: `${target}_${horizon}`,
-        legCount: slip?.booking?.booked_leg_count ?? slip?.legs,
-        fingerprint: slip?.booking?.sportybet_selection_fingerprint,
-      });
-    }
+    trackProductEvent("builder_generate_requested", {
+      product_area: "builder", source: "generator", tier: horizon,
+      target_odds: target, horizon,
+    });
     setLoading(true);
     setError(null);
     setSlip(null);
@@ -51,29 +48,11 @@ export default function SlipBuilderPage() {
       const booking = result.booking;
       if (result.status === "success") {
         trackProductEvent("builder_generated", {
-          source: "generator", tier: horizon, targetOdds: target,
-          legCount: result.legs, bookingStatus: booking?.booking_status,
-          actualOdds: booking?.actual_sportybet_odds,
+          product_area: "builder", source: "generator", tier: horizon,
+          target_odds: target, horizon, leg_count: result.legs,
+          booking_status: booking?.booking_status ?? booking?.status ?? "UNAVAILABLE",
+          actual_sportybet_odds: booking?.actual_sportybet_odds,
         });
-        if (booking?.status === "active") {
-          trackProductEvent("builder_bookable", {
-            source: "generator", tier: horizon, targetOdds: target,
-            legCount: result.legs, bookingStatus: booking.booking_status,
-            actualOdds: booking.actual_sportybet_odds,
-          });
-        }
-      }
-      if (booking?.status === "active" && booking.share_code && !result.cached) {
-        const context = {
-          source: "generator" as const,
-          tier: `${target}_${horizon}`,
-          legCount: booking.booked_leg_count ?? result.legs,
-          fingerprint: booking.sportybet_selection_fingerprint,
-        };
-        if (!booking.code_reused) trackBookingEvent("code_generated", context);
-        if (booking.readback_validation === "PASSED") {
-          trackBookingEvent("code_validated", context);
-        }
       }
     } catch (e) {
       // Say what actually went wrong. A generic line here hid a GET being sent
@@ -130,7 +109,8 @@ export default function SlipBuilderPage() {
           <button key={t} type="button" onClick={() => {
                     setTarget(t);
                     trackProductEvent("builder_target_selected", {
-                      source: "generator", targetOdds: t, tier: horizon,
+                      product_area: "builder", source: "generator",
+                      target_odds: t, tier: horizon, horizon,
                     });
                   }}
                   style={{ ...pill(t === target), minWidth: 68 }}>

@@ -1,6 +1,7 @@
 import React from "react";
 import { Send, ArrowRight, MessageCircle } from "lucide-react";
 import { TELEGRAM_GROUP_URL } from "../../config/socials";
+import { trackProductEvent } from "../../services/bookingTracking";
 
 interface Props {
   variant?: "banner" | "card" | "inline";
@@ -14,6 +15,10 @@ interface Props {
  */
 export function JoinTelegram({ variant = "card" }: Props) {
   if (!TELEGRAM_GROUP_URL) return null;
+  const trackJoin = () => trackProductEvent("telegram_join_clicked", {
+    product_area: window.location.pathname.includes("rollover") ? "rollover" : "predictions",
+    placement: variant,
+  });
 
   if (variant === "inline") {
     return (
@@ -21,6 +26,7 @@ export function JoinTelegram({ variant = "card" }: Props) {
         href={TELEGRAM_GROUP_URL}
         target="_blank"
         rel="noopener noreferrer"
+        onClick={trackJoin}
         style={{
           display: "inline-flex", alignItems: "center", gap: 6,
           padding: "8px 14px", borderRadius: 8, textDecoration: "none",
@@ -78,6 +84,7 @@ export function JoinTelegram({ variant = "card" }: Props) {
             href={TELEGRAM_GROUP_URL}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={trackJoin}
             style={{
               display: "inline-flex", alignItems: "center", gap: 8,
               padding: "12px 22px", borderRadius: 12, textDecoration: "none",
@@ -120,6 +127,7 @@ export function JoinTelegram({ variant = "card" }: Props) {
         href={TELEGRAM_GROUP_URL}
         target="_blank"
         rel="noopener noreferrer"
+        onClick={trackJoin}
         style={{
           display: "inline-flex", alignItems: "center", gap: 5,
           padding: "7px 14px", borderRadius: 8, textDecoration: "none",

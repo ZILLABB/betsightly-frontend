@@ -11,7 +11,8 @@ import { Spinner } from "./components/ui/Spinner";
 
 // HomePage stays eager (always the first paint)
 import { HomePage } from "./pages/HomePage";
-import { trackProductEvent, type ProductEvent } from "./services/bookingTracking";
+import { analytics } from "./services/analytics";
+import { trackProductEvent } from "./services/bookingTracking";
 
 // Everything else is lazy-loaded for smaller initial bundle
 const PredictionsPage = lazy(() => import("./pages/PredictionsPage").then(m => ({ default: m.PredictionsPage })));
@@ -35,13 +36,16 @@ function Fallback() {
 function ProductAnalytics() {
   const location = useLocation();
   useEffect(() => {
-    trackProductEvent("pageview");
-    const featureEvent: ProductEvent | undefined =
-      location.pathname.startsWith("/predictions") ? "prediction_viewed" :
-      location.pathname.startsWith("/rollover") ? "rollover_viewed" :
-      location.pathname.startsWith("/build-slip") ? "builder_opened" :
-      location.pathname.startsWith("/results") ? "results_viewed" : undefined;
-    if (featureEvent) trackProductEvent(featureEvent);
+    analytics.pageView();
+    if (location.pathname.startsWith("/predictions")) {
+      trackProductEvent("prediction_viewed", { product_area: "predictions" });
+    } else if (location.pathname.startsWith("/rollover")) {
+      trackProductEvent("rollover_viewed", { product_area: "rollover" });
+    } else if (location.pathname.startsWith("/build-slip")) {
+      trackProductEvent("builder_opened", { product_area: "builder" });
+    } else if (location.pathname.startsWith("/results")) {
+      trackProductEvent("results_viewed", { product_area: "predictions", results_scope: "all" });
+    }
   }, [location.pathname]);
   return null;
 }
