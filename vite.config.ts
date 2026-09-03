@@ -1,10 +1,27 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import { resolve } from 'path'
 
 // https://vitejs.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => {
+  const fileEnv = loadEnv(mode, process.cwd(), '')
+  const posthogToken = (
+    process.env.VITE_POSTHOG_PROJECT_TOKEN
+    ?? fileEnv.VITE_POSTHOG_PROJECT_TOKEN
+    ?? ''
+  ).trim()
+
+  // Vite replaces import.meta.env at build time. A Vercel production build
+  // without the token therefore removes the lazy import entirely and ships a
+  // silent no-op. Fail that deployment clearly instead of serving zero data.
+  if (process.env.VERCEL_ENV === 'production' && !posthogToken) {
+    throw new Error(
+      'VITE_POSTHOG_PROJECT_TOKEN is missing from the Vercel Production build environment.',
+    )
+  }
+
+  return {
   plugins: [
     react(),
     VitePWA({
@@ -89,4 +106,5 @@ export default defineConfig({
     sourcemap: process.env.NODE_ENV !== 'production',
     chunkSizeWarningLimit: 1000,
   },
+  }
 })

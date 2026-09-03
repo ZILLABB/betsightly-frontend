@@ -80,6 +80,10 @@ function loadProvider(): Promise<PostHogClient | null> {
     return posthog;
   }).catch(() => {
     initialized = false;
+    // A transient chunk/CSP/network failure must not permanently turn the
+    // provider into a no-op for the rest of this SPA session. The next
+    // canonical event may retry, while this failure remains non-blocking.
+    providerPromise = null;
     return null;
   });
   return providerPromise;
