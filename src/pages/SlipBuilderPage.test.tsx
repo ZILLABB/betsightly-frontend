@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import SlipBuilderPage from "./SlipBuilderPage";
 import { api } from "../api/predictions";
+import { BuilderProvider } from "../contexts/BuilderProvider";
 
 jest.mock("../api/predictions", () => ({ api: { buildSlip: jest.fn() } }));
 jest.mock("../components/common/SEO", () => ({ SEO: () => null }));
@@ -12,11 +13,20 @@ jest.mock("../services/bookingTracking", () => ({ trackProductEvent: jest.fn() }
 
 const buildSlip = api.buildSlip as jest.Mock;
 
-beforeEach(() => buildSlip.mockReset());
+const renderBuilder = () =>
+  render(
+    <BuilderProvider>
+      <SlipBuilderPage />
+    </BuilderProvider>,
+  );
 
+beforeEach(() => {
+  buildSlip.mockReset();
+  sessionStorage.clear();
+});
 test("prevents duplicate builds while a request is in flight", () => {
   buildSlip.mockReturnValue(new Promise(() => undefined));
-  render(<SlipBuilderPage />);
+ renderBuilder();
   const button = screen.getByRole("button", { name: /build my 50x slip/i });
   fireEvent.click(button);
   fireEvent.click(button);
@@ -30,7 +40,7 @@ test("shows evidence, break-even context and the responsible staking warning", a
     booking: { status: "active", booking_status: "FULL" },
     games: [{ fixture_id: 1, home_team: "Alpha", away_team: "Beta", league: "Test", date: "2026-09-04", prediction: "Over 1.5", prediction_type: "over_1_5", confidence: .72, trust: { score: 88, evidence_state: "SUPPORTED" } }],
   });
-  render(<SlipBuilderPage />);
+renderBuilder();
   fireEvent.click(screen.getByRole("button", { name: /build my 50x slip/i }));
   await waitFor(() => expect(screen.getByText("Your 52.20x slip")).toBeInTheDocument());
   expect(screen.getByText("Bookmaker break-even")).toBeInTheDocument();

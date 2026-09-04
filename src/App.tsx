@@ -6,6 +6,7 @@ import { SpeedInsights } from "@vercel/speed-insights/react";
 import { PreferencesProvider } from "./contexts/PreferencesProvider";
 import ThemeProvider from "./components/common/ThemeProvider";
 import { ErrorBoundary } from "./components/common/ErrorBoundary";
+import { BuilderProvider } from "./contexts/BuilderProvider";
 import { Layout } from "./components/layout/Layout";
 import { Spinner } from "./components/ui/Spinner";
 
@@ -55,6 +56,7 @@ export default function App() {
     <ErrorBoundary>
     <HelmetProvider>
     <PreferencesProvider>
+      <BuilderProvider>
       <ThemeProvider>
     <BrowserRouter>
       <ProductAnalytics />
@@ -79,6 +81,7 @@ export default function App() {
       <SpeedInsights />
     </BrowserRouter>
     </ThemeProvider>
+    </BuilderProvider>
     </PreferencesProvider>
     </HelmetProvider>
     </ErrorBoundary>
