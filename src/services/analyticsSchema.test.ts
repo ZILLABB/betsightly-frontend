@@ -19,3 +19,14 @@ test("forbidden, free-form and non-finite properties cannot leave the abstractio
   expect(clean).toEqual({ product_area: "builder", target_odds: 50 });
   expect(JSON.stringify(clean)).not.toContain("SECRET");
 });
+
+test("builder failure outcomes require bounded categories and never raw errors", () => {
+  expect(validateAnalyticsEvent("builder_failed", {
+    product_area: "builder", target_odds: 30, failure_category: "timeout",
+  })).toBe(true);
+  expect(validateAnalyticsEvent("builder_unavailable", {
+    product_area: "builder", target_odds: 50, failure_category: "unavailable",
+  })).toBe(true);
+  expect(sanitizeAnalyticsProperties({ error_message: "secret stack", duration_ms: 123 }))
+    .toEqual({ duration_ms: 123 });
+});

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { api, type BuiltSlip } from "../api/predictions";
 import { PredictionCard } from "../components/predictions/PredictionCard";
 import BookingCode from "../components/predictions/BookingCode";
@@ -30,11 +30,15 @@ export default function SlipBuilderPage() {
   const [slip, setSlip] = useState<BuiltSlip | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const inFlight = useRef(false);
 
   const build = async (regenerate = false) => {
+    if (inFlight.current) return;
     if (regenerate && !window.confirm(
       "Regenerating creates a fresh SportyBet code and may change the selections or odds. Continue?",
     )) return;
+    inFlight.current = true;
+    const startedAt = performance.now();
     trackProductEvent("builder_generate_requested", {
       product_area: "builder", source: "generator", tier: horizon,
       target_odds: target, horizon,
@@ -52,6 +56,14 @@ export default function SlipBuilderPage() {
           target_odds: target, horizon, leg_count: result.legs,
           booking_status: booking?.booking_status ?? booking?.status ?? "UNAVAILABLE",
           actual_sportybet_odds: booking?.actual_sportybet_odds,
+          duration_ms: Math.round(performance.now() - startedAt),
+          cached: result.cached ? 1 : 0,
+        });
+      } else {
+        trackProductEvent("builder_unavailable", {
+          product_area: "builder", target_odds: target, horizon,
+          failure_category: result.status,
+          duration_ms: Math.round(performance.now() - startedAt),
         });
       }
     } catch (e) {
@@ -59,6 +71,11 @@ export default function SlipBuilderPage() {
       // to a POST route for a whole release — the page said "try again in a
       // moment" while every attempt was failing the same way.
       const err = e as Error & { status?: number; name?: string };
+      trackProductEvent("builder_failed", {
+        product_area: "builder", target_odds: target, horizon,
+        failure_category: err?.name === "AbortError" ? "timeout" : "request_failed",
+        duration_ms: Math.round(performance.now() - startedAt),
+      });
       setError(
         err?.name === "AbortError"
           ? "That took longer than expected — the server may be waking up. Try once more."
@@ -67,6 +84,7 @@ export default function SlipBuilderPage() {
             : "Could not build a slip just now. Try again in a moment.",
       );
     } finally {
+      inFlight.current = false;
       setLoading(false);
     }
   };

@@ -1,6 +1,7 @@
 export type AnalyticsEvent =
   | "prediction_viewed" | "rollover_viewed" | "builder_opened"
   | "builder_target_selected" | "builder_generate_requested" | "builder_generated"
+  | "builder_failed" | "builder_unavailable"
   | "booking_code_viewed" | "booking_code_copied" | "sportybet_opened"
   | "fallback_shown" | "alternative_market_used" | "replacement_used"
   | "partial_booking_used" | "replacement_details_opened" | "results_viewed"
@@ -12,6 +13,7 @@ export interface AnalyticsProperties {
   product_area?: ProductArea; tier?: string; target_odds?: number;
   booking_status?: string; booking_variant_id?: string; leg_count?: number;
   actual_sportybet_odds?: number;
+  duration_ms?: number; cached?: number;
   replacement_type?: "same_fixture_market" | "replacement_fixture" | "partial";
   replacement_count?: number; failure_category?: string; horizon?: string;
   placement?: string; results_scope?: string; rollover_day?: number;
@@ -23,6 +25,7 @@ const ALLOWED = new Set<keyof AnalyticsProperties>([
   "leg_count", "actual_sportybet_odds", "replacement_type", "replacement_count",
   "failure_category", "horizon", "placement", "results_scope", "rollover_day",
   "chain_id", "entry_source",
+  "duration_ms", "cached",
 ]);
 export const FORBIDDEN_PROPERTY_NAMES = new Set([
   "share_code", "booking_code", "email", "phone", "raw_ip", "ip", "stake",
@@ -34,6 +37,8 @@ const REQUIRED: Partial<Record<AnalyticsEvent, (keyof AnalyticsProperties)[]>> =
   builder_target_selected: ["product_area", "target_odds"],
   builder_generate_requested: ["product_area", "target_odds"],
   builder_generated: ["product_area", "target_odds", "booking_status"],
+  builder_failed: ["product_area", "target_odds", "failure_category"],
+  builder_unavailable: ["product_area", "target_odds", "failure_category"],
   booking_code_viewed: ["product_area", "booking_status", "booking_variant_id"],
   booking_code_copied: ["product_area", "booking_status", "booking_variant_id"],
   sportybet_opened: ["product_area", "booking_status", "booking_variant_id"],

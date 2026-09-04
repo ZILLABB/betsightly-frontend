@@ -1,7 +1,7 @@
 /// <reference lib="webworker" />
 import { precacheAndRoute, cleanupOutdatedCaches } from "workbox-precaching";
 import { registerRoute, setCatchHandler } from "workbox-routing";
-import { NetworkFirst, CacheFirst, StaleWhileRevalidate } from "workbox-strategies";
+import { NetworkFirst, NetworkOnly, CacheFirst, StaleWhileRevalidate } from "workbox-strategies";
 import { ExpirationPlugin } from "workbox-expiration";
 import { CacheableResponsePlugin } from "workbox-cacheable-response";
 
@@ -37,9 +37,22 @@ setCatchHandler(async ({ event }) => {
   return Response.error();
 });
 
-// ── API cache — network first, fall back to cached data ──
+// Current betting state must never fall back to yesterday's response.
 registerRoute(
-  ({ url }) => url.origin === "https://betsightly-api.onrender.com" && url.pathname.startsWith("/api/"),
+  ({ url }) => url.origin === "https://betsightly-api.onrender.com" && [
+    "/api/leagues/daily-accumulators", "/api/leagues/bookable-now",
+    "/api/leagues/bookings", "/api/leagues/live-scores",
+  ].includes(url.pathname),
+  new NetworkOnly(),
+);
+
+// ── Other API data may use bounded offline fallback ──
+registerRoute(
+  ({ url }) => url.origin === "https://betsightly-api.onrender.com" &&
+    url.pathname.startsWith("/api/") && ![
+      "/api/leagues/daily-accumulators", "/api/leagues/bookable-now",
+      "/api/leagues/bookings", "/api/leagues/live-scores",
+    ].includes(url.pathname),
   new NetworkFirst({
     cacheName: "api-cache",
     networkTimeoutSeconds: 8,

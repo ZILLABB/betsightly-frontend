@@ -47,7 +47,16 @@ export default function BookingCode({
   }, [booking?.share_code, booking?.status, tracking?.source, tracking?.tier,
       tracking?.legCount, tracking?.fingerprint]);
 
-  if (!booking) return null;
+  if (!booking) return (
+    <div role="status" style={{ marginTop: 12, padding: "10px 14px", borderRadius: 8,
+      border: "1px dashed var(--border)", fontFamily: "var(--font-body)",
+      fontSize: 13, color: "var(--text-3)" }}>
+      <strong style={{ display: "block", color: "var(--text-1)", marginBottom: 4 }}>
+        SportyBet code pending
+      </strong>
+      The booking code is being prepared. Your predictions remain available while we check it.
+    </div>
+  );
 
   const bookingStatus = booking.booking_status ?? (
     booking.status === "active" ? (booking.partial ? "PARTIAL" : "FULL") :
