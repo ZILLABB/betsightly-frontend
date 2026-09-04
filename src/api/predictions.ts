@@ -169,6 +169,7 @@ export interface BuiltSlip {
   /** Model-estimated return per unit: joint hit probability × displayed odds. */
   expected_return?: number;
   avg_confidence?: number;
+  avg_evidence_probability?: number;
   minimum_trust_score?: number;
   average_trust_score?: number;
   lowest_trust_grade?: "A" | "B";

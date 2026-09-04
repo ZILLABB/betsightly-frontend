@@ -30,3 +30,16 @@ test("builder failure outcomes require bounded categories and never raw errors",
   expect(sanitizeAnalyticsProperties({ error_message: "secret stack", duration_ms: 123 }))
     .toEqual({ duration_ms: 123 });
 });
+
+test("trust metadata and best-reachable acceptance stay in the canonical schema", () => {
+  expect(validateAnalyticsEvent("best_reachable_accepted", {
+    product_area: "builder", target_odds: 11.3,
+  })).toBe(true);
+  expect(sanitizeAnalyticsProperties({
+    lowest_trust_grade: "A", average_trust_band: "Strong evidence",
+    market_mix: "over_1_5:3", target_reached: 1,
+  })).toEqual({
+    lowest_trust_grade: "A", average_trust_band: "Strong evidence",
+    market_mix: "over_1_5:3", target_reached: 1,
+  });
+});

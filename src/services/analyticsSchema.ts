@@ -2,6 +2,7 @@ export type AnalyticsEvent =
   | "prediction_viewed" | "rollover_viewed" | "builder_opened"
   | "builder_target_selected" | "builder_generate_requested" | "builder_generated"
   | "builder_failed" | "builder_unavailable"
+  | "best_reachable_accepted"
   | "booking_code_viewed" | "booking_code_copied" | "sportybet_opened"
   | "fallback_shown" | "alternative_market_used" | "replacement_used"
   | "partial_booking_used" | "replacement_details_opened" | "results_viewed"
@@ -18,6 +19,8 @@ export interface AnalyticsProperties {
   replacement_count?: number; failure_category?: string; horizon?: string;
   placement?: string; results_scope?: string; rollover_day?: number;
   chain_id?: string; entry_source?: string;
+  lowest_trust_grade?: string; average_trust_band?: string; market_mix?: string;
+  target_reached?: number;
 }
 
 const ALLOWED = new Set<keyof AnalyticsProperties>([
@@ -26,6 +29,7 @@ const ALLOWED = new Set<keyof AnalyticsProperties>([
   "failure_category", "horizon", "placement", "results_scope", "rollover_day",
   "chain_id", "entry_source",
   "duration_ms", "cached",
+  "lowest_trust_grade", "average_trust_band", "market_mix", "target_reached",
 ]);
 export const FORBIDDEN_PROPERTY_NAMES = new Set([
   "share_code", "booking_code", "email", "phone", "raw_ip", "ip", "stake",

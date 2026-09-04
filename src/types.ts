@@ -136,6 +136,17 @@ export interface GamePrediction {
   prediction_value?: string;
   readable_prediction?: string;  // keep for backwards compat
   confidence: number;
+  /** Conservative probability after historical/live evidence fusion. */
+  evidence_adjusted_probability?: number;
+  trust?: {
+    score?: number;
+    grade?: "A" | "B";
+    evidence_state?: "SUPPORTED" | "PROVISIONAL" | "SHADOW" | "REJECTED";
+    evidence_level?: string;
+    lower_reliability_bound?: number | null;
+    historical_reliability_estimate?: number | null;
+    live_reliability_estimate?: number | null;
+  };
   estimated_odds?: number;
   odds?: number;  // real odds from bookmaker
   real_odds?: number;
