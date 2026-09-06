@@ -182,6 +182,8 @@ export interface BuiltSlip {
   reason?: string;
   best_reachable?: number;
   achieved_odds?: number;
+  /** Server-side stage counts explaining a quality cap; safe to ignore in UI. */
+  selection_diagnostics?: Record<string, unknown>;
   cached?: boolean;
 }
 

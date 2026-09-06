@@ -148,16 +148,24 @@ export interface GamePrediction {
     live_reliability_estimate?: number | null;
   };
   fixture_rank?: number;
+  /** Rank across every modeled market, including non-public markets. */
+  model_rank?: number;
+  /** Rank after market policy and trust eligibility; product selectors use this. */
+  public_rank?: number;
   quality_score?: number;
   market_trust_state?: "TRUSTED" | "PROVISIONAL" | "DEVELOPING" | "RESTRICTED" | "DISABLED";
   best_market?: string;
+  best_model_market?: string;
+  best_public_market?: string;
+  model_quality_gap?: number;
+  public_quality_gap?: number;
   quality_gap_from_best?: number;
   selection_reason_codes?: string[];
   ranking_policy_version?: string;
   selector_version?: string;
   market_policy_version?: string;
   fixture_alternatives?: Array<{
-    market: string; fixture_rank: number; quality_score: number;
+    market: string; model_rank?: number; public_rank: number; quality_score: number;
     confidence?: number; trust_state: string;
   }>;
   estimated_odds?: number;
