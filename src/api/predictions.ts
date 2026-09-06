@@ -159,6 +159,7 @@ export const api = {
 /** A slip built to a requested multiplier. */
 export interface BuiltSlip {
   status: "success" | "unavailable" | "error";
+  result_status?: "TARGET_REACHED" | "QUALITY_CAPPED" | "INSUFFICIENT_TRUSTED_FIXTURES" | "NO_SAFE_COMBINATION";
   target: number;
   horizon?: "today" | "week";
   odds?: number;
@@ -180,6 +181,7 @@ export interface BuiltSlip {
   /** Present when the target could not be reached honestly. */
   reason?: string;
   best_reachable?: number;
+  achieved_odds?: number;
   cached?: boolean;
 }
 

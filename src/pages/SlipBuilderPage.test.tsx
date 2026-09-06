@@ -47,3 +47,16 @@ renderBuilder();
   expect(screen.getByText(/Review every match and market yourself/)).toBeInTheDocument();
   expect(screen.getByText("Strong evidence")).toBeInTheDocument();
 });
+
+test("labels a below-target trustworthy result as quality capped", async () => {
+  buildSlip.mockResolvedValue({
+    status: "unavailable", result_status: "QUALITY_CAPPED", target: 70,
+    best_reachable: 43.62,
+    reason: "Reaching 70x would require selections that fail quality rules.",
+  });
+  renderBuilder();
+  fireEvent.click(screen.getByRole("button", { name: /70x high target/i }));
+  fireEvent.click(screen.getByRole("button", { name: /build my 70x slip/i }));
+  await waitFor(() => expect(screen.getByText("Best quality combination found")).toBeInTheDocument());
+  expect(screen.getByRole("button", { name: /43.62x slip/i })).toBeInTheDocument();
+});

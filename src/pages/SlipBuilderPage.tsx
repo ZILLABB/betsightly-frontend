@@ -194,7 +194,7 @@ export default function SlipBuilderPage() {
       )}
       {slip && slip.status !== "success" && (
         <section className="builder-message">
-          <h2>We won’t force this target</h2>
+          <h2>{slip.result_status === "QUALITY_CAPPED" ? "Best quality combination found" : "We won’t force this target"}</h2>
           <p>
             {slip.reason ??
               "That target is not responsibly reachable from the available board."}
