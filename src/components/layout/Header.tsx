@@ -133,8 +133,8 @@ export function Header() {
       </nav>
 
       <style>{`
-        @media (min-width: 768px) { .hidden-mobile { display:flex !important; } .show-mobile { display:none !important; } }
-        @media (max-width: 767px) { .hidden-mobile { display:none !important; } .show-mobile { display:flex !important; } }
+        @media (min-width: 901px) { .hidden-mobile { display:flex !important; } .show-mobile { display:none !important; } }
+        @media (max-width: 900px) { .hidden-mobile { display:none !important; } .show-mobile { display:flex !important; } }
         @keyframes spin { to { transform:rotate(360deg); } }
       `}</style>
     </>

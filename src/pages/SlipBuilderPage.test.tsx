@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import SlipBuilderPage from "./SlipBuilderPage";
 import { api } from "../api/predictions";
@@ -57,6 +57,50 @@ test("labels a below-target trustworthy result as quality capped", async () => {
   renderBuilder();
   fireEvent.click(screen.getByRole("button", { name: /70x high target/i }));
   fireEvent.click(screen.getByRole("button", { name: /build my 70x slip/i }));
-  await waitFor(() => expect(screen.getByText("Best quality combination found")).toBeInTheDocument());
+  await waitFor(() => expect(screen.getByText(/70x isn’t supported/)).toBeInTheDocument());
   expect(screen.getByRole("button", { name: /43.62x slip/i })).toBeInTheDocument();
+});
+
+test.each([10, 20, 30, 50, 70, 100])("selects and submits the %ix target", async (target) => {
+  buildSlip.mockResolvedValue({ status: "unavailable", target });
+  renderBuilder();
+  const band = target <= 20 ? "lower target" : target <= 50 ? "balanced" : "high target";
+  fireEvent.click(screen.getByRole("button", { name: new RegExp(`^${target}x ${band}$`, "i") }));
+  fireEvent.click(screen.getByRole("button", { name: new RegExp(`build my ${target}x slip`, "i") }));
+  await waitFor(() => expect(buildSlip).toHaveBeenCalledWith(target, "week", false));
+});
+
+test("switches between today and seven-day windows", async () => {
+  buildSlip.mockResolvedValue({ status: "unavailable", target: 50 });
+  renderBuilder();
+  fireEvent.click(screen.getByRole("button", { name: /today only/i }));
+  fireEvent.click(screen.getByRole("button", { name: /build my 50x slip/i }));
+  await waitFor(() => expect(buildSlip).toHaveBeenCalledWith(50, "today", false));
+});
+
+test("best reachable CTA submits its exact target and disables while loading", async () => {
+  let finish!: (value: unknown) => void;
+  buildSlip
+    .mockResolvedValueOnce({ status: "unavailable", result_status: "EXPOSURE_CAPPED",
+      target: 100, best_reachable: 6.06, optimization_status: "OPTIMAL" })
+    .mockReturnValueOnce(new Promise((resolve) => { finish = resolve; }));
+  renderBuilder();
+  fireEvent.click(screen.getByRole("button", { name: /100x high target/i }));
+  fireEvent.click(screen.getByRole("button", { name: /build my 100x slip/i }));
+  const cta = await screen.findByRole("button", { name: /build verified 6.06x slip/i });
+  fireEvent.click(cta);
+  expect(buildSlip).toHaveBeenLastCalledWith(6.06, "week", false);
+  expect(cta).toBeDisabled();
+  await act(async () => {
+    finish({ status: "success", target: 6.06, odds: 6.1, legs: 0, games: [] });
+  });
+});
+
+test("active booking is rendered immediately without pending copy", async () => {
+  buildSlip.mockResolvedValue({ status: "success", target: 50, odds: 50.1, legs: 0,
+    games: [], booking: { status: "active", share_code: "READY1" } });
+  renderBuilder();
+  fireEvent.click(screen.getByRole("button", { name: /build my 50x slip/i }));
+  await screen.findByText("booking");
+  expect(screen.queryByText(/code pending/i)).not.toBeInTheDocument();
 });

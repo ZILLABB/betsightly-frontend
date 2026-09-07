@@ -15,6 +15,8 @@ import { trackProductEvent } from "../services/bookingTracking";
 import { useBuilder } from "../contexts/BuilderContextInstance";
 
 const TARGETS = [10, 20, 30, 50, 70, 100];
+const suggestedTargets = (requested: number) =>
+  TARGETS.filter((value) => value < requested).slice(-3).reverse();
 const accent = CATEGORIES.find((c) => c.key === "5_odds")!;
 const trustBand = (score?: number) =>
   score == null
@@ -41,7 +43,7 @@ export default function SlipBuilderPage() {
 
     const closest = Math.max(2, Number(slip.best_reachable.toFixed(2)));
 
-    chooseTarget(closest);
+    chooseTarget(closest, true);
 
     trackProductEvent("best_reachable_accepted", {
       product_area: "builder",
@@ -49,7 +51,7 @@ export default function SlipBuilderPage() {
       horizon,
     });
 
-    void build(false, closest);
+    void build(false, closest, true);
   };
 
   return (
@@ -193,20 +195,39 @@ export default function SlipBuilderPage() {
         </div>
       )}
       {slip && slip.status !== "success" && (
-        <section className="builder-message">
-          <h2>{slip.result_status === "QUALITY_CAPPED" ? "Best quality combination found" : "We won’t force this target"}</h2>
-          <p>
-            {slip.reason ??
-              "That target is not responsibly reachable from the available board."}
+        <section className="builder-message builder-cap" aria-live="polite">
+          <span className="builder-cap__badge">Best available</span>
+          <h2>{target}x isn’t supported by the current board</h2>
+          {slip.best_reachable && (
+            <div className="builder-cap__number">
+              <strong>{slip.best_reachable.toFixed(2)}x</strong>
+              <span>{slip.optimization_status === "OPTIMAL" ? "verified maximum" : "reachable"}</span>
+            </div>
+          )}
+          <p>{slip.reason ?? "That target is not responsibly reachable from the available board."}</p>
+          <p className="builder-cap__promise">
+            We will not add weaker picks simply to manufacture {target}x.
           </p>
           {slip.best_reachable && (
             <button
-              className="btn-ghost"
+              className="builder-cap__cta"
               type="button"
               onClick={acceptBestReachable}
+              disabled={loading}
             >
-              Build the best reachable {slip.best_reachable.toFixed(2)}x slip
+              <Target size={17} />
+              {loading ? "Building verified slip…" :
+                `Build ${slip.optimization_status === "OPTIMAL" ? "verified" : "the best reachable"} ${slip.best_reachable.toFixed(2)}x slip`}
             </button>
+          )}
+          {!!suggestedTargets(target).length && (
+            <div className="builder-cap__alternatives" aria-label="Try another target">
+              <span>Try another target</span>
+              {suggestedTargets(target).map((value) => (
+                <button key={value} type="button" disabled={loading}
+                  onClick={() => chooseTarget(value)}>{value}x</button>
+              ))}
+            </div>
           )}
         </section>
       )}
@@ -242,20 +263,6 @@ export default function SlipBuilderPage() {
             evidence-adjusted and remains an estimate—not a promised result or
             profit.
           </p>
-          <div className="builder-warning">
-            <ShieldCheck size={20} />
-            <p>
-              <span className="builder-warning__desktop">
-                Review every match and market yourself before staking.
-                Predictions are probability estimates, not guarantees, and team
-                news, line-ups, injuries and odds can change.
-              </span>
-              <span className="builder-warning__mobile">
-                Check every match before staking. Predictions are estimates, not
-                guarantees; line-ups, injuries and odds can change.
-              </span>
-            </p>
-          </div>
           <BookingCode
             booking={slip.booking}
             category={accent}
@@ -280,6 +287,20 @@ export default function SlipBuilderPage() {
               Rechecking SportyBet availability…
             </p>
           )}
+          <div className="builder-warning">
+            <ShieldCheck size={20} />
+            <p>
+              <span className="builder-warning__desktop">
+                Review every match and market yourself before staking.
+                Predictions are probability estimates, not guarantees, and team
+                news, line-ups, injuries and odds can change.
+              </span>
+              <span className="builder-warning__mobile">
+                Check every match before staking. Predictions are estimates, not
+                guarantees; line-ups, injuries and odds can change.
+              </span>
+            </p>
+          </div>
           {slip.booking?.status === "active" && (
             <div className="builder-regenerate">
               <button
@@ -288,9 +309,9 @@ export default function SlipBuilderPage() {
                 onClick={() => void build(true)}
                 disabled={loading}
               >
-                Regenerate slip and code
+                Refresh slip and code
               </button>
-              <span>Rechecks live availability and creates a fresh code.</span>
+              <span>Rechecks live availability; unchanged selections reuse the validated code.</span>
             </div>
           )}
           <div className="builder-leg-list">

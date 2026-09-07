@@ -105,9 +105,9 @@ export function BuilderProvider({
     }
   }, [target, horizon, slip]);
 
-  const chooseTarget = useCallback((value: number) => {
+  const chooseTarget = useCallback((value: number, preserveSlip = false) => {
     setTarget(value);
-    setSlip(null);
+    if (!preserveSlip) setSlip(null);
     setError(null);
     recoveryAttempts.current = 0;
   }, []);
@@ -126,6 +126,7 @@ export function BuilderProvider({
     async (
       regenerate = false,
       targetOverride?: number,
+      preserveSlip = false,
     ) => {
       if (inFlight.current) {
         return;
@@ -159,7 +160,7 @@ export function BuilderProvider({
 
       setLoading(true);
       setError(null);
-      setSlip(null);
+      if (!preserveSlip) setSlip(null);
 
       try {
         const result = await api.buildSlip(
@@ -201,6 +202,10 @@ export function BuilderProvider({
               (result.odds ?? 0) >= requestedTarget
                 ? 1
                 : 0,
+            requested_target: requestedTarget,
+            achieved_target: result.odds,
+            optimization_status: result.optimization_status,
+            result_status: result.result_status,
           });
         } else {
           trackProductEvent("builder_unavailable", {
@@ -208,6 +213,10 @@ export function BuilderProvider({
             target_odds: requestedTarget,
             horizon,
             failure_category: result.status,
+            requested_target: requestedTarget,
+            achieved_target: result.best_reachable,
+            optimization_status: result.optimization_status,
+            result_status: result.result_status,
             duration_ms: Math.round(
               performance.now() - startedAt,
             ),

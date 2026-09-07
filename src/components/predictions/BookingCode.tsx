@@ -52,9 +52,9 @@ export default function BookingCode({
       border: "1px dashed var(--border)", fontFamily: "var(--font-body)",
       fontSize: 13, color: "var(--text-3)" }}>
       <strong style={{ display: "block", color: "var(--text-1)", marginBottom: 4 }}>
-        SportyBet code pending
+        Creating SportyBet code…
       </strong>
-      The booking code is being prepared. Your predictions remain available while we check it.
+      Your predictions are ready. This will update automatically without a refresh.
     </div>
   );
 

@@ -159,7 +159,8 @@ export const api = {
 /** A slip built to a requested multiplier. */
 export interface BuiltSlip {
   status: "success" | "unavailable" | "error";
-  result_status?: "TARGET_REACHED" | "QUALITY_CAPPED" | "INSUFFICIENT_TRUSTED_FIXTURES" | "NO_SAFE_COMBINATION";
+  result_status?: "TARGET_REACHED" | "QUALITY_CAPPED" | "EXPOSURE_CAPPED" | "MAX_LEGS_CAPPED" | "INSUFFICIENT_BOOKABLE_FIXTURES" | "INSUFFICIENT_TRUSTED_FIXTURES" | "NO_SAFE_COMBINATION";
+  optimization_status?: "OPTIMAL" | "BOUNDED_OPTIMAL" | "HEURISTIC";
   target: number;
   horizon?: "today" | "week";
   odds?: number;
@@ -184,6 +185,15 @@ export interface BuiltSlip {
   achieved_odds?: number;
   /** Server-side stage counts explaining a quality cap; safe to ignore in UI. */
   selection_diagnostics?: Record<string, unknown>;
+  candidate_count_initial?: number;
+  after_bookability?: number;
+  after_trust?: number;
+  after_policy?: number;
+  optimizer_candidate_count?: number;
+  fixture_count?: number;
+  market_distribution?: Record<string, number>;
+  binding_constraints?: string[];
+  max_legs?: number;
   cached?: boolean;
 }
 

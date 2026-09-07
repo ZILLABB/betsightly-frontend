@@ -11,12 +11,13 @@ export interface BuilderContextValue {
   recoveringCode: boolean;
   error: string | null;
 
-  chooseTarget: (target: number) => void;
+  chooseTarget: (target: number, preserveSlip?: boolean) => void;
   chooseHorizon: (horizon: BuilderHorizon) => void;
 
   build: (
     regenerate?: boolean,
     targetOverride?: number,
+    preserveSlip?: boolean,
   ) => Promise<void>;
 }
 
