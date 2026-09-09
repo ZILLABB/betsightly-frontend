@@ -48,6 +48,32 @@ renderBuilder();
   expect(screen.getByText("Strong evidence")).toBeInTheDocument();
 });
 
+test("explains DNB pushes and shows target-hit probability", async () => {
+  buildSlip.mockResolvedValue({
+    status: "success",
+    target: 50,
+    odds: 52.2,
+    legs: 2,
+    hit_probability: .31,
+    target_hit_probability: .36,
+    no_loss_probability: .44,
+    push_survival_probability: .13,
+    dnb_leg_count: 1,
+    lowest_trust_grade: "A",
+    games: [],
+  });
+  renderBuilder();
+  fireEvent.click(screen.getByRole("button", { name: /build my 50x slip/i }));
+  await waitFor(() => expect(screen.getByText("Target hit chance")).toBeInTheDocument());
+  expect(screen.getByText("36.00%")).toBeInTheDocument();
+  const explainer = screen.getByText((_, element) =>
+    element?.classList.contains("builder-explainer") === true,
+  );
+  expect(explainer).toHaveTextContent(/A draw on that leg voids it at 1.00x/i);
+  expect(explainer).toHaveTextContent(/All-win chance: 31.00%/i);
+  expect(explainer).toHaveTextContent(/No-loss chance: 44.00%/i);
+});
+
 test("labels a below-target trustworthy result as quality capped", async () => {
   buildSlip.mockResolvedValue({
     status: "unavailable", result_status: "QUALITY_CAPPED", target: 70,

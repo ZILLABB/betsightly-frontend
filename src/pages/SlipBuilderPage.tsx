@@ -54,6 +54,12 @@ export default function SlipBuilderPage() {
     void build(false, closest, true);
   };
 
+  const dnbLegCount = slip?.dnb_leg_count ?? 0;
+  const hasDnb = dnbLegCount > 0;
+  const headlineProbability = hasDnb
+    ? (slip?.target_hit_probability ?? slip?.hit_probability ?? 0)
+    : (slip?.hit_probability ?? 0);
+
   return (
     <main className="builder-page page-stack">
       <SEO
@@ -250,19 +256,32 @@ export default function SlipBuilderPage() {
             <Stat label="Total odds" value={`${slip.odds?.toFixed(2)}x`} />
             <Stat label="Legs" value={String(slip.legs)} />
             <Stat
-              label="All legs land"
-              value={`${((slip.hit_probability ?? 0) * 100).toFixed(2)}%`}
+              label={hasDnb ? "Target hit chance" : "All legs win"}
+              value={`${(headlineProbability * 100).toFixed(2)}%`}
             />
             <Stat
               label="Bookmaker break-even"
               value={`${(100 / (slip.odds || 1)).toFixed(2)}%`}
             />
           </div>
-          <p className="builder-explainer">
-            All {slip.legs} legs must land. The probability shown is
-            evidence-adjusted and remains an estimate—not a promised result or
-            profit.
-          </p>
+          {hasDnb ? (
+            <p className="builder-explainer">
+              This slip includes {dnbLegCount} Draw No Bet {dnbLegCount === 1 ? "leg" : "legs"}.
+              {" "}A draw on {dnbLegCount === 1 ? "that leg" : "those legs"} voids it at 1.00x
+              instead of losing the ticket.
+              {" "}Target hit chance is the probability that the final payout still reaches
+              {" "}{slip.target}x after any DNB pushes.
+              {" "}All-win chance: {((slip.hit_probability ?? 0) * 100).toFixed(2)}%.
+              {" "}No-loss chance: {((slip.no_loss_probability ?? slip.hit_probability ?? 0) * 100).toFixed(2)}%.
+              {" "}These are evidence-adjusted estimates, not promised results or profit.
+            </p>
+          ) : (
+            <p className="builder-explainer">
+              All {slip.legs} legs must win. The probability shown is
+              evidence-adjusted and remains an estimate—not a promised result or
+              profit.
+            </p>
+          )}
           <BookingCode
             booking={slip.booking}
             category={accent}

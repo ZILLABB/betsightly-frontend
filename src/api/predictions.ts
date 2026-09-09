@@ -165,10 +165,20 @@ export interface BuiltSlip {
   horizon?: "today" | "week";
   odds?: number;
   legs?: number;
-  /** The chance every leg lands. A 50x slip is a few percent, not a good bet
-   *  dressed up — showing it is the difference between a product and a lure. */
+  /** Probability that every selected leg wins at its quoted odds. For DNB,
+   *  this excludes draw/push branches, because a push pays 1.00x. */
   hit_probability?: number;
-  /** Model-estimated return per unit: joint hit probability × displayed odds. */
+  /** Probability the final positive payout still reaches the requested target.
+   *  This can exceed `hit_probability` when a DNB draw pushes at 1.00x and the
+   *  remaining winning legs still produce at least the requested multiplier. */
+  target_hit_probability?: number;
+  /** Probability no leg loses. A DNB draw counts as survival rather than a loss. */
+  no_loss_probability?: number;
+  /** Probability the slip survives through one or more DNB pushes. */
+  push_survival_probability?: number;
+  /** Number of Draw-No-Bet legs whose draw branch settles at 1.00x. */
+  dnb_leg_count?: number;
+  /** Model-estimated expected positive payout per unit across win/push branches. */
   expected_return?: number;
   avg_confidence?: number;
   avg_evidence_probability?: number;
