@@ -198,6 +198,17 @@ export interface GamePrediction {
   kickoff?: string;
   market?: string;
   league_slug?: string;
+  competition_type?: "LEAGUE" | "DOMESTIC_CUP" | "CONTINENTAL_CLUB" | "INTERNATIONAL_TOURNAMENT" | "INTERNATIONAL_QUALIFIER" | "INTERNATIONAL_FRIENDLY";
+  competition_region?: string;
+  team_type?: "CLUB" | "NATIONAL";
+  competition_stage?: string | null;
+  competition_round?: string | null;
+  competition_context_label?: string | null;
+  neutral_venue?: boolean;
+  knockout?: boolean;
+  leg_number?: number | null;
+  base_rate_source?: string;
+  competition_historical_sample?: number;
   venue?: string | null;
   venue_city?: string | null;
   broadcast?: string[];
@@ -223,6 +234,13 @@ export interface MatchInfo {
   away_form?: string | null;
   home_record?: string | null;
   away_record?: string | null;
+  competition_context?: {
+    stage?: string | null;
+    context_label?: string | null;
+    leg_number?: number | null;
+    neutral_venue?: boolean;
+    knockout?: boolean;
+  };
   home_elo?: number | null;
   away_elo?: number | null;
 }

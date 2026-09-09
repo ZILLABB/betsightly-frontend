@@ -190,7 +190,7 @@ export function PredictionCard({ game, color, faint, index = 0, score }: Props) 
         background: "var(--overlay-1)",
         borderBottom: "1px solid var(--border)",
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0, flexWrap: "wrap" }}>
           {game.league_logo && (
             <img
               src={game.league_logo}
@@ -205,6 +205,14 @@ export function PredictionCard({ game, color, faint, index = 0, score }: Props) 
           }}>
             {game.league}
           </span>
+          {game.competition_context_label && (
+            <span style={{
+              fontFamily: "var(--font-body)", fontSize: 10, fontWeight: 600,
+              color: "var(--text-2)", whiteSpace: "nowrap",
+            }}>
+              · {game.competition_context_label}
+            </span>
+          )}
           {/* Only later picks are marked. The morning card is the default
               reading, so badging everything would say nothing. */}
           {game.added_later && game.added_at && (
