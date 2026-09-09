@@ -25,11 +25,14 @@ export function AccuracyBadge({ compact = false }: { compact?: boolean }) {
     api.getLeagueResults(60)
       .then(r => {
         if (!alive) return;
-        const s = Object.values(r.summary ?? {});
-        if (s.length) {
+        // Only accumulator categories are slips. Over 1.5 is published as
+        // individual singles (`unit: "pick"`) and must not inflate the
+        // homepage metric labelled "settled slips".
+        const slipCategories = Object.values(r.summary ?? {}).filter(c => c.unit !== "pick");
+        if (slipCategories.length) {
           setSlipStats({
-            won: s.reduce((a, c) => a + c.won, 0),
-            lost: s.reduce((a, c) => a + c.lost, 0),
+            won: slipCategories.reduce((a, c) => a + c.won, 0),
+            lost: slipCategories.reduce((a, c) => a + c.lost, 0),
           });
         }
       })
