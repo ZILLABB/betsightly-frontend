@@ -3,6 +3,7 @@ import { CATEGORIES } from "../../types";
 import type { AccumulatorResponse, CategoryMeta, GamePrediction } from "../../types";
 import { useFormatOdds } from "../../hooks/useFormatOdds";
 import type { LiveScore } from "./PredictionCard";
+import { formatLocalTimeWithZone } from "../../utils/formatters";
 
 interface Props {
   accumulators: AccumulatorResponse["accumulators"];
@@ -12,11 +13,7 @@ interface Props {
 
 const time = (iso?: string) => {
   if (!iso) return "";
-  try {
-    return new Date(iso).toLocaleTimeString("en-GB", {
-      hour: "2-digit", minute: "2-digit", timeZone: "UTC",
-    });
-  } catch { return ""; }
+  return formatLocalTimeWithZone(iso);
 };
 
 /**

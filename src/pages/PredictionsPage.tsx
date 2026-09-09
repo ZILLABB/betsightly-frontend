@@ -109,7 +109,7 @@ export function PredictionsPage() {
         <div className="eyebrow" style={{ marginBottom: 8 }}>Today&apos;s Picks</div>
         <h1 style={{ fontSize: 32, fontWeight: 800 }}>All Predictions</h1>
         <p className="page-intro" style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text-3)", marginTop: 6 }}>
-          Every accumulator for {data?.date
+          Every published pick and accumulator for {data?.date
             ? new Date(data.date + "T12:00:00Z").toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" })
             : "today"} — pick a tier that matches your risk appetite.
         </p>

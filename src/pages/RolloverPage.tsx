@@ -8,6 +8,7 @@ import { Repeat2, CheckCircle, XCircle, Clock, Circle, TrendingUp, Calendar, Lis
 import { getTeamFlag, isWcNation, teamInitials, teamColor } from "../data/wcFlags";
 import { SEO } from "../components/common/SEO";
 import BookingCode from "../components/predictions/BookingCode";
+import { formatLocalTimeWithZone } from "../utils/formatters";
 
 function TeamBadge({ team, logo }: { team: string; logo?: string | null }) {
   if (isWcNation(team)) {
@@ -328,7 +329,7 @@ export function RolloverPage() {
                               </span>
                               {pick.commence_time && (
                                 <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--text-3)" }}>
-                                  ⏱ {new Date(pick.commence_time).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false })}
+                                  ⏱ {formatLocalTimeWithZone(pick.commence_time)}
                                 </span>
                               )}
                             </div>

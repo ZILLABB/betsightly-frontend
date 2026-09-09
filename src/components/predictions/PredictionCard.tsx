@@ -2,6 +2,7 @@ import React from "react";
 import type { GamePrediction } from "../../types";
 import { getTeamFlag, isWcNation, teamInitials, teamColor } from "../../data/wcFlags";
 import { ShareButton } from "../common/ShareButton";
+import { formatKickoffDateTime, formatLocalTimeWithZone } from "../../utils/formatters";
 
 function TeamBadge({ team, logo }: { team: string; logo?: string | null }) {
   if (isWcNation(team)) {
@@ -124,12 +125,9 @@ function KickoffStamp({ iso }: { iso?: string }) {
     );
   }
 
-  const d = new Date(ts);
   return (
     <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-3)" }}>
-      {d.toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}
-      {" · "}
-      {d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false })}
+      {formatKickoffDateTime(new Date(ts))}
     </span>
   );
 }
@@ -224,8 +222,7 @@ export function PredictionCard({ game, color, faint, index = 0, score }: Props) 
                 padding: "1px 6px", borderRadius: 4, whiteSpace: "nowrap",
               }}
             >
-              added {new Date(game.added_at).toLocaleTimeString("en-GB",
-                { hour: "2-digit", minute: "2-digit" })}
+              added {formatLocalTimeWithZone(game.added_at)}
             </span>
           )}
         </div>

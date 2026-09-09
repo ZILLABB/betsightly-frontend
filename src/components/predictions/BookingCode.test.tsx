@@ -9,6 +9,7 @@ jest.mock("../../services/bookingTracking", () => ({
 }));
 
 const category = CATEGORIES.find((item) => item.key === "5_odds")!;
+const singlesCategory = CATEGORIES.find((item) => item.key === "over_1_5")!;
 
 test("genuine pending booking announces automatic creation", () => {
   render(<BookingCode category={category} />);
@@ -32,4 +33,15 @@ test("active validated code appears immediately", () => {
   }} />);
   expect(screen.getByText("READY1")).toBeInTheDocument();
   expect(screen.queryByText(/pending/i)).not.toBeInTheDocument();
+});
+
+test("singles convenience code stays labelled as an accumulator ticket", () => {
+  render(<BookingCode category={singlesCategory} booking={{
+    status: "active", booking_status: "FULL", share_code: "SINGLE1",
+    ticket_type: "accumulator", priced_at: "2026-09-20T19:45:00Z",
+  }} />);
+  expect(screen.getByText("SportyBet accumulator share-code ticket")).toBeInTheDocument();
+  expect(screen.getByText(/underlying picks are intended as separate singles/i))
+    .toBeInTheDocument();
+  expect(screen.getByText(/Priced at \d{2}:\d{2} \S+\./)).toBeInTheDocument();
 });

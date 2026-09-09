@@ -163,6 +163,59 @@ export const formatLocalDateTime = (dateString: string | Date): string => {
   })}`;
 };
 
+type LocalTimeOptions = {
+  /** Omit to use the viewer's browser timezone. Primarily injectable so tests
+   * and server-side rendering can be deterministic. */
+  timeZone?: string;
+};
+
+const localTimeParts = (
+  dateString: string | Date,
+  options: LocalTimeOptions = {},
+) => {
+  if (!dateString) return null;
+  const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
+  if (Number.isNaN(date.getTime())) return null;
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    timeZoneName: 'short',
+    ...(options.timeZone ? { timeZone: options.timeZone } : {}),
+  }).formatToParts(date);
+  const part = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find(item => item.type === type)?.value ?? '';
+  return {
+    day: part('day'),
+    month: part('month'),
+    hour: part('hour'),
+    minute: part('minute'),
+    zone: part('timeZoneName'),
+  };
+};
+
+/** User-local kickoff with an explicit timezone label. */
+export const formatKickoffDateTime = (
+  dateString: string | Date,
+  options: LocalTimeOptions = {},
+): string => {
+  const value = localTimeParts(dateString, options);
+  return value
+    ? `${value.day} ${value.month} · ${value.hour}:${value.minute} ${value.zone}`.trim()
+    : '';
+};
+
+/** Compact user-local time with the same explicit timezone policy. */
+export const formatLocalTimeWithZone = (
+  dateString: string | Date,
+  options: LocalTimeOptions = {},
+): string => {
+  const value = localTimeParts(dateString, options);
+  return value ? `${value.hour}:${value.minute} ${value.zone}`.trim() : '';
+};
+
 /**
  * Convert decimal odds to fractional (e.g. 2.50 → "3/2")
  */
@@ -221,5 +274,7 @@ export default {
   formatNumber,
   formatCurrency,
   formatLocalDateTime,
+  formatKickoffDateTime,
+  formatLocalTimeWithZone,
   formatOdds
 };

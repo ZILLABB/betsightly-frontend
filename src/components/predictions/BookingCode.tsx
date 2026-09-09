@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { CategoryMeta, TierBooking } from "../../types";
 import { trackBookingEvent, type BookingEventContext } from "../../services/bookingTracking";
+import { formatLocalTimeWithZone } from "../../utils/formatters";
 
 /**
  * The SportyBet code for a tier, with a copy button.
@@ -116,10 +117,7 @@ export default function BookingCode({
   }
 
   const priced = booking.priced_at
-    ? new Date(booking.priced_at).toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      })
+    ? formatLocalTimeWithZone(booking.priced_at)
     : null;
 
   const copy = async () => {
@@ -187,7 +185,9 @@ export default function BookingCode({
             fontWeight: 600,
           }}
         >
-          SportyBet {booking.ticket_type === "accumulator" ? "accumulator" : "booking"}
+          {category.key === "over_1_5" && booking.ticket_type === "accumulator"
+            ? "SportyBet accumulator share-code ticket"
+            : `SportyBet ${booking.ticket_type === "accumulator" ? "accumulator" : "booking"}`}
         </span>
         <code
           style={{
@@ -263,6 +263,12 @@ export default function BookingCode({
         {bookingStatus === "PARTIAL" && `${booking.booked_leg_count ?? booking.legs ?? 0}/${booking.original_leg_count ?? 0} selections booked · partial ticket.`}
         {booking.actual_sportybet_odds ? ` Actual SportyBet odds: ${booking.actual_sportybet_odds.toFixed(2)}.` : ""}
       </div>
+
+      {category.key === "over_1_5" && (
+        <div style={{ width: "100%", fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)" }}>
+          Convenience share-code ticket only · the underlying picks are intended as separate singles.
+        </div>
+      )}
 
       {!!booking.replacements?.length && (
         <details onToggle={(event) => {

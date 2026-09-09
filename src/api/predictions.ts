@@ -285,6 +285,7 @@ export interface SettledSlip {
   hit_probability: number;
   picks: SettledLeg[];
   settled_at?: string | null;
+  policy_version?: string | null;
 }
 
 export interface CategoryPerformance {
@@ -305,7 +306,23 @@ export interface LeagueResultsResponse {
   status: string;
   days: number;
   summary: Record<string, CategoryPerformance>;
+  totals?: {
+    slips: ResultTotals;
+    picks: ResultTotals;
+    combined_profit: number;
+  };
   history: SettledSlip[];
   rollover_history?: import("../types").RolloverChainDay[];
   by_date: Record<string, Record<string, SettledSlip>>;
+}
+
+export interface ResultTotals {
+  won: number;
+  lost: number;
+  settled: number;
+  win_rate: number | null;
+  staked: number;
+  returned: number;
+  profit: number;
+  roi: number | null;
 }

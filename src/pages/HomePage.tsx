@@ -67,10 +67,19 @@ export function HomePage() {
   const accumulators = data?.accumulators;
   const activeCat = accumulators?.[activeKey];
   const catMeta = CATEGORIES.find(c => c.key === activeKey)!;
+  const isSingles = activeCat?.presentation === "singles";
 
   const oddsMap = accumulators
     ? Object.fromEntries(
         CATEGORIES.map(c => [c.key, accumulators[c.key]?.total_odds])
+      ) as Partial<Record<CategoryKey, number>>
+    : {};
+
+  const singlesMap = accumulators
+    ? Object.fromEntries(
+        CATEGORIES
+          .filter(c => accumulators[c.key]?.presentation === "singles")
+          .map(c => [c.key, accumulators[c.key]?.games?.length ?? 0])
       ) as Partial<Record<CategoryKey, number>>
     : {};
 
@@ -109,7 +118,7 @@ export function HomePage() {
             <span>Smart Picks.</span>
           </h1>
           <p>
-            Curated accumulators backed by real bookmaker odds and statistical
+            Curated football picks and accumulators backed by real bookmaker odds and statistical
             analysis, with every published result tracked transparently.
           </p>
           <div className="home-hero-actions">
@@ -160,27 +169,40 @@ export function HomePage() {
       <div className="metric-grid">
         <StatBubble label="Picks today" value={loading ? "—" : String(totalGames)} icon={<Target size={17} color="var(--brand)" />} color="var(--brand)" />
         <StatBubble label="Confidence" value={loading ? "—" : `${avgConf}%`} icon={<Shield size={17} color="var(--green)" />} color="var(--green)" />
-        <StatBubble label="Top odds" value={loading ? "—" : `${fmtOdds(activeCat?.total_odds ?? 0)}${oddsSuffix}`} icon={<TrendingUp size={17} color="var(--blue)" />} color="var(--blue)" />
+        <StatBubble
+          label={isSingles ? "Independent picks" : "Top odds"}
+          value={loading ? "—" : isSingles
+            ? String(activeCat?.games?.length ?? 0)
+            : `${fmtOdds(activeCat?.total_odds ?? 0)}${oddsSuffix}`}
+          icon={<TrendingUp size={17} color="var(--blue)" />}
+          color="var(--blue)"
+        />
         <StatBubble label="Categories" value={String(CATEGORIES.length)} icon={<Flame size={17} color="var(--gold)" />} color="var(--gold)" />
       </div>
 
       {/* Tabs + content */}
       <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-        <CategoryTabs active={activeKey} onChange={setActiveKey} oddsMap={oddsMap} />
+        <CategoryTabs active={activeKey} onChange={setActiveKey} oddsMap={oddsMap} singlesMap={singlesMap} />
 
         {/* Category header */}
         {!loading && activeCat && (
           <div className="animate-fade-in" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
             <div>
               <h2 style={{ fontSize: 20, fontWeight: 700, color: catMeta.color, letterSpacing: "-0.02em" }}>
-                {catMeta.label} Accumulator
+                {catMeta.label} {isSingles ? "Singles" : "Accumulator"}
               </h2>
               {activeCat.reason && (
                 <p style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text-3)", marginTop: 3 }}>
                   {activeCat.reason}
                 </p>
               )}
-              {typeof activeCat.hit_probability === "number" && activeCat.games?.length > 0 && (
+              {isSingles && activeCat.games?.length > 0 && (
+                <p style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text-3)", marginTop: 3 }}>
+                  {activeCat.games.length} independent picks · bet separately
+                  {avgConf > 0 ? ` · average pick confidence ${avgConf}%` : ""}
+                </p>
+              )}
+              {!isSingles && typeof activeCat.hit_probability === "number" && activeCat.games?.length > 0 && (
                 <p style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text-3)", marginTop: 3 }}>
                   All {activeCat.games.length} legs land about{" "}
                   <strong style={{ color: "var(--text-2)" }}>
@@ -191,14 +213,14 @@ export function HomePage() {
               )}
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <div style={{
+              {!isSingles && <div style={{
                 padding: "5px 14px", borderRadius: 8,
                 background: catMeta.faint, border: `1px solid ${catMeta.color}20`,
                 fontFamily: "var(--font-mono)", fontSize: 14, fontWeight: 700,
                 color: catMeta.color, letterSpacing: "-0.02em",
               }}>
                 {fmtOdds(activeCat.total_odds)}{oddsSuffix}
-              </div>
+              </div>}
               <button
                 onClick={handleRefresh}
                 title="Refresh predictions"

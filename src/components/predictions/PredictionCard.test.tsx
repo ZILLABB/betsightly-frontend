@@ -25,4 +25,21 @@ describe('PredictionCard competition context', () => {
     expect(screen.getByText('Africa Cup of Nations')).toBeTruthy();
     expect(screen.getByText(/Quarterfinals · 2nd leg/)).toBeTruthy();
   });
+
+  it('shows a timezone label beside a future kickoff', () => {
+    const game: GamePrediction = {
+      fixture_id: 2,
+      home_team: 'Ghana',
+      away_team: 'Nigeria',
+      league: 'Africa Cup of Nations',
+      date: '2099-09-20T19:00:00Z',
+      kickoff: '2099-09-20T19:00:00Z',
+      prediction: 'Over 1.5 Goals',
+      prediction_type: 'goals',
+      confidence: 0.8,
+      odds: 1.3,
+    };
+    render(<PredictionCard game={game} color="#22c55e" faint="rgba(34,197,94,.1)" />);
+    expect(screen.getByText(/20 Sept · \d{2}:\d{2} \S+/)).toBeTruthy();
+  });
 });
