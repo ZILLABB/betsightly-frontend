@@ -87,6 +87,19 @@ test("labels a below-target trustworthy result as quality capped", async () => {
   expect(screen.getByRole("button", { name: /43.62x slip/i })).toBeInTheDocument();
 });
 
+test("shows board refreshing as a controlled retry state", async () => {
+  buildSlip.mockResolvedValue({
+    status: "unavailable", target: 50, reason: "board_refreshing",
+  });
+  renderBuilder();
+  fireEvent.click(screen.getByRole("button", { name: /build my 50x slip/i }));
+  await waitFor(() => expect(screen.getByText(/preparing the latest fixture board/i))
+    .toBeInTheDocument());
+  expect(screen.getByText(/not a CORS error/i)).toBeInTheDocument();
+  expect(screen.queryByText(/isn’t supported by the current board/i))
+    .not.toBeInTheDocument();
+});
+
 test.each([10, 20, 30, 50, 70, 100])("selects and submits the %ix target", async (target) => {
   buildSlip.mockResolvedValue({ status: "unavailable", target });
   renderBuilder();

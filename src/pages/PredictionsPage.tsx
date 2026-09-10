@@ -151,7 +151,7 @@ export function PredictionsPage() {
                 {bookableLoading
                   ? "Checking the remaining fixtures and their SportyBet availability."
                   : viewingBookable
-                    ? "Only matches that have not started are included. This does not change today’s published record."
+                    ? "Only matches outside the 20-minute kickoff buffer are included. This does not change today’s published record."
                     : bookableUnavailable
                       ? (bookable?.reason || "The remaining fixtures could not produce a valid SportyBet-ready slip. You can try the check again.")
                       : "Build a fresh slip using only matches that can still be booked. Today’s published card stays unchanged."}

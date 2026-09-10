@@ -283,7 +283,18 @@ export interface RolloverChainDay {
  * needs saying out loud, because someone may have copied the old one.
  */
 export interface TierBooking {
-  status: "active" | "unavailable" | "failed" | "invalid" | "stale";
+  status: "active" | "unavailable" | "failed" | "invalid" | "stale" |
+    "expired" | "started" | "kickoff_buffer" | "validation_failed" |
+    "suspended" | "bookmaker_error";
+  lifecycle_status?: "active" | "unavailable" | "failed" | "invalid" |
+    "stale" | "expired" | "started" | "kickoff_buffer" |
+    "validation_failed" | "suspended" | "bookmaker_error";
+  actionable?: boolean;
+  failure_category?: "FIXTURE_STARTED" | "KICKOFF_BUFFER" |
+    "CODE_EXPIRED" | "FIXTURE_MAPPING_FAILED" | "KICKOFF_MISMATCH" |
+    "MARKET_NOT_FOUND" | "SELECTION_NOT_FOUND" | "OUTCOME_SUSPENDED" |
+    "ODDS_UNAVAILABLE" | "CODE_GENERATION_FAILED" | "READBACK_FAILED" |
+    "READBACK_MISMATCH" | "SPORTYBET_DATA_ERROR" | string | null;
   booking_status?: "FULL" | "REBUILT_FULL" | "PARTIAL" | "UNAVAILABLE" |
     "BOOKING_FAILED" | "VALIDATION_FAILED";
   share_code?: string | null;

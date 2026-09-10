@@ -200,7 +200,22 @@ export default function SlipBuilderPage() {
           {error}
         </div>
       )}
-      {slip && slip.status !== "success" && (
+      {slip?.reason === "board_refreshing" && (
+        <section className="builder-message builder-cap" aria-live="polite">
+          <span className="builder-cap__badge">Board updating</span>
+          <h2>We’re preparing the latest fixture board</h2>
+          <p>
+            The weekly predictions are being evaluated now. Please try again
+            shortly—your request was controlled safely and was not a CORS error.
+          </p>
+          <button className="builder-cap__cta" type="button"
+            onClick={() => void build(false)} disabled={loading}>
+            <Target size={17} />
+            {loading ? "Checking the board…" : "Try again"}
+          </button>
+        </section>
+      )}
+      {slip && slip.status !== "success" && slip.reason !== "board_refreshing" && (
         <section className="builder-message builder-cap" aria-live="polite">
           <span className="builder-cap__badge">Best available</span>
           <h2>{target}x isn’t supported by the current board</h2>
@@ -295,7 +310,7 @@ export default function SlipBuilderPage() {
               actualOdds: slip.booking?.actual_sportybet_odds,
             }}
             onShowBookable={
-              slip.booking?.status === "active"
+              slip.booking?.status === "active" && slip.booking?.actionable !== false
                 ? undefined
                 : () => void build(true)
             }
@@ -320,7 +335,7 @@ export default function SlipBuilderPage() {
               </span>
             </p>
           </div>
-          {slip.booking?.status === "active" && (
+          {slip.booking?.status === "active" && slip.booking?.actionable !== false && (
             <div className="builder-regenerate">
               <button
                 type="button"

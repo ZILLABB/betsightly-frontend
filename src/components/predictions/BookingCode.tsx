@@ -31,9 +31,13 @@ export default function BookingCode({
   fallbackActionLabel?: string;
 }) {
   const [copied, setCopied] = useState(false);
+  const actionable = booking?.status === "active" &&
+    booking.actionable !== false &&
+    (!booking.lifecycle_status || booking.lifecycle_status === "active") &&
+    !!booking.share_code;
 
   useEffect(() => {
-    if (booking?.status === "active" && booking.share_code && tracking) {
+    if (actionable && tracking) {
       trackBookingEvent("booking_code_viewed", {
         ...tracking,
         bookingStatus: booking.booking_status,
@@ -42,10 +46,11 @@ export default function BookingCode({
     } else if (booking && booking.status !== "active" && tracking) {
       trackBookingEvent("fallback_shown", {
         ...tracking, bookingStatus: booking.booking_status ?? booking.status,
-        failure_category: booking.booking_status ?? booking.status,
+        failure_category: booking.failure_category ?? booking.booking_status ?? booking.status,
       });
     }
-  }, [booking?.share_code, booking?.status, tracking?.source, tracking?.tier,
+  }, [actionable, booking?.share_code, booking?.status, booking?.failure_category,
+      tracking?.source, tracking?.tier,
       tracking?.legCount, tracking?.fingerprint]);
 
   if (!booking) return (
@@ -71,9 +76,15 @@ export default function BookingCode({
     unavailable: "No booking code — not every leg is available on SportyBet.",
     failed: "Booking code unavailable right now.",
     invalid: "The code did not match this tier, so it was withheld.",
+    expired: "This SportyBet code has expired and is no longer placeable.",
+    started: "This SportyBet code is no longer placeable because one or more matches have started.",
+    kickoff_buffer: "This code is no longer placeable because a match starts within 20 minutes.",
+    validation_failed: "The code could not be verified against the displayed selections.",
+    suspended: "One or more SportyBet selections are currently suspended.",
+    bookmaker_error: "SportyBet could not verify this code right now.",
   };
 
-  if (booking.status !== "active" || !booking.share_code) {
+  if (!actionable) {
     return (
       <div
         style={{
@@ -87,7 +98,9 @@ export default function BookingCode({
         }}
       >
         <strong style={{ display: "block", color: "var(--text-1)", marginBottom: 4 }}>
-          Slip ready, code unavailable
+          {booking.status === "started" || booking.status === "kickoff_buffer" ||
+            booking.status === "expired" ? "Published code no longer placeable" :
+            "Slip ready, code unavailable"}
         </strong>
         {booking.reason || label[booking.status] || "No valid SportyBet ticket could be created for this tier."}
         {!!booking.excluded_legs?.length && (

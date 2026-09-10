@@ -45,3 +45,20 @@ test("singles convenience code stays labelled as an accumulator ticket", () => {
     .toBeInTheDocument();
   expect(screen.getByText(/Priced at \d{2}:\d{2} \S+\./)).toBeInTheDocument();
 });
+
+test.each([
+  ["started", "one or more matches have started"],
+  ["kickoff_buffer", "within 20 minutes"],
+  ["expired", "has expired"],
+] as const)("%s code never exposes copy or open actions", (status, message) => {
+  const onShowBookable = jest.fn();
+  render(<BookingCode category={category} onShowBookable={onShowBookable} booking={{
+    status, lifecycle_status: status, actionable: false,
+    share_code: "STALE1", share_url: "https://example.test/stale",
+  }} />);
+  expect(screen.getByText(new RegExp(message, "i"))).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: /copy code/i })).not.toBeInTheDocument();
+  expect(screen.queryByRole("link", { name: /open sportybet/i })).not.toBeInTheDocument();
+  expect(screen.getByRole("button", { name: /show what i can still bet/i }))
+    .toBeInTheDocument();
+});
