@@ -77,7 +77,7 @@ export function StakeCalculator({
         {expected != null && (
           <div>
             <p style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)", marginBottom: 5 }}>
-              Average over many tries
+              Model-estimated return
             </p>
             <p style={{
               fontFamily: "var(--font-mono)", fontSize: 22, fontWeight: 800, lineHeight: 1,
@@ -98,10 +98,10 @@ export function StakeCalculator({
           fontFamily: "var(--font-body)", fontSize: 11.5, color: "var(--text-3)",
           marginTop: 14, lineHeight: 1.6,
         }}>
-          Staked repeatedly at these odds this slip loses about{" "}
-          <strong style={{ color: "var(--text-2)" }}>{Math.abs(edge).toFixed(2)}</strong> per{" "}
-          {amount.toFixed(0)} over the long run — the bookmaker&apos;s margin. Shorter slips
-          give up less of it.
+          Based on BetSightly&apos;s calibrated probability, this price has an
+          estimated shortfall of{" "}
+          <strong style={{ color: "var(--text-2)" }}>{Math.abs(edge).toFixed(2)}</strong>{" "}
+          on a {amount.toFixed(0)} stake. That is a model estimate, not a certain outcome.
         </p>
       )}
     </div>

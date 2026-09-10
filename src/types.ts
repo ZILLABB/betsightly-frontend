@@ -166,6 +166,8 @@ export interface GamePrediction {
   ranking_policy_version?: string;
   selector_version?: string;
   market_policy_version?: string;
+  quality_classification?: "STRONG" | "SUPPORTED" | "LEAN";
+  premium_eligible?: boolean;
   fixture_alternatives?: Array<{
     market: string; model_rank?: number; public_rank: number; quality_score: number;
     confidence?: number; trust_state: string;
@@ -338,8 +340,50 @@ export interface TierBooking {
   sportybet_selection_fingerprint?: string;
 }
 
+export type RecommendationClassification = "STRONG" | "SUPPORTED" | "LEAN";
+
+export interface FixtureRecommendation {
+  match_id: string;
+  classification: RecommendationClassification;
+  premium_eligible: boolean;
+  safe_tier_eligible: boolean;
+  best_pick: GamePrediction;
+  alternatives: GamePrediction[];
+  raw_candidate_count: number;
+  public_candidate_count: number;
+}
+
+export interface RecommendationBoardResponse {
+  status: string;
+  date: string;
+  timezone: "WAT" | string;
+  summary: {
+    fixtures_analysed: number;
+    raw_market_candidates: number;
+    recommendations: number;
+    strong: number;
+    supported: number;
+    lean: number;
+    no_prediction: number;
+    premium_eligible: number;
+    sportybet_bookable: number;
+  };
+  market_distribution: Record<string, number>;
+  recommendations: FixtureRecommendation[];
+  no_prediction: Array<{
+    match_id: string;
+    home_team: string;
+    away_team: string;
+    league: string;
+    kickoff?: string;
+    reason: string;
+  }>;
+  board?: { ready?: boolean; complete?: boolean; degraded?: boolean };
+}
+
 export interface CategoryData {
   selected: boolean;
+  result_status?: "TARGET_REACHED" | "QUALITY_CAPPED" | "EXPOSURE_CAPPED" | "MAX_LEGS_CAPPED" | "INSUFFICIENT_BOOKABLE_FIXTURES" | "INSUFFICIENT_TRUSTED_FIXTURES" | "NO_SAFE_COMBINATION";
   games: GamePrediction[];
   total_odds: number;
   risk_level: string;
@@ -435,7 +479,7 @@ export const CATEGORIES: CategoryMeta[] = [
     description: 'Safe picks · high confidence',
     color: '#059669',
     faint: 'rgba(5,150,105,0.10)',
-    riskLabel: 'Low Risk',
+    riskLabel: 'Conservative',
   },
   {
     key: '5_odds',
@@ -444,7 +488,7 @@ export const CATEGORIES: CategoryMeta[] = [
     description: 'Balanced risk & reward',
     color: '#fbbf24',
     faint: 'rgba(251,191,36,0.08)',
-    riskLabel: 'Medium Risk',
+    riskLabel: 'Balanced',
   },
   {
     key: '10_odds',
@@ -453,7 +497,7 @@ export const CATEGORIES: CategoryMeta[] = [
     description: 'Long shot · rarely lands',
     color: '#f59e0b',
     faint: 'rgba(245,158,11,0.08)',
-    riskLabel: 'High Risk',
+    riskLabel: 'Aggressive',
   },
   {
     key: 'rollover',

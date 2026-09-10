@@ -1,0 +1,33 @@
+.recommendation-board { display: grid; gap: 18px; padding-top: 12px; }
+.recommendation-board__heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 18px; }
+.recommendation-board__heading h2 { margin: 7px 0 4px; font-size: clamp(1.35rem, 3vw, 2rem); }
+.recommendation-board__heading p { margin: 0; max-width: 720px; color: var(--text-3); font: 13px/1.6 var(--font-body); }
+.recommendation-board__degraded { border: 1px solid rgba(245,158,11,.35); background: rgba(245,158,11,.1); color: var(--gold); padding: 7px 10px; border-radius: 999px; font: 700 11px var(--font-body); }
+.recommendation-summary { display: grid; grid-template-columns: repeat(6, minmax(100px, 1fr)); gap: 8px; }
+.recommendation-summary span { display: grid; gap: 2px; padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text-3); font: 11px var(--font-body); }
+.recommendation-summary strong { color: var(--text-1); font: 800 20px var(--font-mono); }
+.recommendation-summary .is-strong strong { color: var(--green); }
+.recommendation-summary .is-supported strong { color: #38bdf8; }
+.recommendation-summary .is-lean strong { color: var(--gold); }
+.recommendation-filters { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.recommendation-filters button, .recommendation-filters select, .recommendation-board__state button { min-height: 38px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text-2); padding: 7px 11px; font: 700 12px var(--font-body); }
+.recommendation-filters button { cursor: pointer; }
+.recommendation-filters button.is-active { border-color: var(--green); color: var(--green); background: color-mix(in srgb, var(--green) 8%, var(--surface)); }
+.recommendation-filters label { display: inline-flex; align-items: center; gap: 6px; min-height: 38px; padding: 0 8px; color: var(--text-2); font: 600 12px var(--font-body); }
+.recommendation-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 310px), 1fr)); gap: 16px; align-items: start; }
+.recommendation-item { min-width: 0; }
+.recommendation-label { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: 0 8px -1px; padding: 7px 10px; border: 1px solid var(--border); border-radius: 9px 9px 0 0; background: var(--surface-2); font: 800 10px var(--font-body); letter-spacing: .05em; text-transform: uppercase; }
+.recommendation-label small { color: var(--text-3); font-size: 9px; }
+.recommendation-label.is-strong span { color: var(--green); }
+.recommendation-label.is-supported span { color: #38bdf8; }
+.recommendation-label.is-lean span { color: var(--gold); }
+.recommendation-alternatives { margin: 8px; border: 1px solid var(--border); border-radius: 9px; background: var(--surface); }
+.recommendation-alternatives summary { min-height: 42px; display: flex; align-items: center; padding: 0 12px; cursor: pointer; color: var(--text-2); font: 700 11px var(--font-body); }
+.recommendation-alternatives > div { padding: 0 12px 8px; }
+.recommendation-alternatives p { display: flex; justify-content: space-between; gap: 10px; margin: 0; padding: 8px 0; border-top: 1px solid var(--border); font: 11px var(--font-body); }
+.recommendation-alternatives p span { color: var(--text-3); text-align: right; }
+.recommendation-board__state { min-height: 120px; display: flex; align-items: center; justify-content: center; gap: 10px; border: 1px dashed var(--border); border-radius: 12px; color: var(--text-3); font: 13px var(--font-body); }
+.recommendation-board__state button { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.recommendation-board__disclaimer { margin: 0; color: var(--text-3); font: 11px/1.5 var(--font-body); }
+@media (max-width: 800px) { .recommendation-summary { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 520px) { .recommendation-board__heading { display: grid; } .recommendation-summary { grid-template-columns: repeat(2, 1fr); } .recommendation-filters > select { flex: 1 1 145px; min-width: 0; } }

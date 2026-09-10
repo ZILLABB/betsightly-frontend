@@ -17,6 +17,8 @@ import { CATEGORIES } from "../types";
 import type { CategoryKey } from "../types";
 import { SEO } from "../components/common/SEO";
 import { api, type BookableNowResponse } from "../api/predictions";
+import { useRecommendations } from "../hooks/useRecommendations";
+import { RecommendationBoard } from "../components/predictions/RecommendationBoard";
 
 const VALID_KEYS = new Set<string>(CATEGORIES.map(c => c.key));
 
@@ -26,6 +28,7 @@ export function PredictionsPage() {
   const initialKey: CategoryKey = category && VALID_KEYS.has(category) ? (category as CategoryKey) : "2_odds";
 
   const { data, loading, error, refetch } = usePredictions();
+  const recommendations = useRecommendations();
   const [activeKey, setActiveKey] = useState<CategoryKey>(initialKey);
   const { formatOdds: fmtOdds, oddsSuffix } = useFormatOdds();
 
@@ -107,12 +110,17 @@ export function PredictionsPage() {
       <SEO title="Predictions" description="Today's best football predictions — 2 Odds, 5 Odds, 10 Odds, and Over 1.5 picks backed by real bookmaker odds." path="/predictions" />
       <div>
         <div className="eyebrow" style={{ marginBottom: 8 }}>Today&apos;s Picks</div>
-        <h1 style={{ fontSize: 32, fontWeight: 800 }}>All Predictions</h1>
+        <h1 style={{ fontSize: 32, fontWeight: 800 }}>Today&apos;s football intelligence</h1>
         <p className="page-intro" style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text-3)", marginTop: 6 }}>
-          Every published pick and accumulator for {data?.date
+          Curated products and one best prediction for each analysed fixture on {data?.date
             ? new Date(data.date + "T12:00:00Z").toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" })
             : "today"} — pick a tier that matches your risk appetite.
         </p>
+      </div>
+
+      <div>
+        <div className="eyebrow" style={{ marginBottom: 8 }}>Curated daily products</div>
+        <h2 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>Premium slips</h2>
       </div>
 
       {/* Only offered once something has actually kicked off — before that the
@@ -221,7 +229,7 @@ export function PredictionsPage() {
           </div>
         </BrandLoader>
       ) : !activeCat || !activeCat.selected ? (
-        <EmptyState type="no-selection" onRetry={refetch} />
+        <EmptyState type="no-selection" message={activeCat?.reason} onRetry={refetch} />
       ) : !activeCat.games?.length ? (
         <EmptyState type="empty" />
       ) : (
@@ -230,7 +238,7 @@ export function PredictionsPage() {
             <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
             <span style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text-3)" }}>
               {activeCat.games.length} {activeCat.games.length === 1 ? "pick" : "picks"}
-              {isSingles ? " · bet separately" : ` · ${activeCat.risk_level} risk`}
+              {isSingles ? " · bet separately" : ` · ${catMeta.riskLabel}`}
             </span>
             {/* A singles tier has no combined price, because combining is not
                 what is being suggested. Showing "9.4x total" next to ten
@@ -304,6 +312,13 @@ export function PredictionsPage() {
           </div>
         </div>
       )}
+
+      <RecommendationBoard
+        data={recommendations.data}
+        loading={recommendations.loading}
+        error={recommendations.error}
+        onRetry={recommendations.refetch}
+      />
     </div>
   );
 }
