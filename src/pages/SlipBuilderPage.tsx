@@ -249,7 +249,13 @@ export default function SlipBuilderPage() {
       {slip && slip.status !== "success" && slip.reason !== "board_refreshing" && (
         <section className="builder-message builder-cap" aria-live="polite">
           <span className="builder-cap__badge">Best available</span>
-          <h2>{target}x isn’t supported by the current board</h2>
+          <h2>
+            {slip.result_status === "EXPOSURE_CAPPED"
+              ? `${target}x is limited by the current diversification rules`
+              : slip.result_status === "MAX_LEGS_CAPPED"
+                ? `${target}x exceeds the current leg ceiling`
+                : `${target}x isn’t supported by the current board`}
+          </h2>
           {slip.best_reachable && (
             <div className="builder-cap__number">
               <strong>{slip.best_reachable.toFixed(2)}x</strong>
@@ -258,7 +264,11 @@ export default function SlipBuilderPage() {
           )}
           <p>{slip.reason ?? "That target is not responsibly reachable from the available board."}</p>
           <p className="builder-cap__promise">
-            We will not add weaker picks simply to manufacture {target}x.
+            {slip.result_status === "EXPOSURE_CAPPED"
+              ? "Approved picks remain, but the current exposure limit is binding. This is not the same as those picks failing quality."
+              : slip.result_status === "MAX_LEGS_CAPPED"
+                ? "Approved picks may remain beyond the current leg ceiling; BetSightly will not silently create an oversized slip."
+                : `We will not add weaker picks simply to manufacture ${target}x.`}
           </p>
           {slip.best_reachable && (
             <button
