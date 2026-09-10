@@ -13,6 +13,14 @@ export interface BuilderContextValue {
   error: string | null;
   editingSelectionId: string | null;
   editingMessage: string | null;
+  editingAction: BuilderAction | null;
+  revisionFeedback: {
+    action: BuilderAction;
+    status: "success" | "failure";
+    oldGame?: GamePrediction;
+    newGame?: GamePrediction;
+    message: string;
+  } | null;
 
   chooseTarget: (target: number, preserveSlip?: boolean) => void;
   chooseHorizon: (horizon: BuilderHorizon) => void;

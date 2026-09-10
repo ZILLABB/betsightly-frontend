@@ -100,6 +100,7 @@ export default function BookingCode({
         <strong style={{ display: "block", color: "var(--text-1)", marginBottom: 4 }}>
           {booking.status === "started" || booking.status === "kickoff_buffer" ||
             booking.status === "expired" ? "Published code no longer placeable" :
+            booking.status === "stale" ? "Code outdated — revalidating booking" :
             "Slip ready, code unavailable"}
         </strong>
         {booking.reason || label[booking.status] || "No valid SportyBet ticket could be created for this tier."}
@@ -170,7 +171,7 @@ export default function BookingCode({
   };
 
   return (
-    <div
+    <div className="booking-code booking-code--verified"
       style={{
         marginTop: 12,
         padding: "12px 14px",

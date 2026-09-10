@@ -105,6 +105,10 @@
 }
 
 .editable-builder-leg {
+  --motion-fast: 120ms;
+  --motion-normal: 180ms;
+  --motion-slow: 240ms;
+  --motion-ease: cubic-bezier(.2, .8, .2, 1);
   position: relative;
   display: grid;
   gap: 12px;
@@ -114,7 +118,59 @@
   background: var(--surface-1);
   box-shadow: var(--shadow-sm);
   touch-action: pan-y;
+  transition: opacity var(--motion-normal) var(--motion-ease),
+    border-color var(--motion-fast) ease, box-shadow var(--motion-fast) ease;
 }
+.editable-builder-leg.is-pending { opacity: .78; }
+.editable-builder-leg__card-stage { position: relative; overflow: hidden; }
+.editable-builder-leg__overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: grid;
+  place-content: center;
+  gap: 5px;
+  padding: 18px;
+  text-align: center;
+  color: var(--text-1);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--surface-1) 88%, transparent);
+  backdrop-filter: blur(3px);
+}
+.editable-builder-leg__overlay svg { margin: 0 auto; color: var(--brand); animation: builder-spin .8s linear infinite; }
+.editable-builder-leg__overlay span { color: var(--text-2); font-size: 12px; }
+.editable-builder-leg__old-card {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  animation: builder-swap-out var(--motion-slow) var(--motion-ease) forwards;
+}
+.editable-builder-leg.is-replacement-entering .editable-builder-leg__card-stage > div:not(.editable-builder-leg__old-card) {
+  animation: builder-swap-in var(--motion-slow) var(--motion-ease) both;
+}
+.editable-builder-leg__market-changing { animation: builder-market-fade var(--motion-normal) ease both; }
+.editable-builder-leg__feedback {
+  margin: 0;
+  padding: 9px 11px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  animation: builder-feedback-in var(--motion-normal) var(--motion-ease) both;
+}
+.editable-builder-leg__feedback.is-success { color: var(--brand); background: var(--brand-faint); }
+.editable-builder-leg__feedback.is-failure { color: var(--red); background: color-mix(in srgb, var(--red) 10%, transparent); }
+.editable-builder-leg.is-locked .editable-builder-leg__topline svg { animation: builder-lock var(--motion-fast) ease; }
+.builder-results { animation: builder-result-in var(--motion-normal) var(--motion-ease) both; }
+.booking-code--verified { animation: builder-code-in var(--motion-normal) var(--motion-ease) both; }
+@keyframes builder-spin { to { transform: rotate(360deg); } }
+@keyframes builder-swap-out { to { opacity: 0; transform: translateX(-14px); } }
+@keyframes builder-swap-in { from { opacity: 0; transform: translateX(14px); } }
+@keyframes builder-market-fade { 50% { opacity: .45; } }
+@keyframes builder-feedback-in { from { opacity: 0; transform: translateY(4px); } }
+@keyframes builder-lock { 50% { transform: scale(.86); } }
+@keyframes builder-result-in { from { opacity: 0; transform: translateY(6px); } }
+@keyframes builder-code-in { from { opacity: 0; transform: scale(.98); } }
 .editable-builder-leg.is-locked {
   border-color: var(--border-brand);
   box-shadow: inset 3px 0 var(--brand), var(--shadow-sm);
@@ -194,4 +250,21 @@
   .builder-change-summary p,
   .builder-change-summary small { grid-column: auto; }
   .builder-pick-explanation dl { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .editable-builder-leg,
+  .editable-builder-leg__old-card,
+  .editable-builder-leg.is-replacement-entering .editable-builder-leg__card-stage > div,
+  .editable-builder-leg__market-changing,
+  .editable-builder-leg__feedback,
+  .editable-builder-leg__overlay svg,
+  .editable-builder-leg.is-locked .editable-builder-leg__topline svg,
+  .builder-results {
+    animation: none !important;
+    transition-duration: 1ms !important;
+    transform: none !important;
+  }
+  .booking-code--verified { animation: none !important; }
+  .editable-builder-leg__old-card { display: none; }
 }

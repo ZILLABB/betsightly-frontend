@@ -95,11 +95,18 @@ export function BuilderProvider({
     useState<string | null>(null);
   const [editingMessage, setEditingMessage] =
     useState<string | null>(null);
+  const [editingAction, setEditingAction] =
+    useState<BuilderAction | null>(null);
+  const [revisionFeedback, setRevisionFeedback] = useState<{
+    action: BuilderAction; status: "success" | "failure";
+    oldGame?: GamePrediction; newGame?: GamePrediction; message: string;
+  } | null>(null);
 
   const inFlight = useRef(false);
   const recoveryAttempts = useRef(0);
   const revisionSequence = useRef(0);
   const revisionController = useRef<AbortController | null>(null);
+  const feedbackTimer = useRef<number | null>(null);
 
   useEffect(() => {
     try {
@@ -346,7 +353,10 @@ export function BuilderProvider({
     };
   }, [slip, target, horizon]);
 
-  useEffect(() => () => revisionController.current?.abort(), []);
+  useEffect(() => () => {
+    revisionController.current?.abort();
+    if (feedbackTimer.current) window.clearTimeout(feedbackTimer.current);
+  }, []);
 
   const reviseLeg = useCallback(async (
     action: BuilderAction,
@@ -386,11 +396,16 @@ export function BuilderProvider({
     });
 
     setError(null);
+    setRevisionFeedback(null);
     setEditingSelectionId(selectionId ?? "best-reachable");
+    setEditingAction(action);
     setEditingMessage(
-      action === "safer_same_fixture"
-        ? "Searching approved alternatives…"
-        : "Rebuilding the remaining slip…",
+      action === "replace_selection" ? "Finding a different game…"
+        : action === "safer_same_fixture" ? "Checking safer markets…"
+          : action === "remove_selection" ? "Rebalancing slip…"
+            : action === "exclude_fixture" ? "Excluding this game…"
+              : action.includes("lock") ? null
+                : "Updating this slip…",
     );
     // A code for the prior fingerprint must never remain actionable while a
     // structural edit is in flight or after an ambiguous network failure.
@@ -420,8 +435,49 @@ export function BuilderProvider({
         target: targetOverride,
       }, controller.signal);
       if (sequence !== revisionSequence.current) return;
+      if (action === "replace_selection" && !next.action_error && game &&
+          next.change_summary?.action === "replace_selection") {
+        const oldGames = current.games ?? [];
+        const newGames = next.games ?? [];
+        const oldFixture = String(game.match_id || game.fixture_id || "");
+        const oldUnaffected = oldGames
+          .filter((item) => item.selection_id !== selectionId)
+          .map((item) => item.selection_id)
+          .filter(Boolean);
+        const validSwap = newGames.length === oldGames.length &&
+          !newGames.some((item) =>
+            String(item.match_id || item.fixture_id || "") === oldFixture) &&
+          oldUnaffected.every((id) =>
+            newGames.some((item) => item.selection_id === id)) &&
+          (current.locked_selection_ids ?? []).every((id) =>
+            newGames.some((item) => item.selection_id === id));
+        if (!validSwap) {
+          setRevisionFeedback({ action, status: "failure", oldGame: game,
+            message: "No suitable replacement found. Your original game has been kept." });
+          return;
+        }
+      }
       setSlip(next);
-      if (next.action_error) setError(next.action_error);
+      if (next.action_error) {
+        setRevisionFeedback({ action, status: "failure", oldGame: game,
+          message: action === "replace_selection"
+            ? "No suitable replacement found. Your original game has been kept."
+            : next.action_error });
+      } else {
+        const added = next.change_summary?.added?.[0];
+        const message = action === "replace_selection" ? "Game replaced"
+          : action === "safer_same_fixture" ? "Safer market applied"
+            : action === "exclude_fixture" ? "Game excluded from this Builder run"
+              : action === "lock_selection" ? "Leg locked"
+                : action === "unlock_selection" ? "Leg unlocked"
+                  : "Slip updated";
+        setRevisionFeedback({ action, status: "success", oldGame: game,
+          newGame: added, message });
+        if (feedbackTimer.current) window.clearTimeout(feedbackTimer.current);
+        feedbackTimer.current = window.setTimeout(
+          () => setRevisionFeedback(null), 3800,
+        );
+      }
     } catch (caught) {
       if (sequence !== revisionSequence.current) return;
       const failure = caught as Error & { status?: number };
@@ -435,6 +491,7 @@ export function BuilderProvider({
       if (sequence === revisionSequence.current) {
         setEditingSelectionId(null);
         setEditingMessage(null);
+        setEditingAction(null);
       }
     }
   }, [horizon, slip]);
@@ -450,6 +507,8 @@ export function BuilderProvider({
         error,
         editingSelectionId,
         editingMessage,
+        editingAction,
+        revisionFeedback,
         chooseTarget,
         chooseHorizon,
         build,

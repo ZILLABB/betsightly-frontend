@@ -20,6 +20,14 @@ const TARGETS = [10, 20, 30, 50, 70, 100];
 const suggestedTargets = (requested: number) =>
   TARGETS.filter((value) => value < requested).slice(-3).reverse();
 const accent = CATEGORIES.find((c) => c.key === "5_odds")!;
+const capHeading = (status: string | undefined, target: number) => ({
+  EXPOSURE_CAPPED: `${target}x is limited by the current diversification rules`,
+  TEAM_TO_SCORE_CAPPED: `${target}x reached the Team-to-Score safety limit`,
+  FIXTURE_DIVERSITY_CAPPED: `${target}x is limited by fixture diversity`,
+  MAX_LEGS_CAPPED: `${target}x exceeds the current leg ceiling`,
+  BOOKABILITY_CAPPED: `${target}x is limited by exact SportyBet availability`,
+  EXPECTED_RETURN_CAPPED: `${target}x does not clear the expected-return policy`,
+}[status || ""] || `${target}x isn’t supported by the current board`);
 
 export default function SlipBuilderPage() {
   const {
@@ -31,6 +39,8 @@ export default function SlipBuilderPage() {
     error,
     editingSelectionId,
     editingMessage,
+    editingAction,
+    revisionFeedback,
     chooseTarget,
     chooseHorizon,
     build,
@@ -60,6 +70,7 @@ export default function SlipBuilderPage() {
   const headlineProbability = hasDnb
     ? (slip?.target_hit_probability ?? slip?.hit_probability ?? 0)
     : (slip?.hit_probability ?? 0);
+  const capStatus = String(slip?.result_status || "");
 
   return (
     <main className="builder-page page-stack">
@@ -222,7 +233,8 @@ export default function SlipBuilderPage() {
           {error}
         </div>
       )}
-      {editingMessage && (
+      {editingMessage && editingAction !== "replace_selection" &&
+        editingAction !== "safer_same_fixture" && (
         <div className="builder-revision-progress" role="status">
           <BrandLoader />
           <div>
@@ -249,13 +261,7 @@ export default function SlipBuilderPage() {
       {slip && slip.status !== "success" && slip.reason !== "board_refreshing" && (
         <section className="builder-message builder-cap" aria-live="polite">
           <span className="builder-cap__badge">Best available</span>
-          <h2>
-            {slip.result_status === "EXPOSURE_CAPPED"
-              ? `${target}x is limited by the current diversification rules`
-              : slip.result_status === "MAX_LEGS_CAPPED"
-                ? `${target}x exceeds the current leg ceiling`
-                : `${target}x isn’t supported by the current board`}
-          </h2>
+          <h2>{capHeading(capStatus, target)}</h2>
           {slip.best_reachable && (
             <div className="builder-cap__number">
               <strong>{slip.best_reachable.toFixed(2)}x</strong>
@@ -264,10 +270,13 @@ export default function SlipBuilderPage() {
           )}
           <p>{slip.reason ?? "That target is not responsibly reachable from the available board."}</p>
           <p className="builder-cap__promise">
-            {slip.result_status === "EXPOSURE_CAPPED"
+            {["EXPOSURE_CAPPED", "TEAM_TO_SCORE_CAPPED",
+              "FIXTURE_DIVERSITY_CAPPED"].includes(capStatus)
               ? "Approved picks remain, but the current exposure limit is binding. This is not the same as those picks failing quality."
               : slip.result_status === "MAX_LEGS_CAPPED"
                 ? "Approved picks may remain beyond the current leg ceiling; BetSightly will not silently create an oversized slip."
+                : capStatus === "EXPECTED_RETURN_CAPPED"
+                  ? "A combination can reach the requested odds, but it does not meet BetSightly’s minimum expected-return policy."
                 : `We will not add weaker picks simply to manufacture ${target}x.`}
           </p>
           {slip.best_reachable && (
@@ -439,6 +448,17 @@ export default function SlipBuilderPage() {
                 game={game} index={index} accent={accent}
                 locked={Boolean(game.selection_id && slip.locked_selection_ids?.includes(game.selection_id))}
                 pending={editingSelectionId === game.selection_id}
+                pendingAction={editingAction}
+                replacedFrom={revisionFeedback?.status === "success" &&
+                  revisionFeedback.action === "replace_selection" &&
+                  revisionFeedback.newGame?.selection_id === game.selection_id
+                  ? revisionFeedback.oldGame : undefined}
+                feedback={revisionFeedback && (
+                  revisionFeedback.oldGame?.selection_id === game.selection_id ||
+                  revisionFeedback.newGame?.selection_id === game.selection_id)
+                  ? { status: revisionFeedback.status,
+                      message: revisionFeedback.message }
+                  : undefined}
                 onAction={(action, selected) => void reviseLeg(action, selected)}
                 onExplanation={() => trackProductEvent("builder_explanation_opened", {
                   product_area: "builder", target_odds: target, horizon,

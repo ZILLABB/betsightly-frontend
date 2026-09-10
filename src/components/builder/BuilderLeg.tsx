@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Ban,
   CircleHelp,
@@ -23,6 +23,9 @@ export function BuilderLeg({
   accent,
   locked,
   pending,
+  pendingAction,
+  replacedFrom,
+  feedback,
   onAction,
   onExplanation,
 }: {
@@ -31,15 +34,29 @@ export function BuilderLeg({
   accent: CategoryMeta;
   locked: boolean;
   pending: boolean;
+  pendingAction?: BuilderAction | null;
+  replacedFrom?: GamePrediction;
+  feedback?: { status: "success" | "failure"; message: string };
   onAction: (action: BuilderAction, game: GamePrediction) => void;
   onExplanation: () => void;
 }) {
   const [explanationOpen, setExplanationOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showOldCard, setShowOldCard] = useState(false);
   const touchX = useRef<number | null>(null);
   const alternative = game.fixture_alternatives?.find(
     (item) => item.market !== game.market,
   );
+
+  useEffect(() => {
+    if (!replacedFrom) {
+      setShowOldCard(false);
+      return;
+    }
+    setShowOldCard(true);
+    const timer = window.setTimeout(() => setShowOldCard(false), 260);
+    return () => window.clearTimeout(timer);
+  }, [replacedFrom]);
 
   const explain = () => {
     setExplanationOpen((open) => !open);
@@ -48,7 +65,7 @@ export function BuilderLeg({
 
   return (
     <article
-      className={`editable-builder-leg${locked ? " is-locked" : ""}`}
+      className={`editable-builder-leg${locked ? " is-locked" : ""}${pending ? " is-pending" : ""}${replacedFrom ? " is-replacement-entering" : ""}`}
       onTouchStart={(event) => { touchX.current = event.touches[0]?.clientX ?? null; }}
       onTouchEnd={(event) => {
         if (pending || touchX.current == null) return;
@@ -72,7 +89,27 @@ export function BuilderLeg({
               : "Supported evidence"}
         </strong>
       </div>
-      <PredictionCard game={game} category={accent} />
+      <div className="editable-builder-leg__card-stage">
+        {replacedFrom && showOldCard && (
+          <div className="editable-builder-leg__old-card" aria-hidden="true">
+            <PredictionCard game={replacedFrom} category={accent} />
+          </div>
+        )}
+        <div className={pendingAction === "safer_same_fixture"
+          ? "editable-builder-leg__market-changing" : ""}>
+          <PredictionCard game={game} category={accent} />
+        </div>
+        {pending && (
+          <div className="editable-builder-leg__overlay" role="status">
+            <RefreshCw size={18} aria-hidden="true" />
+            <strong>{pendingAction === "replace_selection"
+              ? "Finding a different game…"
+              : pendingAction === "safer_same_fixture"
+                ? "Checking safer markets…" : "Updating this game…"}</strong>
+            <span>Checking approved predictions and SportyBet availability.</span>
+          </div>
+        )}
+      </div>
 
       <div className="editable-builder-leg__actions" aria-label={`Actions for ${game.home_team} vs ${game.away_team}`}>
         <button type="button" onClick={explain} aria-expanded={explanationOpen}>
@@ -114,9 +151,10 @@ export function BuilderLeg({
         </div>
       )}
 
-      {pending && (
-        <p className="editable-builder-leg__pending" role="status">
-          Searching approved alternatives…
+      {feedback && (
+        <p className={`editable-builder-leg__feedback is-${feedback.status}`}
+          role={feedback.status === "failure" ? "alert" : "status"}>
+          {feedback.status === "success" ? "✓ " : ""}{feedback.message}
         </p>
       )}
 
