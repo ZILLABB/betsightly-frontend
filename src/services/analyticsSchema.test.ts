@@ -43,3 +43,18 @@ test("trust metadata and best-reachable acceptance stay in the canonical schema"
     market_mix: "over_1_5:3", target_reached: 1,
   });
 });
+
+test.each([
+  "builder_leg_replace_clicked",
+  "builder_safer_market_requested",
+  "builder_fixture_excluded",
+  "builder_leg_removed",
+  "builder_leg_locked",
+  "builder_leg_unlocked",
+  "builder_explanation_opened",
+  "builder_best_reachable_accepted",
+] as const)("%s is a canonical human Builder action", (event) => {
+  expect(validateAnalyticsEvent(event, {
+    product_area: "builder", target_odds: 50,
+  })).toBe(true);
+});

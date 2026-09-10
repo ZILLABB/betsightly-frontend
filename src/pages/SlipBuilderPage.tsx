@@ -5,25 +5,21 @@ import {
   Sparkles,
   Target,
 } from "lucide-react";
+import { useState } from "react";
 
-import { PredictionCard } from "../components/predictions/PredictionCard";
 import BookingCode from "../components/predictions/BookingCode";
+import { BuilderLeg } from "../components/builder/BuilderLeg";
 import { BrandLoader } from "../components/ui/BrandLoader";
 import { SEO } from "../components/common/SEO";
 import { CATEGORIES } from "../types";
 import { trackProductEvent } from "../services/bookingTracking";
 import { useBuilder } from "../contexts/BuilderContextInstance";
+import "../styles/builder-editor.css";
 
 const TARGETS = [10, 20, 30, 50, 70, 100];
 const suggestedTargets = (requested: number) =>
   TARGETS.filter((value) => value < requested).slice(-3).reverse();
 const accent = CATEGORIES.find((c) => c.key === "5_odds")!;
-const trustBand = (score?: number) =>
-  score == null
-    ? "Evidence checked"
-    : score >= 85
-      ? "Strong evidence"
-      : "Supported evidence";
 
 export default function SlipBuilderPage() {
   const {
@@ -33,10 +29,14 @@ export default function SlipBuilderPage() {
     loading,
     recoveringCode,
     error,
+    editingSelectionId,
+    editingMessage,
     chooseTarget,
     chooseHorizon,
     build,
+    reviseLeg,
   } = useBuilder();
+  const [customTarget, setCustomTarget] = useState("");
 
   const acceptBestReachable = () => {
     if (!slip?.best_reachable) return;
@@ -45,13 +45,14 @@ export default function SlipBuilderPage() {
 
     chooseTarget(closest, true);
 
-    trackProductEvent("best_reachable_accepted", {
-      product_area: "builder",
-      target_odds: closest,
-      horizon,
-    });
-
-    void build(false, closest, true);
+    if (slip.builder_run_id) {
+      void reviseLeg("accept_best_reachable", undefined, closest);
+    } else {
+      trackProductEvent("builder_best_reachable_accepted", {
+        product_area: "builder", target_odds: closest, horizon,
+      });
+      void build(false, closest, true);
+    }
   };
 
   const dnbLegCount = slip?.dnb_leg_count ?? 0;
@@ -139,6 +140,27 @@ export default function SlipBuilderPage() {
             </button>
           ))}
         </div>
+        <div className="builder-custom-target">
+          <label htmlFor="builder-custom-target">Custom target (2x–200x)</label>
+          <div>
+            <input id="builder-custom-target" type="number" min="2" max="200"
+              step="0.01" inputMode="decimal" value={customTarget}
+              placeholder="e.g. 125"
+              onChange={(event) => setCustomTarget(event.target.value)} />
+            <button type="button" disabled={loading || Number(customTarget) < 2 || Number(customTarget) > 200}
+              onClick={() => {
+                const value = Number(customTarget);
+                chooseTarget(value);
+                trackProductEvent("builder_target_selected", {
+                  product_area: "builder", source: "custom",
+                  target_odds: value, horizon,
+                });
+              }}>
+              Use target
+            </button>
+          </div>
+          <small>A higher request is not a promise; quality rules stay unchanged.</small>
+        </div>
         <div className="builder-divider" />
         <div className="builder-section-heading">
           <div>
@@ -198,6 +220,15 @@ export default function SlipBuilderPage() {
       {error && (
         <div className="builder-message builder-message--error" role="alert">
           {error}
+        </div>
+      )}
+      {editingMessage && (
+        <div className="builder-revision-progress" role="status">
+          <BrandLoader />
+          <div>
+            <strong>{editingMessage}</strong>
+            <span>Checking SportyBet selections, creating the current booking, then validating every event and market.</span>
+          </div>
         </div>
       )}
       {slip?.reason === "board_refreshing" && (
@@ -267,6 +298,43 @@ export default function SlipBuilderPage() {
               minimum
             </span>
           </header>
+          {slip.board?.degraded && (
+            <p className="builder-board-state">
+              The prepared board is usable but incomplete. Unavailable competitions were not searched again for this edit.
+            </p>
+          )}
+          {slip.change_summary && (
+            <section className="builder-change-summary" aria-label="Latest slip changes">
+              <strong>Rebuilt your slip</strong>
+              <span>
+                {slip.change_summary.removed.length} removed · {slip.change_summary.added.length} added
+              </span>
+              <p>{slip.change_summary.reason}</p>
+              {slip.change_summary.removed[0] && slip.change_summary.added[0] && (
+                <div className="builder-change-summary__swap">
+                  <span>
+                    Removed <strong>{slip.change_summary.removed[0].prediction}</strong>
+                    {slip.change_summary.removed[0].odds ? ` @ ${slip.change_summary.removed[0].odds?.toFixed(2)}` : ""}
+                  </span>
+                  <span>
+                    Added <strong>{slip.change_summary.added[0].prediction}</strong>
+                    {slip.change_summary.added[0].odds ? ` @ ${slip.change_summary.added[0].odds?.toFixed(2)}` : ""}
+                  </span>
+                  {slip.change_summary.action === "safer_same_fixture" && (
+                    <small>
+                      Conservative probability: {((slip.change_summary.added[0].evidence_adjusted_probability ?? 0) * 100).toFixed(1)}%
+                      {slip.change_summary.added[0].market?.startsWith("dnb_")
+                        ? " · A draw pushes this leg at 1.00x."
+                        : ""}
+                    </small>
+                  )}
+                </div>
+              )}
+              <small>
+                Old total: {slip.change_summary.old_odds?.toFixed(2) ?? "—"}x · New total: {slip.change_summary.new_odds?.toFixed(2) ?? "—"}x
+              </small>
+            </section>
+          )}
           <div className="builder-stats">
             <Stat label="Total odds" value={`${slip.odds?.toFixed(2)}x`} />
             <Stat label="Legs" value={String(slip.legs)} />
@@ -349,25 +417,22 @@ export default function SlipBuilderPage() {
             </div>
           )}
           <div className="builder-leg-list">
-            <h2>Why each leg qualified</h2>
+            <div className="builder-leg-list__heading">
+              <div>
+                <h2>Shape this slip</h2>
+                <p>Replace a pick, request a safer market, exclude a game, or lock what you want to keep.</p>
+              </div>
+              {slip.revision && <span>Revision {slip.revision}</span>}
+            </div>
             {(slip.games ?? []).map((game, index) => (
-              <article
-                className="builder-leg"
-                key={`${game.fixture_id}-${index}`}
-              >
-                <div className="builder-leg__meta">
-                  <span>Leg {String(index + 1).padStart(2, "0")}</span>
-                  <strong>
-                    <ShieldCheck size={14} /> {trustBand(game.trust?.score)}
-                  </strong>
-                  <small>
-                    {game.trust?.evidence_state === "SUPPORTED"
-                      ? "Historical and live evidence checked"
-                      : "Conservative evidence threshold passed"}
-                  </small>
-                </div>
-                <PredictionCard game={game} category={accent} />
-              </article>
+              <BuilderLeg key={game.selection_id || `${game.fixture_id}-${index}`}
+                game={game} index={index} accent={accent}
+                locked={Boolean(game.selection_id && slip.locked_selection_ids?.includes(game.selection_id))}
+                pending={editingSelectionId === game.selection_id}
+                onAction={(action, selected) => void reviseLeg(action, selected)}
+                onExplanation={() => trackProductEvent("builder_explanation_opened", {
+                  product_area: "builder", target_odds: target, horizon,
+                })} />
             ))}
           </div>
         </section>

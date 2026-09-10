@@ -121,6 +121,8 @@ export interface Game {
 // ── Prediction-specific types ───────────────────────────────────────────
 
 export interface GamePrediction {
+  selection_id?: string;
+  match_id?: string;
   fixture_id: number;
   /** When this pick entered the card. Picks added after first publication
    *  carry a later stamp and `added_later`, so the morning card stays
@@ -179,6 +181,8 @@ export interface GamePrediction {
   raw_confidence?: number;
   ml_confidence?: number | null;
   market_implied_probability?: number | null;
+  bookmaker_disagreement?: number | null;
+  ml_disagreement?: number | null;
   calibration_group?: string;
   calibration_sample?: number;
   safe_tier_eligible?: boolean;

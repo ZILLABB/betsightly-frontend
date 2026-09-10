@@ -1,15 +1,18 @@
 import { createContext, useContext } from "react";
-import type { BuiltSlip } from "../api/predictions";
+import type { BuilderAction, EditableBuiltSlip } from "../api/builderRevisions";
+import type { GamePrediction } from "../types";
 
 export type BuilderHorizon = "today" | "week";
 
 export interface BuilderContextValue {
   target: number;
   horizon: BuilderHorizon;
-  slip: BuiltSlip | null;
+  slip: EditableBuiltSlip | null;
   loading: boolean;
   recoveringCode: boolean;
   error: string | null;
+  editingSelectionId: string | null;
+  editingMessage: string | null;
 
   chooseTarget: (target: number, preserveSlip?: boolean) => void;
   chooseHorizon: (horizon: BuilderHorizon) => void;
@@ -18,6 +21,11 @@ export interface BuilderContextValue {
     regenerate?: boolean,
     targetOverride?: number,
     preserveSlip?: boolean,
+  ) => Promise<void>;
+  reviseLeg: (
+    action: BuilderAction,
+    game?: GamePrediction,
+    targetOverride?: number,
   ) => Promise<void>;
 }
 

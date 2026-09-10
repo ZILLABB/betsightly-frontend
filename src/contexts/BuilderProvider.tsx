@@ -6,7 +6,12 @@ import {
   type ReactNode,
 } from "react";
 
-import { api, type BuiltSlip } from "../api/predictions";
+import { api } from "../api/predictions";
+import {
+  reviseBuilderSlip,
+  type BuilderAction,
+  type EditableBuiltSlip,
+} from "../api/builderRevisions";
 import type { GamePrediction } from "../types";
 import { trackProductEvent } from "../services/bookingTracking";
 
@@ -21,7 +26,7 @@ const MAX_AUTO_RECOVERY_ATTEMPTS = 3;
 interface SavedBuilderState {
   target: number;
   horizon: BuilderHorizon;
-  slip: BuiltSlip | null;
+  slip: EditableBuiltSlip | null;
 }
 
 function readSavedState(): SavedBuilderState {
@@ -79,16 +84,22 @@ export function BuilderProvider({
   const [horizon, setHorizon] =
     useState<BuilderHorizon>(initial.horizon);
   const [slip, setSlip] =
-    useState<BuiltSlip | null>(initial.slip);
+    useState<EditableBuiltSlip | null>(initial.slip);
 
   const [loading, setLoading] = useState(false);
   const [recoveringCode, setRecoveringCode] =
     useState(false);
   const [error, setError] =
     useState<string | null>(null);
+  const [editingSelectionId, setEditingSelectionId] =
+    useState<string | null>(null);
+  const [editingMessage, setEditingMessage] =
+    useState<string | null>(null);
 
   const inFlight = useRef(false);
   const recoveryAttempts = useRef(0);
+  const revisionSequence = useRef(0);
+  const revisionController = useRef<AbortController | null>(null);
 
   useEffect(() => {
     try {
@@ -169,7 +180,7 @@ export function BuilderProvider({
           regenerate,
         );
 
-        setSlip(result);
+        setSlip(result as EditableBuiltSlip);
         recoveryAttempts.current = 0;
 
         const booking = result.booking;
@@ -259,6 +270,7 @@ export function BuilderProvider({
     if (
       slip?.status !== "success" ||
       slip.booking?.status === "active" ||
+      (slip.revision ?? 1) > 1 ||
       recoveryAttempts.current >=
         MAX_AUTO_RECOVERY_ATTEMPTS
     ) {
@@ -334,6 +346,99 @@ export function BuilderProvider({
     };
   }, [slip, target, horizon]);
 
+  useEffect(() => () => revisionController.current?.abort(), []);
+
+  const reviseLeg = useCallback(async (
+    action: BuilderAction,
+    game?: GamePrediction,
+    targetOverride?: number,
+  ) => {
+    const current = slip;
+    if (!current?.builder_run_id || !current.edit_token || !current.revision) {
+      setError("Build a fresh slip before editing its selections.");
+      return;
+    }
+
+    const selectionId = game?.selection_id;
+    const fixtureId = game?.match_id || String(game?.fixture_id ?? "");
+    if (action !== "accept_best_reachable" && !selectionId) {
+      setError("This selection has no current revision identity. Build again.");
+      return;
+    }
+
+    revisionController.current?.abort();
+    const controller = new AbortController();
+    revisionController.current = controller;
+    const sequence = ++revisionSequence.current;
+    const eventByAction = {
+      replace_selection: "builder_leg_replace_clicked",
+      safer_same_fixture: "builder_safer_market_requested",
+      exclude_fixture: "builder_fixture_excluded",
+      remove_selection: "builder_leg_removed",
+      lock_selection: "builder_leg_locked",
+      unlock_selection: "builder_leg_unlocked",
+      accept_best_reachable: "builder_best_reachable_accepted",
+    } as const;
+    trackProductEvent(eventByAction[action], {
+      product_area: "builder",
+      target_odds: targetOverride ?? current.target,
+      horizon,
+    });
+
+    setError(null);
+    setEditingSelectionId(selectionId ?? "best-reachable");
+    setEditingMessage(
+      action === "safer_same_fixture"
+        ? "Searching approved alternatives…"
+        : "Rebuilding the remaining slip…",
+    );
+    // A code for the prior fingerprint must never remain actionable while a
+    // structural edit is in flight or after an ambiguous network failure.
+    setSlip({
+      ...current,
+      booking: current.booking ? {
+        ...current.booking,
+        status: "stale",
+        lifecycle_status: "stale",
+        actionable: false,
+        share_code: null,
+        share_url: undefined,
+        reason: "This code belongs to the previous slip revision.",
+      } : undefined,
+    });
+
+    try {
+      const next = await reviseBuilderSlip({
+        runId: current.builder_run_id,
+        editToken: current.edit_token,
+        revision: current.revision,
+        requestId: globalThis.crypto?.randomUUID?.() ??
+          `revision-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+        action,
+        selectionId,
+        fixtureId,
+        target: targetOverride,
+      }, controller.signal);
+      if (sequence !== revisionSequence.current) return;
+      setSlip(next);
+      if (next.action_error) setError(next.action_error);
+    } catch (caught) {
+      if (sequence !== revisionSequence.current) return;
+      const failure = caught as Error & { status?: number };
+      if (failure.name === "AbortError") return;
+      setError(
+        failure.status === 409
+          ? "This slip changed in another request. Its older response was ignored; build or reload the latest revision."
+          : "That edit could not be verified. The previous code stays hidden until the slip is rebuilt.",
+      );
+    } finally {
+      if (sequence === revisionSequence.current) {
+        setEditingSelectionId(null);
+        setEditingMessage(null);
+      }
+    }
+  }, [horizon, slip]);
+
   return (
     <BuilderContext.Provider
       value={{
@@ -343,9 +448,12 @@ export function BuilderProvider({
         loading,
         recoveringCode,
         error,
+        editingSelectionId,
+        editingMessage,
         chooseTarget,
         chooseHorizon,
         build,
+        reviseLeg,
       }}
     >
       {children}

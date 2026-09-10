@@ -3,6 +3,10 @@ export type AnalyticsEvent =
   | "builder_target_selected" | "builder_generate_requested" | "builder_generated"
   | "builder_failed" | "builder_unavailable"
   | "best_reachable_accepted"
+  | "builder_leg_replace_clicked" | "builder_safer_market_requested"
+  | "builder_fixture_excluded" | "builder_leg_removed"
+  | "builder_leg_locked" | "builder_leg_unlocked"
+  | "builder_explanation_opened" | "builder_best_reachable_accepted"
   | "booking_code_viewed" | "booking_code_copied" | "sportybet_opened"
   | "fallback_shown" | "alternative_market_used" | "replacement_used"
   | "partial_booking_used" | "replacement_details_opened" | "results_viewed"
@@ -43,6 +47,14 @@ const REQUIRED: Partial<Record<AnalyticsEvent, (keyof AnalyticsProperties)[]>> =
   builder_generated: ["product_area", "target_odds", "booking_status"],
   builder_failed: ["product_area", "target_odds", "failure_category"],
   builder_unavailable: ["product_area", "target_odds", "failure_category"],
+  builder_leg_replace_clicked: ["product_area", "target_odds"],
+  builder_safer_market_requested: ["product_area", "target_odds"],
+  builder_fixture_excluded: ["product_area", "target_odds"],
+  builder_leg_removed: ["product_area", "target_odds"],
+  builder_leg_locked: ["product_area", "target_odds"],
+  builder_leg_unlocked: ["product_area", "target_odds"],
+  builder_explanation_opened: ["product_area", "target_odds"],
+  builder_best_reachable_accepted: ["product_area", "target_odds"],
   booking_code_viewed: ["product_area", "booking_status", "booking_variant_id"],
   booking_code_copied: ["product_area", "booking_status", "booking_variant_id"],
   sportybet_opened: ["product_area", "booking_status", "booking_variant_id"],

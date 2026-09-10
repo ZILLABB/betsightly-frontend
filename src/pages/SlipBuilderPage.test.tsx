@@ -2,16 +2,23 @@ import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import "@testing-library/jest-dom";
 import SlipBuilderPage from "./SlipBuilderPage";
 import { api } from "../api/predictions";
+import { reviseBuilderSlip } from "../api/builderRevisions";
 import { BuilderProvider } from "../contexts/BuilderProvider";
 
 jest.mock("../api/predictions", () => ({ api: { buildSlip: jest.fn() } }));
+jest.mock("../api/builderRevisions", () => ({
+  reviseBuilderSlip: jest.fn(),
+}));
 jest.mock("../components/common/SEO", () => ({ SEO: () => null }));
 jest.mock("../components/ui/BrandLoader", () => ({ BrandLoader: () => <span>loading</span> }));
 jest.mock("../components/predictions/PredictionCard", () => ({ PredictionCard: ({ game }: any) => <div>{game.home_team} v {game.away_team}</div> }));
-jest.mock("../components/predictions/BookingCode", () => () => <div>booking</div>);
+jest.mock("../components/predictions/BookingCode", () => ({ booking }: any) => (
+  <div><span>booking</span>{booking?.share_code && <span data-testid="booking-code">{booking.share_code}</span>}</div>
+));
 jest.mock("../services/bookingTracking", () => ({ trackProductEvent: jest.fn() }));
 
 const buildSlip = api.buildSlip as jest.Mock;
+const reviseSlip = reviseBuilderSlip as jest.Mock;
 
 const renderBuilder = () =>
   render(
@@ -22,7 +29,90 @@ const renderBuilder = () =>
 
 beforeEach(() => {
   buildSlip.mockReset();
+  reviseSlip.mockReset();
   sessionStorage.clear();
+});
+
+const editableSlip = (games: any[] = [{
+  selection_id: "leg-a", match_id: "match-a", fixture_id: 1,
+  home_team: "Alpha", away_team: "Beta", league: "Test",
+  date: "2026-09-10", prediction: "Over 1.5", prediction_type: "goals",
+  market: "over_1_5", confidence: .78, evidence_adjusted_probability: .74,
+  real_odds: 1.5, odds: 1.5, public_rank: 1,
+  trust: { score: 88, evidence_state: "SUPPORTED", evidence_level: "strong", lower_reliability_bound: .70 },
+}]) => ({
+  status: "success" as const, target: 10, odds: 10.1, legs: games.length,
+  hit_probability: .2, lowest_trust_grade: "A" as const,
+  builder_run_id: "run-1", edit_token: "token-token-token-token-token-token",
+  revision: 1, locked_selection_ids: [], games,
+  booking: { status: "active" as const, share_code: "OLD123", booking_status: "FULL" as const },
+});
+
+test("shows every editable leg action with accessible button alternatives", async () => {
+  buildSlip.mockResolvedValue(editableSlip());
+  renderBuilder();
+  fireEvent.click(screen.getByRole("button", { name: /10x lower target/i }));
+  fireEvent.click(screen.getByRole("button", { name: /build my 10x slip/i }));
+  await screen.findByRole("button", { name: /why this pick/i });
+  expect(screen.getByRole("button", { name: /safer market/i })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: /^replace$/i })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: /^lock$/i })).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: /more leg actions/i }));
+  expect(screen.getByRole("button", { name: /don't use this game/i })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: /remove and rebuild/i })).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: /why this pick/i }));
+  expect(screen.getByText(/conservative probability/i)).toBeInTheDocument();
+});
+
+test("hides the old code immediately and shows only the verified revision code", async () => {
+  let finish!: (value: unknown) => void;
+  buildSlip.mockResolvedValue(editableSlip());
+  reviseSlip.mockReturnValue(new Promise((resolve) => { finish = resolve; }));
+  renderBuilder();
+  fireEvent.click(screen.getByRole("button", { name: /10x lower target/i }));
+  fireEvent.click(screen.getByRole("button", { name: /build my 10x slip/i }));
+  await screen.findByTestId("booking-code");
+  fireEvent.click(screen.getByRole("button", { name: /^replace$/i }));
+  expect(screen.queryByTestId("booking-code")).not.toBeInTheDocument();
+  await act(async () => finish({
+    ...editableSlip(), revision: 2,
+    booking: { status: "active", share_code: "NEW456", booking_status: "FULL" },
+  }));
+  expect(await screen.findByText("NEW456")).toBeInTheDocument();
+  expect(screen.queryByText("OLD123")).not.toBeInTheDocument();
+});
+
+test("lock state persists in the atomically returned revision", async () => {
+  buildSlip.mockResolvedValue(editableSlip());
+  reviseSlip.mockResolvedValue({
+    ...editableSlip(), revision: 2, locked_selection_ids: ["leg-a"],
+  });
+  renderBuilder();
+  fireEvent.click(screen.getByRole("button", { name: /10x lower target/i }));
+  fireEvent.click(screen.getByRole("button", { name: /build my 10x slip/i }));
+  fireEvent.click(await screen.findByRole("button", { name: /^lock$/i }));
+  expect(await screen.findByRole("button", { name: /^unlock$/i })).toBeInTheDocument();
+});
+
+test("an older edit response cannot overwrite a newer revision", async () => {
+  const gameB = { ...editableSlip().games![0], selection_id: "leg-b", match_id: "match-b", fixture_id: 2, home_team: "Gamma" };
+  let first!: (value: unknown) => void;
+  let second!: (value: unknown) => void;
+  buildSlip.mockResolvedValue(editableSlip([editableSlip().games![0], gameB]));
+  reviseSlip
+    .mockReturnValueOnce(new Promise((resolve) => { first = resolve; }))
+    .mockReturnValueOnce(new Promise((resolve) => { second = resolve; }));
+  renderBuilder();
+  fireEvent.click(screen.getByRole("button", { name: /10x lower target/i }));
+  fireEvent.click(screen.getByRole("button", { name: /build my 10x slip/i }));
+  const replace = await screen.findAllByRole("button", { name: /^replace$/i });
+  fireEvent.click(replace[0]);
+  fireEvent.click(replace[1]);
+  await act(async () => second(editableSlip([{ ...gameB, home_team: "Newest" }] )));
+  await screen.findByText(/Newest v Beta/i);
+  await act(async () => first(editableSlip([{ ...gameB, home_team: "Obsolete" }] )));
+  expect(screen.queryByText(/Obsolete v Beta/i)).not.toBeInTheDocument();
+  expect(screen.getByText(/Newest v Beta/i)).toBeInTheDocument();
 });
 test("prevents duplicate builds while a request is in flight", () => {
   buildSlip.mockReturnValue(new Promise(() => undefined));
@@ -107,6 +197,15 @@ test.each([10, 20, 30, 50, 70, 100])("selects and submits the %ix target", async
   fireEvent.click(screen.getByRole("button", { name: new RegExp(`^${target}x ${band}$`, "i") }));
   fireEvent.click(screen.getByRole("button", { name: new RegExp(`build my ${target}x slip`, "i") }));
   await waitFor(() => expect(buildSlip).toHaveBeenCalledWith(target, "week", false));
+});
+
+test("accepts a bounded custom target up to 200x", async () => {
+  buildSlip.mockResolvedValue({ status: "unavailable", target: 125 });
+  renderBuilder();
+  fireEvent.change(screen.getByLabelText(/custom target/i), { target: { value: "125" } });
+  fireEvent.click(screen.getByRole("button", { name: /use target/i }));
+  fireEvent.click(screen.getByRole("button", { name: /build my 125x slip/i }));
+  await waitFor(() => expect(buildSlip).toHaveBeenCalledWith(125, "week", false));
 });
 
 test("switches between today and seven-day windows", async () => {
