@@ -386,7 +386,16 @@ export interface RecommendationBoardResponse {
     kickoff?: string;
     reason: string;
   }>;
-  board?: { ready?: boolean; complete?: boolean; degraded?: boolean };
+  board?: {
+    ready?: boolean;
+    complete?: boolean;
+    degraded?: boolean;
+    fixture_count?: number;
+    generated_at?: string;
+    successful_league_count?: number;
+    requested_league_count?: number;
+    failed_league_count?: number;
+  };
 }
 
 export interface CategoryData {

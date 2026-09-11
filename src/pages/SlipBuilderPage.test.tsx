@@ -64,6 +64,21 @@ test("shows every editable leg action with accessible button alternatives", asyn
   expect(screen.getByText(/conservative builder probability/i)).toBeInTheDocument();
 });
 
+test("qualifies a verified maximum when the provider board is degraded", async () => {
+  buildSlip.mockResolvedValue({
+    ...editableSlip(), status: "unavailable", result_status: "QUALITY_CAPPED",
+    best_reachable: 8.4, optimization_status: "OPTIMAL",
+    board: { ready: true, degraded: true, complete: false, fixture_count: 387,
+      successful_league_count: 99, requested_league_count: 116,
+      failed_league_count: 17 },
+  });
+  renderBuilder();
+  fireEvent.click(screen.getByRole("button", { name: /10x lower target/i }));
+  fireEvent.click(screen.getByRole("button", { name: /build my 10x slip/i }));
+  expect(await screen.findByText(/verified maximum on the current board/i)).toBeInTheDocument();
+  expect(screen.getByText(/some competitions were unavailable/i)).toBeInTheDocument();
+});
+
 test("hides the old code immediately and shows only the verified revision code", async () => {
   let finish!: (value: unknown) => void;
   buildSlip.mockResolvedValue(editableSlip());

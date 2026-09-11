@@ -265,8 +265,18 @@ export default function SlipBuilderPage() {
           {slip.best_reachable && (
             <div className="builder-cap__number">
               <strong>{slip.best_reachable.toFixed(2)}x</strong>
-              <span>{slip.optimization_status === "OPTIMAL" ? "verified maximum" : "reachable"}</span>
+              <span>{slip.optimization_status === "OPTIMAL"
+                ? slip.board?.degraded || slip.board?.complete === false
+                  ? "verified maximum on the current board"
+                  : "verified maximum"
+                : "reachable"}</span>
             </div>
+          )}
+          {(slip.board?.degraded || slip.board?.complete === false) && (
+            <p className="builder-cap__board-note">
+              Some competitions were unavailable during this refresh. A later
+              complete board may support a stronger combination.
+            </p>
           )}
           <p>{slip.reason ?? "That target is not responsibly reachable from the available board."}</p>
           <p className="builder-cap__promise">
