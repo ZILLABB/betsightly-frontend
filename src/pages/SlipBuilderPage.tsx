@@ -341,7 +341,7 @@ export default function SlipBuilderPage() {
                   </span>
                   {slip.change_summary.action === "safer_same_fixture" && (
                     <small>
-                      Conservative probability: {((slip.change_summary.added[0].evidence_adjusted_probability ?? 0) * 100).toFixed(1)}%
+                      Conservative probability: {((slip.change_summary.added[0].selection_probability ?? 0) * 100).toFixed(1)}%
                       {slip.change_summary.added[0].market?.startsWith("dnb_")
                         ? " · A draw pushes this leg at 1.00x."
                         : ""}

@@ -162,11 +162,14 @@ export function BuilderLeg({
         <section className="builder-pick-explanation">
           <h3>Why BetSightly selected {game.prediction}</h3>
           <dl>
-            <div><dt>Conservative probability</dt><dd>{percent(game.evidence_adjusted_probability)}</dd></div>
+            <div><dt>Model confidence</dt><dd>{percent(game.confidence)}</dd></div>
+            <div><dt>Conservative Builder probability</dt><dd>{percent(game.selection_probability)}</dd></div>
             <div><dt>Reliability lower bound</dt><dd>{percent(game.trust?.lower_reliability_bound)}</dd></div>
             <div><dt>Evidence</dt><dd>{game.trust?.evidence_level || game.trust?.evidence_state || "Unavailable"}</dd></div>
             <div><dt>Fixture market rank</dt><dd>{game.public_rank ? `#${game.public_rank}` : "Unavailable"}</dd></div>
-            <div><dt>SportyBet price</dt><dd>{game.real_odds?.toFixed(2) || "Unavailable"}</dd></div>
+            <div><dt>SportyBet price</dt><dd>{(game.sportybet_odds ?? game.real_odds ?? game.odds)?.toFixed(2) || "Unavailable"}</dd></div>
+            <div><dt>Bookmaker break-even</dt><dd>{percent(game.raw_break_even_probability)}</dd></div>
+            <div><dt>{game.market?.startsWith("dnb_") ? "Push-aware expected return" : "Risk-adjusted return"}</dt><dd>{(game.push_aware_expected_return ?? game.risk_adjusted_return)?.toFixed(3) || "Unavailable"}</dd></div>
             <div><dt>Bookmaker alignment</dt><dd>{game.bookmaker_disagreement == null ? "Unavailable" : game.bookmaker_disagreement <= .08 ? "Close" : "Mixed"}</dd></div>
           </dl>
           <p>

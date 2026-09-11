@@ -61,7 +61,7 @@ test("shows every editable leg action with accessible button alternatives", asyn
   expect(screen.getByRole("button", { name: /don't use this game/i })).toBeInTheDocument();
   expect(screen.getByRole("button", { name: /remove and rebuild/i })).toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: /why this pick/i }));
-  expect(screen.getByText(/conservative probability/i)).toBeInTheDocument();
+  expect(screen.getByText(/conservative builder probability/i)).toBeInTheDocument();
 });
 
 test("hides the old code immediately and shows only the verified revision code", async () => {

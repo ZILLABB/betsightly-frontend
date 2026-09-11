@@ -140,6 +140,14 @@ export interface GamePrediction {
   confidence: number;
   /** Conservative probability after historical/live evidence fusion. */
   evidence_adjusted_probability?: number;
+  /** Actual conservative probability used by Builder ranking and EV maths. */
+  selection_probability?: number;
+  sportybet_odds?: number | null;
+  raw_break_even_probability?: number | null;
+  price_edge_probability?: number | null;
+  risk_adjusted_return?: number;
+  push_aware_expected_return?: number;
+  price_quality_reason_codes?: string[];
   trust?: {
     score?: number;
     grade?: "A" | "B";
