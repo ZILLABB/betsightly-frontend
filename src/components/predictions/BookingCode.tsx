@@ -3,6 +3,38 @@ import type { CategoryMeta, TierBooking } from "../../types";
 import { trackBookingEvent, type BookingEventContext } from "../../services/bookingTracking";
 import { formatLocalTimeWithZone } from "../../utils/formatters";
 
+const availabilityText = (status?: string) => ({
+  FIXTURE_NOT_FOUND: "fixture unavailable on the current SportyBet board",
+  MARKET_NOT_FOUND: "market unavailable on SportyBet",
+  SELECTION_NOT_FOUND: "selection unavailable on SportyBet",
+  ODDS_UNAVAILABLE: "odds currently unavailable",
+  OUTCOME_SUSPENDED: "selection currently suspended",
+  KICKOFF_BUFFER: "too close to kickoff",
+  FIXTURE_STARTED: "match already started",
+  KICKOFF_MISMATCH: "kickoff could not be verified",
+  SPORTYBET_DATA_ERROR: "SportyBet availability could not be verified",
+}[String(status || "").toUpperCase()] || "currently unavailable");
+
+const excludedSummary = (booking: TierBooking) => {
+  const legs = booking.excluded_legs || [];
+  if (!legs.length) return null;
+  const statuses = legs.map(leg => String(
+    leg.status || leg.sportybet_availability?.status || ""
+  ).toUpperCase());
+  const near = statuses.filter(status => status === "KICKOFF_BUFFER").length;
+  const started = statuses.filter(status => status === "FIXTURE_STARTED").length;
+  const unavailable = legs.length - near - started;
+  if (unavailable === legs.length) {
+    return `${legs.length} ${legs.length === 1 ? "selection" : "selections"} could not be matched on the current SportyBet board.`;
+  }
+  const parts = [
+    near ? `${near} near kickoff` : "",
+    started ? `${started} already started` : "",
+    unavailable ? `${unavailable} unavailable` : "",
+  ].filter(Boolean);
+  return `Some selections are no longer placeable: ${parts.join(", ")}.`;
+};
+
 /**
  * The SportyBet code for a tier, with a copy button.
  *
@@ -85,6 +117,7 @@ export default function BookingCode({
   };
 
   if (!actionable) {
+    const actualFailure = excludedSummary(booking);
     return (
       <div
         style={{
@@ -103,13 +136,13 @@ export default function BookingCode({
             booking.status === "stale" ? "Code outdated — revalidating booking" :
             "Slip ready, code unavailable"}
         </strong>
-        {booking.reason || label[booking.status] || "No valid SportyBet ticket could be created for this tier."}
+        {actualFailure || booking.reason || label[booking.status] || "No valid SportyBet ticket could be created for this tier."}
         {!!booking.excluded_legs?.length && (
           <ul style={{ margin: "8px 0 0", paddingLeft: 18 }}>
             {booking.excluded_legs.map((leg, index) => (
               <li key={`${leg.match_id ?? index}-${leg.market ?? "selection"}`}>
                 {leg.home_team} vs {leg.away_team} — {leg.prediction ?? leg.market}
-                {leg.sportybet_availability?.status ? ` (${leg.sportybet_availability.status})` : ""}
+                {` (${availabilityText(leg.status || leg.sportybet_availability?.status)})`}
               </li>
             ))}
           </ul>
@@ -311,7 +344,9 @@ export default function BookingCode({
             {booking.excluded_legs.map((leg, index) => (
               <li key={`${leg.match_id ?? index}-${leg.market ?? "selection"}`}>
                 {leg.home_team} vs {leg.away_team} — {leg.prediction ?? leg.market}
-                {leg.sportybet_availability?.failure_reason ? `: ${leg.sportybet_availability.failure_reason}` : ""}
+                {`: ${leg.sportybet_availability?.failure_reason || availabilityText(
+                  leg.status || leg.sportybet_availability?.status
+                )}`}
               </li>
             ))}
           </ul>

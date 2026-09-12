@@ -339,6 +339,8 @@ export interface TierBooking {
     reason?: string;
   }>;
   excluded_legs?: Array<Partial<GamePrediction> & {
+    status?: string;
+    reason?: string;
     sportybet_availability?: { status?: string; failure_reason?: string };
   }>;
   readback_validation?: "PASSED" | "FAILED";

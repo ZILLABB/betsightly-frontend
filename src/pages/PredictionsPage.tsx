@@ -76,7 +76,12 @@ export function PredictionsPage() {
     setBookableLoading(true);
     api.getBookableNow()
       .then(setBookable)
-      .catch(() => setBookable({ status: "error", available: false }))
+      .catch((error: unknown) => setBookable({
+        status: "error", available: false,
+        reason: error instanceof Error
+          ? `Available-now rebuild failed: ${error.message}`
+          : "Available-now rebuild failed. Please try again.",
+      }))
       .finally(() => setBookableLoading(false));
   }, [showBookable, bookable, bookableLoading]);
 

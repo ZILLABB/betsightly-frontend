@@ -62,3 +62,25 @@ test.each([
   expect(screen.getByRole("button", { name: /show what i can still bet/i }))
     .toBeInTheDocument();
 });
+
+test("excluded fixture facts override an unrelated kickoff reason", () => {
+  render(<BookingCode category={category} booking={{
+    status: "kickoff_buffer", actionable: false,
+    reason: "a fixture starts within 20 minutes",
+    excluded_legs: [
+      { home_team: "Alpha", away_team: "Beta", market: "over_1_5",
+        status: "FIXTURE_NOT_FOUND" },
+      { home_team: "Gamma", away_team: "Delta", market: "home_or_draw",
+        status: "FIXTURE_NOT_FOUND" },
+      { home_team: "Epsilon", away_team: "Zeta", market: "under_4_5",
+        status: "FIXTURE_NOT_FOUND" },
+    ],
+  }} />);
+  expect(screen.getByText(
+    "3 selections could not be matched on the current SportyBet board.",
+  )).toBeInTheDocument();
+  expect(screen.getAllByText(/fixture unavailable on the current SportyBet board/i))
+    .toHaveLength(3);
+  expect(screen.queryByText(/FIXTURE_NOT_FOUND/)).not.toBeInTheDocument();
+  expect(screen.queryByText(/starts within 20 minutes/i)).not.toBeInTheDocument();
+});
