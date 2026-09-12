@@ -217,6 +217,24 @@ export const formatLocalTimeWithZone = (
 };
 
 /**
+ * Turn provider season prefixes into a compact, human league label.
+ * Examples: "2026 27 German Bundesliga" -> "Bundesliga · 2026/27".
+ * Unknown league names are deliberately returned unchanged.
+ */
+export const formatLeagueName = (league?: string | null): string => {
+  const value = league?.trim() ?? '';
+  if (!value) return '';
+  const match = value.match(/^(\d{4})[\s/_-]+(\d{2}|\d{4})\s+(.+)$/);
+  if (!match) return value;
+  const [, start, rawEnd, rawName] = match;
+  const end = rawEnd.length === 2 ? `${start.slice(0, 2)}${rawEnd}` : rawEnd;
+  const name = rawName
+    .replace(/^(German|English|Spanish|Italian|French|Portuguese|Dutch|Belgian)\s+/i, '')
+    .trim();
+  return `${name} · ${start}/${end.slice(-2)}`;
+};
+
+/**
  * Convert decimal odds to fractional (e.g. 2.50 → "3/2")
  */
 const toFractional = (decimal: number): string => {
@@ -276,5 +294,6 @@ export default {
   formatLocalDateTime,
   formatKickoffDateTime,
   formatLocalTimeWithZone,
+  formatLeagueName,
   formatOdds
 };

@@ -13,6 +13,12 @@ interface Props {
   singlesMap?: Partial<Record<CategoryKey, number>>;
 }
 
+const TARGETS: Partial<Record<CategoryKey, number>> = {
+  "2_odds": 2,
+  "5_odds": 5,
+  "10_odds": 10,
+};
+
 export function CategoryTabs({ active, onChange, oddsMap = {}, singlesMap = {} }: Props) {
   const [hovered, setHovered] = useState<CategoryKey | null>(null);
   const { formatOdds: fmtOdds, oddsSuffix } = useFormatOdds();
@@ -30,6 +36,8 @@ export function CategoryTabs({ active, onChange, oddsMap = {}, singlesMap = {} }
         const isHov = hovered === cat.key;
         const odds = oddsMap[cat.key];
         const singlesCount = singlesMap[cat.key];
+        const target = TARGETS[cat.key];
+        const belowTarget = target != null && odds != null && odds > 0 && odds < target;
 
         return (
           <button
@@ -87,7 +95,7 @@ export function CategoryTabs({ active, onChange, oddsMap = {}, singlesMap = {} }
               {singlesCount != null && singlesCount > 0
                 ? `${singlesCount} pick${singlesCount === 1 ? "" : "s"}`
                 : odds != null && odds > 0
-                ? `${fmtOdds(odds)}${oddsSuffix} odds`
+                ? `${belowTarget ? "Best available " : ""}${fmtOdds(odds)}${oddsSuffix}`
                 : cat.riskLabel}
             </span>
           </button>

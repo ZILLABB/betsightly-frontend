@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import type { GamePrediction, CategoryMeta } from "../../types";
 import { Copy, Check, Share2 } from "lucide-react";
 import { useFormatOdds } from "../../hooks/useFormatOdds";
+import { formatLeagueName } from "../../utils/formatters";
 
 interface Props {
   games: GamePrediction[];
@@ -27,7 +28,7 @@ function generateSlipText(
     const pred = g.prediction || g.readable_prediction || g.prediction_value || "";
     lines.push(`${g.home_team} vs ${g.away_team}`);
     lines.push(`  ${pred} @ ${fmtOdds(odds)}`);
-    lines.push(`  ${g.league} | ${Math.round(g.confidence * 100)}% confidence`);
+    lines.push(`  ${formatLeagueName(g.league)} | ${Math.round(g.confidence * 100)}% confidence`);
     lines.push("");
   }
 

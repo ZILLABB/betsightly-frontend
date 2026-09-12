@@ -1,5 +1,6 @@
 import React from "react";
 import type { GamePrediction } from "../../types";
+import { formatLeagueName } from "../../utils/formatters";
 
 /**
  * League chips for the current slip.
@@ -58,7 +59,7 @@ export function LeagueFilter({
       style={{ display: "flex", gap: 7, overflowX: "auto", paddingBottom: 2 }}
     >
       {chip("All", games.length, active === null, () => onChange(null))}
-      {counts.map(([league, n]) => chip(league, n, active === league, () => onChange(league)))}
+      {counts.map(([league, n]) => chip(formatLeagueName(league), n, active === league, () => onChange(league)))}
     </div>
   );
 }

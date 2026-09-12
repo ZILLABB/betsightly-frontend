@@ -5,6 +5,12 @@ import { useFormatOdds } from "../../hooks/useFormatOdds";
 import type { LiveScore } from "./PredictionCard";
 import { formatLocalTimeWithZone } from "../../utils/formatters";
 
+const targetFor = (key: CategoryMeta["key"]) => ({
+  "2_odds": 2,
+  "5_odds": 5,
+  "10_odds": 10,
+} as Partial<Record<CategoryMeta["key"], number>>)[key];
+
 interface Props {
   accumulators: AccumulatorResponse["accumulators"];
   scores?: Record<string, LiveScore>;
@@ -43,6 +49,8 @@ export function AllSlips({ accumulators, scores = {}, onOpen }: Props) {
         const singles = cat!.presentation === "singles";
         const games: GamePrediction[] = cat!.games ?? [];
         const hit = cat!.hit_probability;
+        const nominalTarget = targetFor(meta.key);
+        const belowTarget = nominalTarget != null && cat!.total_odds < nominalTarget;
 
         return (
           <div key={meta.key} className="card" style={{
@@ -78,7 +86,7 @@ export function AllSlips({ accumulators, scores = {}, onOpen }: Props) {
                     color: meta.color, background: meta.faint,
                     padding: "3px 10px", borderRadius: 6,
                   }}>
-                    {fmtOdds(cat!.total_odds)}{oddsSuffix}
+                    {belowTarget ? "Best available " : ""}{fmtOdds(cat!.total_odds)}{oddsSuffix}
                   </span>
                 )}
                 {typeof hit === "number" && (

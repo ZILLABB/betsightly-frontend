@@ -2,7 +2,7 @@ import React from "react";
 import type { GamePrediction } from "../../types";
 import { getTeamFlag, isWcNation, teamInitials, teamColor } from "../../data/wcFlags";
 import { ShareButton } from "../common/ShareButton";
-import { formatKickoffDateTime, formatLocalTimeWithZone } from "../../utils/formatters";
+import { formatKickoffDateTime, formatLeagueName, formatLocalTimeWithZone } from "../../utils/formatters";
 
 function TeamBadge({ team, logo }: { team: string; logo?: string | null }) {
   if (isWcNation(team)) {
@@ -201,7 +201,7 @@ export function PredictionCard({ game, color, faint, index = 0, score }: Props) 
             fontFamily: "var(--font-body)", fontSize: 11, fontWeight: 600,
             letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--text-3)",
           }}>
-            {game.league}
+            {formatLeagueName(game.league)}
           </span>
           {game.competition_context_label && (
             <span style={{

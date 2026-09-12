@@ -19,6 +19,7 @@ import { SEO } from "../components/common/SEO";
 import { api, type BookableNowResponse } from "../api/predictions";
 import { useRecommendations } from "../hooks/useRecommendations";
 import { RecommendationBoard } from "../components/predictions/RecommendationBoard";
+import "../styles/product-experience.css";
 
 const VALID_KEYS = new Set<string>(CATEGORIES.map(c => c.key));
 
@@ -111,9 +112,9 @@ export function PredictionsPage() {
     : {};
 
   return (
-    <div className="page-stack" style={{ display: "flex", flexDirection: "column", gap: 32 }}>
+    <div className="page-stack predictions-page" style={{ display: "flex", flexDirection: "column", gap: 32 }}>
       <SEO title="Predictions" description="Today's best football predictions — 2 Odds, 5 Odds, 10 Odds, and Over 1.5 picks backed by real bookmaker odds." path="/predictions" />
-      <div>
+      <header className="predictions-hero">
         <div className="eyebrow" style={{ marginBottom: 8 }}>Today&apos;s Picks</div>
         <h1 style={{ fontSize: 32, fontWeight: 800 }}>Today&apos;s football intelligence</h1>
         <p className="page-intro" style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text-3)", marginTop: 6 }}>
@@ -121,9 +122,9 @@ export function PredictionsPage() {
             ? new Date(data.date + "T12:00:00Z").toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" })
             : "today"} — pick a tier that matches your risk appetite.
         </p>
-      </div>
+      </header>
 
-      <div>
+      <div className="premium-slips-heading">
         <div className="eyebrow" style={{ marginBottom: 8 }}>Curated daily products</div>
         <h2 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>Premium slips</h2>
       </div>
@@ -131,7 +132,7 @@ export function PredictionsPage() {
       {/* Only offered once something has actually kicked off — before that the
           published card is fully bookable and a second slip is just noise. */}
       {startedCount > 0 && (
-        <div className="card" style={{
+        <div className="card available-now" role="status" aria-live="polite" style={{
           padding: "16px 18px", display: "flex", alignItems: "center",
           justifyContent: "space-between", gap: 16, flexWrap: "wrap",
           border: viewingBookable
@@ -171,7 +172,7 @@ export function PredictionsPage() {
               </span>
             </div>
           </div>
-          <button
+          <button className="available-now__action"
             type="button"
             disabled={bookableLoading}
             aria-pressed={viewingBookable}
@@ -249,8 +250,11 @@ export function PredictionsPage() {
                 what is being suggested. Showing "9.4x total" next to ten
                 independent bets invites exactly the accumulator we avoided. */}
             {!isSingles && (
-              <div style={{ padding: "4px 12px", borderRadius: 6, background: catMeta.faint, fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 700, color: catMeta.color }}>
-                {fmtOdds(activeCat.total_odds)}{oddsSuffix} total
+              <div className="premium-slip-price" style={{ background: catMeta.faint, color: catMeta.color }}>
+                {(["2_odds", "5_odds", "10_odds"].includes(activeKey) && activeCat.total_odds < Number(activeKey.split("_")[0]))
+                  ? "Best available "
+                  : ""}
+                {fmtOdds(activeCat.total_odds)}{oddsSuffix}
               </div>
             )}
             {typeof activeCat.hit_probability === "number" && (

@@ -15,6 +15,7 @@ import { CATEGORIES } from "../types";
 import { trackProductEvent } from "../services/bookingTracking";
 import { useBuilder } from "../contexts/BuilderContextInstance";
 import "../styles/builder-editor.css";
+import "../styles/product-experience.css";
 
 const TARGETS = [10, 20, 30, 50, 70, 100];
 const suggestedTargets = (requested: number) =>
