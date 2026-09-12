@@ -22,6 +22,7 @@ import {
 
 const STORAGE_KEY = "betsightly_builder_session";
 const MAX_AUTO_RECOVERY_ATTEMPTS = 3;
+export const BUILDER_REVISION_TIMEOUT_MS = 20_000;
 
 interface SavedBuilderState {
   target: number;
@@ -261,9 +262,7 @@ export function BuilderProvider({
         setError(
           err?.name === "AbortError"
             ? "That took longer than expected — the server may be waking up. Try once more."
-            : err?.message
-              ? `Could not build a slip: ${err.message}`
-              : "Could not build a slip just now. Try again in a moment.",
+            : "The Builder could not reach the prediction service. Your target and fixture window were kept—try again.",
         );
       } finally {
         inFlight.current = false;
@@ -380,6 +379,11 @@ export function BuilderProvider({
     const controller = new AbortController();
     revisionController.current = controller;
     const sequence = ++revisionSequence.current;
+    let timedOut = false;
+    const timeout = window.setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, BUILDER_REVISION_TIMEOUT_MS);
     const eventByAction = {
       replace_selection: "builder_leg_replace_clicked",
       safer_same_fixture: "builder_safer_market_requested",
@@ -407,21 +411,6 @@ export function BuilderProvider({
               : action.includes("lock") ? null
                 : "Updating this slip…",
     );
-    // A code for the prior fingerprint must never remain actionable while a
-    // structural edit is in flight or after an ambiguous network failure.
-    setSlip({
-      ...current,
-      booking: current.booking ? {
-        ...current.booking,
-        status: "stale",
-        lifecycle_status: "stale",
-        actionable: false,
-        share_code: null,
-        share_url: undefined,
-        reason: "This code belongs to the previous slip revision.",
-      } : undefined,
-    });
-
     try {
       const next = await reviseBuilderSlip({
         runId: current.builder_run_id,
@@ -481,13 +470,21 @@ export function BuilderProvider({
     } catch (caught) {
       if (sequence !== revisionSequence.current) return;
       const failure = caught as Error & { status?: number };
-      if (failure.name === "AbortError") return;
+      if (failure.name === "AbortError" && !timedOut) return;
+      if (timedOut) {
+        setRevisionFeedback({
+          action, status: "failure", oldGame: game,
+          message: "That edit took too long. Your original slip was kept; try again.",
+        });
+        return;
+      }
       setError(
         failure.status === 409
           ? "This slip changed in another request. Its older response was ignored; build or reload the latest revision."
           : "That edit could not be verified. The previous code stays hidden until the slip is rebuilt.",
       );
     } finally {
+      window.clearTimeout(timeout);
       if (sequence === revisionSequence.current) {
         setEditingSelectionId(null);
         setEditingMessage(null);

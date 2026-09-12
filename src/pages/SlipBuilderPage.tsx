@@ -72,6 +72,20 @@ export default function SlipBuilderPage() {
     ? (slip?.target_hit_probability ?? slip?.hit_probability ?? 0)
     : (slip?.hit_probability ?? 0);
   const capStatus = String(slip?.result_status || "");
+  const belowBuilderMinimum = Boolean(
+    slip?.best_reachable && slip.best_reachable < 2,
+  );
+  const displayedBooking = editingSelectionId && slip?.booking
+    ? {
+        ...slip.booking,
+        status: "stale" as const,
+        lifecycle_status: "stale" as const,
+        actionable: false,
+        share_code: null,
+        share_url: undefined,
+        reason: "Awaiting server confirmation for this edit.",
+      }
+    : slip?.booking;
 
   return (
     <main className="builder-page page-stack">
@@ -231,7 +245,14 @@ export default function SlipBuilderPage() {
 
       {error && (
         <div className="builder-message builder-message--error" role="alert">
-          {error}
+          <p>{error}</p>
+          {!editingSelectionId && (
+            <button className="builder-cap__cta" type="button"
+              onClick={() => void build(false)} disabled={loading}>
+              <Target size={17} />
+              {loading ? "Trying again…" : "Try again"}
+            </button>
+          )}
         </div>
       )}
       {editingMessage && editingAction !== "replace_selection" &&
@@ -249,7 +270,7 @@ export default function SlipBuilderPage() {
           <span className="builder-cap__badge">Board updating</span>
           <h2>We’re preparing the latest fixture board</h2>
           <p>
-            The weekly predictions are being evaluated now. Please try again
+            {horizon === "today" ? "Today’s board" : "The 7-day board"} is being evaluated now. Please try again
             shortly—your request was controlled safely and was not a CORS error.
           </p>
           <button className="builder-cap__cta" type="button"
@@ -263,7 +284,12 @@ export default function SlipBuilderPage() {
         <section className="builder-message builder-cap" aria-live="polite">
           <span className="builder-cap__badge">Best available</span>
           <h2>{capHeading(capStatus, target)}</h2>
-          {slip.best_reachable && (
+          {belowBuilderMinimum && (
+            <p className="builder-cap__minimum-note">
+              The current verified combination is below the Builder’s 2x minimum.
+            </p>
+          )}
+          {slip.best_reachable && !belowBuilderMinimum && (
             <div className="builder-cap__number">
               <strong>{slip.best_reachable.toFixed(2)}x</strong>
               <span>{slip.optimization_status === "OPTIMAL"
@@ -290,7 +316,7 @@ export default function SlipBuilderPage() {
                   ? "A combination can reach the requested odds, but it does not meet BetSightly’s minimum expected-return policy."
                 : `We will not add weaker picks simply to manufacture ${target}x.`}
           </p>
-          {slip.best_reachable && (
+          {slip.best_reachable && !belowBuilderMinimum && (
             <button
               className="builder-cap__cta"
               type="button"
@@ -396,7 +422,7 @@ export default function SlipBuilderPage() {
             </p>
           )}
           <BookingCode
-            booking={slip.booking}
+            booking={displayedBooking}
             category={accent}
             tracking={{
               source: "generator",

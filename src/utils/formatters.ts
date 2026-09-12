@@ -234,6 +234,17 @@ export const formatLeagueName = (league?: string | null): string => {
   return `${name} · ${start}/${end.slice(-2)}`;
 };
 
+/** Preserve round/stage labels, but collapse duplicated provider competition
+ * names such as "2026 27 Turkish Super Lig" to the useful season only. */
+export const formatCompetitionContext = (context?: string | null): string => {
+  const value = context?.trim() ?? '';
+  if (!value) return '';
+  const range = value.match(/^(\d{4})[\s/_-]+(\d{2}|\d{4})\s+.+$/);
+  if (range) return `${range[1]}/${range[2].slice(-2)}`;
+  const season = value.match(/^(\d{4})\s+.+$/);
+  return season ? `${season[1]} season` : value;
+};
+
 /**
  * Convert decimal odds to fractional (e.g. 2.50 → "3/2")
  */
@@ -295,5 +306,6 @@ export default {
   formatKickoffDateTime,
   formatLocalTimeWithZone,
   formatLeagueName,
+  formatCompetitionContext,
   formatOdds
 };

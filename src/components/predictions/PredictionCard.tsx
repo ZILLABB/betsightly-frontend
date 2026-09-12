@@ -2,7 +2,7 @@ import React from "react";
 import type { GamePrediction } from "../../types";
 import { getTeamFlag, isWcNation, teamInitials, teamColor } from "../../data/wcFlags";
 import { ShareButton } from "../common/ShareButton";
-import { formatKickoffDateTime, formatLeagueName, formatLocalTimeWithZone } from "../../utils/formatters";
+import { formatCompetitionContext, formatKickoffDateTime, formatLeagueName, formatLocalTimeWithZone } from "../../utils/formatters";
 
 function TeamBadge({ team, logo }: { team: string; logo?: string | null }) {
   if (isWcNation(team)) {
@@ -208,7 +208,7 @@ export function PredictionCard({ game, color, faint, index = 0, score }: Props) 
               fontFamily: "var(--font-body)", fontSize: 10, fontWeight: 600,
               color: "var(--text-2)", whiteSpace: "nowrap",
             }}>
-              · {game.competition_context_label}
+              · {formatCompetitionContext(game.competition_context_label)}
             </span>
           )}
           {/* Only later picks are marked. The morning card is the default

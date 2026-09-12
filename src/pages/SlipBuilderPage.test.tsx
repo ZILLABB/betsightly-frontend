@@ -266,6 +266,19 @@ test("labels a below-target trustworthy result as quality capped", async () => {
   expect(screen.getByRole("button", { name: /43.62x slip/i })).toBeInTheDocument();
 });
 
+test("does not offer an unusable CTA below the public 2x minimum", async () => {
+  buildSlip.mockResolvedValue({
+    status: "unavailable", result_status: "QUALITY_CAPPED", target: 10,
+    best_reachable: 1.18, optimization_status: "OPTIMAL",
+  });
+  renderBuilder();
+  fireEvent.click(screen.getByRole("button", { name: /10x lower target/i }));
+  fireEvent.click(screen.getByRole("button", { name: /build my 10x slip/i }));
+  expect(await screen.findByText(/below the Builder’s 2x minimum/i)).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: /build verified 1.18x/i }))
+    .not.toBeInTheDocument();
+});
+
 test("shows board refreshing as a controlled retry state", async () => {
   buildSlip.mockResolvedValue({
     status: "unavailable", target: 50, reason: "board_refreshing",
@@ -277,6 +290,49 @@ test("shows board refreshing as a controlled retry state", async () => {
   expect(screen.getByText(/not a CORS error/i)).toBeInTheDocument();
   expect(screen.queryByText(/isn’t supported by the current board/i))
     .not.toBeInTheDocument();
+});
+
+test("uses horizon-aware board refresh copy", async () => {
+  buildSlip.mockResolvedValue({
+    status: "unavailable", target: 50, reason: "board_refreshing",
+  });
+  renderBuilder();
+  fireEvent.click(screen.getByRole("button", { name: /today only/i }));
+  fireEvent.click(screen.getByRole("button", { name: /build my 50x slip/i }));
+  expect(await screen.findByText(/Today’s board is being evaluated/i)).toBeInTheDocument();
+  expect(screen.queryByText(/weekly predictions/i)).not.toBeInTheDocument();
+});
+
+test("turns a network failure into a clean retry state without losing choices", async () => {
+  buildSlip.mockRejectedValueOnce(new TypeError("Failed to fetch"))
+    .mockResolvedValueOnce({ status: "unavailable", target: 100 });
+  renderBuilder();
+  fireEvent.click(screen.getByRole("button", { name: /100x high target/i }));
+  fireEvent.click(screen.getByRole("button", { name: /today only/i }));
+  fireEvent.click(screen.getByRole("button", { name: /build my 100x slip/i }));
+  expect(await screen.findByText(/could not reach the prediction service/i)).toBeInTheDocument();
+  expect(screen.queryByText(/Failed to fetch/i)).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: /^try again$/i }));
+  await waitFor(() => expect(buildSlip).toHaveBeenLastCalledWith(100, "today", false));
+});
+
+test("times out an edit, clears pending state, and preserves the original slip", async () => {
+  jest.useFakeTimers();
+  buildSlip.mockResolvedValue(editableSlip());
+  reviseSlip.mockImplementation((_input, signal: AbortSignal) => new Promise((_resolve, reject) => {
+    signal.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")));
+  }));
+  renderBuilder();
+  fireEvent.click(screen.getByRole("button", { name: /10x lower target/i }));
+  fireEvent.click(screen.getByRole("button", { name: /build my 10x slip/i }));
+  await screen.findByTestId("booking-code");
+  fireEvent.click(screen.getByRole("button", { name: /^lock$/i }));
+  expect(screen.getByRole("button", { name: /^lock$/i })).toBeDisabled();
+  await act(async () => { jest.advanceTimersByTime(20_000); });
+  expect(await screen.findByText(/original slip was kept; try again/i)).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: /^lock$/i })).toBeEnabled();
+  expect(screen.getByTestId("booking-code")).toHaveTextContent("OLD123");
+  jest.useRealTimers();
 });
 
 test.each([10, 20, 30, 50, 70, 100])("selects and submits the %ix target", async (target) => {
