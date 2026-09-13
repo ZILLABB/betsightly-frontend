@@ -56,7 +56,7 @@ function fmtDate(iso: string) {
 }
 
 export function RolloverPage() {
-  const { data, loading, error } = usePredictions();
+  const { data, loading, error, usingFallback, lastUpdated, refetch } = usePredictions();
   const [view, setView] = useState<"today" | "all">("today");
   const { formatOdds: fmtOdds, oddsSuffix } = useFormatOdds();
   const rollover = data?.accumulators?.rollover;
@@ -152,9 +152,12 @@ export function RolloverPage() {
         </div>
       )}
 
-      {error && (
+      {error && usingFallback && (
         <div style={{ padding: "12px 16px", borderRadius: "var(--radius-md)", background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.2)", fontFamily: "var(--font-body)", fontSize: 13, color: "var(--red)" }}>
           {error}
+          {lastUpdated && (
+            <span> Last updated {new Date(lastUpdated).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}.</span>
+          )}
         </div>
       )}
 
@@ -174,6 +177,18 @@ export function RolloverPage() {
             {[1, 2, 3].map(i => <PredictionCardSkeleton key={i} />)}
           </div>
         </BrandLoader>
+      ) : error && !usingFallback ? (
+        <div className="card" role="alert" style={{ padding: "40px 20px", textAlign: "center" }}>
+          <p style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text-3)" }}>
+            We couldn’t load the rollover right now.
+          </p>
+          <button type="button" onClick={() => void refetch()} style={{
+            minHeight: 40, marginTop: 14, padding: "8px 16px", borderRadius: 8,
+            border: "1px solid var(--border)", background: "var(--surface-2)",
+            color: "var(--text-1)", fontFamily: "var(--font-body)", fontWeight: 700,
+            cursor: "pointer",
+          }}>Retry</button>
+        </div>
       ) : chain.length === 0 ? (
         <div className="card" style={{ padding: "40px 20px", textAlign: "center" }}>
           <p style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text-3)" }}>

@@ -28,7 +28,7 @@ export function PredictionsPage() {
   const { category } = useParams<{ category?: string }>();
   const initialKey: CategoryKey = category && VALID_KEYS.has(category) ? (category as CategoryKey) : "2_odds";
 
-  const { data, loading, error, refetch } = usePredictions();
+  const { data, loading, error, usingFallback, lastUpdated, refetch } = usePredictions();
   const recommendations = useRecommendations();
   const [activeKey, setActiveKey] = useState<CategoryKey>(initialKey);
   const { formatOdds: fmtOdds, oddsSuffix } = useFormatOdds();
@@ -222,9 +222,12 @@ export function PredictionsPage() {
         />
       )}
 
-      {error && (
+      {error && usingFallback && (
         <div style={{ padding: "12px 16px", borderRadius: "var(--radius-md)", background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.2)", fontFamily: "var(--font-body)", fontSize: 13, color: "var(--red)" }}>
           {error}
+          {lastUpdated && (
+            <span> Last updated {new Date(lastUpdated).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}.</span>
+          )}
         </div>
       )}
 
@@ -234,6 +237,18 @@ export function PredictionsPage() {
             {Array.from({ length: 6 }).map((_, i) => <PredictionCardSkeleton key={i} />)}
           </div>
         </BrandLoader>
+      ) : error && !usingFallback && !data ? (
+        <div className="card" role="alert" style={{ padding: "36px 20px", textAlign: "center" }}>
+          <p style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text-3)" }}>
+            We couldn’t load today’s predictions right now.
+          </p>
+          <button type="button" onClick={() => void refetch()} style={{
+            minHeight: 40, marginTop: 14, padding: "8px 16px", borderRadius: 8,
+            border: "1px solid var(--border)", background: "var(--surface-2)",
+            color: "var(--text-1)", fontFamily: "var(--font-body)", fontWeight: 700,
+            cursor: "pointer",
+          }}>Retry</button>
+        </div>
       ) : !activeCat || !activeCat.selected ? (
         <EmptyState type="no-selection" message={activeCat?.reason} onRetry={refetch} />
       ) : !activeCat.games?.length ? (
