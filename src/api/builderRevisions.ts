@@ -34,6 +34,21 @@ export interface EditableBuiltSlip extends BuiltSlip {
   excluded_selection_ids?: string[];
   change_summary?: BuilderChangeSummary;
   board?: { ready: boolean; degraded: boolean; complete: boolean };
+  materialized_best_reachable?: boolean;
+  original_requested_target?: number;
+  best_reachable_combination?: {
+    original_requested_target: number;
+    achieved_odds: number;
+    selected_selection_ids: string[];
+    selected_fixture_ids: string[];
+    policy_context: {
+      market_cap: number;
+      team_to_score_cap: number;
+      under_cap: number;
+      max_legs: number;
+      market_cap_policy: string;
+    };
+  };
 }
 
 export interface ReviseBuilderRequest {

@@ -52,18 +52,10 @@ export default function SlipBuilderPage() {
   const acceptBestReachable = () => {
     if (!slip?.best_reachable) return;
 
-    const closest = Math.max(2, Number(slip.best_reachable.toFixed(2)));
+    const closest = Number(slip.best_reachable.toFixed(2));
 
-    chooseTarget(closest, true);
-
-    if (slip.builder_run_id) {
-      void reviseLeg("accept_best_reachable", undefined, closest);
-    } else {
-      trackProductEvent("builder_best_reachable_accepted", {
-        product_area: "builder", target_odds: closest, horizon,
-      });
-      void build(false, closest, true);
-    }
+    if (!slip.builder_run_id) return;
+    void reviseLeg("accept_best_reachable", undefined, closest);
   };
 
   const dnbLegCount = slip?.dnb_leg_count ?? 0;
@@ -72,6 +64,7 @@ export default function SlipBuilderPage() {
     ? (slip?.target_hit_probability ?? slip?.hit_probability ?? 0)
     : (slip?.hit_probability ?? 0);
   const capStatus = String(slip?.result_status || "");
+  const acceptingBest = editingAction === "accept_best_reachable";
   const belowBuilderMinimum = Boolean(
     slip?.best_reachable && slip.best_reachable < 2,
   );
@@ -316,15 +309,17 @@ export default function SlipBuilderPage() {
                   ? "A combination can reach the requested odds, but it does not meet BetSightly’s minimum expected-return policy."
                 : `We will not add weaker picks simply to manufacture ${target}x.`}
           </p>
-          {slip.best_reachable && !belowBuilderMinimum && (
+          {slip.best_reachable && !belowBuilderMinimum && slip.builder_run_id
+            && slip.best_reachable_combination && (
             <button
               className="builder-cap__cta"
               type="button"
               onClick={acceptBestReachable}
-              disabled={loading}
+              disabled={loading || acceptingBest}
             >
               <Target size={17} />
-              {loading ? "Building verified slip…" :
+              {acceptingBest ? `Building the verified ${slip.best_reachable.toFixed(2)}x combination…`
+                : loading ? "Building verified slip…" :
                 `Build ${slip.optimization_status === "OPTIMAL" ? "verified" : "the best reachable"} ${slip.best_reachable.toFixed(2)}x slip`}
             </button>
           )}
@@ -392,6 +387,12 @@ export default function SlipBuilderPage() {
             </section>
           )}
           <div className="builder-stats">
+            {slip.materialized_best_reachable && (
+              <Stat label="Requested target" value={`${slip.original_requested_target ?? slip.target}x`} />
+            )}
+            {slip.materialized_best_reachable && (
+              <Stat label="Best verified available" value={`${slip.odds?.toFixed(2)}x`} />
+            )}
             <Stat label="Total odds" value={`${slip.odds?.toFixed(2)}x`} />
             <Stat label="Legs" value={String(slip.legs)} />
             <Stat

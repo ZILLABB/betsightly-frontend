@@ -258,6 +258,13 @@ test("labels a below-target trustworthy result as quality capped", async () => {
     status: "unavailable", result_status: "QUALITY_CAPPED", target: 70,
     best_reachable: 43.62,
     reason: "Reaching 70x would require selections that fail quality rules.",
+    builder_run_id: "run-capped", edit_token: "token-capped", revision: 1,
+    best_reachable_combination: {
+      original_requested_target: 70, achieved_odds: 43.62,
+      selected_selection_ids: [], selected_fixture_ids: [],
+      policy_context: { market_cap: 5, team_to_score_cap: 2, under_cap: 2,
+        max_legs: 16, market_cap_policy: "builder_target_aware_v1" },
+    },
   });
   renderBuilder();
   fireEvent.click(screen.getByRole("button", { name: /70x high target/i }));
@@ -361,23 +368,82 @@ test("switches between today and seven-day windows", async () => {
   await waitFor(() => expect(buildSlip).toHaveBeenCalledWith(50, "today", false));
 });
 
-test("best reachable CTA submits its exact target and disables while loading", async () => {
+test("100x best reachable CTA materializes its stored combination without a target rerun", async () => {
   let finish!: (value: unknown) => void;
-  buildSlip
-    .mockResolvedValueOnce({ status: "unavailable", result_status: "EXPOSURE_CAPPED",
-      target: 100, best_reachable: 6.06, optimization_status: "OPTIMAL" })
-    .mockReturnValueOnce(new Promise((resolve) => { finish = resolve; }));
+  buildSlip.mockResolvedValueOnce({
+    status: "unavailable", result_status: "EXPOSURE_CAPPED",
+    target: 100, best_reachable: 36.85, optimization_status: "OPTIMAL",
+    builder_run_id: "run-100", edit_token: "token-100", revision: 1,
+    best_reachable_combination: {
+      original_requested_target: 100, achieved_odds: 36.85,
+      selected_selection_ids: [], selected_fixture_ids: [],
+      policy_context: { market_cap: 5, team_to_score_cap: 2, under_cap: 2,
+        max_legs: 16, market_cap_policy: "builder_target_aware_v1" },
+    },
+  });
+  reviseSlip.mockReturnValueOnce(new Promise((resolve) => { finish = resolve; }));
   renderBuilder();
   fireEvent.click(screen.getByRole("button", { name: /100x high target/i }));
   fireEvent.click(screen.getByRole("button", { name: /build my 100x slip/i }));
-  const cta = await screen.findByRole("button", { name: /build verified 6.06x slip/i });
+  const cta = await screen.findByRole("button", { name: /build verified 36.85x slip/i });
   fireEvent.click(cta);
-  expect(buildSlip).toHaveBeenLastCalledWith(6.06, "week", false);
-  expect(cta).toBeDisabled();
+  expect(buildSlip).toHaveBeenCalledTimes(1);
+  expect(reviseSlip).toHaveBeenCalledWith(expect.objectContaining({
+    runId: "run-100", action: "accept_best_reachable", target: 36.85,
+  }), expect.any(AbortSignal));
+  expect(screen.getByRole("button", { name: /building the verified 36.85x combination/i }))
+    .toBeDisabled();
+  expect(screen.getByRole("button", { name: /build my 100x slip/i })).toBeInTheDocument();
   await act(async () => {
-    finish({ status: "success", target: 6.06, odds: 6.1, legs: 0, games: [] });
+    finish({
+      status: "success", target: 100, original_requested_target: 100,
+      materialized_best_reachable: true, best_reachable: 36.85,
+      odds: 36.85, legs: 0, games: [], builder_run_id: "run-100",
+      edit_token: "token-100", revision: 2,
+    });
   });
+  expect(await screen.findByText("Requested target")).toBeInTheDocument();
+  expect(screen.getByText("Best verified available")).toBeInTheDocument();
+  expect(screen.getAllByText("36.85x").length).toBeGreaterThan(0);
 });
+
+test.each([[50, 19.81], [20, 10.57]])(
+  "%ix capped result is accepted through its revision without another build",
+  async (requested, best) => {
+    buildSlip.mockResolvedValue({
+      status: "unavailable", result_status: "QUALITY_CAPPED",
+      target: requested, best_reachable: best, optimization_status: "OPTIMAL",
+      builder_run_id: `run-${requested}`, edit_token: "token", revision: 1,
+      best_reachable_combination: {
+        original_requested_target: requested, achieved_odds: best,
+        selected_selection_ids: [], selected_fixture_ids: [],
+        policy_context: { market_cap: requested === 50 ? 4 : 3,
+          team_to_score_cap: 2, under_cap: 2, max_legs: 16,
+          market_cap_policy: "builder_target_aware_v1" },
+      },
+    });
+    reviseSlip.mockResolvedValue({
+      status: "success", target: requested, odds: best, legs: 0, games: [],
+      materialized_best_reachable: true, original_requested_target: requested,
+      builder_run_id: `run-${requested}`, edit_token: "token", revision: 2,
+    });
+    renderBuilder();
+    fireEvent.click(screen.getByRole("button", {
+      name: new RegExp(`^${requested}x`),
+    }));
+    fireEvent.click(screen.getByRole("button", {
+      name: new RegExp(`build my ${requested}x slip`, "i"),
+    }));
+    fireEvent.click(await screen.findByRole("button", {
+      name: new RegExp(`build verified ${best.toFixed(2)}x slip`, "i"),
+    }));
+    await waitFor(() => expect(reviseSlip).toHaveBeenCalled());
+    expect(buildSlip).toHaveBeenCalledTimes(1);
+    expect(reviseSlip).toHaveBeenCalledWith(expect.objectContaining({
+      action: "accept_best_reachable", target: best,
+    }), expect.any(AbortSignal));
+  },
+);
 
 test("active booking is rendered immediately without pending copy", async () => {
   buildSlip.mockResolvedValue({ status: "success", target: 50, odds: 50.1, legs: 0,
