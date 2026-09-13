@@ -453,3 +453,30 @@ test("active booking is rendered immediately without pending copy", async () => 
   await screen.findByText("booking");
   expect(screen.queryByText(/code pending/i)).not.toBeInTheDocument();
 });
+
+test("terminal best-available result shows the original target and no cascade CTA", async () => {
+  buildSlip.mockResolvedValue({
+    status: "success", target: 200, original_requested_target: 200,
+    target_reached: false, materialized_best_reachable: true,
+    result_status: "BEST_AVAILABLE", best_reachable: 121.34,
+    odds: 121.34, legs: 15, games: [],
+    reason: "200x could not be reached within BetSightly's current safety limits.",
+    booking: { status: "active", share_code: "BEST121" },
+    board: { ready: true, degraded: true, complete: false },
+  });
+
+  renderBuilder();
+  fireEvent.change(screen.getByLabelText(/custom target/i), {
+    target: { value: "200" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: /use target/i }));
+  fireEvent.click(screen.getByRole("button", { name: /build my 200x slip/i }));
+
+  expect(await screen.findByText("Best available")).toBeInTheDocument();
+  expect(screen.getByText("Best verified 121.34x slip")).toBeInTheDocument();
+  expect(screen.getByText("Requested target")).toBeInTheDocument();
+  expect(screen.getAllByText("200x").length).toBeGreaterThan(0);
+  expect(screen.getByText(/verified maximum on the current board/i)).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: /build verified/i })).not.toBeInTheDocument();
+  expect(reviseSlip).not.toHaveBeenCalled();
+});

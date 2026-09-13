@@ -64,6 +64,9 @@ export default function SlipBuilderPage() {
     ? (slip?.target_hit_probability ?? slip?.hit_probability ?? 0)
     : (slip?.hit_probability ?? 0);
   const capStatus = String(slip?.result_status || "");
+  const isBestAvailable = Boolean(
+    slip?.status === "success" && slip.materialized_best_reachable,
+  );
   const acceptingBest = editingAction === "accept_best_reachable";
   const belowBuilderMinimum = Boolean(
     slip?.best_reachable && slip.best_reachable < 2,
@@ -340,19 +343,29 @@ export default function SlipBuilderPage() {
           <header>
             <div>
               <span className="builder-eyebrow">
-                <CheckCircle2 size={14} /> Combination ready
+                <CheckCircle2 size={14} />
+                {isBestAvailable ? "Best available" : "Combination ready"}
               </span>
-              <h2>Your {slip.odds?.toFixed(2)}x slip</h2>
+              <h2>
+                {isBestAvailable
+                  ? `Best verified ${slip.odds?.toFixed(2)}x slip`
+                  : `Your ${slip.odds?.toFixed(2)}x slip`}
+              </h2>
             </div>
             <span className="builder-trust-chip">
               <ShieldCheck size={15} /> Grade {slip.lowest_trust_grade ?? "B"}{" "}
               minimum
             </span>
           </header>
-          {slip.board?.degraded && (
+          {(slip.board?.degraded || slip.board?.complete === false) && (
             <p className="builder-board-state">
-              The prepared board is usable but incomplete. Unavailable competitions were not searched again for this edit.
+              This is the verified maximum on the current board. Some
+              competitions were unavailable during this refresh. A later
+              complete board may support a stronger combination.
             </p>
+          )}
+          {isBestAvailable && slip.reason && (
+            <p className="builder-explainer">{slip.reason}</p>
           )}
           {slip.change_summary && (
             <section className="builder-change-summary" aria-label="Latest slip changes">
