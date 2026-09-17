@@ -64,6 +64,36 @@ test("shows every editable leg action with accessible button alternatives", asyn
   expect(screen.getByText(/conservative builder probability/i)).toBeInTheDocument();
 });
 
+test("preview requests a code only after explicit final confirmation", async () => {
+  const preview = {
+    ...editableSlip(),
+    booking: { status: "not_requested", share_code: null,
+      lifecycle_status: "awaiting_confirmation", actionable: false },
+  };
+  buildSlip.mockResolvedValue(preview);
+  reviseSlip.mockResolvedValue({
+    ...preview, revision: 2,
+    booking: { status: "active", share_code: "FINAL10",
+      booking_status: "FULL", readback_validation: "PASSED",
+      actionable: true },
+  });
+  renderBuilder();
+  fireEvent.click(screen.getByRole("button", { name: /10x lower target/i }));
+  fireEvent.click(screen.getByRole("button", { name: /build my 10x slip/i }));
+
+  const confirm = await screen.findByRole("button", {
+    name: /confirm slip and get code/i,
+  });
+  expect(screen.queryByTestId("booking-code")).not.toBeInTheDocument();
+  fireEvent.click(confirm);
+  expect(reviseSlip).toHaveBeenCalledWith(expect.objectContaining({
+    action: "confirm_booking",
+    selectionId: undefined,
+    fixtureId: "",
+  }), expect.any(AbortSignal));
+  expect(await screen.findByText("FINAL10")).toBeInTheDocument();
+});
+
 test("qualifies a verified maximum when the provider board is degraded", async () => {
   buildSlip.mockResolvedValue({
     ...editableSlip(), status: "unavailable", result_status: "QUALITY_CAPPED",
@@ -75,7 +105,7 @@ test("qualifies a verified maximum when the provider board is degraded", async (
   renderBuilder();
   fireEvent.click(screen.getByRole("button", { name: /10x lower target/i }));
   fireEvent.click(screen.getByRole("button", { name: /build my 10x slip/i }));
-  expect(await screen.findByText(/verified maximum on the current board/i)).toBeInTheDocument();
+  expect(await screen.findByText("reachable")).toBeInTheDocument();
   expect(screen.getByText(/some competitions were unavailable/i)).toBeInTheDocument();
 });
 
@@ -385,13 +415,13 @@ test("100x best reachable CTA materializes its stored combination without a targ
   renderBuilder();
   fireEvent.click(screen.getByRole("button", { name: /100x high target/i }));
   fireEvent.click(screen.getByRole("button", { name: /build my 100x slip/i }));
-  const cta = await screen.findByRole("button", { name: /build verified 36.85x slip/i });
+  const cta = await screen.findByRole("button", { name: /build the best reachable 36.85x slip/i });
   fireEvent.click(cta);
   expect(buildSlip).toHaveBeenCalledTimes(1);
   expect(reviseSlip).toHaveBeenCalledWith(expect.objectContaining({
     runId: "run-100", action: "accept_best_reachable", target: 36.85,
   }), expect.any(AbortSignal));
-  expect(screen.getByRole("button", { name: /building the verified 36.85x combination/i }))
+  expect(screen.getByRole("button", { name: /building the best reachable 36.85x combination/i }))
     .toBeDisabled();
   expect(screen.getByRole("button", { name: /build my 100x slip/i })).toBeInTheDocument();
   await act(async () => {
@@ -403,7 +433,7 @@ test("100x best reachable CTA materializes its stored combination without a targ
     });
   });
   expect(await screen.findByText("Requested target")).toBeInTheDocument();
-  expect(screen.getByText("Best verified available")).toBeInTheDocument();
+  expect(screen.getByText("Best found available")).toBeInTheDocument();
   expect(screen.getAllByText("36.85x").length).toBeGreaterThan(0);
 });
 
@@ -435,7 +465,7 @@ test.each([[50, 19.81], [20, 10.57]])(
       name: new RegExp(`build my ${requested}x slip`, "i"),
     }));
     fireEvent.click(await screen.findByRole("button", {
-      name: new RegExp(`build verified ${best.toFixed(2)}x slip`, "i"),
+      name: new RegExp(`build the best reachable ${best.toFixed(2)}x slip`, "i"),
     }));
     await waitFor(() => expect(reviseSlip).toHaveBeenCalled());
     expect(buildSlip).toHaveBeenCalledTimes(1);
@@ -473,10 +503,10 @@ test("terminal best-available result shows the original target and no cascade CT
   fireEvent.click(screen.getByRole("button", { name: /build my 200x slip/i }));
 
   expect(await screen.findByText("Best available")).toBeInTheDocument();
-  expect(screen.getByText("Best verified 121.34x slip")).toBeInTheDocument();
+  expect(screen.getByText("Best available 121.34x slip")).toBeInTheDocument();
   expect(screen.getByText("Requested target")).toBeInTheDocument();
   expect(screen.getAllByText("200x").length).toBeGreaterThan(0);
-  expect(screen.getByText(/verified maximum on the current board/i)).toBeInTheDocument();
+  expect(screen.getByText(/best found on the current board; a maximum has not been proven/i)).toBeInTheDocument();
   expect(screen.queryByRole("button", { name: /build verified/i })).not.toBeInTheDocument();
   expect(reviseSlip).not.toHaveBeenCalled();
 });

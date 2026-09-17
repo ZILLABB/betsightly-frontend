@@ -268,3 +268,46 @@
   .booking-code--verified { animation: none !important; }
   .editable-builder-leg__old-card { display: none; }
 }
+.builder-booking-confirm {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 18px;
+  padding: 18px;
+  border: 1px solid var(--border-brand);
+  border-radius: var(--radius-xl);
+  background: var(--brand-faint);
+}
+
+.builder-booking-confirm > div {
+  display: grid;
+  gap: 5px;
+}
+
+.builder-booking-confirm strong {
+  color: var(--text-1);
+  font-size: 14px;
+}
+
+.builder-booking-confirm span {
+  max-width: 68ch;
+  color: var(--text-2);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.builder-booking-confirm .builder-submit {
+  width: auto;
+  margin: 0;
+  white-space: nowrap;
+}
+
+@media (max-width: 720px) {
+  .builder-booking-confirm {
+    grid-template-columns: 1fr;
+  }
+
+  .builder-booking-confirm .builder-submit {
+    width: 100%;
+  }
+}

@@ -11,7 +11,8 @@ export type BuilderAction =
   | "remove_selection"
   | "lock_selection"
   | "unlock_selection"
-  | "accept_best_reachable";
+  | "accept_best_reachable"
+  | "confirm_booking";
 
 export interface BuilderChangeSummary {
   action: BuilderAction;

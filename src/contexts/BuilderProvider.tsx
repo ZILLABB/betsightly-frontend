@@ -276,6 +276,8 @@ export function BuilderProvider({
     if (
       slip?.status !== "success" ||
       slip.booking?.status === "active" ||
+      slip.booking?.status === "not_requested" ||
+      editingSelectionId !== null ||
       (slip.revision ?? 1) > 1 ||
       recoveryAttempts.current >=
         MAX_AUTO_RECOVERY_ATTEMPTS
@@ -289,7 +291,9 @@ export function BuilderProvider({
       if (
         document.visibilityState !== "visible" ||
         !navigator.onLine ||
-        inFlight.current
+        inFlight.current ||
+        revisionController.current !== null ||
+        editingSelectionId !== null
       ) {
         return;
       }
@@ -350,7 +354,7 @@ export function BuilderProvider({
         schedule,
       );
     };
-  }, [slip, target, horizon]);
+  }, [slip, target, horizon, editingSelectionId]);
 
   useEffect(() => () => {
     revisionController.current?.abort();
@@ -370,7 +374,7 @@ export function BuilderProvider({
 
     const selectionId = game?.selection_id;
     const fixtureId = game?.match_id || String(game?.fixture_id ?? "");
-    if (action !== "accept_best_reachable" && !selectionId) {
+    if (!["accept_best_reachable", "confirm_booking"].includes(action) && !selectionId) {
       setError("This selection has no current revision identity. Build again.");
       return;
     }
@@ -392,6 +396,7 @@ export function BuilderProvider({
       lock_selection: "builder_leg_locked",
       unlock_selection: "builder_leg_unlocked",
       accept_best_reachable: "builder_best_reachable_accepted",
+      confirm_booking: "builder_booking_confirmed",
     } as const;
     trackProductEvent(eventByAction[action], {
       product_area: "builder",
@@ -401,7 +406,9 @@ export function BuilderProvider({
 
     setError(null);
     setRevisionFeedback(null);
-    setEditingSelectionId(selectionId ?? "best-reachable");
+    setEditingSelectionId(selectionId ?? (
+      action === "confirm_booking" ? "confirm-booking" : "best-reachable"
+    ));
     setEditingAction(action);
     setEditingMessage(
       action === "replace_selection" ? "Finding a different game…"
@@ -409,6 +416,7 @@ export function BuilderProvider({
           : action === "remove_selection" ? "Rebalancing slip…"
             : action === "exclude_fixture" ? "Excluding this game…"
               : action.includes("lock") ? null
+                : action === "confirm_booking" ? "Validating your final SportyBet slip…"
                 : "Updating this slip…",
     );
     try {
@@ -459,7 +467,8 @@ export function BuilderProvider({
             : action === "exclude_fixture" ? "Game excluded from this Builder run"
               : action === "lock_selection" ? "Leg locked"
                 : action === "unlock_selection" ? "Leg unlocked"
-                  : "Slip updated";
+                  : action === "confirm_booking" ? "SportyBet code validated"
+                    : "Slip updated";
         setRevisionFeedback({ action, status: "success", oldGame: game,
           newGame: added, message });
         if (feedbackTimer.current) window.clearTimeout(feedbackTimer.current);
@@ -485,6 +494,9 @@ export function BuilderProvider({
       );
     } finally {
       window.clearTimeout(timeout);
+      if (revisionController.current === controller) {
+        revisionController.current = null;
+      }
       if (sequence === revisionSequence.current) {
         setEditingSelectionId(null);
         setEditingMessage(null);

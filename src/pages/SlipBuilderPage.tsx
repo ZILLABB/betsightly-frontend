@@ -65,9 +65,20 @@ export default function SlipBuilderPage() {
     : (slip?.hit_probability ?? 0);
   const capStatus = String(slip?.result_status || "");
   const isBestAvailable = Boolean(
-    slip?.status === "success" && slip.materialized_best_reachable,
+    slip?.status === "success" && (
+      slip.materialized_best_reachable ||
+      (slip.odds != null && slip.target != null && slip.odds < slip.target)
+    ),
+  );
+  const provenMaximum = Boolean(
+    slip?.solver_proof?.optimality_proven === true &&
+    slip.solver_proof.solution_kind === "MAX_REACHABLE"
   );
   const acceptingBest = editingAction === "accept_best_reachable";
+  const confirmingBooking = editingAction === "confirm_booking";
+  const bookingConfirmed = Boolean(
+    slip?.booking?.status === "active" && slip.booking.actionable !== false,
+  );
   const belowBuilderMinimum = Boolean(
     slip?.best_reachable && slip.best_reachable < 2,
   );
@@ -257,7 +268,7 @@ export default function SlipBuilderPage() {
           <BrandLoader />
           <div>
             <strong>{editingMessage}</strong>
-            <span>Checking SportyBet selections, creating the current booking, then validating every event and market.</span>
+            <span>Revalidating the current selections and SportyBet availability. The original slip stays unchanged unless the server confirms the edit.</span>
           </div>
         </div>
       )}
@@ -288,7 +299,7 @@ export default function SlipBuilderPage() {
           {slip.best_reachable && !belowBuilderMinimum && (
             <div className="builder-cap__number">
               <strong>{slip.best_reachable.toFixed(2)}x</strong>
-              <span>{slip.optimization_status === "OPTIMAL"
+              <span>{provenMaximum
                 ? slip.board?.degraded || slip.board?.complete === false
                   ? "verified maximum on the current board"
                   : "verified maximum"
@@ -321,9 +332,9 @@ export default function SlipBuilderPage() {
               disabled={loading || acceptingBest}
             >
               <Target size={17} />
-              {acceptingBest ? `Building the verified ${slip.best_reachable.toFixed(2)}x combination…`
+              {acceptingBest ? `Building ${provenMaximum ? "the verified" : "the best reachable"} ${slip.best_reachable.toFixed(2)}x combination…`
                 : loading ? "Building verified slip…" :
-                `Build ${slip.optimization_status === "OPTIMAL" ? "verified" : "the best reachable"} ${slip.best_reachable.toFixed(2)}x slip`}
+                `Build ${provenMaximum ? "verified" : "the best reachable"} ${slip.best_reachable.toFixed(2)}x slip`}
             </button>
           )}
           {!!suggestedTargets(target).length && (
@@ -348,7 +359,7 @@ export default function SlipBuilderPage() {
               </span>
               <h2>
                 {isBestAvailable
-                  ? `Best verified ${slip.odds?.toFixed(2)}x slip`
+                  ? `${provenMaximum ? "Best verified" : "Best available"} ${slip.odds?.toFixed(2)}x slip`
                   : `Your ${slip.odds?.toFixed(2)}x slip`}
               </h2>
             </div>
@@ -359,7 +370,9 @@ export default function SlipBuilderPage() {
           </header>
           {(slip.board?.degraded || slip.board?.complete === false) && (
             <p className="builder-board-state">
-              This is the verified maximum on the current board. Some
+              {provenMaximum
+                ? "This is a verified maximum on the current board."
+                : "This is the best found on the current board; a maximum has not been proven."} Some
               competitions were unavailable during this refresh. A later
               complete board may support a stronger combination.
             </p>
@@ -400,11 +413,12 @@ export default function SlipBuilderPage() {
             </section>
           )}
           <div className="builder-stats">
-            {slip.materialized_best_reachable && (
+            {isBestAvailable && (
               <Stat label="Requested target" value={`${slip.original_requested_target ?? slip.target}x`} />
             )}
-            {slip.materialized_best_reachable && (
-              <Stat label="Best verified available" value={`${slip.odds?.toFixed(2)}x`} />
+            {isBestAvailable && (
+              <Stat label={provenMaximum ? "Best verified available" : "Best found available"}
+                  value={`${slip.odds?.toFixed(2)}x`} />
             )}
             <Stat label="Total odds" value={`${slip.odds?.toFixed(2)}x`} />
             <Stat label="Legs" value={String(slip.legs)} />
@@ -435,25 +449,40 @@ export default function SlipBuilderPage() {
               profit.
             </p>
           )}
-          <BookingCode
-            booking={displayedBooking}
-            category={accent}
-            tracking={{
-              source: "generator",
-              tier: `${target}_${horizon}`,
-              legCount: slip.booking?.booked_leg_count ?? slip.legs,
-              fingerprint: slip.booking?.sportybet_selection_fingerprint,
-              targetOdds: target,
-              bookingStatus: slip.booking?.booking_status,
-              actualOdds: slip.booking?.actual_sportybet_odds,
-            }}
-            onShowBookable={
-              slip.booking?.status === "active" && slip.booking?.actionable !== false
-                ? undefined
-                : () => void build(true)
-            }
-            fallbackActionLabel="Try another bookable slip"
-          />
+          {!bookingConfirmed && slip.builder_run_id ? (
+            <section className="builder-booking-confirm" aria-live="polite">
+              <div>
+                <strong>Ready to place this exact combination?</strong>
+                <span>
+                  We will recheck every event, market and current price before
+                  requesting a SportyBet code. Your selections will not be
+                  re-optimized into a different slip.
+                </span>
+              </div>
+              <button type="button" className="builder-submit"
+                disabled={loading || confirmingBooking}
+                onClick={() => void reviseLeg("confirm_booking")}>
+                <CheckCircle2 size={18} />
+                {confirmingBooking ? "Validating SportyBet…" : "Confirm slip and get code"}
+              </button>
+            </section>
+          ) : (
+            <BookingCode
+              booking={displayedBooking}
+              category={accent}
+              tracking={{
+                source: "generator",
+                tier: `${target}_${horizon}`,
+                legCount: slip.booking?.booked_leg_count ?? slip.legs,
+                fingerprint: slip.booking?.sportybet_selection_fingerprint,
+                targetOdds: target,
+                bookingStatus: slip.booking?.booking_status,
+                actualOdds: slip.booking?.actual_sportybet_odds,
+              }}
+              onShowBookable={undefined}
+              fallbackActionLabel="Revalidate this slip"
+            />
+          )}
           {recoveringCode && (
             <p className="builder-recovery">
               Rechecking SportyBet availability…
