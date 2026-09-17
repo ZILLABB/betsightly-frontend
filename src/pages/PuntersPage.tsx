@@ -592,7 +592,7 @@ function TelegramGuide() {
       {/* Code format examples */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 14 }}>
         {/* Single code */}
-        <div style={{ padding: "16px 20px", borderRadius: 10, background: "rgba(0,0,0,0.3)", border: "1px solid var(--border)" }}>
+        <div style={{ padding: "16px 20px", borderRadius: 10, background: "var(--code-surface)", border: "1px solid var(--border)" }}>
           <p style={{ fontFamily: "var(--font-body)", fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--brand)", marginBottom: 10 }}>
             Single Code
           </p>
@@ -605,7 +605,7 @@ Bookmaker: Sportybet`}
         </div>
 
         {/* Multiple codes */}
-        <div style={{ padding: "16px 20px", borderRadius: 10, background: "rgba(0,0,0,0.3)", border: "1px solid var(--border)" }}>
+        <div style={{ padding: "16px 20px", borderRadius: 10, background: "var(--code-surface)", border: "1px solid var(--border)" }}>
           <p style={{ fontFamily: "var(--font-body)", fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--green)", marginBottom: 10 }}>
             Multiple Codes
           </p>

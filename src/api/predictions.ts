@@ -154,13 +154,25 @@ export const api = {
   getCalibration: (days = 180) =>
     request<CalibrationResponse>(`/leagues/calibration?days=${days}`),
 
+  /** Policy-aware performance. Optional in the UI so older backend deploys
+   *  continue to render the public record without fabricating engine stats. */
+  getPerformance: (days = 90) =>
+    request<PerformanceResponse>(`/leagues/performance?days=${days}`),
+
 };
 
 /** A slip built to a requested multiplier. */
 export interface BuiltSlip {
   status: "success" | "unavailable" | "error";
-  result_status?: "TARGET_REACHED" | "QUALITY_CAPPED" | "EXPOSURE_CAPPED" | "MAX_LEGS_CAPPED" | "INSUFFICIENT_BOOKABLE_FIXTURES" | "INSUFFICIENT_TRUSTED_FIXTURES" | "NO_SAFE_COMBINATION";
-  optimization_status?: "OPTIMAL" | "BOUNDED_OPTIMAL" | "HEURISTIC";
+  result_status?: "TARGET_REACHED" | "TARGET_BAND_REACHED" | "TARGET_CAPPED" | "QUALITY_CAPPED" | "EXPOSURE_CAPPED" | "MAX_LEGS_CAPPED" | "INSUFFICIENT_BOOKABLE_FIXTURES" | "INSUFFICIENT_TRUSTED_FIXTURES" | "NO_SAFE_COMBINATION" | "BOARD_UNAVAILABLE" | "BEST_REACHABLE_MATERIALIZED";
+  optimization_status?: "OPTIMAL" | "TIME_LIMIT_INCUMBENT" | "INFEASIBLE" | "SOLVER_ERROR" | "HEURISTIC";
+  solver_proof?: {
+    status: string;
+    optimality_proven: boolean;
+    mip_gap?: number | null;
+    objective_bound?: number | null;
+    message?: string;
+  };
   target: number;
   horizon?: "today" | "week";
   odds?: number;
@@ -258,6 +270,8 @@ export interface CalibrationResponse {
   hit_rate: number | null;
   avg_predicted: number | null;
   bias: number | null;
+  current_policy?: string;
+  current_policy_unique_forecasts?: number;
 }
 
 export interface SettledLeg {
@@ -278,14 +292,28 @@ export interface SettledLeg {
 }
 
 export interface SettledSlip {
+  archive_id?: number;
   date: string;
   category: string;
+  presentation?: "accumulator" | "singles";
   status: 'pending' | 'won' | 'lost' | 'void';
   total_odds: number;
   hit_probability: number;
   picks: SettledLeg[];
   settled_at?: string | null;
+  created_at?: string | null;
   policy_version?: string | null;
+}
+
+export interface PerformanceRecord {
+  settled: number;
+  won?: number;
+  lost?: number;
+  staked: number;
+  returned: number;
+  profit: number;
+  roi: number | null;
+  coverage?: number;
 }
 
 export interface CategoryPerformance {
@@ -300,6 +328,10 @@ export interface CategoryPerformance {
   returned: number;
   profit: number;
   roi: number;
+  published_odds_roi?: number;
+  bookable_sportybet_roi?: number | null;
+  published_record?: PerformanceRecord;
+  bookable_record?: PerformanceRecord;
 }
 
 export interface LeagueResultsResponse {
@@ -325,4 +357,26 @@ export interface ResultTotals {
   returned: number;
   profit: number;
   roi: number | null;
+  published_record?: PerformanceRecord;
+  bookable_record?: PerformanceRecord;
+}
+
+export interface CurrentPolicyPerformance {
+  policy_version: string;
+  first_archived_date?: string | null;
+  settled_unique_forecasts: number;
+  settled_slips: number;
+  readiness: string;
+  readiness_label?: string;
+  message?: string;
+  profit?: number;
+  roi?: number | null;
+  win_rate?: number | null;
+}
+
+export interface PerformanceResponse {
+  status: string;
+  days: number;
+  summary: Record<string, CategoryPerformance>;
+  current_policy?: CurrentPolicyPerformance;
 }
