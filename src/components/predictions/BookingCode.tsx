@@ -311,9 +311,29 @@ export default function BookingCode({
         {booking.actual_sportybet_odds ? ` Actual SportyBet odds: ${booking.actual_sportybet_odds.toFixed(2)}.` : ""}
       </div>
 
-      {category.key === "over_1_5" && (
+      {category.key === "over_1_5" && bookingStatus === "PARTIAL" && (
+        <div role="status" style={{ width: "100%", padding: "10px 12px",
+          border: "1px solid var(--border)", borderRadius: 8,
+          fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text-1)" }}>
+          <strong>Partial SportyBet ticket: {booking.booked_leg_count ?? booking.legs ?? 0}
+            {" of "}{booking.original_leg_count ?? 0} selections.</strong>
+          {" The code contains only the included selections as ONE accumulator, not " +
+            "the full list or separate single-bet codes. The excluded predictions remain " +
+            "on the original published singles card."}
+          {!!booking.excluded_legs?.length && (
+            <ul style={{ margin: "8px 0 0", paddingLeft: 18 }}>
+              {booking.excluded_legs.map((leg, index) => (
+                <li key={`${leg.match_id ?? index}-${leg.market ?? "selection"}`}>
+                  Not in code: {leg.home_team} vs {leg.away_team} — {leg.prediction ?? leg.market}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+      {category.key === "over_1_5" && bookingStatus !== "PARTIAL" && (
         <div style={{ width: "100%", fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)" }}>
-          Convenience share-code ticket only · the underlying picks are intended as separate singles.
+          Convenience accumulator share-code ticket only · the underlying picks are intended as separate singles.
         </div>
       )}
 
