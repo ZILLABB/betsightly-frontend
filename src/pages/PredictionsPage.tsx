@@ -80,7 +80,9 @@ export function PredictionsPage() {
       .catch((error: unknown) => setBookable({
         status: "error", available: false,
         reason: error instanceof Error
-          ? `Available-now rebuild failed: ${error.message}`
+          ? (error.name === "TimeoutError"
+            ? "SportyBet verification took too long. Try again to request a fresh slip."
+            : `Available-now rebuild failed: ${error.message}`)
           : "Available-now rebuild failed. Please try again.",
       }))
       .finally(() => setBookableLoading(false));
@@ -158,7 +160,9 @@ export function PredictionsPage() {
                   : viewingBookable
                     ? "You’re viewing the available-now slip"
                     : bookableUnavailable
-                      ? "No available-now slip could be built"
+                      ? (bookable?.status === "error"
+                        ? "The availability check could not finish"
+                        : "No available-now slip could be built")
                       : `${startedCount} ${startedCount === 1 ? "pick has" : "picks have"} already started`}
               </strong>
               <span style={{ display: "block", fontSize: 13, lineHeight: 1.5, color: "var(--text-2)" }}>

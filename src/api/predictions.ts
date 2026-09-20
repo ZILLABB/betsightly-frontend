@@ -13,7 +13,11 @@ async function request<T>(
 ): Promise<T> {
   const { timeoutMs = DEFAULT_TIMEOUT, ...rest } = init ?? {};
   const ctrl = new AbortController();
-  const timer = window.setTimeout(() => ctrl.abort(), timeoutMs);
+  let timedOut = false;
+  const timer = window.setTimeout(() => {
+    timedOut = true;
+    ctrl.abort();
+  }, timeoutMs);
   try {
     const res = await fetch(`${BASE}${path}`, {
       ...rest,
@@ -34,6 +38,13 @@ async function request<T>(
       throw err;
     }
     return res.json() as Promise<T>;
+  } catch (error) {
+    if (timedOut) {
+      const timeoutError = new Error("The server did not respond in time. Please try again.");
+      timeoutError.name = "TimeoutError";
+      throw timeoutError;
+    }
+    throw error;
   } finally {
     window.clearTimeout(timer);
   }
@@ -119,7 +130,7 @@ export const api = {
    * already under way. This gives them something they can still place. It is
    * not archived and not settled — only the 08:00 card carries the record. */
   getBookableNow: () =>
-    request<BookableNowResponse>('/leagues/bookable-now'),
+    request<BookableNowResponse>('/leagues/bookable-now', { timeoutMs: 240_000 }),
 
   /** Live scores for today's fixtures, keyed by match_id. Fetched apart from
    *  the card because the card is frozen at 08:00 and a score is not. */
