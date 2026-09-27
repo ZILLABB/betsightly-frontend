@@ -9,6 +9,8 @@ import { useState } from "react";
 
 import BookingCode from "../components/predictions/BookingCode";
 import { BuilderLeg } from "../components/builder/BuilderLeg";
+import { BuilderV2Panel } from "../components/builder/BuilderV2Panel";
+import type { BuilderV2Mode } from "../api/builderV2";
 import { BrandLoader } from "../components/ui/BrandLoader";
 import { SEO } from "../components/common/SEO";
 import { CATEGORIES } from "../types";
@@ -48,6 +50,7 @@ export default function SlipBuilderPage() {
     reviseLeg,
   } = useBuilder();
   const [customTarget, setCustomTarget] = useState("");
+  const [builderMode, setBuilderMode] = useState<BuilderV2Mode>("target_odds");
 
   const acceptBestReachable = () => {
     if (!slip?.best_reachable) return;
@@ -119,7 +122,10 @@ export default function SlipBuilderPage() {
             </span>
           </div>
         </div>
-        <div className="builder-hero__target" aria-label="Selected target">
+        <div
+          className={`builder-hero__target ${builderMode === "target_odds" ? "" : "builder-hero__target--hidden"}`}
+          aria-label="Selected target"
+        >
           <span>Your target</span>
           <strong>
             {target}
@@ -129,6 +135,33 @@ export default function SlipBuilderPage() {
         </div>
       </section>
 
+      <div className="builder-v2-mode-switch" role="tablist" aria-label="Builder mode">
+        {([
+          ["target_odds", "Target Odds"],
+          ["game_count", "Number of Games"],
+          ["strongest", "Strongest"],
+          ["manual", "Pick My Games"],
+        ] as Array<[BuilderV2Mode, string]>).map(([value, label]) => (
+          <button
+            key={value}
+            type="button"
+            role="tab"
+            aria-selected={builderMode === value}
+            className={builderMode === value ? "is-active" : ""}
+            onClick={() => setBuilderMode(value)}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {builderMode !== "target_odds" && (
+        <BuilderV2Panel
+          mode={builderMode as Exclude<BuilderV2Mode, "target_odds">}
+        />
+      )}
+
+      <div className={`builder-v2-target-wrap ${builderMode === "target_odds" ? "" : "is-hidden"}`}>
       <section
         className="builder-config"
         aria-labelledby="builder-config-title"
@@ -547,6 +580,7 @@ export default function SlipBuilderPage() {
           </div>
         </section>
       )}
+      </div>
     </main>
   );
 }
