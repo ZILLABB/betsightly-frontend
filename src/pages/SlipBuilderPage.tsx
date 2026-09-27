@@ -1,4 +1,4 @@
-﻿import {
+import {
   CheckCircle2,
   ShieldCheck,
   Sparkles,
@@ -29,6 +29,30 @@ const capHeading = (status: string | undefined, target: number) => ({
   EXPECTED_RETURN_CAPPED: `${target}x does not clear the expected-return policy`,
 }[status || ""] || `${target}x isn’t supported by the current board`);
 
+const MARKET_LABELS: Record<string, string> = {
+  over_1_5: "Over 1.5",
+  over_2_5: "Over 2.5",
+  under_3_5: "Under 3.5",
+  under_4_5: "Under 4.5",
+  home_or_draw: "Home / Draw",
+  away_or_draw: "Away / Draw",
+  dnb_home: "Home DNB",
+  dnb_away: "Away DNB",
+  home_win: "Home Win",
+  away_win: "Away Win",
+  home_over_0_5: "Home O0.5",
+  away_over_0_5: "Away O0.5",
+};
+
+const marketLabel = (market: string) =>
+  MARKET_LABELS[market] ??
+  market.replaceAll("_", " ").replace(/\b\w/g, (value) => value.toUpperCase());
+
+const formatProbabilityPercent = (value: number) => {
+  if (value > 0 && value < 0.0001) return "<0.01%";
+  return `${(value * 100).toFixed(2)}%`;
+};
+
 export default function SlipBuilderPage() {
   const {
     target,
@@ -44,6 +68,7 @@ export default function SlipBuilderPage() {
     chooseTarget,
     chooseHorizon,
     build,
+    retryBuild,
     reviseLeg,
   } = useBuilder();
 
@@ -75,6 +100,30 @@ export default function SlipBuilderPage() {
     slip?.solver_proof?.optimality_proven === true &&
     slip.solver_proof.solution_kind === "MAX_REACHABLE"
   );
+
+  const resultEyebrow = isBestAvailable
+    ? "Best available"
+    : slipMode === "game_count"
+      ? "Game count ready"
+      : slipMode === "strongest"
+        ? "Strongest picks ready"
+        : slipMode === "manual"
+          ? "Your picks ready"
+          : "Combination ready";
+
+  const resultHeading = isBestAvailable
+    ? `${provenMaximum ? "Best verified" : "Best available"} ${slip?.odds?.toFixed(2)}x slip`
+    : slipMode === "game_count"
+      ? `${slip?.delivered_game_count ?? slip?.legs ?? 0} qualifying games`
+      : slipMode === "strongest"
+        ? `${slip?.legs ?? 0} strongest qualifying picks`
+        : slipMode === "manual"
+          ? `${slip?.legs ?? 0} selected ${slip?.legs === 1 ? "game" : "games"}`
+          : `Your ${slip?.odds?.toFixed(2)}x slip`;
+
+  const marketShortfalls = Object.entries(
+    slip?.market_balance?.shortfalls ?? {},
+  ).filter(([, count]) => Number(count) > 0);
   const acceptingBest = editingAction === "accept_best_reachable";
   const confirmingBooking = editingAction === "confirm_booking";
   const bookingConfirmed = Boolean(
@@ -134,7 +183,7 @@ export default function SlipBuilderPage() {
           <p>{error}</p>
           {!editingSelectionId && (
             <button className="builder-cap__cta" type="button"
-              onClick={() => void build(false)} disabled={loading}>
+              onClick={() => void retryBuild()} disabled={loading}>
               <Target size={17} />
               {loading ? "Trying again…" : "Try again"}
             </button>
@@ -160,7 +209,7 @@ export default function SlipBuilderPage() {
             shortly—your request was controlled safely and was not a CORS error.
           </p>
           <button className="builder-cap__cta" type="button"
-            onClick={() => void build(false)} disabled={loading}>
+            onClick={() => void retryBuild()} disabled={loading}>
             <Target size={17} />
             {loading ? "Checking the board…" : "Try again"}
           </button>
@@ -234,13 +283,9 @@ export default function SlipBuilderPage() {
             <div>
               <span className="builder-eyebrow">
                 <CheckCircle2 size={14} />
-                {isBestAvailable ? "Best available" : "Combination ready"}
+                {resultEyebrow}
               </span>
-              <h2>
-                {isBestAvailable
-                  ? `${provenMaximum ? "Best verified" : "Best available"} ${slip.odds?.toFixed(2)}x slip`
-                  : `Your ${slip.odds?.toFixed(2)}x slip`}
-              </h2>
+              <h2>{resultHeading}</h2>
             </div>
             <span className="builder-trust-chip">
               <ShieldCheck size={15} /> Grade {slip.lowest_trust_grade ?? "B"}{" "}
@@ -259,6 +304,63 @@ export default function SlipBuilderPage() {
           {isBestAvailable && slip.reason && (
             <p className="builder-explainer">{slip.reason}</p>
           )}
+
+          {(slip.mode === "game_count" || slip.mode === "strongest") &&
+            slip.market_distribution &&
+            Object.keys(slip.market_distribution).length > 0 && (
+              <section
+                className="builder-market-mix"
+                aria-label="Market distribution"
+              >
+                <div className="builder-market-mix__heading">
+                  <strong>Market mix</strong>
+                  <span>
+                    {slip.mode === "game_count"
+                      ? "Built from your selected market structure"
+                      : "Strongest qualifying markets"}
+                  </span>
+                </div>
+
+                <div className="builder-market-mix__chips">
+                  {Object.entries(slip.market_distribution).map(
+                    ([market, count]) => (
+                      <span key={market}>
+                        {marketLabel(market)}
+                        <strong>{count}</strong>
+                      </span>
+                    ),
+                  )}
+                </div>
+
+                {slip.mode === "game_count" &&
+                  slip.market_balance?.applied &&
+                  marketShortfalls.length === 0 && (
+                    <p>
+                      Your selected markets were balanced to the requested mix
+                      without lowering BetSightly's quality floor.
+                    </p>
+                  )}
+
+                {slip.mode === "game_count" &&
+                  slip.market_balance?.applied &&
+                  marketShortfalls.length > 0 && (
+                    <p>
+                      {marketShortfalls
+                        .map(
+                          ([market, count]) =>
+                            `${marketLabel(market)} was ${count} ${
+                              Number(count) === 1 ? "pick" : "picks"
+                            } short of its target share`,
+                        )
+                        .join("; ")}.
+                      {" "}Remaining slots were filled only from your other
+                      selected markets that still passed the same quality and
+                      SportyBet bookability gates.
+                    </p>
+                  )}
+              </section>
+            )}
+
           {slip.change_summary && (
             <section className="builder-change-summary" aria-label="Latest slip changes">
               <strong>Rebuilt your slip</strong>
@@ -309,11 +411,11 @@ export default function SlipBuilderPage() {
             <Stat label="Legs" value={String(slip.legs)} />
             <Stat
               label={hasDnb ? "Target hit chance" : "All legs win"}
-              value={`${(headlineProbability * 100).toFixed(2)}%`}
+              value={formatProbabilityPercent(headlineProbability)}
             />
             <Stat
               label="Bookmaker break-even"
-              value={`${(100 / (slip.odds || 1)).toFixed(2)}%`}
+              value={formatProbabilityPercent(1 / (slip.odds || 1))}
             />
           </div>
           {hasDnb ? (
@@ -323,8 +425,10 @@ export default function SlipBuilderPage() {
               instead of losing the ticket.
               {" "}Target hit chance is the probability that the final payout still reaches
               {" "}{slip.target ?? target}x after any DNB pushes.
-              {" "}All-win chance: {((slip.hit_probability ?? 0) * 100).toFixed(2)}%.
-              {" "}No-loss chance: {((slip.no_loss_probability ?? slip.hit_probability ?? 0) * 100).toFixed(2)}%.
+              {" "}All-win chance: {formatProbabilityPercent(slip.hit_probability ?? 0)}.
+              {" "}No-loss chance: {formatProbabilityPercent(
+                slip.no_loss_probability ?? slip.hit_probability ?? 0,
+              )}.
               {" "}These are evidence-adjusted estimates, not promised results or profit.
             </p>
           ) : (

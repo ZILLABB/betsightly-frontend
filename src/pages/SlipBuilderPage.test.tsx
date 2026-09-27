@@ -5,7 +5,12 @@ import { api } from "../api/predictions";
 import { reviseBuilderSlip } from "../api/builderRevisions";
 import { BuilderProvider } from "../contexts/BuilderProvider";
 
-jest.mock("../api/predictions", () => ({ api: { buildSlip: jest.fn() } }));
+jest.mock("../api/predictions", () => ({
+  api: {
+    buildSlip: jest.fn(),
+    generateBuilderV2: jest.fn(),
+  },
+}));
 jest.mock("../api/builderRevisions", () => ({
   reviseBuilderSlip: jest.fn(),
 }));
@@ -18,6 +23,7 @@ jest.mock("../components/predictions/BookingCode", () => ({ booking }: any) => (
 jest.mock("../services/bookingTracking", () => ({ trackProductEvent: jest.fn() }));
 
 const buildSlip = api.buildSlip as jest.Mock;
+const generateBuilderV2 = api.generateBuilderV2 as jest.Mock;
 const reviseSlip = reviseBuilderSlip as jest.Mock;
 
 const renderBuilder = () =>
@@ -29,8 +35,20 @@ const renderBuilder = () =>
 
 beforeEach(() => {
   buildSlip.mockReset();
+  generateBuilderV2.mockReset();
   reviseSlip.mockReset();
   sessionStorage.clear();
+
+  // Existing page tests describe the returned slip through buildSlip mocks.
+  // Proxy the V2 request into that same test double so these tests keep
+  // asserting page behavior while the real UI now routes Target Odds via V2.
+  generateBuilderV2.mockImplementation((payload: any) =>
+    buildSlip(
+      payload.target_odds,
+      payload.horizon === "7_days" ? "week" : payload.horizon,
+      false,
+    ),
+  );
 });
 
 const editableSlip = (games: any[] = [{
@@ -509,4 +527,112 @@ test("terminal best-available result shows the original target and no cascade CT
   expect(screen.getByText(/best found on the current board; a maximum has not been proven/i)).toBeInTheDocument();
   expect(screen.queryByRole("button", { name: /build verified/i })).not.toBeInTheDocument();
   expect(reviseSlip).not.toHaveBeenCalled();
+});
+
+test("game-count results use a structural heading and show market balance", async () => {
+  buildSlip.mockResolvedValue({
+    status: "success",
+    mode: "game_count",
+    requested_game_count: 20,
+    delivered_game_count: 20,
+    odds: 48.2,
+    legs: 20,
+    hit_probability: .000001,
+    lowest_trust_grade: "A",
+    market_distribution: {
+      over_1_5: 14,
+      over_2_5: 6,
+    },
+    market_balance: {
+      applied: true,
+      requested_markets: ["over_1_5", "over_2_5"],
+      target_distribution: {
+        over_1_5: 10,
+        over_2_5: 10,
+      },
+      delivered_distribution: {
+        over_1_5: 14,
+        over_2_5: 6,
+      },
+      shortfalls: {
+        over_2_5: 4,
+      },
+      quality_floor_preserved: true,
+      strategy: "even_requested_markets_then_quality_backfill",
+    },
+    games: [],
+    booking: {
+      status: "active",
+      booking_status: "FULL",
+      share_code: "BAL20",
+    },
+  });
+
+  renderBuilder();
+
+  fireEvent.click(
+    screen.getByRole("button", { name: /number of games/i }),
+  );
+  fireEvent.click(
+    screen.getByRole("button", { name: /build best 20 games/i }),
+  );
+
+  expect(
+    await screen.findByText("20 qualifying games"),
+  ).toBeInTheDocument();
+
+  expect(screen.getByText("Market mix")).toBeInTheDocument();
+
+  const marketDistribution = screen.getByLabelText("Market distribution");
+  expect(marketDistribution).toHaveTextContent("Over 1.5");
+  expect(marketDistribution).toHaveTextContent("Over 2.5");
+
+  expect(
+    screen.getByText(/Over 2.5 was 4 picks short/i),
+  ).toBeInTheDocument();
+
+  expect(screen.getByText("<0.01%")).toBeInTheDocument();
+});
+
+test("strongest results lead with strongest picks instead of total odds", async () => {
+  buildSlip.mockResolvedValue({
+    status: "success",
+    mode: "strongest",
+    odds: 62.77,
+    legs: 30,
+    hit_probability: .000001,
+    lowest_trust_grade: "A",
+    market_distribution: {
+      home_over_0_5: 22,
+      over_1_5: 8,
+    },
+    games: [],
+    booking: {
+      status: "active",
+      booking_status: "FULL",
+      share_code: "STR30",
+    },
+  });
+
+  renderBuilder();
+
+  fireEvent.click(
+    screen.getByRole("button", { name: /strongest picks/i }),
+  );
+
+  fireEvent.change(
+    screen.getByLabelText(/maximum strongest picks/i),
+    { target: { value: "30" } },
+  );
+
+  fireEvent.click(
+    screen.getByRole("button", { name: /build strongest 30 picks/i }),
+  );
+
+  expect(
+    await screen.findByText("30 strongest qualifying picks"),
+  ).toBeInTheDocument();
+
+  expect(screen.getByText("Strongest picks ready")).toBeInTheDocument();
+  expect(screen.getByText("Market mix")).toBeInTheDocument();
 });

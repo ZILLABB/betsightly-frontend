@@ -235,6 +235,16 @@ export const api = {
 
 };
 
+export interface BuilderV2MarketBalance {
+  applied: boolean;
+  requested_markets: string[];
+  target_distribution: Record<string, number>;
+  delivered_distribution: Record<string, number>;
+  shortfalls: Record<string, number>;
+  quality_floor_preserved: boolean;
+  strategy: string;
+}
+
 /** A slip built to a requested multiplier. */
 export interface BuiltSlip {
   status: "success" | "unavailable" | "error";
@@ -297,6 +307,7 @@ export interface BuiltSlip {
   optimizer_candidate_count?: number;
   fixture_count?: number;
   market_distribution?: Record<string, number>;
+  market_balance?: BuilderV2MarketBalance;
   binding_constraints?: string[];
   max_legs?: number;
   cached?: boolean;

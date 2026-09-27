@@ -109,6 +109,9 @@ export function BuilderProvider({
   const revisionSequence = useRef(0);
   const revisionController = useRef<AbortController | null>(null);
   const feedbackTimer = useRef<number | null>(null);
+  const lastV2Request = useRef<
+    BuilderV2GenerateRequest | BuilderV2ManualRequest | null
+  >(null);
 
   useEffect(() => {
     try {
@@ -164,6 +167,8 @@ export function BuilderProvider({
       const requestedTarget =
         targetOverride ?? target;
 
+      // An explicit legacy build must not accidentally retry an older V2 request.
+      lastV2Request.current = null;
       inFlight.current = true;
       const startedAt = performance.now();
 
@@ -284,6 +289,7 @@ export function BuilderProvider({
   ) => {
     if (inFlight.current) return;
 
+    lastV2Request.current = input;
     inFlight.current = true;
     const startedAt = performance.now();
     setLoading(true);
@@ -325,6 +331,17 @@ export function BuilderProvider({
       setLoading(false);
     }
   }, []);
+
+  const retryBuild = useCallback(async () => {
+    const previousV2 = lastV2Request.current;
+
+    if (previousV2) {
+      await buildV2(previousV2);
+      return;
+    }
+
+    await build(false);
+  }, [build, buildV2]);
 
   useEffect(() => {
     if (
@@ -577,6 +594,7 @@ export function BuilderProvider({
         chooseHorizon,
         build,
         buildV2,
+        retryBuild,
         clearSlip,
         reviseLeg,
       }}

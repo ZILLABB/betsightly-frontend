@@ -4,6 +4,7 @@ import {
   ChevronDown,
   ListChecks,
   MousePointer2,
+  RotateCcw,
   Search,
   SlidersHorizontal,
   Sparkles,
@@ -68,7 +69,6 @@ export function BuilderV2Controls() {
     loading,
     chooseTarget,
     chooseHorizon,
-    build,
     buildV2,
     clearSlip,
   } = useBuilder();
@@ -98,17 +98,26 @@ export function BuilderV2Controls() {
     require_bookable: true,
   }), [horizon, markets, minOdds, maxOdds, minProbability, minTrustGrade]);
 
-  const advancedDefault = !minOdds && !maxOdds && !minProbability && minTrustGrade === "B";
-  const legacyTargetCompatible =
-    mode === "target_odds" &&
-    horizon !== "3_days" &&
-    markets.length === 0 &&
-    advancedDefault;
-
-  const invalidateManual = () => {
+   const invalidateManual = () => {
     setCandidates([]);
     setSelectedIds([]);
     setCandidateStatus(null);
+  };
+
+  const advancedFilterCount = [
+    minOdds,
+    maxOdds,
+    minProbability,
+    minTrustGrade === "A",
+  ].filter(Boolean).length;
+
+  const resetAdvancedFilters = () => {
+    setMinOdds("");
+    setMaxOdds("");
+    setMinProbability("");
+    setMinTrustGrade("B");
+    clearSlip();
+    invalidateManual();
   };
 
   const changeMode = (next: BuilderV2Mode) => {
@@ -133,12 +142,12 @@ export function BuilderV2Controls() {
   };
 
   const submitAuto = async () => {
-    if (mode === "target_odds" && legacyTargetCompatible) {
-      await build(false);
-      return;
-    }
     if (mode === "target_odds") {
-      await buildV2({ ...filters, mode, target_odds: target });
+      await buildV2({
+        ...filters,
+        mode,
+        target_odds: target,
+      });
       return;
     }
     if (mode === "game_count") {
@@ -274,7 +283,10 @@ export function BuilderV2Controls() {
                   type="button"
                   className={value === target ? "is-active" : ""}
                   aria-pressed={value === target}
-                  onClick={() => chooseTarget(value)}
+                  onClick={() => {
+                    chooseTarget(value);
+                    setCustomTarget("");
+                  }}
                 >
                   <strong>{value}x</strong>
                   <span>{value <= 20 ? "Lower target" : value <= 50 ? "Balanced" : "High target"}</span>
@@ -298,11 +310,19 @@ export function BuilderV2Controls() {
                 <button
                   type="button"
                   disabled={loading || Number(customTarget) < 2 || Number(customTarget) > 200}
-                  onClick={() => chooseTarget(Number(customTarget))}
+                  onClick={() => {
+                    chooseTarget(Number(customTarget));
+                    setCustomTarget("");
+                  }}
                 >
                   Use target
                 </button>
               </div>
+              {!TARGETS.includes(target) && (
+                <span className="builder-v2-active-custom">
+                  Active custom target · {target}x
+                </span>
+              )}
             </div>
           </>
         )}
@@ -392,6 +412,21 @@ export function BuilderV2Controls() {
             </button>
           ))}
         </div>
+
+        {mode === "game_count" && markets.length > 1 && (
+          <p className="builder-v2-market-note">
+            BetSightly will balance these markets as evenly as quality and exact
+            SportyBet availability allow. If one market has too few qualifying
+            selections, the remaining slots stay within your other selected markets.
+          </p>
+        )}
+
+        {mode === "strongest" && markets.length > 1 && (
+          <p className="builder-v2-market-note">
+            These markets are allowed, but Strongest Picks remains quality-first.
+            BetSightly will not force an artificial market split.
+          </p>
+        )}
       </div>
 
       <div className="builder-v2-section">
@@ -420,29 +455,112 @@ export function BuilderV2Controls() {
       </div>
 
       <details className="builder-v2-advanced">
-        <summary><SlidersHorizontal size={16} /> Advanced filters <ChevronDown size={15} /></summary>
+        <summary>
+          <SlidersHorizontal size={16} />
+          <span>Advanced filters</span>
+          {advancedFilterCount > 0 && (
+            <span className="builder-v2-filter-count">{advancedFilterCount}</span>
+          )}
+          <ChevronDown size={15} />
+        </summary>
+
+        <div className="builder-v2-advanced-toolbar">
+          <span>
+            Optional refinements. BetSightly's system quality floor still applies.
+          </span>
+
+          {advancedFilterCount > 0 && (
+            <button type="button" onClick={resetAdvancedFilters}>
+              <RotateCcw size={13} />
+              Reset filters
+            </button>
+          )}
+        </div>
+
         <div className="builder-v2-advanced-grid">
-          <label>Min odds<input type="number" min="1.01" step="0.01" value={minOdds}
-            onChange={(event) => { setMinOdds(event.target.value); clearSlip(); invalidateManual(); }} placeholder="Any" /></label>
-          <label>Max odds<input type="number" min="1.01" step="0.01" value={maxOdds}
-            onChange={(event) => { setMaxOdds(event.target.value); clearSlip(); invalidateManual(); }} placeholder="Any" /></label>
-          <label>Min probability %
-            <input type="number" min="0" max="100" step="1" value={minProbability}
-              onChange={(event) => { setMinProbability(event.target.value); clearSlip(); invalidateManual(); }} placeholder="System floor" />
-          </label>
-          <label>Trust grade
-            <select
-              value={minTrustGrade}
+          <label>
+            <span>Min odds</span>
+            <input
+              type="number"
+              min="1.01"
+              step="0.01"
+              value={minOdds}
               onChange={(event) => {
-                setMinTrustGrade(event.target.value as "A" | "B");
+                setMinOdds(event.target.value);
                 clearSlip();
                 invalidateManual();
               }}
-            >
-              <option value="B">A or B</option>
-              <option value="A">A only</option>
-            </select>
+              placeholder="Any"
+            />
           </label>
+
+          <label>
+            <span>Max odds</span>
+            <input
+              type="number"
+              min="1.01"
+              step="0.01"
+              value={maxOdds}
+              onChange={(event) => {
+                setMaxOdds(event.target.value);
+                clearSlip();
+                invalidateManual();
+              }}
+              placeholder="Any"
+            />
+          </label>
+
+          <label>
+            <span>Min probability %</span>
+            <input
+              type="number"
+              min="0"
+              max="100"
+              step="1"
+              value={minProbability}
+              onChange={(event) => {
+                setMinProbability(event.target.value);
+                clearSlip();
+                invalidateManual();
+              }}
+              placeholder="System floor"
+            />
+          </label>
+
+          <div className="builder-v2-trust-field">
+            <span>Trust grade</span>
+            <div
+              className="builder-v2-segmented"
+              role="group"
+              aria-label="Minimum trust grade"
+            >
+              <button
+                type="button"
+                className={minTrustGrade === "B" ? "is-active" : ""}
+                aria-pressed={minTrustGrade === "B"}
+                onClick={() => {
+                  setMinTrustGrade("B");
+                  clearSlip();
+                  invalidateManual();
+                }}
+              >
+                A or B
+              </button>
+
+              <button
+                type="button"
+                className={minTrustGrade === "A" ? "is-active" : ""}
+                aria-pressed={minTrustGrade === "A"}
+                onClick={() => {
+                  setMinTrustGrade("A");
+                  clearSlip();
+                  invalidateManual();
+                }}
+              >
+                A only
+              </button>
+            </div>
+          </div>
         </div>
       </details>
 

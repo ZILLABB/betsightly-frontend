@@ -102,17 +102,29 @@ test("manual mode books only selected approved IDs", async () => {
   }));
 });
 
-test("default target mode preserves the existing proven target build path", () => {
-  const build = jest.fn();
+test("default target mode uses Builder V2 with the 7-day horizon", async () => {
+  const buildV2 = jest.fn();
 
   render(
-    <BuilderContext.Provider value={makeContext({ build }) as any}>
+    <BuilderContext.Provider value={makeContext({ buildV2 }) as any}>
       <BuilderV2Controls />
     </BuilderContext.Provider>,
   );
 
-  fireEvent.click(screen.getByRole("button", { name: /build my 50x slip/i }));
-  expect(build).toHaveBeenCalledWith(false);
+  fireEvent.click(
+    screen.getByRole("button", { name: /build my 50x slip/i }),
+  );
+
+  await waitFor(() =>
+    expect(buildV2).toHaveBeenCalledWith(
+      expect.objectContaining({
+        mode: "target_odds",
+        target_odds: 50,
+        horizon: "7_days",
+        require_bookable: true,
+      }),
+    ),
+  );
 });
 
 test("manual mode replaces a previous market from the same fixture", async () => {
@@ -185,4 +197,62 @@ test("manual mode replaces a previous market from the same fixture", async () =>
       horizon: "7_days",
     }),
   );
+});
+
+test("advanced trust control uses project segmented buttons and resets cleanly", async () => {
+  const buildV2 = jest.fn();
+
+  render(
+    <BuilderContext.Provider value={makeContext({ buildV2 }) as any}>
+      <BuilderV2Controls />
+    </BuilderContext.Provider>,
+  );
+
+  fireEvent.click(screen.getByText(/advanced filters/i));
+
+  const aOnly = screen.getByRole("button", { name: /a only/i });
+  fireEvent.click(aOnly);
+
+  expect(aOnly).toHaveAttribute("aria-pressed", "true");
+  expect(screen.getByText("1")).toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole("button", { name: /reset filters/i }));
+
+  expect(
+    screen.getByRole("button", { name: /a or b/i }),
+  ).toHaveAttribute("aria-pressed", "true");
+});
+
+test("custom target clears its draft after applying it", () => {
+  const chooseTarget = jest.fn();
+
+  render(
+    <BuilderContext.Provider value={makeContext({ chooseTarget }) as any}>
+      <BuilderV2Controls />
+    </BuilderContext.Provider>,
+  );
+
+  const input = screen.getByLabelText(/custom target/i);
+
+  fireEvent.change(input, { target: { value: "125" } });
+  fireEvent.click(screen.getByRole("button", { name: /use target/i }));
+
+  expect(chooseTarget).toHaveBeenCalledWith(125);
+  expect(input).toHaveValue(null);
+});
+
+test("game count explains that multiple selected markets are balanced", () => {
+  render(
+    <BuilderContext.Provider value={makeContext() as any}>
+      <BuilderV2Controls />
+    </BuilderContext.Provider>,
+  );
+
+  fireEvent.click(screen.getByRole("button", { name: /number of games/i }));
+  fireEvent.click(screen.getByRole("button", { name: /over 1.5/i }));
+  fireEvent.click(screen.getByRole("button", { name: /over 2.5/i }));
+
+  expect(
+    screen.getByText(/balance these markets as evenly as quality/i),
+  ).toBeInTheDocument();
 });

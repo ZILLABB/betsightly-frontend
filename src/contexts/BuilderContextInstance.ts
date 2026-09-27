@@ -32,6 +32,7 @@ export interface BuilderContextValue {
     preserveSlip?: boolean,
   ) => Promise<void>;
   buildV2: (input: BuilderV2GenerateRequest | BuilderV2ManualRequest) => Promise<void>;
+  retryBuild: () => Promise<void>;
   clearSlip: () => void;
   reviseLeg: (
     action: BuilderAction,
