@@ -83,12 +83,14 @@ export default function SlipBuilderPage() {
 
   const dnbLegCount = slip?.dnb_leg_count ?? 0;
   const hasDnb = dnbLegCount > 0;
-  const headlineProbability = hasDnb
-    ? (slip?.target_hit_probability ?? slip?.hit_probability ?? 0)
-    : (slip?.hit_probability ?? 0);
   const capStatus = String(slip?.result_status || "");
   const slipMode = slip?.mode ?? "target_odds";
   const isTargetMode = slipMode === "target_odds";
+  const headlineProbability = hasDnb
+    ? (slip?.target_hit_probability ?? slip?.hit_probability ?? 0)
+    : isTargetMode
+      ? (slip?.hit_probability ?? 0)
+      : (slip?.estimated_all_leg_probability ?? slip?.hit_probability ?? 0);
   const boardWindowLabel = horizon === "today" ? "Today’s board" : horizon === "3_days" ? "The 3-day board" : "The 7-day board";
   const isBestAvailable = Boolean(
     slip?.status === "success" && (

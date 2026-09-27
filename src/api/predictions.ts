@@ -273,6 +273,9 @@ export interface BuiltSlip {
   /** Probability that every selected leg wins at its quoted odds. For DNB,
    *  this excludes draw/push branches, because a push pays 1.00x. */
   hit_probability?: number;
+  /** Product of evidence-adjusted leg probabilities for Builder V2
+   *  game-count, strongest and manual modes. */
+  estimated_all_leg_probability?: number;
   /** Probability the final positive payout still reaches the requested target.
    *  This can exceed `hit_probability` when a DNB draw pushes at 1.00x and the
    *  remaining winning legs still produce at least the requested multiplier. */

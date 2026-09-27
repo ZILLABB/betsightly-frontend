@@ -537,7 +537,7 @@ test("game-count results use a structural heading and show market balance", asyn
     delivered_game_count: 20,
     odds: 48.2,
     legs: 20,
-    hit_probability: .000001,
+    estimated_all_leg_probability: .000001,
     lowest_trust_grade: "A",
     market_distribution: {
       over_1_5: 14,
