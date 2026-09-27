@@ -97,6 +97,56 @@ export interface ResultsResponse {
   categories: Record<string, CategoryResult>;
 }
 
+export type BuilderV2Mode = "target_odds" | "game_count" | "strongest" | "manual";
+export type BuilderV2Horizon = "today" | "3_days" | "7_days";
+
+export interface BuilderV2Filters {
+  horizon: BuilderV2Horizon;
+  markets?: string[];
+  min_odds?: number;
+  max_odds?: number;
+  min_probability?: number;
+  min_trust_grade?: "A" | "B";
+  include_leagues?: string[];
+  exclude_leagues?: string[];
+  exclude_fixture_ids?: string[];
+  exclude_team_ids?: string[];
+  require_bookable?: true;
+}
+
+export interface BuilderV2GenerateRequest extends BuilderV2Filters {
+  mode: "target_odds" | "game_count" | "strongest";
+  target_odds?: number;
+  game_count?: number;
+  max_games?: number;
+}
+
+export interface BuilderV2ManualRequest extends BuilderV2Filters {
+  mode: "manual";
+  selection_ids: string[];
+}
+
+export interface BuilderV2Candidate extends GamePrediction {
+  recommended_for_fixture?: boolean;
+  lower_reliability_bound?: number;
+  trust_grade?: "A" | "B" | "C" | "D";
+  trust_score?: number;
+  market_capability?: string;
+}
+
+export interface BuilderV2CandidatesResponse {
+  status: "success" | "unavailable" | "error";
+  mode?: "manual";
+  origin?: "USER_MANUAL";
+  horizon?: BuilderV2Horizon;
+  markets_requested?: string[];
+  candidate_count?: number;
+  candidates: BuilderV2Candidate[];
+  reason?: string;
+  selection_diagnostics?: Record<string, unknown>;
+  board?: Record<string, unknown>;
+}
+
 /* ── API ─────────────────────────────────────────────── */
 
 export const api = {
@@ -138,6 +188,30 @@ export const api = {
       // fixtures before it can answer.
       { method: "POST", timeoutMs: 240_000 }),
 
+  generateBuilderV2: (payload: BuilderV2GenerateRequest) =>
+    request<BuiltSlip>('/leagues/slip-builder/v2/generate', {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      timeoutMs: 240_000,
+    }),
+
+  getBuilderV2Candidates: (payload: BuilderV2Filters) =>
+    request<BuilderV2CandidatesResponse>('/leagues/slip-builder/v2/candidates', {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      timeoutMs: 240_000,
+    }),
+
+  buildManualBuilderV2: (payload: BuilderV2ManualRequest) =>
+    request<BuiltSlip>('/leagues/slip-builder/v2/manual', {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      timeoutMs: 240_000,
+    }),
+
   getSlipTargets: () => request<SlipTargets>('/leagues/slip-builder/targets'),
 
   getPredictionHistory: (days = 14) =>
@@ -173,8 +247,17 @@ export interface BuiltSlip {
     objective_bound?: number | null;
     message?: string;
   };
-  target: number;
-  horizon?: "today" | "week";
+  target?: number;
+  horizon?: "today" | "3_days" | "7_days" | "week";
+  mode?: BuilderV2Mode;
+  origin?: "BETSIGHTLY_AUTO" | "USER_MANUAL";
+  requested_target?: number;
+  requested_game_count?: number;
+  delivered_game_count?: number;
+  shortfall?: number;
+  shortfall_reason?: string | null;
+  markets_requested?: string[];
+  markets_used?: string[];
   odds?: number;
   legs?: number;
   /** Probability that every selected leg wins at its quoted odds. For DNB,

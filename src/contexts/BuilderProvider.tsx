@@ -7,6 +7,7 @@ import {
 } from "react";
 
 import { api } from "../api/predictions";
+import type { BuilderV2GenerateRequest, BuilderV2ManualRequest } from "../api/predictions";
 import {
   reviseBuilderSlip,
   type BuilderAction,
@@ -272,9 +273,63 @@ export function BuilderProvider({
     [horizon, target],
   );
 
+  const clearSlip = useCallback(() => {
+    setSlip(null);
+    setError(null);
+    recoveryAttempts.current = 0;
+  }, []);
+
+  const buildV2 = useCallback(async (
+    input: BuilderV2GenerateRequest | BuilderV2ManualRequest,
+  ) => {
+    if (inFlight.current) return;
+
+    inFlight.current = true;
+    const startedAt = performance.now();
+    setLoading(true);
+    setError(null);
+    setSlip(null);
+
+    try {
+      const result = input.mode === "manual"
+        ? await api.buildManualBuilderV2(input)
+        : await api.generateBuilderV2(input);
+
+      setSlip(result as EditableBuiltSlip);
+      recoveryAttempts.current = 0;
+
+      trackProductEvent(
+        result.status === "success" ? "builder_generated" : "builder_unavailable",
+        {
+          product_area: "builder",
+          source: "generator_v2",
+          mode: input.mode,
+          horizon: input.horizon,
+          target_odds: input.mode === "target_odds" ? input.target_odds : undefined,
+          requested_game_count: input.mode === "game_count" ? input.game_count : undefined,
+          delivered_game_count: result.delivered_game_count,
+          leg_count: result.legs,
+          duration_ms: Math.round(performance.now() - startedAt),
+        },
+      );
+    } catch (caught) {
+      const err = caught as Error & { name?: string };
+
+      setError(
+        err?.name === "AbortError"
+          ? "That took longer than expected — the server may be waking up. Try once more."
+          : "The Builder could not reach the prediction service. Your choices were kept—try again.",
+      );
+    } finally {
+      inFlight.current = false;
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (
       slip?.status !== "success" ||
+      Boolean(slip?.mode) ||
       slip.booking?.status === "active" ||
       slip.booking?.status === "not_requested" ||
       editingSelectionId !== null ||
@@ -521,6 +576,8 @@ export function BuilderProvider({
         chooseTarget,
         chooseHorizon,
         build,
+        buildV2,
+        clearSlip,
         reviseLeg,
       }}
     >

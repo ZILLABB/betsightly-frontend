@@ -1,19 +1,18 @@
-import {
-  CalendarDays,
+﻿import {
   CheckCircle2,
   ShieldCheck,
   Sparkles,
   Target,
 } from "lucide-react";
-import { useState } from "react";
 
 import BookingCode from "../components/predictions/BookingCode";
 import { BuilderLeg } from "../components/builder/BuilderLeg";
+import { BuilderV2Controls } from "../components/builder/BuilderV2Controls";
 import { BrandLoader } from "../components/ui/BrandLoader";
 import { SEO } from "../components/common/SEO";
 import { CATEGORIES } from "../types";
-import { trackProductEvent } from "../services/bookingTracking";
 import { useBuilder } from "../contexts/BuilderContextInstance";
+import { trackProductEvent } from "../services/bookingTracking";
 import "../styles/builder-editor.css";
 import "../styles/product-experience.css";
 
@@ -47,7 +46,6 @@ export default function SlipBuilderPage() {
     build,
     reviseLeg,
   } = useBuilder();
-  const [customTarget, setCustomTarget] = useState("");
 
   const acceptBestReachable = () => {
     if (!slip?.best_reachable) return;
@@ -64,6 +62,9 @@ export default function SlipBuilderPage() {
     ? (slip?.target_hit_probability ?? slip?.hit_probability ?? 0)
     : (slip?.hit_probability ?? 0);
   const capStatus = String(slip?.result_status || "");
+  const slipMode = slip?.mode ?? "target_odds";
+  const isTargetMode = slipMode === "target_odds";
+  const boardWindowLabel = horizon === "today" ? "Today’s board" : horizon === "3_days" ? "The 3-day board" : "The 7-day board";
   const isBestAvailable = Boolean(
     slip?.status === "success" && (
       slip.materialized_best_reachable ||
@@ -119,136 +120,14 @@ export default function SlipBuilderPage() {
             </span>
           </div>
         </div>
-        <div className="builder-hero__target" aria-label="Selected target">
-          <span>Your target</span>
-          <strong>
-            {target}
-            <small>x</small>
-          </strong>
-          <em>{horizon === "today" ? "Today" : "7-day board"}</em>
+        <div className="builder-hero__target" aria-label="Builder V2">
+          <span>Builder V2</span>
+          <strong>4</strong>
+          <em>ways to build · quality stays fixed</em>
         </div>
       </section>
 
-      <section
-        className="builder-config"
-        aria-labelledby="builder-config-title"
-      >
-        <div className="builder-section-heading">
-          <div>
-            <span>01</span>
-            <h2 id="builder-config-title">Choose total odds</h2>
-          </div>
-          <p>
-            Higher targets usually need more legs and have a lower chance of
-            landing.
-          </p>
-        </div>
-        <div className="builder-targets" role="group" aria-label="Target odds">
-          {TARGETS.map((t) => (
-            <button
-              key={t}
-              type="button"
-              className={t === target ? "is-active" : ""}
-              aria-pressed={t === target}
-              onClick={() => {
-                chooseTarget(t);
-
-                trackProductEvent("builder_target_selected", {
-                  product_area: "builder",
-                  source: "generator",
-                  target_odds: t,
-                  tier: horizon,
-                  horizon,
-                });
-              }}
-            >
-              <strong>{t}x</strong>
-              <span>
-                {t <= 20
-                  ? "Lower target"
-                  : t <= 50
-                    ? "Balanced"
-                    : "High target"}
-              </span>
-            </button>
-          ))}
-        </div>
-        <div className="builder-custom-target">
-          <label htmlFor="builder-custom-target">Custom target (2x–200x)</label>
-          <div>
-            <input id="builder-custom-target" type="number" min="2" max="200"
-              step="0.01" inputMode="decimal" value={customTarget}
-              placeholder="e.g. 125"
-              onChange={(event) => setCustomTarget(event.target.value)} />
-            <button type="button" disabled={loading || Number(customTarget) < 2 || Number(customTarget) > 200}
-              onClick={() => {
-                const value = Number(customTarget);
-                chooseTarget(value);
-                trackProductEvent("builder_target_selected", {
-                  product_area: "builder", source: "custom",
-                  target_odds: value, horizon,
-                });
-              }}>
-              Use target
-            </button>
-          </div>
-          <small>A higher request is not a promise; quality rules stay unchanged.</small>
-        </div>
-        <div className="builder-divider" />
-        <div className="builder-section-heading">
-          <div>
-            <span>02</span>
-            <h2>Choose the window</h2>
-          </div>
-          <p>A wider window gives the model a deeper board to search.</p>
-        </div>
-        <div
-          className="builder-horizons"
-          role="group"
-          aria-label="Fixture window"
-        >
-          <button
-            type="button"
-            className={horizon === "today" ? "is-active" : ""}
-            aria-pressed={horizon === "today"}
-            onClick={() => chooseHorizon("today")}
-          >
-            <CalendarDays size={22} />
-            <span>
-              <strong>Today only</strong>
-              <small>All legs settle from today’s fixtures.</small>
-            </span>
-          </button>
-
-          <button
-            type="button"
-            className={horizon === "week" ? "is-active" : ""}
-            aria-pressed={horizon === "week"}
-            onClick={() => chooseHorizon("week")}
-          >
-            <CalendarDays size={22} />
-            <span>
-              <strong>Across 7 days</strong>
-              <small>A larger board for stronger combinations.</small>
-            </span>
-          </button>
-        </div>
-        <button
-          className="builder-submit"
-          type="button"
-          onClick={() => void build(false)}
-          disabled={loading}
-        >
-          <Target size={19} />
-          {loading ? "Searching the board…" : `Build my ${target}x slip`}
-        </button>
-        {loading && (
-          <div className="builder-loading">
-            <BrandLoader />
-            <span>Checking evidence and current SportyBet availability.</span>
-          </div>
-        )}
-      </section>
+      <BuilderV2Controls />
 
       {error && (
         <div className="builder-message builder-message--error" role="alert">
@@ -277,7 +156,7 @@ export default function SlipBuilderPage() {
           <span className="builder-cap__badge">Board updating</span>
           <h2>We’re preparing the latest fixture board</h2>
           <p>
-            {horizon === "today" ? "Today’s board" : "The 7-day board"} is being evaluated now. Please try again
+            {boardWindowLabel} is being evaluated now. Please try again
             shortly—your request was controlled safely and was not a CORS error.
           </p>
           <button className="builder-cap__cta" type="button"
@@ -290,7 +169,7 @@ export default function SlipBuilderPage() {
       {slip && slip.status !== "success" && slip.reason !== "board_refreshing" && (
         <section className="builder-message builder-cap" aria-live="polite">
           <span className="builder-cap__badge">Best available</span>
-          <h2>{capHeading(capStatus, target)}</h2>
+          <h2>{isTargetMode ? capHeading(capStatus, target) : "No qualifying combination is available right now"}</h2>
           {belowBuilderMinimum && (
             <p className="builder-cap__minimum-note">
               The current verified combination is below the Builder’s 2x minimum.
@@ -323,7 +202,7 @@ export default function SlipBuilderPage() {
                   ? "A combination can reach the requested odds, but it does not meet BetSightly’s minimum expected-return policy."
                 : `We will not add weaker picks simply to manufacture ${target}x.`}
           </p>
-          {slip.best_reachable && !belowBuilderMinimum && slip.builder_run_id
+          {isTargetMode && slip.best_reachable && !belowBuilderMinimum && slip.builder_run_id
             && slip.best_reachable_combination && (
             <button
               className="builder-cap__cta"
@@ -337,7 +216,7 @@ export default function SlipBuilderPage() {
                 `Build ${provenMaximum ? "verified" : "the best reachable"} ${slip.best_reachable.toFixed(2)}x slip`}
             </button>
           )}
-          {!!suggestedTargets(target).length && (
+          {isTargetMode && !!suggestedTargets(target).length && (
             <div className="builder-cap__alternatives" aria-label="Try another target">
               <span>Try another target</span>
               {suggestedTargets(target).map((value) => (
@@ -420,6 +299,12 @@ export default function SlipBuilderPage() {
               <Stat label={provenMaximum ? "Best verified available" : "Best found available"}
                   value={`${slip.odds?.toFixed(2)}x`} />
             )}
+            {slip.mode === "game_count" && slip.requested_game_count != null && (
+              <Stat label="Requested games" value={String(slip.requested_game_count)} />
+            )}
+            {slip.mode === "game_count" && slip.delivered_game_count != null && (
+              <Stat label="Delivered games" value={String(slip.delivered_game_count)} />
+            )}
             <Stat label="Total odds" value={`${slip.odds?.toFixed(2)}x`} />
             <Stat label="Legs" value={String(slip.legs)} />
             <Stat
@@ -437,7 +322,7 @@ export default function SlipBuilderPage() {
               {" "}A draw on {dnbLegCount === 1 ? "that leg" : "those legs"} voids it at 1.00x
               instead of losing the ticket.
               {" "}Target hit chance is the probability that the final payout still reaches
-              {" "}{slip.target}x after any DNB pushes.
+              {" "}{slip.target ?? target}x after any DNB pushes.
               {" "}All-win chance: {((slip.hit_probability ?? 0) * 100).toFixed(2)}%.
               {" "}No-loss chance: {((slip.no_loss_probability ?? slip.hit_probability ?? 0) * 100).toFixed(2)}%.
               {" "}These are evidence-adjusted estimates, not promised results or profit.
@@ -502,7 +387,7 @@ export default function SlipBuilderPage() {
               </span>
             </p>
           </div>
-          {slip.booking?.status === "active" && slip.booking?.actionable !== false && (
+          {!slip.mode && slip.booking?.status === "active" && slip.booking?.actionable !== false && (
             <div className="builder-regenerate">
               <button
                 type="button"

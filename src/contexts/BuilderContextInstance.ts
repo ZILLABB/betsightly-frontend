@@ -1,8 +1,9 @@
 import { createContext, useContext } from "react";
 import type { BuilderAction, EditableBuiltSlip } from "../api/builderRevisions";
+import type { BuilderV2GenerateRequest, BuilderV2ManualRequest } from "../api/predictions";
 import type { GamePrediction } from "../types";
 
-export type BuilderHorizon = "today" | "week";
+export type BuilderHorizon = "today" | "3_days" | "week";
 
 export interface BuilderContextValue {
   target: number;
@@ -30,6 +31,8 @@ export interface BuilderContextValue {
     targetOverride?: number,
     preserveSlip?: boolean,
   ) => Promise<void>;
+  buildV2: (input: BuilderV2GenerateRequest | BuilderV2ManualRequest) => Promise<void>;
+  clearSlip: () => void;
   reviseLeg: (
     action: BuilderAction,
     game?: GamePrediction,
