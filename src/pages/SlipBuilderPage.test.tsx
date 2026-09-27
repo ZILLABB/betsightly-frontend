@@ -6,6 +6,17 @@ import { reviseBuilderSlip } from "../api/builderRevisions";
 import { BuilderProvider } from "../contexts/BuilderProvider";
 
 jest.mock("../api/predictions", () => ({ api: { buildSlip: jest.fn() } }));
+jest.mock("../api/builderV2", () => ({
+  builderV2Api: {
+    candidates: jest.fn().mockResolvedValue({
+      status: "success",
+      candidates: [],
+      candidate_count: 0,
+    }),
+    generate: jest.fn(),
+    manual: jest.fn(),
+  },
+}));
 jest.mock("../api/builderRevisions", () => ({
   reviseBuilderSlip: jest.fn(),
 }));
@@ -378,7 +389,7 @@ test.each([10, 20, 30, 50, 70, 100])("selects and submits the %ix target", async
   const band = target <= 20 ? "lower target" : target <= 50 ? "balanced" : "high target";
   fireEvent.click(screen.getByRole("button", { name: new RegExp(`^${target}x ${band}$`, "i") }));
   fireEvent.click(screen.getByRole("button", { name: new RegExp(`build my ${target}x slip`, "i") }));
-  await waitFor(() => expect(buildSlip).toHaveBeenCalledWith(target, "week", false));
+  await waitFor(() => expect(buildSlip).toHaveBeenCalledWith(target, "7_days", false));
 });
 
 test("accepts a bounded custom target up to 200x", async () => {
@@ -387,7 +398,7 @@ test("accepts a bounded custom target up to 200x", async () => {
   fireEvent.change(screen.getByLabelText(/custom target/i), { target: { value: "125" } });
   fireEvent.click(screen.getByRole("button", { name: /use target/i }));
   fireEvent.click(screen.getByRole("button", { name: /build my 125x slip/i }));
-  await waitFor(() => expect(buildSlip).toHaveBeenCalledWith(125, "week", false));
+  await waitFor(() => expect(buildSlip).toHaveBeenCalledWith(125, "7_days", false));
 });
 
 test("switches between today and seven-day windows", async () => {
@@ -396,6 +407,29 @@ test("switches between today and seven-day windows", async () => {
   fireEvent.click(screen.getByRole("button", { name: /today only/i }));
   fireEvent.click(screen.getByRole("button", { name: /build my 50x slip/i }));
   await waitFor(() => expect(buildSlip).toHaveBeenCalledWith(50, "today", false));
+});
+
+test("submits Target Odds against the three-day V2 window", async () => {
+  buildSlip.mockResolvedValue({ status: "unavailable", target: 50 });
+  renderBuilder();
+  fireEvent.click(screen.getByRole("button", { name: /across 3 days/i }));
+  fireEvent.click(screen.getByRole("button", { name: /build my 50x slip/i }));
+  await waitFor(() =>
+    expect(buildSlip).toHaveBeenCalledWith(50, "3_days", false),
+  );
+});
+
+test("migrates a legacy week session to the V2 seven-day window", async () => {
+  sessionStorage.setItem(
+    "betsightly_builder_session",
+    JSON.stringify({ target: 50, horizon: "week", slip: null }),
+  );
+  buildSlip.mockResolvedValue({ status: "unavailable", target: 50 });
+  renderBuilder();
+  fireEvent.click(screen.getByRole("button", { name: /build my 50x slip/i }));
+  await waitFor(() =>
+    expect(buildSlip).toHaveBeenCalledWith(50, "7_days", false),
+  );
 });
 
 test("100x best reachable CTA materializes its stored combination without a target rerun", async () => {

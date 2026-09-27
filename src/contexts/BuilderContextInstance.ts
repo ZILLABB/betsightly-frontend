@@ -2,7 +2,7 @@ import { createContext, useContext } from "react";
 import type { BuilderAction, EditableBuiltSlip } from "../api/builderRevisions";
 import type { GamePrediction } from "../types";
 
-export type BuilderHorizon = "today" | "week";
+export type BuilderHorizon = "today" | "3_days" | "7_days";
 
 export interface BuilderContextValue {
   target: number;

@@ -126,17 +126,30 @@ export const api = {
   getLiveScores: () =>
     request<LiveScoresResponse>('/leagues/live-scores'),
 
-  /** Build a slip to a requested multiplier and book it.
+  /** Build a target-odds slip from the prepared Builder V2 board.
    *
-   * `horizon` is a real choice, not a setting. "today" settles tonight from a
-   * single WAT calendar day; "week" draws on seven WAT dates, which provides
-   * a larger qualifying board but takes longer to resolve. */
-  buildSlip: (target: number, horizon: "today" | "week" = "week", refresh = false) =>
+   * V2 never lowers quality to manufacture a target. The legacy V1 route
+   * remains available server-side for compatibility, but the current Builder
+   * uses today / 3-day / 7-day V2 horizons and the same revision editor. */
+  buildSlip: (
+    target: number,
+    horizon: "today" | "3_days" | "7_days" = "7_days",
+    _refresh = false,
+  ) =>
     request<BuiltSlip>(
-      `/leagues/slip-builder/generate?target=${target}&horizon=${horizon}${refresh ? "&refresh=true" : ""}`,
-      // Generous: on a cold instance this runs the pipeline across a week of
-      // fixtures before it can answer.
-      { method: "POST", timeoutMs: 240_000 }),
+      "/leagues/slip-builder/v2/generate",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode: "target_odds",
+          target_odds: target,
+          horizon,
+          require_bookable: true,
+        }),
+        timeoutMs: 90_000,
+      },
+    ),
 
   getSlipTargets: () => request<SlipTargets>('/leagues/slip-builder/targets'),
 
@@ -174,7 +187,7 @@ export interface BuiltSlip {
     message?: string;
   };
   target: number;
-  horizon?: "today" | "week";
+  horizon?: "today" | "3_days" | "7_days";
   odds?: number;
   legs?: number;
   /** Probability that every selected leg wins at its quoted odds. For DNB,

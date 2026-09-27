@@ -33,7 +33,7 @@ interface SavedBuilderState {
 function readSavedState(): SavedBuilderState {
   const fallback: SavedBuilderState = {
     target: 50,
-    horizon: "week",
+    horizon: "7_days",
     slip: null,
   };
 
@@ -44,9 +44,28 @@ function readSavedState(): SavedBuilderState {
       return fallback;
     }
 
+    const saved = JSON.parse(raw) as Partial<SavedBuilderState> & {
+      horizon?: string;
+    };
+    const normalizedHorizon =
+      saved.horizon === "week"
+        ? "7_days"
+        : saved.horizon ?? fallback.horizon;
+    const horizon: BuilderHorizon =
+      normalizedHorizon === "today" ||
+      normalizedHorizon === "3_days" ||
+      normalizedHorizon === "7_days"
+        ? normalizedHorizon
+        : fallback.horizon;
+    const migrated =
+      saved.horizon === "week" ||
+      (saved.horizon != null && saved.horizon !== horizon);
+
     return {
       ...fallback,
-      ...JSON.parse(raw),
+      ...saved,
+      horizon,
+      slip: migrated ? null : saved.slip ?? null,
     };
   } catch {
     return fallback;
