@@ -114,3 +114,75 @@ test("default target mode preserves the existing proven target build path", () =
   fireEvent.click(screen.getByRole("button", { name: /build my 50x slip/i }));
   expect(build).toHaveBeenCalledWith(false);
 });
+
+test("manual mode replaces a previous market from the same fixture", async () => {
+  const buildV2 = jest.fn();
+
+  getCandidates.mockResolvedValue({
+    status: "success",
+    candidate_count: 2,
+    candidates: [
+      {
+        selection_id: "sel-over",
+        match_id: "same-match",
+        fixture_id: 101,
+        home_team: "Alpha",
+        away_team: "Beta",
+        league: "Test League",
+        date: "2099-01-01",
+        prediction: "Over 1.5",
+        prediction_type: "goals",
+        market: "over_1_5",
+        confidence: .78,
+        odds: 1.45,
+        trust_grade: "A",
+        recommended_for_fixture: true,
+      },
+      {
+        selection_id: "sel-under",
+        match_id: "same-match",
+        fixture_id: 101,
+        home_team: "Alpha",
+        away_team: "Beta",
+        league: "Test League",
+        date: "2099-01-01",
+        prediction: "Under 4.5",
+        prediction_type: "goals",
+        market: "under_4_5",
+        confidence: .82,
+        odds: 1.30,
+        trust_grade: "A",
+        recommended_for_fixture: false,
+      },
+    ],
+  });
+
+  render(
+    <BuilderContext.Provider value={makeContext({ buildV2 }) as any}>
+      <BuilderV2Controls />
+    </BuilderContext.Provider>,
+  );
+
+  fireEvent.click(screen.getByRole("button", { name: /pick my games/i }));
+  fireEvent.click(screen.getByRole("button", { name: /browse approved games/i }));
+
+  const fixtureOptions = await screen.findAllByRole(
+    "button",
+    { name: /alpha v beta/i },
+  );
+
+  fireEvent.click(fixtureOptions[0]);
+  fireEvent.click(fixtureOptions[1]);
+
+  fireEvent.click(
+    screen.getByRole("button", { name: /build 1 selected game/i }),
+  );
+
+  expect(buildV2).toHaveBeenCalledWith(
+    expect.objectContaining({
+      mode: "manual",
+      selection_ids: ["sel-under"],
+      horizon: "7_days",
+    }),
+  );
+});

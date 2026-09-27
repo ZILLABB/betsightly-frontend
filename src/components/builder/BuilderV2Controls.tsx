@@ -175,7 +175,39 @@ export function BuilderV2Controls() {
       if (current.includes(selectionId)) {
         return current.filter((item) => item !== selectionId);
       }
+
       if (current.length >= 50) return current;
+
+      const candidate = candidates.find(
+        (item) => String(item.selection_id || "") === selectionId,
+      );
+
+      if (!candidate) return current;
+
+      const fixtureId = String(
+        candidate.match_id || candidate.fixture_id || "",
+      );
+
+      const sameFixtureSelection = current.find((id) => {
+        const selected = candidates.find(
+          (item) => String(item.selection_id || "") === id,
+        );
+
+        return selected && String(
+          selected.match_id || selected.fixture_id || "",
+        ) === fixtureId;
+      });
+
+      // Manual Builder allows only one market per fixture. Selecting another
+      // approved market for the same game replaces the previous UI selection
+      // instead of sending an invalid duplicate-fixture request to the server.
+      if (sameFixtureSelection) {
+        return [
+          ...current.filter((id) => id !== sameFixtureSelection),
+          selectionId,
+        ];
+      }
+
       return [...current, selectionId];
     });
   };
