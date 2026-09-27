@@ -131,7 +131,13 @@ export default function SlipBuilderPage() {
             {target}
             <small>x</small>
           </strong>
-          <em>{horizon === "today" ? "Today" : "7-day board"}</em>
+          <em>
+            {horizon === "today"
+              ? "Today"
+              : horizon === "3_days"
+                ? "3-day board"
+                : "7-day board"}
+          </em>
         </div>
       </section>
 
@@ -255,9 +261,22 @@ export default function SlipBuilderPage() {
 
           <button
             type="button"
-            className={horizon === "week" ? "is-active" : ""}
-            aria-pressed={horizon === "week"}
-            onClick={() => chooseHorizon("week")}
+            className={horizon === "3_days" ? "is-active" : ""}
+            aria-pressed={horizon === "3_days"}
+            onClick={() => chooseHorizon("3_days")}
+          >
+            <CalendarDays size={22} />
+            <span>
+              <strong>Across 3 days</strong>
+              <small>A deeper board without waiting a full week.</small>
+            </span>
+          </button>
+
+          <button
+            type="button"
+            className={horizon === "7_days" ? "is-active" : ""}
+            aria-pressed={horizon === "7_days"}
+            onClick={() => chooseHorizon("7_days")}
           >
             <CalendarDays size={22} />
             <span>
@@ -310,7 +329,11 @@ export default function SlipBuilderPage() {
           <span className="builder-cap__badge">Board updating</span>
           <h2>We’re preparing the latest fixture board</h2>
           <p>
-            {horizon === "today" ? "Today’s board" : "The 7-day board"} is being evaluated now. Please try again
+            {horizon === "today"
+              ? "Today’s board"
+              : horizon === "3_days"
+                ? "The 3-day board"
+                : "The 7-day board"} is being evaluated now. Please try again
             shortly—your request was controlled safely and was not a CORS error.
           </p>
           <button className="builder-cap__cta" type="button"
