@@ -4,6 +4,7 @@ import SlipBuilderPage from "./SlipBuilderPage";
 import { api } from "../api/predictions";
 import { reviseBuilderSlip } from "../api/builderRevisions";
 import { BuilderProvider } from "../contexts/BuilderProvider";
+import { BuilderContext } from "../contexts/BuilderContextInstance";
 
 jest.mock("../api/predictions", () => ({
   api: {
@@ -1050,6 +1051,56 @@ test("safe fill says when selected markets alone were enough", async () => {
   ).toBeInTheDocument();
   expect(
     screen.queryByLabelText("Fallback market distribution"),
+  ).not.toBeInTheDocument();
+});
+
+test("manual selection changes use dedicated recovery instead of the generic unavailable card", () => {
+  const context = {
+    target: 50,
+    horizon: "week",
+    slip: {
+      status: "SELECTIONS_CHANGED",
+      mode: "manual",
+      reason:
+        "One or more selections are no longer approved and exactly bookable.",
+      invalid_selections: [{
+        selection_id: "sel-stale",
+        reason: "STALE_OR_UNAVAILABLE_SELECTION",
+        actions: ["REMOVE", "REPLACE", "SAFER_MARKET"],
+      }],
+    },
+    loading: false,
+    recoveringCode: false,
+    error: null,
+    editingSelectionId: null,
+    editingMessage: null,
+    editingAction: null,
+    revisionFeedback: null,
+    chooseTarget: jest.fn(),
+    chooseHorizon: jest.fn(),
+    build: jest.fn(),
+    buildV2: jest.fn(),
+    retryBuild: jest.fn(),
+    clearSlip: jest.fn(),
+    reviseLeg: jest.fn(),
+  };
+
+  render(
+    <BuilderContext.Provider value={context as any}>
+      <SlipBuilderPage />
+    </BuilderContext.Provider>,
+  );
+
+  fireEvent.click(
+    screen.getByRole("button", { name: /pick my games/i }),
+  );
+
+  expect(
+    screen.getByText(/SportyBet changed your selected slip/i),
+  ).toBeInTheDocument();
+
+  expect(
+    screen.queryByText(/No qualifying combination is available right now/i),
   ).not.toBeInTheDocument();
 });
 

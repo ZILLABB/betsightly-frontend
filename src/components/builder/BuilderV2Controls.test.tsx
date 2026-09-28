@@ -1,4 +1,5 @@
-﻿import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { useState } from "react";
 import "@testing-library/jest-dom";
 import { BuilderV2Controls } from "./BuilderV2Controls";
 import { BuilderContext } from "../../contexts/BuilderContextInstance";
@@ -410,4 +411,452 @@ test("reset filters clears original V2 include and exclude controls", () => {
 
   expect(include).toHaveValue("");
   expect(fixtures).toHaveValue("");
+});
+
+test("manual recovery removes stale picks without silently replacing them", async () => {
+  const buildV2 = jest.fn();
+  const clearSlip = jest.fn();
+
+  const stale = {
+    selection_id: "sel-stale",
+    match_id: "fixture-a",
+    fixture_id: 1,
+    home_team: "Alpha",
+    away_team: "Beta",
+    league: "Test League",
+    date: "2099-01-01",
+    prediction: "Over 1.5",
+    market: "over_1_5",
+    confidence: .76,
+    odds: 1.45,
+    trust_grade: "A" as const,
+  };
+
+  const valid = {
+    ...stale,
+    selection_id: "sel-valid",
+    match_id: "fixture-b",
+    fixture_id: 2,
+    home_team: "Gamma",
+    away_team: "Delta",
+    prediction: "Under 4.5",
+    market: "under_4_5",
+  };
+
+  getCandidates.mockResolvedValue({
+    status: "success",
+    candidate_count: 2,
+    candidates: [stale, valid],
+  });
+
+  render(
+    <BuilderContext.Provider value={makeContext({
+      buildV2,
+      clearSlip,
+      slip: {
+        status: "SELECTIONS_CHANGED",
+        mode: "manual",
+        reason:
+          "One or more selections are no longer approved and exactly bookable.",
+        valid_count: 1,
+        invalid_selections: [{
+          selection_id: "sel-stale",
+          reason: "STALE_OR_UNAVAILABLE_SELECTION",
+          actions: ["REMOVE", "REPLACE", "SAFER_MARKET"],
+        }],
+      },
+    }) as any}>
+      <BuilderV2Controls />
+    </BuilderContext.Provider>,
+  );
+
+  fireEvent.click(screen.getByRole("button", { name: /pick my games/i }));
+  fireEvent.click(screen.getByRole("button", { name: /browse approved games/i }));
+
+  fireEvent.click(
+    await screen.findByRole("button", { name: /alpha v beta/i }),
+  );
+  fireEvent.click(screen.getByRole("button", { name: /gamma v delta/i }));
+
+  expect(
+    screen.getByText(/SportyBet changed your selected slip/i),
+  ).toBeInTheDocument();
+  expect(
+    screen.getByText(/Alpha v Beta · Over 1.5/i),
+  ).toBeInTheDocument();
+
+  fireEvent.click(
+    screen.getByRole("button", { name: /remove unavailable/i }),
+  );
+
+  expect(clearSlip).toHaveBeenCalled();
+  expect(buildV2).not.toHaveBeenCalled();
+
+  fireEvent.click(
+    screen.getByRole("button", { name: /build 1 selected game/i }),
+  );
+
+  expect(buildV2).toHaveBeenCalledWith(
+    expect.objectContaining({
+      mode: "manual",
+      selection_ids: ["sel-valid"],
+    }),
+  );
+});
+
+test("manual recovery keeps only still-valid picks when requested", async () => {
+  const buildV2 = jest.fn();
+
+  const stale = {
+    selection_id: "sel-stale",
+    match_id: "fixture-a",
+    fixture_id: 1,
+    home_team: "Alpha",
+    away_team: "Beta",
+    league: "Test League",
+    date: "2099-01-01",
+    prediction: "Over 1.5",
+    market: "over_1_5",
+    confidence: .76,
+    odds: 1.45,
+    trust_grade: "A" as const,
+  };
+
+  const valid = {
+    ...stale,
+    selection_id: "sel-valid",
+    match_id: "fixture-b",
+    fixture_id: 2,
+    home_team: "Gamma",
+    away_team: "Delta",
+  };
+
+  getCandidates.mockResolvedValue({
+    status: "success",
+    candidate_count: 2,
+    candidates: [stale, valid],
+  });
+
+  render(
+    <BuilderContext.Provider value={makeContext({
+      buildV2,
+      slip: {
+        status: "SELECTIONS_CHANGED",
+        mode: "manual",
+        valid_count: 1,
+        invalid_selections: [{
+          selection_id: "sel-stale",
+          reason: "STALE_OR_UNAVAILABLE_SELECTION",
+          actions: ["REMOVE", "REPLACE", "SAFER_MARKET"],
+        }],
+      },
+    }) as any}>
+      <BuilderV2Controls />
+    </BuilderContext.Provider>,
+  );
+
+  fireEvent.click(screen.getByRole("button", { name: /pick my games/i }));
+  fireEvent.click(screen.getByRole("button", { name: /browse approved games/i }));
+
+  fireEvent.click(
+    await screen.findByRole("button", { name: /alpha v beta/i }),
+  );
+  fireEvent.click(screen.getByRole("button", { name: /gamma v delta/i }));
+
+  fireEvent.click(
+    screen.getByRole("button", { name: /keep remaining/i }),
+  );
+
+  await waitFor(() =>
+    expect(buildV2).toHaveBeenCalledWith(
+      expect.objectContaining({
+        mode: "manual",
+        selection_ids: ["sel-valid"],
+      }),
+    ),
+  );
+});
+
+test("manual replacement refresh preserves valid picks and waits for the user", async () => {
+  const buildV2 = jest.fn();
+
+  const stale = {
+    selection_id: "sel-stale",
+    match_id: "fixture-a",
+    fixture_id: 1,
+    home_team: "Alpha",
+    away_team: "Beta",
+    league: "Test",
+    date: "2099-01-01",
+    prediction: "Over 1.5",
+    market: "over_1_5",
+    confidence: .76,
+    odds: 1.45,
+    trust_grade: "A" as const,
+  };
+
+  const valid = {
+    ...stale,
+    selection_id: "sel-valid",
+    match_id: "fixture-b",
+    fixture_id: 2,
+    home_team: "Gamma",
+    away_team: "Delta",
+  };
+
+  const replacement = {
+    ...stale,
+    selection_id: "sel-new",
+    match_id: "fixture-c",
+    fixture_id: 3,
+    home_team: "Roma",
+    away_team: "Torino",
+  };
+
+  getCandidates
+    .mockResolvedValueOnce({
+      status: "success",
+      candidate_count: 2,
+      candidates: [stale, valid],
+    })
+    .mockResolvedValueOnce({
+      status: "success",
+      candidate_count: 2,
+      candidates: [valid, replacement],
+    });
+
+  render(
+    <BuilderContext.Provider value={makeContext({
+      buildV2,
+      slip: {
+        status: "SELECTIONS_CHANGED",
+        mode: "manual",
+        valid_count: 1,
+        invalid_selections: [{
+          selection_id: "sel-stale",
+          reason: "STALE_OR_UNAVAILABLE_SELECTION",
+          actions: ["REMOVE", "REPLACE", "SAFER_MARKET"],
+        }],
+      },
+    }) as any}>
+      <BuilderV2Controls />
+    </BuilderContext.Provider>,
+  );
+
+  fireEvent.click(screen.getByRole("button", { name: /pick my games/i }));
+  fireEvent.click(screen.getByRole("button", { name: /browse approved games/i }));
+
+  fireEvent.click(
+    await screen.findByRole("button", { name: /alpha v beta/i }),
+  );
+  fireEvent.click(screen.getByRole("button", { name: /gamma v delta/i }));
+
+  fireEvent.click(
+    screen.getByRole("button", { name: /choose replacement/i }),
+  );
+
+  const newPick = await screen.findByRole(
+    "button",
+    { name: /roma v torino/i },
+  );
+
+  expect(buildV2).not.toHaveBeenCalled();
+
+  fireEvent.click(newPick);
+  fireEvent.click(
+    screen.getByRole("button", { name: /build 2 selected games/i }),
+  );
+
+  expect(buildV2).toHaveBeenCalledWith(
+    expect.objectContaining({
+      mode: "manual",
+      selection_ids: ["sel-valid", "sel-new"],
+    }),
+  );
+});
+
+
+test("manual safer-market recovery scopes the refreshed board to the affected fixture", async () => {
+  const buildV2 = jest.fn();
+
+  const stale = {
+    selection_id: "sel-stale",
+    match_id: "fixture-a",
+    fixture_id: 1,
+    home_team: "Alpha",
+    away_team: "Beta",
+    league: "Test",
+    date: "2099-01-01",
+    prediction: "Over 2.5",
+    market: "over_2_5",
+    confidence: .76,
+    odds: 1.65,
+    trust_grade: "A" as const,
+  };
+
+  const valid = {
+    ...stale,
+    selection_id: "sel-valid",
+    match_id: "fixture-b",
+    fixture_id: 2,
+    home_team: "Gamma",
+    away_team: "Delta",
+  };
+
+  const safer = {
+    ...stale,
+    selection_id: "sel-safer",
+    prediction: "Over 1.5",
+    market: "over_1_5",
+    odds: 1.30,
+  };
+
+  const unrelated = {
+    ...stale,
+    selection_id: "sel-other",
+    match_id: "fixture-c",
+    fixture_id: 3,
+    home_team: "Roma",
+    away_team: "Torino",
+  };
+
+  const recoverySlip = {
+    status: "SELECTIONS_CHANGED",
+    mode: "manual",
+    valid_count: 1,
+    reason:
+      "One or more selections are no longer approved and exactly bookable.",
+    invalid_selections: [{
+      selection_id: "sel-stale",
+      reason: "STALE_OR_UNAVAILABLE_SELECTION",
+      actions: ["REMOVE", "REPLACE", "SAFER_MARKET"],
+    }],
+  };
+
+  getCandidates
+    .mockResolvedValueOnce({
+      status: "success",
+      candidate_count: 2,
+      candidates: [stale, valid],
+    })
+    .mockResolvedValueOnce({
+      status: "success",
+      candidate_count: 3,
+      candidates: [valid, safer, unrelated],
+    });
+
+  function RecoveryHarness() {
+    const [currentSlip, setCurrentSlip] = useState<any>(null);
+
+    const handleBuildV2 = async (request: any) => {
+      buildV2(request);
+
+      // Only the original stale submission receives SELECTIONS_CHANGED.
+      if (request.selection_ids?.includes("sel-stale")) {
+        setCurrentSlip(recoverySlip);
+      }
+    };
+
+    return (
+      <BuilderContext.Provider
+        value={makeContext({
+          buildV2: handleBuildV2,
+          clearSlip: () => setCurrentSlip(null),
+          slip: currentSlip,
+        }) as any}
+      >
+        <BuilderV2Controls />
+      </BuilderContext.Provider>
+    );
+  }
+
+  render(<RecoveryHarness />);
+
+  // Normal manual flow first.
+  fireEvent.click(
+    screen.getByRole("button", { name: /pick my games/i }),
+  );
+
+  fireEvent.click(
+    screen.getByRole("button", { name: /browse approved games/i }),
+  );
+
+  fireEvent.click(
+    await screen.findByRole("button", { name: /alpha v beta/i }),
+  );
+
+  fireEvent.click(
+    screen.getByRole("button", { name: /gamma v delta/i }),
+  );
+
+  fireEvent.click(
+    screen.getByRole("button", { name: /build 2 selected games/i }),
+  );
+
+  // Server now reports the stale Alpha/Beta selection.
+  await screen.findByText(
+    /SportyBet changed your selected slip/i,
+  );
+
+  expect(buildV2).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      mode: "manual",
+      selection_ids: ["sel-stale", "sel-valid"],
+    }),
+  );
+
+  buildV2.mockClear();
+
+  // Ask for approved alternatives on the affected fixture.
+  fireEvent.click(
+    screen.getByRole("button", { name: /safer market/i }),
+  );
+
+  // The stale Alpha/Beta candidate can remain in the DOM for one render
+  // while the approved recovery board refreshes. Wait for the old Over 2.5
+  // selection to disappear before choosing the new approved Over 1.5 market.
+  await waitFor(() => {
+    expect(
+      screen.queryByRole(
+        "button",
+        { name: /alpha v beta.*over 2\.5/i },
+      ),
+    ).not.toBeInTheDocument();
+  });
+
+  const saferPick = screen.getByRole(
+    "button",
+    { name: /alpha v beta.*over 1\.5/i },
+  );
+
+  // Recovery board is scoped to fixture A.
+  expect(
+    screen.queryByRole("button", { name: /roma v torino/i }),
+  ).not.toBeInTheDocument();
+
+  // Refreshing alternatives must never book automatically.
+  expect(buildV2).not.toHaveBeenCalled();
+
+  // The unaffected fixture-B selection remains selected internally.
+  expect(
+    screen.getByRole("button", { name: /build 1 selected game/i }),
+  ).toBeInTheDocument();
+
+  // User explicitly chooses the safer fixture-A market.
+  fireEvent.click(saferPick);
+
+  expect(
+    screen.getByRole("button", { name: /build 2 selected games/i }),
+  ).toBeInTheDocument();
+
+  fireEvent.click(
+    screen.getByRole("button", { name: /build 2 selected games/i }),
+  );
+
+  expect(buildV2).toHaveBeenCalledWith(
+    expect.objectContaining({
+      mode: "manual",
+      selection_ids: ["sel-valid", "sel-safer"],
+    }),
+  );
 });

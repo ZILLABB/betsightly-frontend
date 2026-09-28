@@ -131,6 +131,10 @@ export default function SlipBuilderPage() {
     gameCountRequested > 0 &&
     gameCountDelivered < gameCountRequested,
   );
+  const isManualSelectionChanged = Boolean(
+    slipMode === "manual" &&
+    String(slip?.status || "") === "SELECTIONS_CHANGED",
+  );
   const canEditSlip = Boolean(
     slip?.editing_supported !== false &&
     slip?.builder_run_id &&
@@ -333,7 +337,10 @@ export default function SlipBuilderPage() {
           </button>
         </section>
       )}
-      {slip && slip.status !== "success" && slip.reason !== "board_refreshing" && (
+      {slip &&
+        slip.status !== "success" &&
+        slip.reason !== "board_refreshing" &&
+        !isManualSelectionChanged && (
         <section className="builder-message builder-cap" aria-live="polite">
           <span className="builder-cap__badge">Best available</span>
           <h2>{isTargetMode ? capHeading(capStatus, target) : "No qualifying combination is available right now"}</h2>

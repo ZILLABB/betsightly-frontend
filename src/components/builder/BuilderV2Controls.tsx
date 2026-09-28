@@ -63,16 +63,38 @@ const horizonLabel = (value: "today" | "3_days" | "week") =>
 const candidateText = (candidate: BuilderV2Candidate) =>
   `${candidate.home_team || ""} ${candidate.away_team || ""} ${candidate.league || ""} ${candidate.prediction || ""}`.toLowerCase();
 
+const candidateFixtureId = (candidate?: BuilderV2Candidate) =>
+  String(candidate?.match_id || candidate?.fixture_id || "");
+
 const parseFilterList = (value: string) =>
   value
     .split(/[\n,]+/)
     .map((item) => item.trim())
     .filter(Boolean);
 
+type ManualRecoveryAction = "REMOVE" | "REPLACE" | "SAFER_MARKET";
+
+interface ManualRecoverySelection {
+  selection_id?: string;
+  fixture_id?: string;
+  reason?: string;
+  actions?: ManualRecoveryAction[];
+}
+
+interface ManualRecoverySlip {
+  mode?: BuilderV2Mode;
+  status?: string;
+  reason?: string;
+  valid_count?: number;
+  invalid_selections?: ManualRecoverySelection[];
+  actions?: ManualRecoveryAction[];
+}
+
 export function BuilderV2Controls() {
   const {
     target,
     horizon,
+    slip,
     loading,
     chooseTarget,
     chooseHorizon,
@@ -80,7 +102,15 @@ export function BuilderV2Controls() {
     clearSlip,
   } = useBuilder();
 
-  const [mode, setMode] = useState<BuilderV2Mode>("target_odds");
+  const restoredMode: BuilderV2Mode =
+    slip?.mode === "manual" ||
+    slip?.mode === "game_count" ||
+    slip?.mode === "strongest" ||
+    slip?.mode === "target_odds"
+      ? slip.mode
+      : "target_odds";
+
+  const [mode, setMode] = useState<BuilderV2Mode>(restoredMode);
   const [customTarget, setCustomTarget] = useState("");
   const [gameCount, setGameCount] = useState(20);
   const [fillStrategy, setFillStrategy] =
@@ -100,6 +130,7 @@ export function BuilderV2Controls() {
   const [candidateLoading, setCandidateLoading] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [candidateSearch, setCandidateSearch] = useState("");
+  const [recoveryFixtureIds, setRecoveryFixtureIds] = useState<string[]>([]);
 
   const filters = useMemo<BuilderV2Filters>(() => ({
     horizon: backendHorizon(horizon),
@@ -126,10 +157,12 @@ export function BuilderV2Controls() {
     excludeTeams,
   ]);
 
-   const invalidateManual = () => {
+  const invalidateManual = () => {
     setCandidates([]);
     setSelectedIds([]);
     setCandidateStatus(null);
+    setCandidateSearch("");
+    setRecoveryFixtureIds([]);
   };
 
   const advancedFilterCount = [
@@ -204,6 +237,8 @@ export function BuilderV2Controls() {
     setCandidateLoading(true);
     setCandidateStatus(null);
     setSelectedIds([]);
+    setCandidateSearch("");
+    setRecoveryFixtureIds([]);
     try {
       const response = await api.getBuilderV2Candidates(filters);
       setCandidates(response.candidates || []);
@@ -271,7 +306,188 @@ export function BuilderV2Controls() {
     });
   };
 
+  const recoverySlip = slip as ManualRecoverySlip | null;
+  const manualSelectionChanged = Boolean(
+    mode === "manual" &&
+    recoverySlip?.mode === "manual" &&
+    String(recoverySlip?.status || "") === "SELECTIONS_CHANGED",
+  );
+  const invalidManualSelections = manualSelectionChanged
+    ? (recoverySlip?.invalid_selections || [])
+    : [];
+  const invalidManualIdSet = new Set(
+    invalidManualSelections
+      .map((item) => String(item.selection_id || ""))
+      .filter(Boolean),
+  );
+  const validSelectedIds = selectedIds.filter(
+    (selectionId) => !invalidManualIdSet.has(selectionId),
+  );
+  const staleFixtureIds = Array.from(new Set(
+    invalidManualSelections
+      .map((item) => {
+        if (item.fixture_id) return String(item.fixture_id);
+        const original = candidates.find(
+          (candidate) =>
+            String(candidate.selection_id || "") ===
+            String(item.selection_id || ""),
+        );
+        return candidateFixtureId(original);
+      })
+      .filter(Boolean),
+  ));
+  const manualRecoveryActions = new Set<ManualRecoveryAction>([
+    ...(recoverySlip?.actions || []),
+    ...invalidManualSelections.flatMap((item) => item.actions || []),
+  ]);
+  const canRemoveInvalid =
+    invalidManualIdSet.size > 0 &&
+    (manualRecoveryActions.size === 0 || manualRecoveryActions.has("REMOVE"));
+  const canChooseReplacement =
+    manualRecoveryActions.size === 0 ||
+    manualRecoveryActions.has("REPLACE");
+  const canChooseSafer =
+    staleFixtureIds.length > 0 &&
+    manualRecoveryActions.has("SAFER_MARKET");
+
+  const invalidManualDetails = invalidManualSelections.map((item) => {
+    const original = candidates.find((candidate) => {
+      if (item.selection_id) {
+        return String(candidate.selection_id || "") === String(item.selection_id);
+      }
+      if (item.fixture_id) {
+        return candidateFixtureId(candidate) === String(item.fixture_id);
+      }
+      return false;
+    });
+    return {
+      key: String(
+        item.selection_id ||
+        item.fixture_id ||
+        item.reason ||
+        "changed-selection",
+      ),
+      label: original
+        ? `${original.home_team} v ${original.away_team} · ${original.prediction}`
+        : "Selected game",
+      reason: item.reason || "NO_LONGER_APPROVED",
+    };
+  });
+
+  const removeUnavailableManualSelections = () => {
+    if (!invalidManualIdSet.size) return;
+
+    setSelectedIds(validSelectedIds);
+    setCandidates((current) =>
+      current.filter(
+        (candidate) =>
+          !invalidManualIdSet.has(String(candidate.selection_id || "")),
+      ),
+    );
+    setRecoveryFixtureIds([]);
+    setCandidateSearch("");
+    setCandidateStatus(
+      `${invalidManualIdSet.size} unavailable ${
+        invalidManualIdSet.size === 1 ? "selection" : "selections"
+      } removed. ${validSelectedIds.length} still selected.`,
+    );
+    clearSlip();
+  };
+
+  const keepRemainingManualSelections = async () => {
+    if (!validSelectedIds.length) {
+      removeUnavailableManualSelections();
+      setCandidateStatus(
+        "No valid selections remain. Choose replacements from the approved board.",
+      );
+      return;
+    }
+
+    setSelectedIds(validSelectedIds);
+    await buildV2({
+      ...filters,
+      mode: "manual",
+      selection_ids: validSelectedIds,
+    });
+  };
+
+  const openManualRecoveryBoard = async (
+    scope: "replace" | "safer",
+  ) => {
+    setCandidateLoading(true);
+    setCandidateStatus(null);
+
+    try {
+      const response = await api.getBuilderV2Candidates(filters);
+      const nextCandidates = response.candidates || [];
+      const currentIds = new Set(
+        nextCandidates.map((candidate) =>
+          String(candidate.selection_id || ""),
+        ),
+      );
+      const preservedIds = validSelectedIds.filter((selectionId) =>
+        currentIds.has(selectionId),
+      );
+      const droppedCount = validSelectedIds.length - preservedIds.length;
+
+      setCandidates(nextCandidates);
+      setSelectedIds(preservedIds);
+      setCandidateSearch("");
+
+      if (scope === "safer" && staleFixtureIds.length) {
+        const affectedFixtureIds = new Set(staleFixtureIds);
+        const alternatives = nextCandidates.filter(
+          (candidate) =>
+            affectedFixtureIds.has(candidateFixtureId(candidate)) &&
+            !invalidManualIdSet.has(String(candidate.selection_id || "")),
+        );
+
+        setRecoveryFixtureIds(staleFixtureIds);
+        setCandidateStatus(
+          alternatives.length
+            ? `${alternatives.length} approved ${
+                alternatives.length === 1 ? "alternative" : "alternatives"
+              } available for the affected game. ${
+                preservedIds.length
+              } valid selections kept.`
+            : `No approved safer market is currently available for the affected game. ${
+                preservedIds.length
+              } valid selections kept.`,
+        );
+      } else {
+        setRecoveryFixtureIds([]);
+        setCandidateStatus(
+          response.status === "success"
+            ? `Choose a replacement from ${
+                response.candidate_count ?? nextCandidates.length
+              } approved selections. ${preservedIds.length} valid selections kept.${
+                droppedCount
+                  ? ` ${droppedCount} additional selection${
+                      droppedCount === 1 ? "" : "s"
+                    } no longer appears on the refreshed approved board.`
+                  : ""
+              }`
+            : response.reason ||
+                "No approved replacement is available right now.",
+        );
+      }
+
+      clearSlip();
+    } catch {
+      setCandidateStatus(
+        "Could not refresh the approved game board. Your selected games were not changed.",
+      );
+    } finally {
+      setCandidateLoading(false);
+    }
+  };
+
   const visibleCandidates = candidates
+    .filter(
+      (candidate) =>
+        !recoveryFixtureIds.length ||
+        recoveryFixtureIds.includes(candidateFixtureId(candidate)),
+    )
     .filter((candidate) =>
       !candidateSearch.trim() ||
       candidateText(candidate).includes(candidateSearch.trim().toLowerCase()),
@@ -716,12 +932,93 @@ export function BuilderV2Controls() {
         </button>
       ) : (
         <div className="builder-v2-manual">
+          {manualSelectionChanged && (
+            <section
+              className="builder-v2-market-note"
+              role="alert"
+              aria-label="Manual selection recovery"
+            >
+              <strong>SportyBet changed your selected slip</strong>
+              <p>
+                {recoverySlip?.reason ||
+                  "One or more selected games are no longer approved and exactly bookable."}
+              </p>
+
+              {!!invalidManualDetails.length && (
+                <ul>
+                  {invalidManualDetails.map((item) => (
+                    <li key={item.key}>
+                      <strong>{item.label}</strong>
+                      {" · "}
+                      {item.reason.replaceAll("_", " ").toLowerCase()}
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              <p>
+                No game has been replaced automatically. Your valid selections
+                stay under your control.
+              </p>
+
+              <div
+                className="builder-v2-pills"
+                role="group"
+                aria-label="Manual recovery actions"
+              >
+                {canRemoveInvalid && (
+                  <button
+                    type="button"
+                    onClick={removeUnavailableManualSelections}
+                    disabled={loading || candidateLoading}
+                  >
+                    Remove unavailable
+                  </button>
+                )}
+
+                {canRemoveInvalid && validSelectedIds.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => void keepRemainingManualSelections()}
+                    disabled={loading || candidateLoading}
+                  >
+                    Keep remaining
+                  </button>
+                )}
+
+                {canChooseReplacement && (
+                  <button
+                    type="button"
+                    onClick={() => void openManualRecoveryBoard("replace")}
+                    disabled={loading || candidateLoading}
+                  >
+                    Choose replacement
+                  </button>
+                )}
+
+                {canChooseSafer && (
+                  <button
+                    type="button"
+                    onClick={() => void openManualRecoveryBoard("safer")}
+                    disabled={loading || candidateLoading}
+                  >
+                    Safer market
+                  </button>
+                )}
+              </div>
+            </section>
+          )}
+
           <button className="builder-submit builder-v2-submit" type="button"
-            onClick={() => void loadCandidates()} disabled={candidateLoading || loading}>
-            <Search size={18} />
-            {candidateLoading ? "Loading approved games…" : "Browse approved games"}
-          </button>
-          {candidateStatus && <p className="builder-v2-candidate-status">{candidateStatus}</p>}
+              onClick={() => void loadCandidates()} disabled={candidateLoading || loading}>
+              <Search size={18} />
+              {candidateLoading ? "Loading approved games…" : "Browse approved games"}
+            </button>
+
+          {candidateStatus && (
+            <p className="builder-v2-candidate-status">{candidateStatus}</p>
+          )}
+
           {!!candidates.length && (
             <>
               <label className="builder-v2-search">
