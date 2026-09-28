@@ -245,6 +245,23 @@ export interface BuilderV2MarketBalance {
   strategy: string;
 }
 
+export interface BuilderV2MarketAvailability {
+  target: number;
+  raw: number;
+  after_trust_and_policy: number;
+  approved: number;
+  selected: number;
+  shortfall: number;
+  primary_reason:
+    | "TARGET_SHARE_FILLED"
+    | "NO_RAW_CANDIDATES"
+    | "TRUST_OR_MARKET_POLICY_REJECTED"
+    | "BELOW_FINAL_BUILDER_GATES"
+    | "FIXTURE_OR_TEAM_DIVERSITY"
+    | "INSUFFICIENT_APPROVED_SELECTIONS"
+    | string;
+}
+
 /** A slip built to a requested multiplier. */
 export interface BuiltSlip {
   status: "success" | "unavailable" | "error";
@@ -311,6 +328,8 @@ export interface BuiltSlip {
   fixture_count?: number;
   market_distribution?: Record<string, number>;
   market_balance?: BuilderV2MarketBalance;
+  market_availability?: Record<string, BuilderV2MarketAvailability>;
+  editing_supported?: boolean;
   binding_constraints?: string[];
   max_legs?: number;
   cached?: boolean;

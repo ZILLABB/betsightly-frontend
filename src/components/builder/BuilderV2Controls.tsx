@@ -389,7 +389,7 @@ export function BuilderV2Controls() {
       <div className="builder-v2-section">
         <div className="builder-v2-label-row">
           <strong>Markets</strong>
-          <span>{markets.length ? `${markets.length} selected` : "All trusted markets"}</span>
+          <span>{markets.length ? `${markets.length} selected` : "All eligible markets"}</span>
         </div>
         <div className="builder-v2-market-grid" role="group" aria-label="Markets">
           <button
@@ -398,7 +398,7 @@ export function BuilderV2Controls() {
             aria-pressed={!markets.length}
             onClick={() => { setMarkets([]); clearSlip(); invalidateManual(); }}
           >
-            All trusted
+            All eligible markets
           </button>
           {MARKETS.map(([key, label]) => (
             <button

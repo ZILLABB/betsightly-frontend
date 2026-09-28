@@ -53,6 +53,42 @@ const formatProbabilityPercent = (value: number) => {
   return `${(value * 100).toFixed(2)}%`;
 };
 
+const marketAvailabilityMessage = (
+  market: string,
+  info?: {
+    approved?: number;
+    primary_reason?: string;
+  },
+) => {
+  if (!info) return null;
+
+  const label = marketLabel(market);
+
+  switch (info.primary_reason) {
+    case "NO_RAW_CANDIDATES":
+      return `${label}: no qualifying candidate was available on the current board.`;
+
+    case "TRUST_OR_MARKET_POLICY_REJECTED":
+      return `${label}: available candidates did not pass the current evidence and trust policy.`;
+
+    case "BELOW_FINAL_BUILDER_GATES":
+      return `${label}: candidates reached policy review but did not pass the final Builder quality gates.`;
+
+    case "FIXTURE_OR_TEAM_DIVERSITY":
+      return `${label}: qualifying selections were limited by fixture or team diversity.`;
+
+    case "INSUFFICIENT_APPROVED_SELECTIONS": {
+      const approved = Number(info.approved ?? 0);
+      return `${label}: only ${approved} approved ${
+        approved === 1 ? "selection" : "selections"
+      } passed all current gates.`;
+    }
+
+    default:
+      return null;
+  }
+};
+
 export default function SlipBuilderPage() {
   const {
     target,
@@ -86,6 +122,21 @@ export default function SlipBuilderPage() {
   const capStatus = String(slip?.result_status || "");
   const slipMode = slip?.mode ?? "target_odds";
   const isTargetMode = slipMode === "target_odds";
+  const gameCountRequested = Number(slip?.requested_game_count ?? 0);
+  const gameCountDelivered = Number(
+    slip?.delivered_game_count ?? slip?.legs ?? 0,
+  );
+  const isPartialGameCount = Boolean(
+    slipMode === "game_count" &&
+    gameCountRequested > 0 &&
+    gameCountDelivered < gameCountRequested,
+  );
+  const canEditSlip = Boolean(
+    slip?.editing_supported !== false &&
+    slip?.builder_run_id &&
+    slip?.edit_token &&
+    slip?.revision,
+  );
   const headlineProbability = hasDnb
     ? (slip?.target_hit_probability ?? slip?.hit_probability ?? 0)
     : isTargetMode
@@ -106,7 +157,9 @@ export default function SlipBuilderPage() {
   const resultEyebrow = isBestAvailable
     ? "Best available"
     : slipMode === "game_count"
-      ? "Game count ready"
+      ? isPartialGameCount
+        ? "Best available game count"
+        : "Game count ready"
       : slipMode === "strongest"
         ? "Strongest picks ready"
         : slipMode === "manual"
@@ -116,7 +169,9 @@ export default function SlipBuilderPage() {
   const resultHeading = isBestAvailable
     ? `${provenMaximum ? "Best verified" : "Best available"} ${slip?.odds?.toFixed(2)}x slip`
     : slipMode === "game_count"
-      ? `${slip?.delivered_game_count ?? slip?.legs ?? 0} qualifying games`
+      ? isPartialGameCount
+        ? `${gameCountDelivered} of ${gameCountRequested} qualifying games`
+        : `${gameCountDelivered} qualifying games`
       : slipMode === "strongest"
         ? `${slip?.legs ?? 0} strongest qualifying picks`
         : slipMode === "manual"
@@ -126,6 +181,46 @@ export default function SlipBuilderPage() {
   const marketShortfalls = Object.entries(
     slip?.market_balance?.shortfalls ?? {},
   ).filter(([, count]) => Number(count) > 0);
+
+  const marketMixEntries =
+    slipMode === "game_count" &&
+    (slip?.market_balance?.requested_markets?.length ?? 0) > 0
+      ? (slip?.market_balance?.requested_markets ?? []).map((market) => ({
+          market,
+          count: Number(
+            slip?.market_balance?.delivered_distribution?.[market] ??
+            slip?.market_distribution?.[market] ??
+            0
+          ),
+          target: Number(
+            slip?.market_balance?.target_distribution?.[market] ?? 0
+          ),
+        }))
+      : Object.entries(slip?.market_distribution ?? {}).map(
+          ([market, count]) => ({
+            market,
+            count: Number(count),
+            target: undefined as number | undefined,
+          }),
+        );
+
+  const marketAvailabilityMessages =
+    slipMode === "game_count"
+      ? (slip?.market_balance?.requested_markets ?? [])
+          .filter(
+            (market) =>
+              Number(
+                slip?.market_balance?.shortfalls?.[market] ?? 0
+              ) > 0,
+          )
+          .map((market) =>
+            marketAvailabilityMessage(
+              market,
+              slip?.market_availability?.[market],
+            ),
+          )
+          .filter((message): message is string => Boolean(message))
+      : [];
   const acceptingBest = editingAction === "accept_best_reachable";
   const confirmingBooking = editingAction === "confirm_booking";
   const bookingConfirmed = Boolean(
@@ -290,8 +385,8 @@ export default function SlipBuilderPage() {
               <h2>{resultHeading}</h2>
             </div>
             <span className="builder-trust-chip">
-              <ShieldCheck size={15} /> Grade {slip.lowest_trust_grade ?? "B"}{" "}
-              minimum
+              <ShieldCheck size={15} /> Lowest selected grade:{" "}
+              {slip.lowest_trust_grade ?? "B"}
             </span>
           </header>
           {(slip.board?.degraded || slip.board?.complete === false) && (
@@ -308,8 +403,7 @@ export default function SlipBuilderPage() {
           )}
 
           {(slip.mode === "game_count" || slip.mode === "strongest") &&
-            slip.market_distribution &&
-            Object.keys(slip.market_distribution).length > 0 && (
+            marketMixEntries.length > 0 && (
               <section
                 className="builder-market-mix"
                 aria-label="Market distribution"
@@ -324,14 +418,16 @@ export default function SlipBuilderPage() {
                 </div>
 
                 <div className="builder-market-mix__chips">
-                  {Object.entries(slip.market_distribution).map(
-                    ([market, count]) => (
-                      <span key={market}>
-                        {marketLabel(market)}
-                        <strong>{count}</strong>
-                      </span>
-                    ),
-                  )}
+                  {marketMixEntries.map(({ market, count, target }) => (
+                    <span key={market}>
+                      {marketLabel(market)}
+                      <strong>
+                        {slip.mode === "game_count" && target != null
+                          ? `${count} / ${target}`
+                          : count}
+                      </strong>
+                    </span>
+                  ))}
                 </div>
 
                 {slip.mode === "game_count" &&
@@ -346,19 +442,31 @@ export default function SlipBuilderPage() {
                 {slip.mode === "game_count" &&
                   slip.market_balance?.applied &&
                   marketShortfalls.length > 0 && (
-                    <p>
-                      {marketShortfalls
-                        .map(
-                          ([market, count]) =>
-                            `${marketLabel(market)} was ${count} ${
-                              Number(count) === 1 ? "pick" : "picks"
-                            } short of its target share`,
-                        )
-                        .join("; ")}.
-                      {" "}Remaining slots were filled only from your other
-                      selected markets that still passed the same quality and
-                      SportyBet bookability gates.
-                    </p>
+                    isPartialGameCount ? (
+                      <p>
+                        Only {gameCountDelivered} of {gameCountRequested} requested
+                        games passed the selected market, quality and exact
+                        SportyBet gates.
+                        {marketAvailabilityMessages.length > 0 &&
+                          <>{" "}{marketAvailabilityMessages.join(" ")}</>}
+                        {" "}BetSightly did not add weaker picks to manufacture
+                        the requested game count.
+                      </p>
+                    ) : (
+                      <p>
+                        {marketShortfalls
+                          .map(
+                            ([market, count]) =>
+                              `${marketLabel(market)} was ${count} ${
+                                Number(count) === 1 ? "pick" : "picks"
+                              } short of its target share`,
+                          )
+                          .join("; ")}.
+                        {" "}Remaining slots were filled only from your other
+                        selected markets that still passed the same quality and
+                        SportyBet bookability gates.
+                      </p>
+                    )
                   )}
               </section>
             )}
@@ -408,6 +516,9 @@ export default function SlipBuilderPage() {
             )}
             {slip.mode === "game_count" && slip.delivered_game_count != null && (
               <Stat label="Delivered games" value={String(slip.delivered_game_count)} />
+            )}
+            {slip.mode === "game_count" && Number(slip.shortfall ?? 0) > 0 && (
+              <Stat label="Shortfall" value={String(slip.shortfall)} />
             )}
             <Stat label="Total odds" value={`${slip.odds?.toFixed(2)}x`} />
             <Stat label="Legs" value={String(slip.legs)} />
@@ -509,14 +620,19 @@ export default function SlipBuilderPage() {
           <div className="builder-leg-list">
             <div className="builder-leg-list__heading">
               <div>
-                <h2>Shape this slip</h2>
-                <p>Replace a pick, request a safer market, exclude a game, or lock what you want to keep.</p>
+                <h2>{canEditSlip ? "Shape this slip" : "Review this slip"}</h2>
+                <p>
+                  {canEditSlip
+                    ? "Replace a pick, request a safer market, exclude a game, or lock what you want to keep."
+                    : "Review every selected market and why it qualified. Use the controls above to rebuild with a different structure."}
+                </p>
               </div>
-              {slip.revision && <span>Revision {slip.revision}</span>}
+              {canEditSlip && slip.revision && <span>Revision {slip.revision}</span>}
             </div>
             {(slip.games ?? []).map((game, index) => (
               <BuilderLeg key={game.selection_id || `${game.fixture_id}-${index}`}
                 game={game} index={index} accent={accent}
+                editable={canEditSlip}
                 locked={Boolean(game.selection_id && slip.locked_selection_ids?.includes(game.selection_id))}
                 pending={editingSelectionId === game.selection_id}
                 pendingAction={editingAction}

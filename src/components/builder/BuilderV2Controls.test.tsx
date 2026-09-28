@@ -256,3 +256,20 @@ test("game count explains that multiple selected markets are balanced", () => {
     screen.getByText(/balance these markets as evenly as quality/i),
   ).toBeInTheDocument();
 });
+
+
+test("labels the unfiltered market choice as all eligible markets", () => {
+  render(
+    <BuilderContext.Provider value={makeContext() as any}>
+      <BuilderV2Controls />
+    </BuilderContext.Provider>,
+  );
+
+  expect(
+    screen.getByRole("button", { name: /all eligible markets/i }),
+  ).toBeInTheDocument();
+
+  expect(
+    screen.queryByRole("button", { name: /^all trusted$/i }),
+  ).not.toBeInTheDocument();
+});

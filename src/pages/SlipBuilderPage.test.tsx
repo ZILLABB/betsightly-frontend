@@ -636,3 +636,222 @@ test("strongest results lead with strongest picks instead of total odds", async 
   expect(screen.getByText("Strongest picks ready")).toBeInTheDocument();
   expect(screen.getByText("Market mix")).toBeInTheDocument();
 });
+
+
+test("partial game-count result shows honest market shortfalls and read-only legs", async () => {
+  buildSlip.mockResolvedValue({
+    ...editableSlip(),
+    mode: "game_count",
+    editing_supported: false,
+    requested_game_count: 50,
+    delivered_game_count: 16,
+    shortfall: 34,
+    odds: 71.005,
+    legs: 16,
+    estimated_all_leg_probability: .000001,
+    lowest_trust_grade: "A",
+    market_distribution: {
+      over_1_5: 15,
+      home_win: 1,
+    },
+    market_balance: {
+      applied: true,
+      requested_markets: ["over_1_5", "home_win", "away_win"],
+      target_distribution: {
+        over_1_5: 17,
+        home_win: 17,
+        away_win: 16,
+      },
+      delivered_distribution: {
+        over_1_5: 15,
+        home_win: 1,
+        away_win: 0,
+      },
+      shortfalls: {
+        over_1_5: 2,
+        home_win: 16,
+        away_win: 16,
+      },
+      quality_floor_preserved: true,
+      strategy: "even_requested_markets_then_quality_backfill",
+    },
+    market_availability: {
+      over_1_5: {
+        target: 17,
+        raw: 16,
+        after_trust_and_policy: 16,
+        approved: 16,
+        selected: 15,
+        shortfall: 2,
+        primary_reason: "FIXTURE_OR_TEAM_DIVERSITY",
+      },
+      home_win: {
+        target: 17,
+        raw: 1,
+        after_trust_and_policy: 1,
+        approved: 1,
+        selected: 1,
+        shortfall: 16,
+        primary_reason: "INSUFFICIENT_APPROVED_SELECTIONS",
+      },
+      away_win: {
+        target: 16,
+        raw: 0,
+        after_trust_and_policy: 0,
+        approved: 0,
+        selected: 0,
+        shortfall: 16,
+        primary_reason: "NO_RAW_CANDIDATES",
+      },
+    },
+    booking: {
+      status: "active",
+      booking_status: "FULL",
+      booked_leg_count: 16,
+      original_leg_count: 16,
+      share_code: "VD5G95",
+      readback_validation: "PASSED",
+    },
+  });
+
+  renderBuilder();
+
+  fireEvent.click(
+    screen.getByRole("button", { name: /number of games/i }),
+  );
+
+  fireEvent.change(
+    screen.getByLabelText(/number of games/i),
+    { target: { value: "50" } },
+  );
+
+  fireEvent.click(
+    screen.getByRole("button", { name: /build best 50 games/i }),
+  );
+
+  expect(
+    await screen.findByText("16 of 50 qualifying games"),
+  ).toBeInTheDocument();
+
+  expect(
+    screen.getByText("Best available game count"),
+  ).toBeInTheDocument();
+
+  expect(
+    screen.getByText(/Lowest selected grade:\s*A/i),
+  ).toBeInTheDocument();
+
+  const mix = screen.getByLabelText("Market distribution");
+
+  expect(mix).toHaveTextContent("Over 1.5");
+  expect(mix).toHaveTextContent("15 / 17");
+  expect(mix).toHaveTextContent("Home Win");
+  expect(mix).toHaveTextContent("1 / 17");
+  expect(mix).toHaveTextContent("Away Win");
+  expect(mix).toHaveTextContent("0 / 16");
+
+  expect(
+    screen.getByText(/only 16 of 50 requested games passed/i),
+  ).toBeInTheDocument();
+
+  expect(
+    screen.getByText(/Away Win: no qualifying candidate was available/i),
+  ).toBeInTheDocument();
+
+  expect(
+    screen.getByText(/Home Win: only 1 approved selection passed all current gates/i),
+  ).toBeInTheDocument();
+
+  expect(screen.getByText("Shortfall")).toBeInTheDocument();
+  expect(screen.getByText("34")).toBeInTheDocument();
+
+  expect(screen.getByText("Review this slip")).toBeInTheDocument();
+
+  expect(
+    screen.getByRole("button", { name: /why this pick/i }),
+  ).toBeInTheDocument();
+
+  expect(
+    screen.queryByRole("button", { name: /safer market/i }),
+  ).not.toBeInTheDocument();
+
+  expect(
+    screen.queryByRole("button", { name: /^replace$/i }),
+  ).not.toBeInTheDocument();
+
+  expect(
+    screen.queryByRole("button", { name: /^lock$/i }),
+  ).not.toBeInTheDocument();
+
+  expect(
+    screen.queryByRole("button", { name: /more leg actions/i }),
+  ).not.toBeInTheDocument();
+
+  expect(
+    screen.queryByText(/remaining slots were filled only/i),
+  ).not.toBeInTheDocument();
+});
+
+test("complete game-count result may explain market backfill without calling it partial", async () => {
+  buildSlip.mockResolvedValue({
+    status: "success",
+    mode: "game_count",
+    editing_supported: false,
+    requested_game_count: 20,
+    delivered_game_count: 20,
+    shortfall: 0,
+    odds: 48.2,
+    legs: 20,
+    estimated_all_leg_probability: .000001,
+    lowest_trust_grade: "A",
+    market_distribution: {
+      over_1_5: 14,
+      over_2_5: 6,
+    },
+    market_balance: {
+      applied: true,
+      requested_markets: ["over_1_5", "over_2_5"],
+      target_distribution: {
+        over_1_5: 10,
+        over_2_5: 10,
+      },
+      delivered_distribution: {
+        over_1_5: 14,
+        over_2_5: 6,
+      },
+      shortfalls: {
+        over_2_5: 4,
+      },
+      quality_floor_preserved: true,
+      strategy: "even_requested_markets_then_quality_backfill",
+    },
+    games: [],
+    booking: {
+      status: "active",
+      booking_status: "FULL",
+      share_code: "FULL20",
+    },
+  });
+
+  renderBuilder();
+
+  fireEvent.click(
+    screen.getByRole("button", { name: /number of games/i }),
+  );
+
+  fireEvent.click(
+    screen.getByRole("button", { name: /build best 20 games/i }),
+  );
+
+  expect(
+    await screen.findByText("20 qualifying games"),
+  ).toBeInTheDocument();
+
+  expect(
+    screen.getByText(/remaining slots were filled only/i),
+  ).toBeInTheDocument();
+
+  expect(
+    screen.queryByText(/20 of 20 qualifying games/i),
+  ).not.toBeInTheDocument();
+});
