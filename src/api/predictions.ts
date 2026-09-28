@@ -314,6 +314,10 @@ export interface BuiltSlip {
   dnb_leg_count?: number;
   /** Model-estimated expected positive payout per unit across win/push branches. */
   expected_return?: number;
+  /** Average conservative Builder selection probability. */
+  average_probability?: number;
+  /** Lowest conservative probability among selected Builder legs. */
+  lowest_probability?: number;
   avg_confidence?: number;
   avg_evidence_probability?: number;
   minimum_trust_score?: number;

@@ -1104,3 +1104,102 @@ test("manual selection changes use dedicated recovery instead of the generic una
   ).not.toBeInTheDocument();
 });
 
+test("shows complete Builder V2 risk context for a generated slip", async () => {
+  const base = editableSlip().games![0];
+
+  const games = [
+    {
+      ...base,
+      selection_id: "risk-a",
+      match_id: "risk-a",
+      fixture_id: 101,
+      league: "Premier League",
+      date: "2026-09-28T12:00:00Z",
+      selection_probability: .72,
+    },
+    {
+      ...base,
+      selection_id: "risk-b",
+      match_id: "risk-b",
+      fixture_id: 102,
+      home_team: "Gamma",
+      away_team: "Delta",
+      league: "Premier League",
+      date: "2026-09-28T14:00:00Z",
+      selection_probability: .70,
+    },
+    {
+      ...base,
+      selection_id: "risk-c",
+      match_id: "risk-c",
+      fixture_id: 103,
+      home_team: "Roma",
+      away_team: "Torino",
+      league: "Premier League",
+      date: "2026-09-28T16:00:00Z",
+      selection_probability: .68,
+    },
+    {
+      ...base,
+      selection_id: "risk-d",
+      match_id: "risk-d",
+      fixture_id: 104,
+      home_team: "Sevilla",
+      away_team: "Betis",
+      league: "LaLiga",
+      date: "2026-09-28T18:00:00Z",
+      selection_probability: .66,
+    },
+  ];
+
+  buildSlip.mockResolvedValue({
+    ...editableSlip(games),
+    target: 50,
+    odds: 51.2,
+    legs: 4,
+    lowest_probability: .66,
+    average_probability: .69,
+    first_kickoff: "2026-09-28T12:00:00Z",
+    last_kickoff: "2026-09-28T18:00:00Z",
+    board: {
+      board_age_seconds: 185,
+      board_complete: true,
+      board_degraded: false,
+      board_generated_at: "2026-09-28T11:56:55Z",
+      sportybet_generated_at: "2026-09-28T11:56:30Z",
+    },
+  });
+
+  renderBuilder();
+
+  fireEvent.click(
+    screen.getByRole("button", { name: /build my 50x slip/i }),
+  );
+
+  await screen.findByText("Lowest selected probability");
+
+  expect(
+    screen.getByText("Lowest selected probability").parentElement,
+  ).toHaveTextContent("66.00%");
+
+  expect(
+    screen.getByText("Board freshness").parentElement,
+  ).toHaveTextContent("3m old");
+
+  expect(
+    screen.getByText("Kickoff window"),
+  ).toBeInTheDocument();
+
+  const leagues = screen.getByLabelText("League distribution");
+
+  expect(leagues).toHaveTextContent("Premier League");
+  expect(leagues).toHaveTextContent("LaLiga");
+
+  expect(
+    screen.getByText(/3 of 4 picks are from Premier League/i),
+  ).toBeInTheDocument();
+
+  expect(
+    screen.getByText(/Concentration check:/i),
+  ).toBeInTheDocument();
+});

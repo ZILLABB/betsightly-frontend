@@ -53,6 +53,50 @@ const formatProbabilityPercent = (value: number) => {
   return `${(value * 100).toFixed(2)}%`;
 };
 
+const selectedProbability = (game: {
+  selection_probability?: number;
+  evidence_adjusted_probability?: number;
+  confidence?: number;
+}) => {
+  for (const value of [
+    game.selection_probability,
+    game.evidence_adjusted_probability,
+    game.confidence,
+  ]) {
+    if (typeof value === "number" && Number.isFinite(value)) {
+      return value;
+    }
+  }
+
+  return null;
+};
+
+const formatBoardAge = (value: unknown) => {
+  const seconds = Number(value);
+
+  if (!Number.isFinite(seconds) || seconds < 0) return null;
+  if (seconds < 60) return "Just refreshed";
+  if (seconds < 3600) return `${Math.max(1, Math.round(seconds / 60))}m old`;
+
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.round((seconds % 3600) / 60);
+
+  return minutes > 0 ? `${hours}h ${minutes}m old` : `${hours}h old`;
+};
+
+const formatKickoff = (value?: string | null) => {
+  if (!value) return null;
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return value;
+
+  return parsed.toLocaleString([], {
+    weekday: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
 const marketAvailabilityMessage = (
   market: string,
   info?: {
@@ -246,6 +290,83 @@ export default function SlipBuilderPage() {
           )
           .filter((message): message is string => Boolean(message))
       : [];
+  const selectedGames = slip?.games ?? [];
+
+  const selectedProbabilities = selectedGames
+    .map(selectedProbability)
+    .filter((value): value is number => value !== null);
+
+  const lowestSelectedProbability =
+    typeof slip?.lowest_probability === "number"
+      ? slip.lowest_probability
+      : selectedProbabilities.length
+        ? Math.min(...selectedProbabilities)
+        : null;
+
+  const leagueCounts = selectedGames.reduce<Record<string, number>>(
+    (counts, game) => {
+      const league = String(game.league || "Unknown league");
+      counts[league] = (counts[league] ?? 0) + 1;
+      return counts;
+    },
+    {},
+  );
+
+  const leagueMixEntries = Object.entries(leagueCounts).sort(
+    ([leagueA, countA], [leagueB, countB]) =>
+      countB - countA || leagueA.localeCompare(leagueB),
+  );
+
+  const selectedLegCount = Number(slip?.legs ?? selectedGames.length);
+  const topLeague = leagueMixEntries[0];
+
+  const concentrationWarning =
+    topLeague &&
+    selectedLegCount >= 4 &&
+    topLeague[1] >= 3 &&
+    topLeague[1] / selectedLegCount >= 0.6
+      ? `${topLeague[1]} of ${selectedLegCount} picks are from ${topLeague[0]}.`
+      : null;
+
+  const boardContext = (slip?.board ?? {}) as Record<string, unknown>;
+
+  const boardFreshness = formatBoardAge(
+    boardContext.board_age_seconds,
+  );
+
+  const datedKickoffs = selectedGames
+    .map((game) => game.date)
+    .filter(
+      (value): value is string =>
+        typeof value === "string" &&
+        value.includes("T") &&
+        !Number.isNaN(new Date(value).getTime()),
+    )
+    .sort(
+      (a, b) =>
+        new Date(a).getTime() - new Date(b).getTime(),
+    );
+
+  const firstKickoff =
+    slip?.first_kickoff ??
+    datedKickoffs[0] ??
+    null;
+
+  const lastKickoff =
+    slip?.last_kickoff ??
+    datedKickoffs[datedKickoffs.length - 1] ??
+    null;
+
+  const firstKickoffLabel = formatKickoff(firstKickoff);
+  const lastKickoffLabel = formatKickoff(lastKickoff);
+
+  const kickoffWindow =
+    firstKickoffLabel && lastKickoffLabel
+      ? firstKickoff === lastKickoff
+        ? firstKickoffLabel
+        : `${firstKickoffLabel} ? ${lastKickoffLabel}`
+      : firstKickoffLabel ?? lastKickoffLabel;
+
   const acceptingBest = editingAction === "accept_best_reachable";
   const confirmingBooking = editingAction === "confirm_booking";
   const bookingConfirmed = Boolean(
@@ -555,6 +676,36 @@ export default function SlipBuilderPage() {
               </section>
             )}
 
+          {leagueMixEntries.length > 0 && (
+            <section
+              className="builder-market-mix"
+              aria-label="League distribution"
+            >
+              <div className="builder-market-mix__heading">
+                <strong>League mix</strong>
+                <span>Where this slip's selections come from</span>
+              </div>
+
+              <div className="builder-market-mix__chips">
+                {leagueMixEntries.map(([league, count]) => (
+                  <span key={league}>
+                    {league}
+                    <strong>{count}</strong>
+                  </span>
+                ))}
+              </div>
+
+              {concentrationWarning && (
+                <p>
+                  <strong>Concentration check:</strong>{" "}
+                  {concentrationWarning} A large share of this slip
+                  depends on one competition, so review that exposure
+                  before staking.
+                </p>
+              )}
+            </section>
+          )}
+
           {slip.change_summary && (
             <section className="builder-change-summary" aria-label="Latest slip changes">
               <strong>Rebuilt your slip</strong>
@@ -612,6 +763,24 @@ export default function SlipBuilderPage() {
             )}
             <Stat label="Total odds" value={`${slip.odds?.toFixed(2)}x`} />
             <Stat label="Legs" value={String(slip.legs)} />
+            {lowestSelectedProbability != null && (
+              <Stat
+                label="Lowest selected probability"
+                value={formatProbabilityPercent(lowestSelectedProbability)}
+              />
+            )}
+            {boardFreshness && (
+              <Stat
+                label="Board freshness"
+                value={boardFreshness}
+              />
+            )}
+            {kickoffWindow && (
+              <Stat
+                label="Kickoff window"
+                value={kickoffWindow}
+              />
+            )}
             <Stat
               label={hasDnb ? "Target hit chance" : "All legs win"}
               value={formatProbabilityPercent(headlineProbability)}
