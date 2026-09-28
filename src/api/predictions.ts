@@ -99,6 +99,9 @@ export interface ResultsResponse {
 
 export type BuilderV2Mode = "target_odds" | "game_count" | "strongest" | "manual";
 export type BuilderV2Horizon = "today" | "3_days" | "7_days";
+export type BuilderV2FillStrategy =
+  | "strict_selected_markets"
+  | "selected_first_then_eligible";
 
 export interface BuilderV2Filters {
   horizon: BuilderV2Horizon;
@@ -119,6 +122,7 @@ export interface BuilderV2GenerateRequest extends BuilderV2Filters {
   target_odds?: number;
   game_count?: number;
   max_games?: number;
+  fill_strategy?: BuilderV2FillStrategy;
 }
 
 export interface BuilderV2ManualRequest extends BuilderV2Filters {
@@ -243,6 +247,11 @@ export interface BuilderV2MarketBalance {
   shortfalls: Record<string, number>;
   quality_floor_preserved: boolean;
   strategy: string;
+  fill_strategy?: BuilderV2FillStrategy;
+  requested_market_leg_count?: number;
+  fallback_market_leg_count?: number;
+  fallback_market_distribution?: Record<string, number>;
+  fallback_markets_used?: string[];
 }
 
 export interface BuilderV2MarketAvailability {
@@ -329,6 +338,11 @@ export interface BuiltSlip {
   market_distribution?: Record<string, number>;
   market_balance?: BuilderV2MarketBalance;
   market_availability?: Record<string, BuilderV2MarketAvailability>;
+  fill_strategy?: BuilderV2FillStrategy;
+  requested_market_leg_count?: number;
+  fallback_market_leg_count?: number;
+  fallback_market_distribution?: Record<string, number>;
+  fallback_markets_used?: string[];
   editing_supported?: boolean;
   binding_constraints?: string[];
   max_legs?: number;

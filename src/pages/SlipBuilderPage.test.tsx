@@ -855,3 +855,201 @@ test("complete game-count result may explain market backfill without calling it 
     screen.queryByText(/20 of 20 qualifying games/i),
   ).not.toBeInTheDocument();
 });
+
+test("safe broader fill explains requested and fallback picks honestly", async () => {
+  buildSlip.mockResolvedValue({
+    status: "success",
+    mode: "game_count",
+    editing_supported: false,
+    fill_strategy: "selected_first_then_eligible",
+    requested_game_count: 30,
+    delivered_game_count: 22,
+    requested_market_leg_count: 14,
+    fallback_market_leg_count: 8,
+    fallback_market_distribution: {
+      under_4_5: 3,
+      home_or_draw: 5,
+    },
+    fallback_markets_used: ["home_or_draw", "under_4_5"],
+    shortfall: 8,
+    odds: 41.2,
+    legs: 22,
+    estimated_all_leg_probability: .000001,
+    lowest_trust_grade: "A",
+    market_distribution: {
+      over_1_5: 13,
+      home_win: 1,
+      under_4_5: 3,
+      home_or_draw: 5,
+    },
+    market_balance: {
+      applied: true,
+      requested_markets: ["over_1_5", "home_win"],
+      target_distribution: {
+        over_1_5: 15,
+        home_win: 15,
+      },
+      delivered_distribution: {
+        over_1_5: 13,
+        home_win: 1,
+      },
+      shortfalls: {
+        over_1_5: 2,
+        home_win: 14,
+      },
+      quality_floor_preserved: true,
+      strategy: "even_requested_markets_then_quality_backfill_then_eligible",
+      fill_strategy: "selected_first_then_eligible",
+      requested_market_leg_count: 14,
+      fallback_market_leg_count: 8,
+      fallback_market_distribution: {
+        under_4_5: 3,
+        home_or_draw: 5,
+      },
+      fallback_markets_used: ["home_or_draw", "under_4_5"],
+    },
+    market_availability: {
+      over_1_5: {
+        target: 15,
+        raw: 14,
+        after_trust_and_policy: 14,
+        approved: 14,
+        selected: 13,
+        shortfall: 2,
+        primary_reason: "FIXTURE_OR_TEAM_DIVERSITY",
+      },
+      home_win: {
+        target: 15,
+        raw: 1,
+        after_trust_and_policy: 1,
+        approved: 1,
+        selected: 1,
+        shortfall: 14,
+        primary_reason: "INSUFFICIENT_APPROVED_SELECTIONS",
+      },
+    },
+    games: [],
+    booking: {
+      status: "active",
+      booking_status: "FULL",
+      share_code: "SAFE22",
+      readback_validation: "PASSED",
+    },
+  });
+
+  renderBuilder();
+
+  fireEvent.click(screen.getByRole("button", { name: /number of games/i }));
+  fireEvent.click(screen.getByRole("button", { name: /over 1.5/i }));
+  fireEvent.click(
+    screen.getByRole("button", {
+      name: /fill safely from other eligible markets/i,
+    }),
+  );
+  fireEvent.change(
+    screen.getByLabelText(/number of games/i),
+    { target: { value: "30" } },
+  );
+  fireEvent.click(
+    screen.getByRole("button", { name: /build best 30 games/i }),
+  );
+
+  expect(
+    await screen.findByText("22 of 30 qualifying games"),
+  ).toBeInTheDocument();
+
+  expect(
+    screen.getByText(/selected markets produced 14 qualifying picks/i),
+  ).toBeInTheDocument();
+  expect(
+    screen.getByText(/added 8 picks from other eligible markets/i),
+  ).toBeInTheDocument();
+  expect(
+    screen.getByText(/stopped at 22 of 30/i),
+  ).toBeInTheDocument();
+
+  expect(screen.getByText("Selected-market picks")).toBeInTheDocument();
+  expect(screen.getByText("Other eligible picks")).toBeInTheDocument();
+
+  const fallback = screen.getByLabelText("Fallback market distribution");
+  expect(fallback).toHaveTextContent("Under 4.5");
+  expect(fallback).toHaveTextContent("3");
+  expect(fallback).toHaveTextContent("Home / Draw");
+  expect(fallback).toHaveTextContent("5");
+
+  const requested = screen.getByLabelText("Market distribution");
+  expect(requested).toHaveTextContent("Over 1.5");
+  expect(requested).toHaveTextContent("13 / 15");
+  expect(requested).toHaveTextContent("Home Win");
+  expect(requested).toHaveTextContent("1 / 15");
+});
+
+test("safe fill says when selected markets alone were enough", async () => {
+  buildSlip.mockResolvedValue({
+    status: "success",
+    mode: "game_count",
+    editing_supported: false,
+    fill_strategy: "selected_first_then_eligible",
+    requested_game_count: 10,
+    delivered_game_count: 10,
+    requested_market_leg_count: 10,
+    fallback_market_leg_count: 0,
+    fallback_market_distribution: {},
+    fallback_markets_used: [],
+    shortfall: 0,
+    odds: 12.4,
+    legs: 10,
+    estimated_all_leg_probability: .01,
+    lowest_trust_grade: "A",
+    market_distribution: { over_1_5: 10 },
+    market_balance: {
+      applied: true,
+      requested_markets: ["over_1_5"],
+      target_distribution: { over_1_5: 10 },
+      delivered_distribution: { over_1_5: 10 },
+      shortfalls: {},
+      quality_floor_preserved: true,
+      strategy: "quality_first",
+      fill_strategy: "selected_first_then_eligible",
+      requested_market_leg_count: 10,
+      fallback_market_leg_count: 0,
+      fallback_market_distribution: {},
+      fallback_markets_used: [],
+    },
+    games: [],
+    booking: {
+      status: "active",
+      booking_status: "FULL",
+      share_code: "NOFALL",
+      readback_validation: "PASSED",
+    },
+  });
+
+  renderBuilder();
+
+  fireEvent.click(screen.getByRole("button", { name: /number of games/i }));
+  fireEvent.click(screen.getByRole("button", { name: /over 1.5/i }));
+  fireEvent.click(
+    screen.getByRole("button", {
+      name: /fill safely from other eligible markets/i,
+    }),
+  );
+  fireEvent.change(
+    screen.getByLabelText(/number of games/i),
+    { target: { value: "10" } },
+  );
+  fireEvent.click(
+    screen.getByRole("button", { name: /build best 10 games/i }),
+  );
+
+  expect(
+    await screen.findByText("10 qualifying games"),
+  ).toBeInTheDocument();
+  expect(
+    screen.getByText(/selected markets alone filled the requested game count/i),
+  ).toBeInTheDocument();
+  expect(
+    screen.queryByLabelText("Fallback market distribution"),
+  ).not.toBeInTheDocument();
+});
+

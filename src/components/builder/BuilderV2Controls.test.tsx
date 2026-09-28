@@ -57,6 +57,7 @@ test("game-count mode sends count, market and 3-day horizon", async () => {
     horizon: "3_days",
     markets: ["over_1_5"],
     require_bookable: true,
+    fill_strategy: "strict_selected_markets",
   })));
 });
 
@@ -273,3 +274,65 @@ test("labels the unfiltered market choice as all eligible markets", () => {
     screen.queryByRole("button", { name: /^all trusted$/i }),
   ).not.toBeInTheDocument();
 });
+
+test("game-count safe fill serializes selected-first eligible fallback", async () => {
+  const buildV2 = jest.fn();
+
+  render(
+    <BuilderContext.Provider value={makeContext({ buildV2 }) as any}>
+      <BuilderV2Controls />
+    </BuilderContext.Provider>,
+  );
+
+  fireEvent.click(screen.getByRole("button", { name: /number of games/i }));
+  fireEvent.click(screen.getByRole("button", { name: /over 1.5/i }));
+
+  const safeFill = screen.getByRole("button", {
+    name: /fill safely from other eligible markets/i,
+  });
+  fireEvent.click(safeFill);
+
+  expect(safeFill).toHaveAttribute("aria-pressed", "true");
+
+  fireEvent.click(screen.getByRole("button", { name: /build best 20 games/i }));
+
+  await waitFor(() =>
+    expect(buildV2).toHaveBeenCalledWith(
+      expect.objectContaining({
+        mode: "game_count",
+        game_count: 20,
+        markets: ["over_1_5"],
+        fill_strategy: "selected_first_then_eligible",
+      }),
+    ),
+  );
+});
+
+test("fill strategy is shown only when game count has selected markets", () => {
+  render(
+    <BuilderContext.Provider value={makeContext() as any}>
+      <BuilderV2Controls />
+    </BuilderContext.Provider>,
+  );
+
+  expect(
+    screen.queryByRole("group", { name: /fill strategy/i }),
+  ).not.toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole("button", { name: /number of games/i }));
+
+  expect(
+    screen.queryByRole("group", { name: /fill strategy/i }),
+  ).not.toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole("button", { name: /home win/i }));
+
+  expect(
+    screen.getByRole("group", { name: /fill strategy/i }),
+  ).toBeInTheDocument();
+
+  expect(
+    screen.getByRole("button", { name: /selected markets only/i }),
+  ).toHaveAttribute("aria-pressed", "true");
+});
+

@@ -182,6 +182,27 @@ export default function SlipBuilderPage() {
     slip?.market_balance?.shortfalls ?? {},
   ).filter(([, count]) => Number(count) > 0);
 
+  const requestedMarketLegCount = Number(
+    slip?.requested_market_leg_count ??
+    slip?.market_balance?.requested_market_leg_count ??
+    gameCountDelivered,
+  );
+  const fallbackMarketLegCount = Number(
+    slip?.fallback_market_leg_count ??
+    slip?.market_balance?.fallback_market_leg_count ??
+    0,
+  );
+  const fallbackMarketDistribution =
+    slip?.fallback_market_distribution ??
+    slip?.market_balance?.fallback_market_distribution ??
+    {};
+  const fallbackMarketEntries = Object.entries(
+    fallbackMarketDistribution,
+  ).filter(([, count]) => Number(count) > 0);
+  const safeFallbackEnabled =
+    slipMode === "game_count" &&
+    slip?.fill_strategy === "selected_first_then_eligible";
+
   const marketMixEntries =
     slipMode === "game_count" &&
     (slip?.market_balance?.requested_markets?.length ?? 0) > 0
@@ -431,18 +452,74 @@ export default function SlipBuilderPage() {
                 </div>
 
                 {slip.mode === "game_count" &&
+                  safeFallbackEnabled &&
+                  fallbackMarketEntries.length > 0 && (
+                    <div
+                      className="builder-market-mix__fallback"
+                      aria-label="Fallback market distribution"
+                    >
+                      <div className="builder-market-mix__heading">
+                        <strong>Other eligible markets</strong>
+                        <span>
+                          {fallbackMarketLegCount} {
+                            fallbackMarketLegCount === 1 ? "pick" : "picks"
+                          } added after your selected markets
+                        </span>
+                      </div>
+                      <div className="builder-market-mix__chips">
+                        {fallbackMarketEntries.map(([market, count]) => (
+                          <span key={market}>
+                            {marketLabel(market)}
+                            <strong>{Number(count)}</strong>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                {slip.mode === "game_count" &&
                   slip.market_balance?.applied &&
                   marketShortfalls.length === 0 && (
                     <p>
-                      Your selected markets were balanced to the requested mix
-                      without lowering BetSightly's quality floor.
+                      {safeFallbackEnabled && fallbackMarketLegCount === 0
+                        ? "Your selected markets alone filled the requested game count; no fallback markets were needed."
+                        : "Your selected markets were balanced to the requested mix without lowering BetSightly's quality floor."}
                     </p>
                   )}
 
                 {slip.mode === "game_count" &&
                   slip.market_balance?.applied &&
                   marketShortfalls.length > 0 && (
-                    isPartialGameCount ? (
+                    safeFallbackEnabled ? (
+                      isPartialGameCount ? (
+                        <p>
+                          Your selected markets produced {requestedMarketLegCount} qualifying {
+                            requestedMarketLegCount === 1 ? "pick" : "picks"
+                          }.
+                          {fallbackMarketLegCount > 0
+                            ? <>{" "}BetSightly added {fallbackMarketLegCount} {
+                                fallbackMarketLegCount === 1 ? "pick" : "picks"
+                              } from other eligible markets that passed the same quality and exact SportyBet gates.</>
+                            : <>{" "}No additional eligible fallback selections passed all current gates.</>}
+                          {" "}It stopped at {gameCountDelivered} of {gameCountRequested} because no additional safe selections qualified.
+                          {marketAvailabilityMessages.length > 0 &&
+                            <>{" "}{marketAvailabilityMessages.join(" ")}</>}
+                        </p>
+                      ) : (
+                        <p>
+                          Your selected markets produced {requestedMarketLegCount} qualifying {
+                            requestedMarketLegCount === 1 ? "pick" : "picks"
+                          }.
+                          {fallbackMarketLegCount > 0
+                            ? <>{" "}BetSightly added {fallbackMarketLegCount} {
+                                fallbackMarketLegCount === 1 ? "pick" : "picks"
+                              } from other eligible markets that passed the same quality and exact SportyBet gates.</>
+                            : <>{" "}Your selected markets alone filled the requested game count; no fallback markets were needed.</>}
+                          {marketAvailabilityMessages.length > 0 &&
+                            <>{" "}{marketAvailabilityMessages.join(" ")}</>}
+                        </p>
+                      )
+                    ) : isPartialGameCount ? (
                       <p>
                         Only {gameCountDelivered} of {gameCountRequested} requested
                         games passed the selected market, quality and exact
@@ -516,6 +593,12 @@ export default function SlipBuilderPage() {
             )}
             {slip.mode === "game_count" && slip.delivered_game_count != null && (
               <Stat label="Delivered games" value={String(slip.delivered_game_count)} />
+            )}
+            {safeFallbackEnabled && (
+              <Stat label="Selected-market picks" value={String(requestedMarketLegCount)} />
+            )}
+            {safeFallbackEnabled && (
+              <Stat label="Other eligible picks" value={String(fallbackMarketLegCount)} />
             )}
             {slip.mode === "game_count" && Number(slip.shortfall ?? 0) > 0 && (
               <Stat label="Shortfall" value={String(slip.shortfall)} />

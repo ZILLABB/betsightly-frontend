@@ -15,6 +15,7 @@ import { useMemo, useState } from "react";
 import { api } from "../../api/predictions";
 import type {
   BuilderV2Candidate,
+  BuilderV2FillStrategy,
   BuilderV2Filters,
   BuilderV2Horizon,
   BuilderV2Mode,
@@ -76,6 +77,8 @@ export function BuilderV2Controls() {
   const [mode, setMode] = useState<BuilderV2Mode>("target_odds");
   const [customTarget, setCustomTarget] = useState("");
   const [gameCount, setGameCount] = useState(20);
+  const [fillStrategy, setFillStrategy] =
+    useState<BuilderV2FillStrategy>("strict_selected_markets");
   const [maxGames, setMaxGames] = useState(10);
   const [markets, setMarkets] = useState<string[]>([]);
   const [minOdds, setMinOdds] = useState("");
@@ -151,7 +154,12 @@ export function BuilderV2Controls() {
       return;
     }
     if (mode === "game_count") {
-      await buildV2({ ...filters, mode, game_count: gameCount });
+      await buildV2({
+        ...filters,
+        mode,
+        game_count: gameCount,
+        fill_strategy: fillStrategy,
+      });
       return;
     }
     if (mode === "strongest") {
@@ -348,6 +356,48 @@ export function BuilderV2Controls() {
                   onClick={() => setGameCount(value)}>{value}</button>
               ))}
             </div>
+
+            {markets.length > 0 && (
+              <div className="builder-v2-fill-choice">
+                <div className="builder-v2-label-row">
+                  <strong>Fill strategy</strong>
+                  <span>Your selected markets always get priority.</span>
+                </div>
+                <div
+                  className="builder-v2-segmented"
+                  role="group"
+                  aria-label="Fill strategy"
+                >
+                  <button
+                    type="button"
+                    className={fillStrategy === "strict_selected_markets" ? "is-active" : ""}
+                    aria-pressed={fillStrategy === "strict_selected_markets"}
+                    onClick={() => {
+                      setFillStrategy("strict_selected_markets");
+                      clearSlip();
+                    }}
+                  >
+                    Selected markets only
+                  </button>
+                  <button
+                    type="button"
+                    className={fillStrategy === "selected_first_then_eligible" ? "is-active" : ""}
+                    aria-pressed={fillStrategy === "selected_first_then_eligible"}
+                    onClick={() => {
+                      setFillStrategy("selected_first_then_eligible");
+                      clearSlip();
+                    }}
+                  >
+                    Fill safely from other eligible markets
+                  </button>
+                </div>
+                <p className="builder-v2-market-note">
+                  {fillStrategy === "selected_first_then_eligible"
+                    ? "BetSightly will use every safe selection from your chosen markets first, then may fill remaining slots from other eligible markets that pass the same quality and exact SportyBet gates."
+                    : "BetSightly will use only the markets you selected, even if other eligible markets could safely fill more slots."}
+                </p>
+              </div>
+            )}
           </div>
         )}
 
@@ -417,7 +467,8 @@ export function BuilderV2Controls() {
           <p className="builder-v2-market-note">
             BetSightly will balance these markets as evenly as quality and exact
             SportyBet availability allow. If one market has too few qualifying
-            selections, the remaining slots stay within your other selected markets.
+            selections, your fill strategy decides whether remaining slots stay
+            within the selected markets or may use other equally approved markets.
           </p>
         )}
 
