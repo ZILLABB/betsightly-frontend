@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+﻿import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { BuilderV2Controls } from "./BuilderV2Controls";
 import { BuilderContext } from "../../contexts/BuilderContextInstance";
@@ -336,3 +336,78 @@ test("fill strategy is shown only when game count has selected markets", () => {
   ).toHaveAttribute("aria-pressed", "true");
 });
 
+test("game-count quick values match the original V2 1-50 shortcuts", () => {
+  render(
+    <BuilderContext.Provider value={makeContext() as any}>
+      <BuilderV2Controls />
+    </BuilderContext.Provider>,
+  );
+
+  fireEvent.click(screen.getByRole("button", { name: /number of games/i }));
+
+  for (const value of [5, 10, 15, 20, 30, 40, 50]) {
+    expect(
+      screen.getByRole("button", { name: new RegExp(`^${value}$`) }),
+    ).toBeInTheDocument();
+  }
+});
+
+test("advanced include and exclude filters serialize to Builder V2", async () => {
+  const buildV2 = jest.fn();
+
+  render(
+    <BuilderContext.Provider value={makeContext({ buildV2 }) as any}>
+      <BuilderV2Controls />
+    </BuilderContext.Provider>,
+  );
+
+  fireEvent.click(screen.getByText(/advanced filters/i));
+
+  fireEvent.change(screen.getByLabelText(/include leagues/i), {
+    target: { value: "Premier League, LaLiga" },
+  });
+  fireEvent.change(screen.getByLabelText(/exclude leagues/i), {
+    target: { value: "Friendly, league-slug" },
+  });
+  fireEvent.change(screen.getByLabelText(/exclude fixtures/i), {
+    target: { value: "fx-1, fx-2" },
+  });
+  fireEvent.change(screen.getByLabelText(/exclude teams/i), {
+    target: { value: "Arsenal, team-99" },
+  });
+
+  fireEvent.click(screen.getByRole("button", { name: /build my 50x slip/i }));
+
+  await waitFor(() =>
+    expect(buildV2).toHaveBeenCalledWith(
+      expect.objectContaining({
+        include_leagues: ["Premier League", "LaLiga"],
+        exclude_leagues: ["Friendly", "league-slug"],
+        exclude_fixture_ids: ["fx-1", "fx-2"],
+        exclude_team_ids: ["Arsenal", "team-99"],
+        require_bookable: true,
+      }),
+    ),
+  );
+});
+
+test("reset filters clears original V2 include and exclude controls", () => {
+  render(
+    <BuilderContext.Provider value={makeContext() as any}>
+      <BuilderV2Controls />
+    </BuilderContext.Provider>,
+  );
+
+  fireEvent.click(screen.getByText(/advanced filters/i));
+
+  const include = screen.getByLabelText(/include leagues/i);
+  const fixtures = screen.getByLabelText(/exclude fixtures/i);
+
+  fireEvent.change(include, { target: { value: "Premier League" } });
+  fireEvent.change(fixtures, { target: { value: "fx-1" } });
+
+  fireEvent.click(screen.getByRole("button", { name: /reset filters/i }));
+
+  expect(include).toHaveValue("");
+  expect(fixtures).toHaveValue("");
+});

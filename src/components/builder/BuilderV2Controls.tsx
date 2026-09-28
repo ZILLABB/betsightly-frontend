@@ -24,7 +24,7 @@ import { useBuilder } from "../../contexts/BuilderContextInstance";
 import "../../styles/builder-v2.css";
 
 const TARGETS = [10, 20, 30, 50, 70, 100];
-const GAME_COUNTS = [10, 20, 30, 50];
+const GAME_COUNTS = [5, 10, 15, 20, 30, 40, 50];
 const STRONGEST_COUNTS = [5, 10, 20, 30];
 
 const MODES: Array<{
@@ -63,6 +63,12 @@ const horizonLabel = (value: "today" | "3_days" | "week") =>
 const candidateText = (candidate: BuilderV2Candidate) =>
   `${candidate.home_team || ""} ${candidate.away_team || ""} ${candidate.league || ""} ${candidate.prediction || ""}`.toLowerCase();
 
+const parseFilterList = (value: string) =>
+  value
+    .split(/[\n,]+/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+
 export function BuilderV2Controls() {
   const {
     target,
@@ -85,6 +91,10 @@ export function BuilderV2Controls() {
   const [maxOdds, setMaxOdds] = useState("");
   const [minProbability, setMinProbability] = useState("");
   const [minTrustGrade, setMinTrustGrade] = useState<"A" | "B">("B");
+  const [includeLeagues, setIncludeLeagues] = useState("");
+  const [excludeLeagues, setExcludeLeagues] = useState("");
+  const [excludeFixtureIds, setExcludeFixtureIds] = useState("");
+  const [excludeTeams, setExcludeTeams] = useState("");
   const [candidates, setCandidates] = useState<BuilderV2Candidate[]>([]);
   const [candidateStatus, setCandidateStatus] = useState<string | null>(null);
   const [candidateLoading, setCandidateLoading] = useState(false);
@@ -98,8 +108,23 @@ export function BuilderV2Controls() {
     max_odds: maxOdds ? Number(maxOdds) : undefined,
     min_probability: minProbability ? Number(minProbability) / 100 : undefined,
     min_trust_grade: minTrustGrade,
+    include_leagues: parseFilterList(includeLeagues),
+    exclude_leagues: parseFilterList(excludeLeagues),
+    exclude_fixture_ids: parseFilterList(excludeFixtureIds),
+    exclude_team_ids: parseFilterList(excludeTeams),
     require_bookable: true,
-  }), [horizon, markets, minOdds, maxOdds, minProbability, minTrustGrade]);
+  }), [
+    horizon,
+    markets,
+    minOdds,
+    maxOdds,
+    minProbability,
+    minTrustGrade,
+    includeLeagues,
+    excludeLeagues,
+    excludeFixtureIds,
+    excludeTeams,
+  ]);
 
    const invalidateManual = () => {
     setCandidates([]);
@@ -112,6 +137,10 @@ export function BuilderV2Controls() {
     maxOdds,
     minProbability,
     minTrustGrade === "A",
+    includeLeagues,
+    excludeLeagues,
+    excludeFixtureIds,
+    excludeTeams,
   ].filter(Boolean).length;
 
   const resetAdvancedFilters = () => {
@@ -119,6 +148,10 @@ export function BuilderV2Controls() {
     setMaxOdds("");
     setMinProbability("");
     setMinTrustGrade("B");
+    setIncludeLeagues("");
+    setExcludeLeagues("");
+    setExcludeFixtureIds("");
+    setExcludeTeams("");
     clearSlip();
     invalidateManual();
   };
@@ -612,6 +645,66 @@ export function BuilderV2Controls() {
               </button>
             </div>
           </div>
+
+          <label>
+            <span>Include leagues</span>
+            <input
+              aria-label="Include leagues"
+              type="text"
+              value={includeLeagues}
+              onChange={(event) => {
+                setIncludeLeagues(event.target.value);
+                clearSlip();
+                invalidateManual();
+              }}
+              placeholder="Premier League, LaLiga"
+            />
+          </label>
+
+          <label>
+            <span>Exclude leagues</span>
+            <input
+              aria-label="Exclude leagues"
+              type="text"
+              value={excludeLeagues}
+              onChange={(event) => {
+                setExcludeLeagues(event.target.value);
+                clearSlip();
+                invalidateManual();
+              }}
+              placeholder="Friendly, league-slug"
+            />
+          </label>
+
+          <label>
+            <span>Exclude fixtures</span>
+            <input
+              aria-label="Exclude fixtures"
+              type="text"
+              value={excludeFixtureIds}
+              onChange={(event) => {
+                setExcludeFixtureIds(event.target.value);
+                clearSlip();
+                invalidateManual();
+              }}
+              placeholder="Fixture IDs, comma separated"
+            />
+          </label>
+
+          <label>
+            <span>Exclude teams</span>
+            <input
+              aria-label="Exclude teams"
+              type="text"
+              value={excludeTeams}
+              onChange={(event) => {
+                setExcludeTeams(event.target.value);
+                clearSlip();
+                invalidateManual();
+              }}
+              placeholder="Team names or IDs"
+            />
+          </label>
         </div>
       </details>
 
