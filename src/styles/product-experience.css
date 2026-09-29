@@ -90,3 +90,29 @@
     transition-duration: 1ms !important;
   }
 }
+
+/* Builder compact page shell 2026-09-28 */
+.builder-page { max-width: 980px; gap: 10px !important; }
+.builder-page .builder-hero { grid-template-columns: minmax(0, 1fr) 140px; gap: 14px; padding: 13px 16px; border-radius: 12px; }
+.builder-page .builder-hero h1 { margin: 6px 0 5px; font-size: clamp(22px, 2.6vw, 30px); line-height: 1.08; }
+.builder-page .builder-hero p { max-width: 620px; font-size: 12px; line-height: 1.42; }
+.builder-page .builder-proof { gap: 10px; margin-top: 8px; font-size: 10px; }
+.builder-page .builder-hero__target { padding: 9px 11px; border-radius: 10px; }
+.builder-page .builder-hero__target strong { font-size: 28px !important; }
+.builder-page .builder-config, .builder-page .builder-results { padding: 14px 16px; border-radius: 12px; }
+.builder-page .builder-submit { min-height: 42px; }
+.builder-page .builder-results > header h2 { margin-top: 4px; font-size: clamp(21px, 2.5vw, 28px); }
+.builder-page .builder-stats { gap: 6px; margin: 10px 0 7px; }
+.builder-page .builder-stats > div { padding: 9px; }
+.builder-page .builder-stats strong { margin-top: 4px; font-size: 15px; }
+.builder-page .builder-leg-list { gap: 7px; margin-top: 13px; }
+.builder-page .editable-builder-leg { padding: 10px; gap: 8px; }
+@media (max-width: 600px) {
+  .builder-page { gap: 9px !important; }
+  .builder-page .builder-hero { grid-template-columns: 1fr; gap: 7px; padding: 11px 12px; }
+  .builder-page .builder-hero h1 { font-size: 22px; }
+  .builder-page .builder-hero p { font-size: 11px; }
+  .builder-page .builder-proof { margin-top: 7px; }
+  .builder-page .builder-hero__target { display: none; }
+  .builder-page .builder-config, .builder-page .builder-results { padding: 10px; }
+}

@@ -588,7 +588,7 @@ export function BuilderV2Controls() {
           <div className="builder-v2-number">
             <div className="builder-v2-label-row">
               <label htmlFor="builder-game-count"><strong>Number of games</strong></label>
-              <span>If fewer qualify, BetSightly returns fewer.</span>
+              <span>Choose how many matches you want.</span>
             </div>
             <input
               id="builder-game-count"
@@ -605,15 +605,18 @@ export function BuilderV2Controls() {
                   onClick={() => setGameCount(value)}>{value}</button>
               ))}
             </div>
+            <p className="builder-v2-inline-note">
+              Quality first: BetSightly may return fewer games when fewer selections qualify.
+            </p>
 
             {markets.length > 0 && (
               <div className="builder-v2-fill-choice">
                 <div className="builder-v2-label-row">
                   <strong>Fill strategy</strong>
-                  <span>Your selected markets always get priority.</span>
+                  <span>Your selected markets stay first.</span>
                 </div>
                 <div
-                  className="builder-v2-segmented"
+                  className="builder-v2-fill-options"
                   role="group"
                   aria-label="Fill strategy"
                 >
@@ -626,7 +629,10 @@ export function BuilderV2Controls() {
                       clearSlip();
                     }}
                   >
-                    Selected markets only
+                    <span className="builder-v2-choice-copy">
+                      <strong>Selected markets only</strong>
+                      <small>Stay strictly within your choices.</small>
+                    </span>
                   </button>
                   <button
                     type="button"
@@ -637,13 +643,14 @@ export function BuilderV2Controls() {
                       clearSlip();
                     }}
                   >
-                    Fill safely from other eligible markets
+                    <span className="builder-v2-choice-copy">
+                      <strong>Smart fill</strong>
+                      <small>Your choices first, then other qualified markets.</small>
+                    </span>
                   </button>
                 </div>
-                <p className="builder-v2-market-note">
-                  {fillStrategy === "selected_first_then_eligible"
-                    ? "BetSightly will use every safe selection from your chosen markets first, then may fill remaining slots from other eligible markets that pass the same quality and exact SportyBet gates."
-                    : "BetSightly will use only the markets you selected, even if other eligible markets could safely fill more slots."}
+                <p className="builder-v2-inline-note">
+                  Quality standards are never lowered to fill the slip.
                 </p>
               </div>
             )}
@@ -714,10 +721,8 @@ export function BuilderV2Controls() {
 
         {mode === "game_count" && markets.length > 1 && (
           <p className="builder-v2-market-note">
-            BetSightly will balance these markets as evenly as quality and exact
-            SportyBet availability allow. If one market has too few qualifying
-            selections, your fill strategy decides whether remaining slots stay
-            within the selected markets or may use other equally approved markets.
+            Selected markets are balanced where quality allows. Your fill strategy
+            decides whether other equally qualified markets may complete the slip.
           </p>
         )}
 
@@ -736,9 +741,9 @@ export function BuilderV2Controls() {
         </div>
         <div className="builder-horizons builder-v2-horizons" role="group" aria-label="Fixture window">
           {([
-            ["today", "Today only", "Fastest settlement"],
-            ["3_days", "Across 3 days", "More games, still compact"],
-            ["week", "Across 7 days", "Deepest qualifying board"],
+            ["today", "Today", "Fast settlement"],
+            ["3_days", "3 days", "More choice"],
+            ["week", "7 days", "Deepest board"],
           ] as const).map(([value, label, copy]) => (
             <button
               key={value}

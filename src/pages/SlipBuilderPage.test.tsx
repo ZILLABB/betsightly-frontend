@@ -353,7 +353,7 @@ test("uses horizon-aware board refresh copy", async () => {
     status: "unavailable", target: 50, reason: "board_refreshing",
   });
   renderBuilder();
-  fireEvent.click(screen.getByRole("button", { name: /today only/i }));
+  fireEvent.click(screen.getByRole("button", { name: /today fast settlement/i }));
   fireEvent.click(screen.getByRole("button", { name: /build my 50x slip/i }));
   expect(await screen.findByText(/Today’s board is being evaluated/i)).toBeInTheDocument();
   expect(screen.queryByText(/weekly predictions/i)).not.toBeInTheDocument();
@@ -364,7 +364,7 @@ test("turns a network failure into a clean retry state without losing choices", 
     .mockResolvedValueOnce({ status: "unavailable", target: 100 });
   renderBuilder();
   fireEvent.click(screen.getByRole("button", { name: /100x high target/i }));
-  fireEvent.click(screen.getByRole("button", { name: /today only/i }));
+  fireEvent.click(screen.getByRole("button", { name: /today fast settlement/i }));
   fireEvent.click(screen.getByRole("button", { name: /build my 100x slip/i }));
   expect(await screen.findByText(/could not reach the prediction service/i)).toBeInTheDocument();
   expect(screen.queryByText(/Failed to fetch/i)).not.toBeInTheDocument();
@@ -412,7 +412,7 @@ test("accepts a bounded custom target up to 200x", async () => {
 test("switches between today and seven-day windows", async () => {
   buildSlip.mockResolvedValue({ status: "unavailable", target: 50 });
   renderBuilder();
-  fireEvent.click(screen.getByRole("button", { name: /today only/i }));
+  fireEvent.click(screen.getByRole("button", { name: /today fast settlement/i }));
   fireEvent.click(screen.getByRole("button", { name: /build my 50x slip/i }));
   await waitFor(() => expect(buildSlip).toHaveBeenCalledWith(50, "today", false));
 });
@@ -944,7 +944,7 @@ test("safe broader fill explains requested and fallback picks honestly", async (
   fireEvent.click(screen.getByRole("button", { name: /over 1.5/i }));
   fireEvent.click(
     screen.getByRole("button", {
-      name: /fill safely from other eligible markets/i,
+      name: /smart fill/i,
     }),
   );
   fireEvent.change(
@@ -1032,7 +1032,7 @@ test("safe fill says when selected markets alone were enough", async () => {
   fireEvent.click(screen.getByRole("button", { name: /over 1.5/i }));
   fireEvent.click(
     screen.getByRole("button", {
-      name: /fill safely from other eligible markets/i,
+      name: /smart fill/i,
     }),
   );
   fireEvent.change(

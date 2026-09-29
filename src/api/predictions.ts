@@ -2,9 +2,8 @@ import type { AccumulatorResponse, GamePrediction, TierBooking } from '../types'
 
 const BASE = import.meta.env.VITE_API_BASE_URL || 'https://betsightly-api.onrender.com/api';
 
-/** Requests that build something can take a while — the slip builder runs the
- *  whole model pipeline on a cold instance — so the timeout is per call rather
- *  than one number for everything. */
+/** Booking/optimization have bounded per-call timeouts. Cold Builder requests
+ * return a retryable prepared-board state, never a synchronous model rebuild. */
 const DEFAULT_TIMEOUT = 30_000;
 
 async function request<T>(
@@ -123,6 +122,7 @@ export interface BuilderV2GenerateRequest extends BuilderV2Filters {
   game_count?: number;
   max_games?: number;
   fill_strategy?: BuilderV2FillStrategy;
+  refresh?: boolean;
 }
 
 export interface BuilderV2ManualRequest extends BuilderV2Filters {
@@ -187,10 +187,15 @@ export const api = {
    * a larger qualifying board but takes longer to resolve. */
   buildSlip: (target: number, horizon: "today" | "week" = "week", refresh = false) =>
     request<BuiltSlip>(
-      `/leagues/slip-builder/generate?target=${target}&horizon=${horizon}${refresh ? "&refresh=true" : ""}`,
-      // Generous: on a cold instance this runs the pipeline across a week of
-      // fixtures before it can answer.
-      { method: "POST", timeoutMs: 240_000 }),
+      '/leagues/slip-builder/v2/generate',
+      // Compatibility helper for target recovery/edit flows. Never use the
+      // independent legacy generator, and never force provider preparation.
+      { method: "POST", timeoutMs: 240_000,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: "target_odds", target_odds: target,
+          horizon: horizon === "week" ? "7_days" : "today", refresh,
+          markets: [], min_trust_grade: "B", require_bookable: true }),
+      }),
 
   generateBuilderV2: (payload: BuilderV2GenerateRequest) =>
     request<BuiltSlip>('/leagues/slip-builder/v2/generate', {

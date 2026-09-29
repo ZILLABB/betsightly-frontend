@@ -255,7 +255,7 @@ test("game count explains that multiple selected markets are balanced", () => {
   fireEvent.click(screen.getByRole("button", { name: /over 2.5/i }));
 
   expect(
-    screen.getByText(/balance these markets as evenly as quality/i),
+    screen.getByText(/selected markets are balanced where quality allows/i),
   ).toBeInTheDocument();
 });
 
@@ -289,7 +289,7 @@ test("game-count safe fill serializes selected-first eligible fallback", async (
   fireEvent.click(screen.getByRole("button", { name: /over 1.5/i }));
 
   const safeFill = screen.getByRole("button", {
-    name: /fill safely from other eligible markets/i,
+    name: /smart fill/i,
   });
   fireEvent.click(safeFill);
 
