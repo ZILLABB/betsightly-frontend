@@ -26,6 +26,7 @@ import "../../styles/builder-v2.css";
 const TARGETS = [10, 20, 30, 50, 70, 100];
 const GAME_COUNTS = [5, 10, 15, 20, 30, 40, 50];
 const STRONGEST_COUNTS = [5, 10, 20, 30];
+const MANUAL_PAGE_SIZE = 20;
 
 const MODES: Array<{
   key: BuilderV2Mode;
@@ -131,6 +132,9 @@ export function BuilderV2Controls() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [candidateSearch, setCandidateSearch] = useState("");
   const [recoveryFixtureIds, setRecoveryFixtureIds] = useState<string[]>([]);
+  const [manualPage, setManualPage] = useState(1);
+  const [showSelectedOnly, setShowSelectedOnly] = useState(false);
+  const [replacementNotice, setReplacementNotice] = useState<string | null>(null);
 
   const filters = useMemo<BuilderV2Filters>(() => ({
     horizon: backendHorizon(horizon),
@@ -163,6 +167,9 @@ export function BuilderV2Controls() {
     setCandidateStatus(null);
     setCandidateSearch("");
     setRecoveryFixtureIds([]);
+    setManualPage(1);
+    setShowSelectedOnly(false);
+    setReplacementNotice(null);
   };
 
   const advancedFilterCount = [
@@ -239,6 +246,9 @@ export function BuilderV2Controls() {
     setSelectedIds([]);
     setCandidateSearch("");
     setRecoveryFixtureIds([]);
+    setManualPage(1);
+    setShowSelectedOnly(false);
+    setReplacementNotice(null);
     try {
       const response = await api.getBuilderV2Candidates(filters);
       setCandidates(response.candidates || []);
@@ -256,45 +266,45 @@ export function BuilderV2Controls() {
   };
 
   const toggleCandidate = (selectionId: string) => {
-    setSelectedIds((current) => {
-      if (current.includes(selectionId)) {
-        return current.filter((item) => item !== selectionId);
-      }
+    const candidate = candidates.find(
+      (item) => String(item.selection_id || "") === selectionId,
+    );
+    if (!candidate) return;
 
-      if (current.length >= 50) return current;
-
-      const candidate = candidates.find(
-        (item) => String(item.selection_id || "") === selectionId,
+    const fixtureId = candidateFixtureId(candidate);
+    const sameFixtureSelection = selectedIds.find((id) => {
+      const selected = candidates.find(
+        (item) => String(item.selection_id || "") === id,
       );
-
-      if (!candidate) return current;
-
-      const fixtureId = String(
-        candidate.match_id || candidate.fixture_id || "",
-      );
-
-      const sameFixtureSelection = current.find((id) => {
-        const selected = candidates.find(
-          (item) => String(item.selection_id || "") === id,
-        );
-
-        return selected && String(
-          selected.match_id || selected.fixture_id || "",
-        ) === fixtureId;
-      });
-
-      // Manual Builder allows only one market per fixture. Selecting another
-      // approved market for the same game replaces the previous UI selection
-      // instead of sending an invalid duplicate-fixture request to the server.
-      if (sameFixtureSelection) {
-        return [
-          ...current.filter((id) => id !== sameFixtureSelection),
-          selectionId,
-        ];
-      }
-
-      return [...current, selectionId];
+      return selected && candidateFixtureId(selected) === fixtureId;
     });
+
+    if (sameFixtureSelection === selectionId) {
+      setSelectedIds((current) =>
+        current.filter((item) => item !== selectionId),
+      );
+      setReplacementNotice(null);
+      return;
+    }
+
+    if (!sameFixtureSelection && selectedIds.length >= 50) return;
+
+    if (sameFixtureSelection) {
+      const previous = candidates.find(
+        (item) => String(item.selection_id || "") === sameFixtureSelection,
+      );
+      setSelectedIds((current) => [
+        ...current.filter((id) => id !== sameFixtureSelection),
+        selectionId,
+      ]);
+      setReplacementNotice(
+        `Market changed for ${candidate.home_team} v ${candidate.away_team}: ${previous?.prediction || "previous market"} → ${candidate.prediction || "new market"}.`,
+      );
+      return;
+    }
+
+    setSelectedIds((current) => [...current, selectionId]);
+    setReplacementNotice(null);
   };
 
   const submitManual = async () => {
@@ -433,6 +443,9 @@ export function BuilderV2Controls() {
       setCandidates(nextCandidates);
       setSelectedIds(preservedIds);
       setCandidateSearch("");
+      setManualPage(1);
+      setShowSelectedOnly(false);
+      setReplacementNotice(null);
 
       if (scope === "safer" && staleFixtureIds.length) {
         const affectedFixtureIds = new Set(staleFixtureIds);
@@ -482,7 +495,7 @@ export function BuilderV2Controls() {
     }
   };
 
-  const visibleCandidates = candidates
+  const filteredCandidates = candidates
     .filter(
       (candidate) =>
         !recoveryFixtureIds.length ||
@@ -491,8 +504,53 @@ export function BuilderV2Controls() {
     .filter((candidate) =>
       !candidateSearch.trim() ||
       candidateText(candidate).includes(candidateSearch.trim().toLowerCase()),
-    )
-    .slice(0, 120);
+    );
+
+  const fixtureGroups = Array.from(
+    filteredCandidates.reduce<Map<string, BuilderV2Candidate[]>>(
+      (groups, candidate) => {
+        const fixtureId =
+          candidateFixtureId(candidate) ||
+          String(candidate.selection_id || "");
+        const group = groups.get(fixtureId) || [];
+        group.push(candidate);
+        groups.set(fixtureId, group);
+        return groups;
+      },
+      new Map(),
+    ),
+  ).map(([fixtureId, selections]) => ({
+    fixtureId,
+    selections,
+    lead: selections.find((candidate) => candidate.recommended_for_fixture)
+      || selections[0],
+  }));
+
+  const selectedFixtureIds = new Set(
+    selectedIds
+      .map((selectionId) =>
+        candidates.find(
+          (candidate) =>
+            String(candidate.selection_id || "") === selectionId,
+        ),
+      )
+      .filter((candidate): candidate is BuilderV2Candidate => Boolean(candidate))
+      .map((candidate) => candidateFixtureId(candidate)),
+  );
+
+  const browsableFixtureGroups = showSelectedOnly
+    ? fixtureGroups.filter((group) => selectedFixtureIds.has(group.fixtureId))
+    : fixtureGroups;
+
+  const manualPageCount = Math.max(
+    1,
+    Math.ceil(browsableFixtureGroups.length / MANUAL_PAGE_SIZE),
+  );
+  const effectiveManualPage = Math.min(manualPage, manualPageCount);
+  const visibleFixtureGroups = browsableFixtureGroups.slice(
+    (effectiveManualPage - 1) * MANUAL_PAGE_SIZE,
+    effectiveManualPage * MANUAL_PAGE_SIZE,
+  );
 
   const submitLabel =
     mode === "target_odds"
@@ -1031,39 +1089,160 @@ export function BuilderV2Controls() {
                 <input
                   aria-label="Search approved games"
                   value={candidateSearch}
-                  onChange={(event) => setCandidateSearch(event.target.value)}
+                  onChange={(event) => {
+                    setCandidateSearch(event.target.value);
+                    setManualPage(1);
+                  }}
                   placeholder="Search team, league or market"
                 />
               </label>
-              <div className="builder-v2-candidates" aria-label="Approved game selections">
-                {visibleCandidates.map((candidate) => {
-                  const id = String(candidate.selection_id || "");
-                  const selected = selectedIds.includes(id);
+
+              <div className="builder-v2-manual-toolbar">
+                <span>
+                  {browsableFixtureGroups.length} {browsableFixtureGroups.length === 1 ? "fixture" : "fixtures"}
+                  {" · "}
+                  {selectedIds.length} selected
+                </span>
+                <button
+                  type="button"
+                  className={showSelectedOnly ? "is-active" : ""}
+                  aria-pressed={showSelectedOnly}
+                  onClick={() => {
+                    setShowSelectedOnly((current) => !current);
+                    setManualPage(1);
+                  }}
+                >
+                  Selected games ({selectedIds.length})
+                </button>
+              </div>
+
+              {replacementNotice && (
+                <p className="builder-v2-replacement-notice" role="status">
+                  {replacementNotice}
+                </p>
+              )}
+
+              <div className="builder-v2-fixtures" aria-label="Approved game selections">
+                {visibleFixtureGroups.map(({ fixtureId, selections, lead }) => {
+                  const selectedId = selectedIds.find((id) => {
+                    const selected = candidates.find(
+                      (candidate) =>
+                        String(candidate.selection_id || "") === id,
+                    );
+                    return selected && candidateFixtureId(selected) === fixtureId;
+                  });
+                  const selectedCandidate = selectedId
+                    ? candidates.find(
+                        (candidate) =>
+                          String(candidate.selection_id || "") === selectedId,
+                      )
+                    : undefined;
+
                   return (
-                    <button
-                      key={id}
-                      type="button"
-                      className={selected ? "is-selected" : ""}
-                      aria-pressed={selected}
-                      disabled={!id || (!selected && selectedIds.length >= 50)}
-                      onClick={() => toggleCandidate(id)}
+                    <section
+                      key={fixtureId}
+                      className={`builder-v2-fixture-card${selectedId ? " is-selected" : ""}`}
+                      aria-label={`${lead?.home_team || ""} v ${lead?.away_team || ""}`}
                     >
-                      <span className="builder-v2-candidate-check">{selected ? <Check size={14} /> : null}</span>
-                      <span className="builder-v2-candidate-main">
-                        <strong>{candidate.home_team} v {candidate.away_team}</strong>
-                        <small>{candidate.league} · {candidate.prediction}</small>
-                      </span>
-                      <span className="builder-v2-candidate-meta">
-                        <strong>{candidate.odds?.toFixed?.(2) ?? candidate.odds ?? "—"}</strong>
-                        <small>
-                          {candidate.trust_grade ? `Grade ${candidate.trust_grade}` : ""}
-                          {candidate.recommended_for_fixture ? " · Recommended" : ""}
-                        </small>
-                      </span>
-                    </button>
+                      <div className="builder-v2-fixture-header">
+                        <div>
+                          <strong>{lead?.home_team} v {lead?.away_team}</strong>
+                          <small>{lead?.league}</small>
+                        </div>
+                        {selectedCandidate && (
+                          <span className="builder-v2-fixture-selected">
+                            <Check size={13} />
+                            {selectedCandidate.prediction}
+                          </span>
+                        )}
+                      </div>
+
+                      <div
+                        className="builder-v2-fixture-markets"
+                        role="group"
+                        aria-label={`Markets for ${lead?.home_team || ""} v ${lead?.away_team || ""}`}
+                      >
+                        {selections.map((candidate) => {
+                          const id = String(candidate.selection_id || "");
+                          const selected = selectedIds.includes(id);
+                          const fixtureAlreadySelected = Boolean(selectedId);
+                          return (
+                            <button
+                              key={id}
+                              type="button"
+                              className={selected ? "is-selected" : ""}
+                              aria-pressed={selected}
+                              aria-label={`${candidate.home_team} v ${candidate.away_team} · ${candidate.prediction}`}
+                              disabled={
+                                !id ||
+                                (!selected &&
+                                  !fixtureAlreadySelected &&
+                                  selectedIds.length >= 50)
+                              }
+                              onClick={() => toggleCandidate(id)}
+                            >
+                              <span>
+                                {selected && <Check size={13} />}
+                                {candidate.prediction}
+                              </span>
+                              <strong>
+                                {candidate.odds?.toFixed?.(2) ?? candidate.odds ?? "—"}
+                              </strong>
+                              <small>
+                                {candidate.trust_grade
+                                  ? `Grade ${candidate.trust_grade}`
+                                  : ""}
+                                {candidate.recommended_for_fixture
+                                  ? " · Recommended"
+                                  : ""}
+                              </small>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </section>
                   );
                 })}
               </div>
+
+              {browsableFixtureGroups.length === 0 && (
+                <p className="builder-v2-candidate-status">
+                  {showSelectedOnly
+                    ? "No games selected yet."
+                    : "No approved fixtures match this search."}
+                </p>
+              )}
+
+              {manualPageCount > 1 && (
+                <nav
+                  className="builder-v2-pagination"
+                  aria-label="Approved games pagination"
+                >
+                  <button
+                    type="button"
+                    disabled={effectiveManualPage <= 1}
+                    onClick={() =>
+                      setManualPage((currentPage) => Math.max(1, currentPage - 1))
+                    }
+                  >
+                    Previous
+                  </button>
+                  <span>
+                    Page {effectiveManualPage} of {manualPageCount}
+                  </span>
+                  <button
+                    type="button"
+                    disabled={effectiveManualPage >= manualPageCount}
+                    onClick={() =>
+                      setManualPage((currentPage) =>
+                        Math.min(manualPageCount, currentPage + 1),
+                      )
+                    }
+                  >
+                    Next
+                  </button>
+                </nav>
+              )}
               <button
                 className="builder-submit builder-v2-submit"
                 type="button"

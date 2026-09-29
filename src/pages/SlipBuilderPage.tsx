@@ -364,7 +364,7 @@ export default function SlipBuilderPage() {
     firstKickoffLabel && lastKickoffLabel
       ? firstKickoff === lastKickoff
         ? firstKickoffLabel
-        : `${firstKickoffLabel} ? ${lastKickoffLabel}`
+        : `${firstKickoffLabel} – ${lastKickoffLabel}`
       : firstKickoffLabel ?? lastKickoffLabel;
 
   const acceptingBest = editingAction === "accept_best_reachable";
@@ -495,7 +495,13 @@ export default function SlipBuilderPage() {
                 ? "Approved picks may remain beyond the current leg ceiling; BetSightly will not silently create an oversized slip."
                 : capStatus === "EXPECTED_RETURN_CAPPED"
                   ? "A combination can reach the requested odds, but it does not meet BetSightly’s minimum expected-return policy."
-                : `We will not add weaker picks simply to manufacture ${target}x.`}
+                : slipMode === "game_count"
+                  ? `We will not add weaker selections simply to reach ${gameCountRequested || "the requested number of"} games.`
+                : slipMode === "strongest"
+                  ? "We will not add weaker selections simply to fill the requested Strongest Picks count."
+                : isTargetMode
+                  ? `We will not add weaker picks simply to manufacture ${target}x.`
+                  : "We will not lower the quality or exact-bookability gates to force a result."}
           </p>
           {isTargetMode && slip.best_reachable && !belowBuilderMinimum && slip.builder_run_id
             && slip.best_reachable_combination && (

@@ -188,6 +188,13 @@ test("manual mode replaces a previous market from the same fixture", async () =>
   fireEvent.click(fixtureOptions[0]);
   fireEvent.click(fixtureOptions[1]);
 
+  expect(
+    screen.getByRole("status"),
+  ).toHaveTextContent(/market changed for alpha v beta/i);
+  expect(
+    screen.getByRole("button", { name: /selected games \(1\)/i }),
+  ).toBeInTheDocument();
+
   fireEvent.click(
     screen.getByRole("button", { name: /build 1 selected game/i }),
   );
@@ -482,7 +489,7 @@ test("manual recovery removes stale picks without silently replacing them", asyn
     screen.getByText(/SportyBet changed your selected slip/i),
   ).toBeInTheDocument();
   expect(
-    screen.getByText(/Alpha v Beta · Over 1.5/i),
+    screen.getByRole("button", { name: /alpha v beta.*over 1\.5/i }),
   ).toBeInTheDocument();
 
   fireEvent.click(
@@ -859,4 +866,72 @@ test("manual safer-market recovery scopes the refreshed board to the affected fi
       selection_ids: ["sel-valid", "sel-safer"],
     }),
   );
+});
+
+
+test("manual fixture pagination preserves selections across pages", async () => {
+  const buildV2 = jest.fn();
+  const candidates = Array.from({ length: 21 }, (_, index) => ({
+    selection_id: `sel-${index + 1}`,
+    match_id: `fixture-${index + 1}`,
+    fixture_id: index + 1,
+    home_team: `Home ${index + 1}`,
+    away_team: `Away ${index + 1}`,
+    league: "Test League",
+    date: "2099-01-01",
+    prediction: "Over 1.5",
+    prediction_type: "goals",
+    market: "over_1_5",
+    confidence: .80,
+    odds: 1.20,
+    trust_grade: "A" as const,
+    recommended_for_fixture: true,
+  }));
+
+  getCandidates.mockResolvedValue({
+    status: "success",
+    candidate_count: candidates.length,
+    candidates,
+  });
+
+  render(
+    <BuilderContext.Provider value={makeContext({ buildV2 }) as any}>
+      <BuilderV2Controls />
+    </BuilderContext.Provider>,
+  );
+
+  fireEvent.click(screen.getByRole("button", { name: /pick my games/i }));
+  fireEvent.click(screen.getByRole("button", { name: /browse approved games/i }));
+
+  const first = await screen.findByRole(
+    "button",
+    { name: /home 1 v away 1 · over 1\.5/i },
+  );
+  fireEvent.click(first);
+
+  expect(
+    screen.getByRole("button", { name: /selected games \(1\)/i }),
+  ).toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole("button", { name: /^next$/i }));
+  expect(screen.getByText(/page 2 of 2/i)).toBeInTheDocument();
+
+  fireEvent.click(
+    screen.getByRole("button", { name: /home 21 v away 21 · over 1\.5/i }),
+  );
+
+  expect(
+    screen.getByRole("button", { name: /selected games \(2\)/i }),
+  ).toBeInTheDocument();
+
+  fireEvent.click(
+    screen.getByRole("button", { name: /selected games \(2\)/i }),
+  );
+
+  expect(
+    screen.getByRole("button", { name: /home 1 v away 1 · over 1\.5/i }),
+  ).toHaveAttribute("aria-pressed", "true");
+  expect(
+    screen.getByRole("button", { name: /home 21 v away 21 · over 1\.5/i }),
+  ).toHaveAttribute("aria-pressed", "true");
 });

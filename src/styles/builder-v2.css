@@ -352,3 +352,182 @@
   .builder-v2-fill-options { grid-template-columns: 1fr; }
   .builder-v2-advanced-grid { grid-template-columns: 1fr; }
 }
+
+
+/* Builder V2 manual fixture browser */
+.builder-v2-manual-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--text-3);
+  font-size: 11px;
+}
+
+.builder-v2-manual-toolbar button,
+.builder-v2-pagination button {
+  min-height: 34px;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--overlay-1);
+  color: var(--text-2);
+  font: 800 10px var(--font-body);
+  cursor: pointer;
+}
+
+.builder-v2-manual-toolbar button.is-active {
+  border-color: var(--border-brand);
+  background: var(--brand-faint);
+  color: var(--brand);
+}
+
+.builder-v2-replacement-notice {
+  margin: 0;
+  padding: 9px 11px;
+  border: 1px solid var(--border-brand);
+  border-radius: 9px;
+  background: var(--brand-faint);
+  color: var(--text-2);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.builder-v2-fixtures {
+  display: grid;
+  gap: 9px;
+}
+
+.builder-v2-fixture-card {
+  display: grid;
+  gap: 9px;
+  padding: 11px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: var(--surface-1);
+}
+
+.builder-v2-fixture-card.is-selected {
+  border-color: var(--border-brand);
+  background: var(--brand-faint);
+}
+
+.builder-v2-fixture-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.builder-v2-fixture-header > div {
+  display: grid;
+  gap: 2px;
+}
+
+.builder-v2-fixture-header strong {
+  color: var(--text-1);
+  font-size: 12px;
+}
+
+.builder-v2-fixture-header small {
+  color: var(--text-3);
+  font-size: 10px;
+}
+
+.builder-v2-fixture-selected {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 52%;
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: var(--brand-faint);
+  color: var(--brand);
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.builder-v2-fixture-markets {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 6px;
+}
+
+.builder-v2-fixture-markets button {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 3px 8px;
+  min-height: 48px;
+  padding: 8px 9px;
+  text-align: left;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--overlay-1);
+  color: var(--text-2);
+  cursor: pointer;
+}
+
+.builder-v2-fixture-markets button.is-selected {
+  border-color: var(--border-brand);
+  background: var(--brand-faint);
+}
+
+.builder-v2-fixture-markets button > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  color: var(--text-1);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.builder-v2-fixture-markets button > strong {
+  color: var(--text-1);
+  font-size: 11px;
+}
+
+.builder-v2-fixture-markets button > small {
+  grid-column: 1 / -1;
+  color: var(--text-3);
+  font-size: 9px;
+}
+
+.builder-v2-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.builder-v2-pagination span {
+  color: var(--text-3);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.builder-v2-pagination button:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+@media (max-width: 520px) {
+  .builder-v2-manual-toolbar,
+  .builder-v2-fixture-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .builder-v2-fixture-selected {
+    max-width: 100%;
+    width: fit-content;
+  }
+
+  .builder-v2-fixture-markets {
+    grid-template-columns: 1fr;
+  }
+
+  .builder-v2-pagination {
+    justify-content: space-between;
+  }
+}
