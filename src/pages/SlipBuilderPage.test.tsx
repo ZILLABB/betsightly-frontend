@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
-import SlipBuilderPage from "./SlipBuilderPage";
+import SlipBuilderPage, { formatKickoffWindow } from "./SlipBuilderPage";
 import { api } from "../api/predictions";
 import { reviseBuilderSlip } from "../api/builderRevisions";
 import { BuilderProvider } from "../contexts/BuilderProvider";
@@ -50,6 +50,13 @@ beforeEach(() => {
       false,
     ),
   );
+});
+
+test("formats Builder kickoff windows consistently in WAT", () => {
+  expect(formatKickoffWindow("2026-09-29T17:05:00Z", "2026-09-29T20:30:00Z"))
+    .toBe("29 Sep · 18:05–21:30 WAT");
+  expect(formatKickoffWindow("2026-09-29T17:05:00Z", "2026-10-06T11:30:00Z"))
+    .toBe("29 Sep 18:05 – 6 Oct 12:30 WAT");
 });
 
 const editableSlip = (games: any[] = [{

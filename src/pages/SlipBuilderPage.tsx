@@ -84,17 +84,46 @@ const formatBoardAge = (value: unknown) => {
   return minutes > 0 ? `${hours}h ${minutes}m old` : `${hours}h old`;
 };
 
-const formatKickoff = (value?: string | null) => {
+const WAT_TIME_ZONE = "Africa/Lagos";
+
+const kickoffDate = new Intl.DateTimeFormat("en-GB", {
+  day: "numeric",
+  month: "short",
+  timeZone: WAT_TIME_ZONE,
+});
+
+const kickoffTime = new Intl.DateTimeFormat("en-GB", {
+  hour: "2-digit",
+  minute: "2-digit",
+  hourCycle: "h23",
+  timeZone: WAT_TIME_ZONE,
+});
+
+const parseKickoff = (value?: string | null) => {
   if (!value) return null;
-
   const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return value;
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
 
-  return parsed.toLocaleString([], {
-    weekday: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+const formatKickoffDate = (value: Date) => kickoffDate.format(value).replace("Sept", "Sep");
+
+export const formatKickoffWindow = (
+  first?: string | null,
+  last?: string | null,
+) => {
+  const start = parseKickoff(first);
+  const end = parseKickoff(last);
+
+  if (!start && !end) return first ?? last ?? null;
+  if (!start) return `${formatKickoffDate(end!)} · ${kickoffTime.format(end!)} WAT`;
+  if (!end || start.getTime() === end.getTime()) {
+    return `${formatKickoffDate(start)} · ${kickoffTime.format(start)} WAT`;
+  }
+
+  if (formatKickoffDate(start) === formatKickoffDate(end)) {
+    return `${formatKickoffDate(start)} · ${kickoffTime.format(start)}–${kickoffTime.format(end)} WAT`;
+  }
+  return `${formatKickoffDate(start)} ${kickoffTime.format(start)} – ${formatKickoffDate(end)} ${kickoffTime.format(end)} WAT`;
 };
 
 const marketAvailabilityMessage = (
@@ -357,15 +386,7 @@ export default function SlipBuilderPage() {
     datedKickoffs[datedKickoffs.length - 1] ??
     null;
 
-  const firstKickoffLabel = formatKickoff(firstKickoff);
-  const lastKickoffLabel = formatKickoff(lastKickoff);
-
-  const kickoffWindow =
-    firstKickoffLabel && lastKickoffLabel
-      ? firstKickoff === lastKickoff
-        ? firstKickoffLabel
-        : `${firstKickoffLabel} – ${lastKickoffLabel}`
-      : firstKickoffLabel ?? lastKickoffLabel;
+  const kickoffWindow = formatKickoffWindow(firstKickoff, lastKickoff);
 
   const acceptingBest = editingAction === "accept_best_reachable";
   const confirmingBooking = editingAction === "confirm_booking";
