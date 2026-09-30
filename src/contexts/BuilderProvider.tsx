@@ -287,6 +287,7 @@ export function BuilderProvider({
 
   const buildV2 = useCallback(async (
     input: BuilderV2GenerateRequest | BuilderV2ManualRequest,
+    preserveSlip = false,
   ) => {
     if (inFlight.current) return;
 
@@ -296,7 +297,9 @@ export function BuilderProvider({
     const startedAt = performance.now();
     setLoading(true);
     setError(null);
-    setSlip(null);
+    if (!preserveSlip) {
+      setSlip(null);
+    }
 
     try {
       const result = identifiedInput.mode === "manual"
@@ -333,6 +336,40 @@ export function BuilderProvider({
       setLoading(false);
     }
   }, []);
+
+  const buildAnother = useCallback(async () => {
+    const previous = lastV2Request.current;
+
+    // Manual mode reflects the user's explicit selections; automatic
+    // diversification must not silently replace those choices.
+    if (!previous || previous.mode === "manual") {
+      return;
+    }
+
+    trackProductEvent("builder_build_another", {
+      product_area: "builder",
+      source: "generator_v2",
+      mode: previous.mode,
+      horizon: previous.horizon,
+      target_odds:
+        previous.mode === "target_odds"
+          ? previous.target_odds
+          : undefined,
+      requested_game_count:
+        previous.mode === "game_count"
+          ? previous.game_count
+          : undefined,
+    });
+
+    await buildV2(
+      {
+        ...previous,
+        build_another: true,
+      },
+      true,
+    );
+  }, [buildV2]);
+
 
   const retryBuild = useCallback(async () => {
     const previousV2 = lastV2Request.current;
@@ -596,6 +633,7 @@ export function BuilderProvider({
         chooseHorizon,
         build,
         buildV2,
+        buildAnother,
         retryBuild,
         clearSlip,
         reviseLeg,

@@ -177,6 +177,7 @@ export default function SlipBuilderPage() {
     chooseTarget,
     chooseHorizon,
     build,
+    buildAnother,
     retryBuild,
     reviseLeg,
   } = useBuilder();
@@ -396,6 +397,36 @@ export default function SlipBuilderPage() {
   const belowBuilderMinimum = Boolean(
     slip?.best_reachable && slip.best_reachable < 2,
   );
+  const diversification = slip?.diversification;
+
+  const diversificationMessage = (() => {
+    if (!diversification?.build_another) {
+      return null;
+    }
+
+    if (diversification.history_ticket_count === 0) {
+      return "No recent ticket history was available yet. This ticket becomes your freshness baseline.";
+    }
+
+    if (diversification.unavoidable_reuse_count > 0) {
+      const count = diversification.unavoidable_reuse_count;
+
+      return `${count} previously used qualified ${
+        count === 1 ? "pick was" : "picks were"
+      } reused because fresh alternatives could not satisfy the same Builder requirements. Quality standards were not lowered.`;
+    }
+
+    if (diversification.repeated_fixture_count > 0) {
+      const count = diversification.repeated_fixture_count;
+
+      return `Fresh selections were used, although ${
+        count === 1 ? "1 recent fixture appears" : `${count} recent fixtures appear`
+      } again with a different qualified selection.`;
+    }
+
+    return "Fresh combination generated from qualified alternatives without lowering BetSightly's quality standards.";
+  })();
+
   const displayedBooking = editingSelectionId && slip?.booking
     ? {
         ...slip.booking,
@@ -565,6 +596,32 @@ export default function SlipBuilderPage() {
               {slip.lowest_trust_grade ?? "B"}
             </span>
           </header>
+          {Boolean(slip.mode) && slipMode !== "manual" && (
+            <div className="builder-build-another">
+              <button
+                className="builder-cap__cta"
+                type="button"
+                aria-label="Build another qualified ticket"
+                onClick={() => void buildAnother()}
+                disabled={loading}
+              >
+                <Sparkles size={17} />
+                {loading
+                  ? "Finding another combination…"
+                  : "Build Another"}
+              </button>
+
+              {diversificationMessage && (
+                <p
+                  className="builder-explainer"
+                  role="status"
+                >
+                  {diversificationMessage}
+                </p>
+              )}
+            </div>
+          )}
+
           {(slip.board?.degraded || slip.board?.complete === false) && (
             <p className="builder-board-state">
               {provenMaximum

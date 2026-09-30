@@ -124,6 +124,7 @@ export interface BuilderV2GenerateRequest extends BuilderV2Filters {
   max_games?: number;
   fill_strategy?: BuilderV2FillStrategy;
   refresh?: boolean;
+  build_another?: boolean;
 }
 
 export interface BuilderV2ManualRequest extends BuilderV2Filters {
@@ -260,6 +261,24 @@ export interface BuilderV2MarketBalance {
   fallback_markets_used?: string[];
 }
 
+export interface BuilderDiversification {
+  applied: boolean;
+  build_another: boolean;
+  history_ticket_count: number;
+  strategy_used:
+    | "normal"
+    | "no_history"
+    | "fresh"
+    | "fixture_reuse"
+    | "qualified_repeat_fallback"
+    | string;
+  fresh_selection_count: number;
+  repeated_selection_count: number;
+  repeated_fixture_count: number;
+  unavoidable_reuse_count: number;
+  quality_floor_preserved: boolean;
+}
+
 export interface BuilderV2MarketAvailability {
   target: number;
   raw: number;
@@ -353,6 +372,7 @@ export interface BuiltSlip {
   fallback_market_leg_count?: number;
   fallback_market_distribution?: Record<string, number>;
   fallback_markets_used?: string[];
+  diversification?: BuilderDiversification;
   editing_supported?: boolean;
   binding_constraints?: string[];
   max_legs?: number;

@@ -39,6 +39,7 @@ beforeEach(() => {
   generateBuilderV2.mockReset();
   reviseSlip.mockReset();
   sessionStorage.clear();
+  localStorage.clear();
 
   // Existing page tests describe the returned slip through buildSlip mocks.
   // Proxy the V2 request into that same test double so these tests keep
@@ -89,6 +90,58 @@ test("shows every editable leg action with accessible button alternatives", asyn
   fireEvent.click(screen.getByRole("button", { name: /why this pick/i }));
   expect(screen.getByText(/conservative builder probability/i)).toBeInTheDocument();
 });
+
+test("Build Another preserves the last V2 settings and requests diversification", async () => {
+  buildSlip.mockResolvedValue({
+    ...editableSlip(),
+    mode: "target_odds",
+    diversification: {
+      applied: false,
+      build_another: false,
+      history_ticket_count: 0,
+      strategy_used: "normal",
+      fresh_selection_count: 1,
+      repeated_selection_count: 0,
+      repeated_fixture_count: 0,
+      unavoidable_reuse_count: 0,
+      quality_floor_preserved: true,
+    },
+  });
+
+  renderBuilder();
+
+  fireEvent.click(
+    screen.getByRole("button", {
+      name: /10x lower target/i,
+    }),
+  );
+
+  fireEvent.click(
+    screen.getByRole("button", {
+      name: /build my 10x slip/i,
+    }),
+  );
+
+  const another = await screen.findByRole(
+    "button",
+    { name: /build another qualified ticket/i },
+  );
+
+  fireEvent.click(another);
+
+  await waitFor(() =>
+    expect(generateBuilderV2).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        mode: "target_odds",
+        target_odds: 10,
+        horizon: "7_days",
+        build_another: true,
+        anonymous_id: expect.stringMatching(/^anon_/),
+      }),
+    ),
+  );
+});
+
 
 test("preview requests a code only after explicit final confirmation", async () => {
   const preview = {

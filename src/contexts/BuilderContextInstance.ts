@@ -31,7 +31,11 @@ export interface BuilderContextValue {
     targetOverride?: number,
     preserveSlip?: boolean,
   ) => Promise<void>;
-  buildV2: (input: BuilderV2GenerateRequest | BuilderV2ManualRequest) => Promise<void>;
+  buildV2: (
+    input: BuilderV2GenerateRequest | BuilderV2ManualRequest,
+    preserveSlip?: boolean,
+  ) => Promise<void>;
+  buildAnother: () => Promise<void>;
   retryBuild: () => Promise<void>;
   clearSlip: () => void;
   reviseLeg: (

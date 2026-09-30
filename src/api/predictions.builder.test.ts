@@ -39,6 +39,23 @@ test("preserves optional anonymous Builder identity in request serialization", a
   expect(JSON.parse((fetch as jest.Mock).mock.calls[0][1].body)).toEqual(payload);
 });
 
+test("serializes explicit Build Another without changing the request contract", async () => {
+  const payload = {
+    mode: "target_odds",
+    target_odds: 20,
+    horizon: "7_days",
+    anonymous_id: "anon_test_identity_123",
+    build_another: true,
+  };
+
+  await api.generateBuilderV2(payload);
+
+  expect(
+    JSON.parse((fetch as jest.Mock).mock.calls[0][1].body),
+  ).toEqual(payload);
+});
+
+
 test("manual sends exact IDs to V2, never reconstructed odds", async () => {
   const payload = { mode: "manual", selection_ids: ["exact-a", "exact-b"], horizon: "3_days" };
   await api.buildManualBuilderV2(payload);
