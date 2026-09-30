@@ -33,6 +33,12 @@ test.each(["strict_selected_markets", "selected_first_then_eligible"])("preserve
   expect(JSON.parse((fetch as jest.Mock).mock.calls[0][1].body)).toEqual(payload);
 });
 
+test("preserves optional anonymous Builder identity in request serialization", async () => {
+  const payload = { mode: "strongest", horizon: "today", anonymous_id: "anon_test_identity_123" };
+  await api.generateBuilderV2(payload);
+  expect(JSON.parse((fetch as jest.Mock).mock.calls[0][1].body)).toEqual(payload);
+});
+
 test("manual sends exact IDs to V2, never reconstructed odds", async () => {
   const payload = { mode: "manual", selection_ids: ["exact-a", "exact-b"], horizon: "3_days" };
   await api.buildManualBuilderV2(payload);

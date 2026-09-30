@@ -8,6 +8,7 @@ import {
 
 import { api } from "../api/predictions";
 import type { BuilderV2GenerateRequest, BuilderV2ManualRequest } from "../api/predictions";
+import { anonymousBuilderId } from "../utils/anonymousIdentity";
 import {
   reviseBuilderSlip,
   type BuilderAction,
@@ -289,7 +290,8 @@ export function BuilderProvider({
   ) => {
     if (inFlight.current) return;
 
-    lastV2Request.current = input;
+    const identifiedInput = { ...input, anonymous_id: anonymousBuilderId() };
+    lastV2Request.current = identifiedInput;
     inFlight.current = true;
     const startedAt = performance.now();
     setLoading(true);
@@ -297,9 +299,9 @@ export function BuilderProvider({
     setSlip(null);
 
     try {
-      const result = input.mode === "manual"
-        ? await api.buildManualBuilderV2(input)
-        : await api.generateBuilderV2(input);
+      const result = identifiedInput.mode === "manual"
+        ? await api.buildManualBuilderV2(identifiedInput)
+        : await api.generateBuilderV2(identifiedInput);
 
       setSlip(result as EditableBuiltSlip);
       recoveryAttempts.current = 0;
@@ -309,7 +311,7 @@ export function BuilderProvider({
         {
           product_area: "builder",
           source: "generator_v2",
-          mode: input.mode,
+          mode: identifiedInput.mode,
           horizon: input.horizon,
           target_odds: input.mode === "target_odds" ? input.target_odds : undefined,
           requested_game_count: input.mode === "game_count" ? input.game_count : undefined,

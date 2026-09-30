@@ -104,6 +104,7 @@ export type BuilderV2FillStrategy =
 
 export interface BuilderV2Filters {
   horizon: BuilderV2Horizon;
+  anonymous_id?: string;
   markets?: string[];
   min_odds?: number;
   max_odds?: number;
