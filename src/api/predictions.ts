@@ -275,8 +275,12 @@ export interface BuilderDiversification {
   fresh_selection_count: number;
   repeated_selection_count: number;
   repeated_fixture_count: number;
+  repeated_team_count?: number;
+  repeated_league_count?: number;
+  repeated_market_count?: number;
   unavoidable_reuse_count: number;
   quality_floor_preserved: boolean;
+  portfolio_quality_delta?: number;
 }
 
 export interface BuilderV2MarketAvailability {

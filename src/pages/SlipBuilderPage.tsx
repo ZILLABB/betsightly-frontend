@@ -424,6 +424,26 @@ export default function SlipBuilderPage() {
       } again with a different qualified selection.`;
     }
 
+    const teamCount = diversification.repeated_team_count ?? 0;
+    const leagueCount = diversification.repeated_league_count ?? 0;
+    const marketCount = diversification.repeated_market_count ?? 0;
+
+    if (teamCount || leagueCount || marketCount) {
+      const exposure = [
+        teamCount
+          ? `${teamCount} previously used ${teamCount === 1 ? "team" : "teams"}`
+          : null,
+        leagueCount
+          ? `${leagueCount} previously used ${leagueCount === 1 ? "league" : "leagues"}`
+          : null,
+        marketCount
+          ? `${marketCount} previously used ${marketCount === 1 ? "market" : "markets"}`
+          : null,
+      ].filter(Boolean);
+
+      return `A new qualified combination was built while keeping football quality first. It still contains ${exposure.join(", ")} because stronger picks are not discarded merely for novelty.`;
+    }
+
     return "Fresh combination generated from qualified alternatives without lowering BetSightly's quality standards.";
   })();
 

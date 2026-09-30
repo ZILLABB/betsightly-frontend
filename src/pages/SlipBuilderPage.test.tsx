@@ -143,6 +143,65 @@ test("Build Another preserves the last V2 settings and requests diversification"
 });
 
 
+test("explains portfolio reuse without describing it as lower quality", async () => {
+  buildSlip
+    .mockResolvedValueOnce({
+      ...editableSlip(),
+      mode: "target_odds",
+    })
+    .mockResolvedValueOnce({
+      ...editableSlip(),
+      mode: "target_odds",
+      diversification: {
+        applied: true,
+        build_another: true,
+        history_ticket_count: 4,
+        strategy_used: "fresh",
+        fresh_selection_count: 1,
+        repeated_selection_count: 0,
+        repeated_fixture_count: 0,
+        repeated_team_count: 2,
+        repeated_league_count: 1,
+        repeated_market_count: 1,
+        unavoidable_reuse_count: 0,
+        quality_floor_preserved: true,
+        portfolio_quality_delta: 0.005,
+      },
+    });
+
+  renderBuilder();
+
+  fireEvent.click(
+    screen.getByRole("button", {
+      name: /10x lower target/i,
+    }),
+  );
+
+  fireEvent.click(
+    screen.getByRole("button", {
+      name: /build my 10x slip/i,
+    }),
+  );
+
+  fireEvent.click(
+    await screen.findByRole(
+      "button",
+      { name: /build another qualified ticket/i },
+    ),
+  );
+
+  expect(
+    await screen.findByText(
+      /stronger picks are not discarded merely for novelty/i,
+    ),
+  ).toBeInTheDocument();
+
+  expect(
+    screen.getByText(/2 previously used teams/i),
+  ).toBeInTheDocument();
+});
+
+
 test("preview requests a code only after explicit final confirmation", async () => {
   const preview = {
     ...editableSlip(),
