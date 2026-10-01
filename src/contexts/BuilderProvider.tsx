@@ -324,13 +324,17 @@ export function BuilderProvider({
         },
       );
     } catch (caught) {
-      const err = caught as Error & { name?: string };
-
-      setError(
-        err?.name === "AbortError"
-          ? "That took longer than expected — the server may be waking up. Try once more."
-          : "The Builder could not reach the prediction service. Your choices were kept—try again.",
-      );
+      const err = caught as Error & { name?: string; reason?: string };
+      if (err?.reason === "board_refreshing") {
+        setSlip({ status: "unavailable", reason: "board_refreshing",
+          retryable: true } as EditableBuiltSlip);
+      } else {
+        setError(
+          err?.name === "AbortError"
+            ? "That took longer than expected — the server may be waking up. Try once more."
+            : "The Builder could not reach the prediction service. Your choices were kept—try again.",
+        );
+      }
     } finally {
       inFlight.current = false;
       setLoading(false);

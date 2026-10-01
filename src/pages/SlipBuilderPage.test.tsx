@@ -496,9 +496,28 @@ test("shows board refreshing as a controlled retry state", async () => {
   fireEvent.click(screen.getByRole("button", { name: /build my 50x slip/i }));
   await waitFor(() => expect(screen.getByText(/preparing the latest fixture board/i))
     .toBeInTheDocument());
-  expect(screen.getByText(/not a CORS error/i)).toBeInTheDocument();
+  expect(screen.getByText(/Your choices have been kept/i)).toBeInTheDocument();
   expect(screen.queryByText(/isn’t supported by the current board/i))
     .not.toBeInTheDocument();
+});
+
+test("handles an HTTP board-refresh response as a retryable Builder state", async () => {
+  const error = Object.assign(new Error("board_refreshing"), {
+    status: 503, reason: "board_refreshing", retryable: true,
+  });
+  generateBuilderV2.mockRejectedValueOnce(error).mockResolvedValueOnce({
+    status: "unavailable", reason: "board_refreshing", retryable: true,
+  });
+  renderBuilder();
+  fireEvent.click(screen.getByRole("button", { name: /today fast settlement/i }));
+  fireEvent.click(screen.getByRole("button", { name: /build my 50x slip/i }));
+  expect(await screen.findByText(/Your choices have been kept/i)).toBeInTheDocument();
+  expect(screen.queryByText(/could not reach the prediction service/i)).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: /^try again$/i }));
+  await waitFor(() => expect(generateBuilderV2).toHaveBeenLastCalledWith(
+    expect.objectContaining({ mode: "target_odds", target_odds: 50,
+      horizon: "today" }),
+  ));
 });
 
 test("uses horizon-aware board refresh copy", async () => {
@@ -508,7 +527,7 @@ test("uses horizon-aware board refresh copy", async () => {
   renderBuilder();
   fireEvent.click(screen.getByRole("button", { name: /today fast settlement/i }));
   fireEvent.click(screen.getByRole("button", { name: /build my 50x slip/i }));
-  expect(await screen.findByText(/Today’s board is being evaluated/i)).toBeInTheDocument();
+  expect(await screen.findByText(/for today’s board/i)).toBeInTheDocument();
   expect(screen.queryByText(/weekly predictions/i)).not.toBeInTheDocument();
 });
 

@@ -526,8 +526,8 @@ export default function SlipBuilderPage() {
           <span className="builder-cap__badge">Board updating</span>
           <h2>We’re preparing the latest fixture board</h2>
           <p>
-            {boardWindowLabel} is being evaluated now. Please try again
-            shortly—your request was controlled safely and was not a CORS error.
+            BetSightly is preparing the latest prediction board for {boardWindowLabel.toLowerCase()}.
+            Your choices have been kept. Please try again shortly.
           </p>
           <button className="builder-cap__cta" type="button"
             onClick={() => void retryBuild()} disabled={loading}>
