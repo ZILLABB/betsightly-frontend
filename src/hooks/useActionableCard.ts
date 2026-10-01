@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api, type BookableNowResponse } from "../api/predictions";
 import type {
   AccumulatorResponse,
@@ -93,6 +93,7 @@ export function useActionableCard(
   const [bookableLoading, setBookableLoading] = useState(false);
   const [fetchedAt, setFetchedAt] = useState(0);
   const [now, setNow] = useState(() => Date.now());
+  const requestIdRef = useRef(0);
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 60_000);
@@ -100,8 +101,11 @@ export function useActionableCard(
   }, []);
 
   useEffect(() => {
+    // Invalidate a response belonging to the previous published card.
+    requestIdRef.current += 1;
     setMode("auto");
     setBookable(null);
+    setBookableLoading(false);
     setFetchedAt(0);
   }, [cardDate]);
 
@@ -121,17 +125,17 @@ export function useActionableCard(
 
     if (freshEnough) return;
 
-    let alive = true;
+    const requestId = ++requestIdRef.current;
     setBookableLoading(true);
 
     api.getBookableNow()
       .then(result => {
-        if (!alive) return;
+        if (requestId !== requestIdRef.current) return;
         setBookable(result);
         setFetchedAt(Date.now());
       })
       .catch((error: unknown) => {
-        if (!alive) return;
+        if (requestId !== requestIdRef.current) return;
         setBookable({
           status: "error",
           available: false,
@@ -142,17 +146,14 @@ export function useActionableCard(
         setFetchedAt(Date.now());
       })
       .finally(() => {
-        if (alive) setBookableLoading(false);
+        if (requestId === requestIdRef.current) {
+          setBookableLoading(false);
+        }
       });
-
-    return () => {
-      alive = false;
-    };
   }, [
     actionability.needsReplacement,
     mode,
     bookable,
-    bookableLoading,
     fetchedAt,
     now,
   ]);

@@ -1,4 +1,6 @@
-import { cardActionability } from "./useActionableCard";
+import { renderHook, waitFor } from "@testing-library/react";
+import { api } from "../api/predictions";
+import { cardActionability, useActionableCard } from "./useActionableCard";
 
 jest.mock("../api/predictions", () => ({
   api: { getBookableNow: jest.fn() },
@@ -84,4 +86,47 @@ test("requires replacement inside the kickoff buffer or after booking failure", 
   } as any, now);
 
   expect(unavailable.needsReplacement).toBe(true);
+});
+
+
+test("finishes the available-now request instead of getting stuck loading", async () => {
+  const staleKickoff = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+  const futureKickoff = new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString();
+
+  const published = {
+    banker: empty,
+    "2_odds": category(staleKickoff),
+    "5_odds": empty,
+    "10_odds": empty,
+    over_1_5: empty,
+    rollover: empty,
+  } as any;
+
+  const available = {
+    banker: empty,
+    "2_odds": category(futureKickoff),
+    "5_odds": empty,
+    "10_odds": empty,
+    over_1_5: empty,
+  };
+
+  const getBookableNow = api.getBookableNow as jest.Mock;
+  getBookableNow.mockResolvedValueOnce({
+    status: "success",
+    available: true,
+    accumulators: available,
+  });
+
+  const { result } = renderHook(() =>
+    useActionableCard(published, "2026-10-01"),
+  );
+
+  await waitFor(() => {
+    expect(getBookableNow).toHaveBeenCalledTimes(1);
+    expect(result.current.viewingBookable).toBe(true);
+    expect(result.current.bookableLoading).toBe(false);
+  });
+
+  expect(result.current.accumulators?.["2_odds"]?.games?.[0]?.kickoff)
+    .toBe(futureKickoff);
 });
