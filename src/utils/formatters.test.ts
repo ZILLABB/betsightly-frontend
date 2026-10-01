@@ -4,10 +4,10 @@ test("formats kickoff in WAT by default and allows an explicit override", () => 
   const kickoff = "2026-09-20T19:45:00Z";
 
   expect(formatKickoffDateTime(kickoff))
-    .toBe("20 Sept · 20:45 GMT+1");
+    .toBe("20 Sept · 20:45 WAT");
 
   expect(formatLocalTimeWithZone(kickoff))
-    .toBe("20:45 GMT+1");
+    .toBe("20:45 WAT");
 
   expect(formatKickoffDateTime(kickoff, { timeZone: "UTC" }))
     .toBe("20 Sept · 19:45 UTC");

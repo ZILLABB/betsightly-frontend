@@ -63,3 +63,25 @@ test("manual sends exact IDs to V2, never reconstructed odds", async () => {
   expect(url).toContain("/v2/manual");
   expect(JSON.parse(options.body)).toEqual(payload);
 });
+
+
+test("preserves structured retryable API error details", async () => {
+  (global.fetch as jest.Mock).mockResolvedValueOnce({
+    ok: false,
+    status: 503,
+    json: async () => ({
+      detail: {
+        reason: "board_refreshing",
+        retryable: true,
+        refresh_started: true,
+      },
+    }),
+  });
+
+  await expect(api.getBookableNow()).rejects.toMatchObject({
+    message: "board_refreshing",
+    status: 503,
+    reason: "board_refreshing",
+    retryable: true,
+  });
+});

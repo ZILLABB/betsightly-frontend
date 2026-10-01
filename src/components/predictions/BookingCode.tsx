@@ -138,14 +138,30 @@ export default function BookingCode({
         </strong>
         {actualFailure || booking.reason || label[booking.status] || "No valid SportyBet ticket could be created for this tier."}
         {!!booking.excluded_legs?.length && (
-          <ul style={{ margin: "8px 0 0", paddingLeft: 18 }}>
-            {booking.excluded_legs.map((leg, index) => (
-              <li key={`${leg.match_id ?? index}-${leg.market ?? "selection"}`}>
-                {leg.home_team} vs {leg.away_team} — {leg.prediction ?? leg.market}
-                {` (${availabilityText(leg.status || leg.sportybet_availability?.status)})`}
-              </li>
-            ))}
-          </ul>
+          <details style={{
+            marginTop: 8,
+            padding: "7px 9px",
+            border: "1px solid var(--border)",
+            borderRadius: 7,
+            background: "var(--overlay-1)",
+          }}>
+            <summary style={{
+              cursor: "pointer",
+              color: "var(--text-2)",
+              fontSize: 11,
+              fontWeight: 700,
+            }}>
+              View unavailable selections ({booking.excluded_legs.length})
+            </summary>
+            <ul style={{ margin: "8px 0 0", paddingLeft: 18 }}>
+              {booking.excluded_legs.map((leg, index) => (
+                <li key={`${leg.match_id ?? index}-${leg.market ?? "selection"}`}>
+                  {leg.home_team} vs {leg.away_team} — {leg.prediction ?? leg.market}
+                  {` (${availabilityText(leg.status || leg.sportybet_availability?.status)})`}
+                </li>
+              ))}
+            </ul>
+          </details>
         )}
         {onShowBookable && (
           <button type="button" onClick={onShowBookable}

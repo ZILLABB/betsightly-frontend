@@ -130,3 +130,43 @@ test("finishes the available-now request instead of getting stuck loading", asyn
   expect(result.current.accumulators?.["2_odds"]?.games?.[0]?.kickoff)
     .toBe(futureKickoff);
 });
+
+
+test("shows a human API failure instead of object-object text", async () => {
+  const staleKickoff = new Date(
+    Date.now() - 60 * 60 * 1000,
+  ).toISOString();
+
+  const getBookableNow = api.getBookableNow as jest.Mock;
+
+  getBookableNow.mockRejectedValueOnce(
+    Object.assign(
+      new Error("availability_temporarily_unavailable"),
+      {
+        status: 500,
+        reason: "availability_temporarily_unavailable",
+      },
+    ),
+  );
+
+  const { result } = renderHook(() =>
+    useActionableCard({
+      banker: empty,
+      "2_odds": category(staleKickoff),
+      "5_odds": empty,
+      "10_odds": empty,
+      over_1_5: empty,
+      rollover: empty,
+    } as any, "2026-10-01"),
+  );
+
+  await waitFor(() =>
+    expect(result.current.bookableError).toBe(true),
+  );
+
+  expect(result.current.bookable?.reason)
+    .not.toContain("[object Object]");
+
+  expect(result.current.bookable?.reason)
+    .toMatch(/availability temporarily unavailable/i);
+});

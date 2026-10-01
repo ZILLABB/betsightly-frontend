@@ -12,7 +12,7 @@ import {
 
 import type { BuilderAction } from "../../api/builderRevisions";
 import type { CategoryMeta, GamePrediction } from "../../types";
-import { PredictionCard } from "../predictions/PredictionCard";
+import { formatKickoffDateTime } from "../../utils/formatters";
 
 const percent = (value?: number | null) =>
   value == null ? "Unavailable" : `${(value * 100).toFixed(1)}%`;
@@ -20,7 +20,7 @@ const percent = (value?: number | null) =>
 export function BuilderLeg({
   game,
   index,
-  accent,
+  accent: _accent,
   editable = true,
   locked,
   pending,
@@ -46,15 +46,56 @@ export function BuilderLeg({
   const [menuOpen, setMenuOpen] = useState(false);
   const [showOldCard, setShowOldCard] = useState(false);
   const touchX = useRef<number | null>(null);
+
   const alternative = game.fixture_alternatives?.find(
     (item) => item.market !== game.market,
   );
+
+  const displayOdds =
+    game.sportybet_odds ??
+    game.real_odds ??
+    game.odds ??
+    game.estimated_odds;
+
+  const realPrice = Boolean(
+    game.sportybet_odds != null ||
+    game.real_odds != null ||
+    game.odds_are_real,
+  );
+
+  const grade =
+    game.trust?.grade ??
+    ((game.trust?.score ?? 0) >= 85 ? "A" : "B");
+
+  const kickoff = formatKickoffDateTime(game.kickoff || game.date);
+
+  const context =
+    game.competition_context_label ||
+    game.competition_stage ||
+    game.competition_round;
+
+  const venue =
+    game.match_info?.venue ||
+    game.venue;
+
+  const city =
+    game.match_info?.city ||
+    game.venue_city;
+
+  const homeForm =
+    game.match_info?.home_form ||
+    game.home_form;
+
+  const awayForm =
+    game.match_info?.away_form ||
+    game.away_form;
 
   useEffect(() => {
     if (!replacedFrom) {
       setShowOldCard(false);
       return;
     }
+
     setShowOldCard(true);
     const timer = window.setTimeout(() => setShowOldCard(false), 260);
     return () => window.clearTimeout(timer);
@@ -68,20 +109,33 @@ export function BuilderLeg({
   return (
     <article
       className={`editable-builder-leg${locked ? " is-locked" : ""}${pending ? " is-pending" : ""}${replacedFrom ? " is-replacement-entering" : ""}`}
-      onTouchStart={(event) => { touchX.current = event.touches[0]?.clientX ?? null; }}
+      onTouchStart={(event) => {
+        touchX.current = event.touches[0]?.clientX ?? null;
+      }}
       onTouchEnd={(event) => {
         if (!editable || pending || touchX.current == null) return;
-        const distance = (event.changedTouches[0]?.clientX ?? touchX.current) - touchX.current;
+
+        const distance =
+          (event.changedTouches[0]?.clientX ?? touchX.current) -
+          touchX.current;
+
         touchX.current = null;
-        if (distance <= -90) onAction("replace_selection", game);
-        if (distance >= 90) onAction(
-          locked ? "unlock_selection" : "lock_selection",
-          game,
-        );
+
+        if (distance <= -90) {
+          onAction("replace_selection", game);
+        }
+
+        if (distance >= 90) {
+          onAction(
+            locked ? "unlock_selection" : "lock_selection",
+            game,
+          );
+        }
       }}
     >
       <div className="editable-builder-leg__topline">
         <span>Leg {String(index + 1).padStart(2, "0")}</span>
+
         <strong>
           {locked && <Lock size={13} />}
           {locked
@@ -91,51 +145,134 @@ export function BuilderLeg({
               : "Supported evidence"}
         </strong>
       </div>
+
       <div className="editable-builder-leg__card-stage">
         {replacedFrom && showOldCard && (
-          <div className="editable-builder-leg__old-card" aria-hidden="true">
-            <PredictionCard game={replacedFrom} category={accent} />
+          <div
+            className="editable-builder-leg__old-row"
+            aria-hidden="true"
+          >
+            <strong>
+              {replacedFrom.home_team} v {replacedFrom.away_team}
+            </strong>
+            <span>{replacedFrom.prediction}</span>
           </div>
         )}
-        <div className={pendingAction === "safer_same_fixture"
-          ? "editable-builder-leg__market-changing" : ""}>
-          <PredictionCard game={game} category={accent} />
+
+        <div
+          className={
+            pendingAction === "safer_same_fixture"
+              ? "editable-builder-leg__market-changing"
+              : ""
+          }
+        >
+          <div className="builder-leg-compact">
+            <div className="builder-leg-compact__fixture">
+              <span>
+                {game.league}
+                {context ? ` · ${context}` : ""}
+              </span>
+
+              <strong>
+                {`${game.home_team} v ${game.away_team}`}
+              </strong>
+
+              {kickoff && <small>{kickoff}</small>}
+            </div>
+
+            <div className="builder-leg-compact__pick">
+              <strong>{game.prediction}</strong>
+              <span>
+                {Math.round(game.confidence * 100)}% confidence
+                {" · "}Grade {grade}
+              </span>
+            </div>
+
+            <div className="builder-leg-compact__odds">
+              <strong>
+                {displayOdds != null
+                  ? Number(displayOdds).toFixed(2)
+                  : "—"}
+              </strong>
+              <span>{realPrice ? "SportyBet" : "estimated"}</span>
+            </div>
+          </div>
         </div>
+
         {pending && (
           <div className="editable-builder-leg__overlay" role="status">
             <RefreshCw size={18} aria-hidden="true" />
-            <strong>{pendingAction === "replace_selection"
-              ? "Finding a different game…"
-              : pendingAction === "safer_same_fixture"
-                ? "Checking safer markets…" : "Updating this game…"}</strong>
-            <span>Checking approved predictions and SportyBet availability.</span>
+            <strong>
+              {pendingAction === "replace_selection"
+                ? "Finding a different game…"
+                : pendingAction === "safer_same_fixture"
+                  ? "Checking safer markets…"
+                  : "Updating this game…"}
+            </strong>
+            <span>
+              Checking approved predictions and SportyBet availability.
+            </span>
           </div>
         )}
       </div>
 
-      <div className="editable-builder-leg__actions" aria-label={`Actions for ${game.home_team} vs ${game.away_team}`}>
-        <button type="button" onClick={explain} aria-expanded={explanationOpen}>
-          <CircleHelp size={16} /> Why this pick?
+      <div
+        className="editable-builder-leg__actions"
+        aria-label={`Actions for ${game.home_team} vs ${game.away_team}`}
+      >
+        <button
+          type="button"
+          onClick={explain}
+          aria-expanded={explanationOpen}
+        >
+          <CircleHelp size={15} />
+          Why this pick?
         </button>
+
         {editable && (
           <>
-            <button type="button" disabled={pending}
-              onClick={() => onAction("safer_same_fixture", game)}>
-              <ShieldPlus size={16} /> Safer market
+            <button
+              type="button"
+              disabled={pending}
+              onClick={() => onAction("safer_same_fixture", game)}
+            >
+              <ShieldPlus size={15} />
+              Safer market
             </button>
-            <button type="button" disabled={pending}
-              onClick={() => onAction("replace_selection", game)}>
-              <RefreshCw size={16} /> Replace
+
+            <button
+              type="button"
+              disabled={pending}
+              onClick={() => onAction("replace_selection", game)}
+            >
+              <RefreshCw size={15} />
+              Replace
             </button>
-            <button type="button" disabled={pending}
-              onClick={() => onAction(locked ? "unlock_selection" : "lock_selection", game)}>
-              {locked ? <LockOpen size={16} /> : <Lock size={16} />}
+
+            <button
+              type="button"
+              disabled={pending}
+              onClick={() =>
+                onAction(
+                  locked ? "unlock_selection" : "lock_selection",
+                  game,
+                )
+              }
+            >
+              {locked
+                ? <LockOpen size={15} />
+                : <Lock size={15} />}
               {locked ? "Unlock" : "Lock"}
             </button>
-            <button type="button" className="editable-builder-leg__more"
-              aria-label="More leg actions" aria-expanded={menuOpen}
-              onClick={() => setMenuOpen((open) => !open)}>
-              <MoreHorizontal size={17} />
+
+            <button
+              type="button"
+              className="editable-builder-leg__more"
+              aria-label="More leg actions"
+              aria-expanded={menuOpen}
+              onClick={() => setMenuOpen((open) => !open)}
+            >
+              <MoreHorizontal size={16} />
             </button>
           </>
         )}
@@ -143,48 +280,149 @@ export function BuilderLeg({
 
       {editable && menuOpen && (
         <div className="editable-builder-leg__menu">
-          <button type="button" disabled={pending} onClick={() => {
-            if (window.confirm("Exclude this entire fixture from every later revision in this Builder run?")) {
-              onAction("exclude_fixture", game);
-            }
-          }}>
-            <Ban size={16} /> Don&apos;t use this game
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() => {
+              if (
+                window.confirm(
+                  "Exclude this entire fixture from every later revision in this Builder run?",
+                )
+              ) {
+                onAction("exclude_fixture", game);
+              }
+            }}
+          >
+            <Ban size={15} />
+            Don&apos;t use this game
           </button>
-          <button type="button" disabled={pending}
-            onClick={() => onAction("remove_selection", game)}>
-            <Trash2 size={16} /> Remove and rebuild
+
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() => onAction("remove_selection", game)}
+          >
+            <Trash2 size={15} />
+            Remove and rebuild
           </button>
         </div>
       )}
 
       {feedback && (
-        <p className={`editable-builder-leg__feedback is-${feedback.status}`}
-          role={feedback.status === "failure" ? "alert" : "status"}>
-          {feedback.status === "success" ? "✓ " : ""}{feedback.message}
+        <p
+          className={`editable-builder-leg__feedback is-${feedback.status}`}
+          role={feedback.status === "failure" ? "alert" : "status"}
+        >
+          {feedback.status === "success" ? "✓ " : ""}
+          {feedback.message}
         </p>
       )}
 
       {explanationOpen && (
         <section className="builder-pick-explanation">
           <h3>Why BetSightly selected {game.prediction}</h3>
+
+          {(venue || homeForm || awayForm) && (
+            <div className="builder-pick-context">
+              {(venue || city) && (
+                <span>
+                  Venue: {[venue, city].filter(Boolean).join(" · ")}
+                </span>
+              )}
+
+              {(homeForm || awayForm) && (
+                <span>
+                  Recent form: {game.home_team} {homeForm || "—"} ·{" "}
+                  {game.away_team} {awayForm || "—"}
+                </span>
+              )}
+            </div>
+          )}
+
           <dl>
-            <div><dt>Model confidence</dt><dd>{percent(game.confidence)}</dd></div>
-            <div><dt>Conservative Builder probability</dt><dd>{percent(game.selection_probability)}</dd></div>
-            <div><dt>Reliability lower bound</dt><dd>{percent(game.trust?.lower_reliability_bound)}</dd></div>
-            <div><dt>Evidence</dt><dd>{game.trust?.evidence_level || game.trust?.evidence_state || "Unavailable"}</dd></div>
-            <div><dt>Fixture market rank</dt><dd>{game.public_rank ? `#${game.public_rank}` : "Unavailable"}</dd></div>
-            <div><dt>SportyBet price</dt><dd>{(game.sportybet_odds ?? game.real_odds ?? game.odds)?.toFixed(2) || "Unavailable"}</dd></div>
-            <div><dt>Bookmaker break-even</dt><dd>{percent(game.raw_break_even_probability)}</dd></div>
-            <div><dt>{game.market?.startsWith("dnb_") ? "Push-aware expected return" : "Risk-adjusted return"}</dt><dd>{(game.push_aware_expected_return ?? game.risk_adjusted_return)?.toFixed(3) || "Unavailable"}</dd></div>
-            <div><dt>Bookmaker alignment</dt><dd>{game.bookmaker_disagreement == null ? "Unavailable" : game.bookmaker_disagreement <= .08 ? "Close" : "Mixed"}</dd></div>
+            <div>
+              <dt>Model confidence</dt>
+              <dd>{percent(game.confidence)}</dd>
+            </div>
+
+            <div>
+              <dt>Conservative Builder probability</dt>
+              <dd>{percent(game.selection_probability)}</dd>
+            </div>
+
+            <div>
+              <dt>Reliability lower bound</dt>
+              <dd>{percent(game.trust?.lower_reliability_bound)}</dd>
+            </div>
+
+            <div>
+              <dt>Evidence</dt>
+              <dd>
+                {game.trust?.evidence_level ||
+                  game.trust?.evidence_state ||
+                  "Unavailable"}
+              </dd>
+            </div>
+
+            <div>
+              <dt>Fixture market rank</dt>
+              <dd>
+                {game.public_rank
+                  ? `#${game.public_rank}`
+                  : "Unavailable"}
+              </dd>
+            </div>
+
+            <div>
+              <dt>SportyBet price</dt>
+              <dd>
+                {displayOdds != null
+                  ? Number(displayOdds).toFixed(2)
+                  : "Unavailable"}
+              </dd>
+            </div>
+
+            <div>
+              <dt>Bookmaker break-even</dt>
+              <dd>{percent(game.raw_break_even_probability)}</dd>
+            </div>
+
+            <div>
+              <dt>
+                {game.market?.startsWith("dnb_")
+                  ? "Push-aware expected return"
+                  : "Risk-adjusted return"}
+              </dt>
+              <dd>
+                {(game.push_aware_expected_return ??
+                  game.risk_adjusted_return)?.toFixed(3) ||
+                  "Unavailable"}
+              </dd>
+            </div>
+
+            <div>
+              <dt>Bookmaker alignment</dt>
+              <dd>
+                {game.bookmaker_disagreement == null
+                  ? "Unavailable"
+                  : game.bookmaker_disagreement <= 0.08
+                    ? "Close"
+                    : "Mixed"}
+              </dd>
+            </div>
           </dl>
+
           <p>
             {alternative
               ? `${game.market} ranked ahead of ${alternative.market} on conservative, evidence-adjusted quality.`
               : "No equally strong public alternative is currently available for this fixture."}
           </p>
+
           {game.market?.startsWith("dnb_") && (
-            <p>A draw is a push: that leg settles at 1.00x instead of winning or losing.</p>
+            <p>
+              A draw is a push: that leg settles at 1.00x instead of
+              winning or losing.
+            </p>
           )}
         </section>
       )}

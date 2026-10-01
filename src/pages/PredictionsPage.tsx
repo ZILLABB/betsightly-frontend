@@ -59,6 +59,8 @@ export function PredictionsPage() {
     accumulators,
     bookable,
     bookableLoading,
+    bookableNotice,
+    bookableError,
     viewingBookable,
     viewingPublishedRecord,
     unavailable: bookableUnavailable,
@@ -131,20 +133,27 @@ export function PredictionsPage() {
                   ? "Checking what is still bookable"
                   : viewingBookable
                     ? "Showing matches you can still bet"
-                    : bookableUnavailable
-                      ? "No verified bookable slip remains right now"
-                      : viewingPublishedRecord
+                    : bookableError
+                      ? "Couldn’t verify current SportyBet availability"
+                      : bookableUnavailable
+                        ? "No verified bookable slip remains right now"
+                        : viewingPublishedRecord
                         ? "Viewing the original published card"
                         : `${startedCount} published ${startedCount === 1 ? "selection is" : "selections are"} no longer actionable`}
               </strong>
               <span style={{ display: "block", fontSize: 13, lineHeight: 1.5, color: "var(--text-2)" }}>
                 {bookableLoading
-                  ? "Checking upcoming fixtures against the current SportyBet board."
+                  ? (bookableNotice ||
+                    "Checking upcoming fixtures against the current SportyBet board.")
                   : viewingBookable
                     ? "Only exact-bookable matches outside the 20-minute kickoff buffer are shown. The original published record remains unchanged."
-                    : bookableUnavailable
-                      ? (bookable?.reason || "No exact SportyBet-ready replacement could be verified.")
-                      : viewingPublishedRecord
+                    : bookableError
+                      ? (bookable?.reason ||
+                        "Current SportyBet availability could not be verified.")
+                      : bookableUnavailable
+                        ? (bookable?.reason ||
+                          "No exact SportyBet-ready replacement could be verified.")
+                        : viewingPublishedRecord
                         ? "This is the frozen record used for transparent results tracking; it may contain matches that have already started."
                         : "The original publication stays locked for results, while this page automatically moves late visitors to a current actionable card."}
               </span>
@@ -176,7 +185,7 @@ export function PredictionsPage() {
               ? "Checking…"
               : viewingBookable
                 ? <><RotateCcw size={15} /> View original card</>
-                : <>{bookableUnavailable ? "Check again" : "Show available now"} <ArrowRight size={15} /></>}
+                : <>{bookableError || bookableUnavailable ? "Try again" : "Show available now"} <ArrowRight size={15} /></>}
           </button>
         </div>
       )}

@@ -9,6 +9,7 @@ import { getTeamFlag, isWcNation, teamInitials, teamColor } from "../data/wcFlag
 import { SEO } from "../components/common/SEO";
 import BookingCode from "../components/predictions/BookingCode";
 import { formatLocalTimeWithZone } from "../utils/formatters";
+import "../styles/product-experience.css";
 
 function TeamBadge({ team, logo }: { team: string; logo?: string | null }) {
   if (isWcNation(team)) {
@@ -72,6 +73,14 @@ export function RolloverPage() {
   const pendingDays = chain.filter(d => d.status === "pending").length;
   const isAlive = lostDays === 0 && voidDays === 0;
   const isComplete = chain.length >= targetDays && pendingDays === 0;
+  const chainStatus =
+    lostDays > 0
+      ? "Broken"
+      : voidDays > 0
+        ? "Ended"
+        : isComplete
+          ? "Completed"
+          : "Active";
   const legacyChain = chain.some(day =>
     day.picks.some(pick => pick.safe_tier_eligible !== true),
   );
@@ -87,7 +96,7 @@ export function RolloverPage() {
   const cumOdds = rollover?.cumulative_odds ?? rollover?.total_odds ?? 0;
 
   return (
-    <div className="page-stack" style={{ display: "flex", flexDirection: "column", gap: 28 }}>
+    <div className="page-stack rollover-page" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <SEO title="Rollover Challenge" description="3-day rollover challenge using evidence-backed daily picks. Every leg must land for the chain to continue." path="/rollover" />
       {/* Header */}
       <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
@@ -105,51 +114,68 @@ export function RolloverPage() {
         </div>
       </div>
 
-      {/* Stat cards */}
+      {/* Compact chain summary */}
       {chain.length > 0 && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12 }}>
-          <div className="card" style={{ padding: "18px 20px", borderLeft: `3px solid ${catMeta.color}` }}>
-            <p style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Today&apos;s multiplier</p>
-            <p className="stat-num" style={{ fontSize: 32, color: catMeta.color, lineHeight: 1.05 }}>
-              {todaysDay ? `${fmtOdds(todaysDay.combined_odds)}${oddsSuffix}` : "—"}
-            </p>
-            {/* The compounded figure runs into four digits by day ten. Shown
-                as a caption rather than a headline: a 1,700x number presented
-                as the payout reads as a scam, and the daily multiplier is the
-                one a user actually stakes against. */}
-            <p style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)", marginTop: 6 }}>
-              {cumOdds > 0
-                ? lostDays > 0
-                  ? `${fmtOdds(cumOdds)}${oddsSuffix} was scheduled across ${chain.length} days`
-                  : `${fmtOdds(cumOdds)}${oddsSuffix} compounded if all ${chain.length} days land${completionProbability != null ? ` · model chance ${Math.round(completionProbability * 100)}%` : ""}`
-                : `Builds over ${targetDays} days`}
-            </p>
+        <section
+          className="rollover-summary"
+          aria-label="Rollover status summary"
+        >
+          <div className="rollover-summary__lead">
+            <span>{targetDays}-day challenge</span>
+            <strong
+              className={
+                chainStatus === "Active" || chainStatus === "Completed"
+                  ? "is-positive"
+                  : "is-negative"
+              }
+            >
+              {chainStatus}
+            </strong>
+            <small>
+              {legacyChain
+                ? "Previous selection rules"
+                : "Evidence-backed picks"}
+            </small>
           </div>
 
-          <div className="card" style={{ padding: "18px 20px" }}>
-            <p style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Progress</p>
-            <p className="stat-num" style={{ fontSize: 32, color: "var(--text-1)", lineHeight: 1.05 }}>{wonDays}/{chain.length}</p>
-            <p style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)", marginTop: 6 }}>{pendingDays} pending · {lostDays} lost</p>
-          </div>
-
-          <div className="card" style={{ padding: "18px 20px" }}>
-            <p style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Chain status</p>
-            <p className="stat-num" style={{ fontSize: 22, color: isAlive ? "var(--green)" : "var(--red)", lineHeight: 1.05 }}>
-              {lostDays > 0 ? "Broken" : voidDays > 0 ? "Ended" : isComplete ? "Completed" : "Active"}
-            </p>
-            <p style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)", marginTop: 6 }}>
-              {legacyChain ? "Previous selection rules" : "Evidence-backed picks"}
-            </p>
-          </div>
-
-          {todaysDay && (
-            <div className="card" style={{ padding: "18px 20px", borderLeft: `3px solid var(--blue)` }}>
-              <p style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--blue)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Today's slot</p>
-              <p className="stat-num" style={{ fontSize: 22, color: "var(--text-1)", lineHeight: 1.05 }}>{todaysDay.picks.length} pick{todaysDay.picks.length !== 1 ? "s" : ""}</p>
-              <p style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)", marginTop: 6 }}>Combined {todaysDay.combined_odds}x</p>
+          <dl className="rollover-summary__stats">
+            <div>
+              <dt>Today</dt>
+              <dd>
+                {todaysDay
+                  ? `${fmtOdds(todaysDay.combined_odds)}${oddsSuffix}`
+                  : "—"}
+              </dd>
             </div>
-          )}
-        </div>
+
+            <div>
+              <dt>Progress</dt>
+              <dd>{wonDays}/{chain.length}</dd>
+            </div>
+
+            <div>
+              <dt>Today&apos;s picks</dt>
+              <dd>{todaysDay?.picks.length ?? "—"}</dd>
+            </div>
+
+            <div>
+              <dt>Chain chance</dt>
+              <dd>
+                {completionProbability != null
+                  ? `${Math.round(completionProbability * 100)}%`
+                  : "—"}
+              </dd>
+            </div>
+          </dl>
+
+          <p>
+            {cumOdds > 0
+              ? lostDays > 0
+                ? `${fmtOdds(cumOdds)}${oddsSuffix} was scheduled across ${chain.length} days.`
+                : `${fmtOdds(cumOdds)}${oddsSuffix} compounded only if every scheduled day lands.`
+              : `Targets 2x–3x per qualifying day.`}
+          </p>
+        </section>
       )}
 
       {error && usingFallback && (

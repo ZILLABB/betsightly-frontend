@@ -542,6 +542,11 @@ export function BuilderV2Controls() {
     ? fixtureGroups.filter((group) => selectedFixtureIds.has(group.fixtureId))
     : fixtureGroups;
 
+  const browsableSelectionCount = browsableFixtureGroups.reduce(
+    (total, group) => total + group.selections.length,
+    0,
+  );
+
   const manualPageCount = Math.max(
     1,
     Math.ceil(browsableFixtureGroups.length / MANUAL_PAGE_SIZE),
@@ -1100,6 +1105,8 @@ export function BuilderV2Controls() {
               <div className="builder-v2-manual-toolbar">
                 <span>
                   {browsableFixtureGroups.length} {browsableFixtureGroups.length === 1 ? "fixture" : "fixtures"}
+                  {" · "}
+                  {browsableSelectionCount} approved {browsableSelectionCount === 1 ? "market" : "markets"}
                   {" · "}
                   {selectedIds.length} selected
                 </span>

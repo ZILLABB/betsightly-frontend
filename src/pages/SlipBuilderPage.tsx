@@ -394,6 +394,17 @@ export default function SlipBuilderPage() {
   const bookingConfirmed = Boolean(
     slip?.booking?.status === "active" && slip.booking.actionable !== false,
   );
+
+  const verifiedSportyBetOdds =
+    bookingConfirmed &&
+    typeof slip?.booking?.actual_sportybet_odds === "number"
+      ? slip.booking.actual_sportybet_odds
+      : null;
+
+  const displayedFinalOdds =
+    verifiedSportyBetOdds ??
+    slip?.odds ??
+    0;
   const belowBuilderMinimum = Boolean(
     slip?.best_reachable && slip.best_reachable < 2,
   );
@@ -483,11 +494,6 @@ export default function SlipBuilderPage() {
               <CheckCircle2 size={16} /> Bookability checked
             </span>
           </div>
-        </div>
-        <div className="builder-hero__target" aria-label="Builder V2">
-          <span>Builder V2</span>
-          <strong>4</strong>
-          <em>ways to build · quality stays fixed</em>
         </div>
       </section>
 
@@ -865,7 +871,10 @@ export default function SlipBuilderPage() {
             {slip.mode === "game_count" && Number(slip.shortfall ?? 0) > 0 && (
               <Stat label="Shortfall" value={String(slip.shortfall)} />
             )}
-            <Stat label="Total odds" value={`${slip.odds?.toFixed(2)}x`} />
+            <Stat
+              label={verifiedSportyBetOdds != null ? "SportyBet odds" : "Selection odds"}
+              value={`${displayedFinalOdds.toFixed(2)}x`}
+            />
             <Stat label="Legs" value={String(slip.legs)} />
             {lowestSelectedProbability != null && (
               <Stat
@@ -891,7 +900,7 @@ export default function SlipBuilderPage() {
             />
             <Stat
               label="Bookmaker break-even"
-              value={formatProbabilityPercent(1 / (slip.odds || 1))}
+              value={formatProbabilityPercent(1 / (displayedFinalOdds || 1))}
             />
           </div>
           {hasDnb ? (

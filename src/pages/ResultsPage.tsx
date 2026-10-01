@@ -129,9 +129,6 @@ export function ResultsPage() {
       {tab === "products" ? (
         <>
           <RecordSummary results={results} />
-          <ProductPerformance summary={results?.summary} />
-          <CalibrationPanel calibration={calibration} unavailable={calibrationError} />
-          <CurrentPolicyPanel policy={currentPolicy} />
 
           <section className="results-history" aria-labelledby="results-history-title">
             <div className="results-history__heading">
@@ -154,6 +151,26 @@ export function ResultsPage() {
               <div className="results-empty"><Trophy size={26} aria-hidden="true" /><h3>No matching results</h3><p>{results?.history?.length ? "Try another status or product filter." : "Published selections will appear here as soon as verified results are available."}</p></div>
             )}
           </section>
+
+          <ProductPerformance summary={results?.summary} />
+
+          <details className="results-diagnostics">
+            <summary>
+              <span>
+                <strong>Model diagnostics</strong>
+                <small>Calibration and current selection policy</small>
+              </span>
+              <span aria-hidden="true">+</span>
+            </summary>
+
+            <div className="results-diagnostics__body">
+              <CalibrationPanel
+                calibration={calibration}
+                unavailable={calibrationError}
+              />
+              <CurrentPolicyPanel policy={currentPolicy} />
+            </div>
+          </details>
         </>
       ) : (
         <section className="results-history" aria-labelledby="rollover-history-title">

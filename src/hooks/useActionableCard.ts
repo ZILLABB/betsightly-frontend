@@ -8,6 +8,8 @@ import type {
 
 const BOOKING_BUFFER_MS = 20 * 60 * 1000;
 const REFRESH_MS = 2 * 60 * 1000;
+const BOARD_REFRESH_RETRY_MS = 5_000;
+const BOARD_REFRESH_RETRY_LIMIT = 12;
 
 const REPLACEABLE_KEYS = [
   "banker",
@@ -20,6 +22,38 @@ const REPLACEABLE_KEYS = [
 type RuntimeGame = GamePrediction & {
   started?: boolean;
   bookable?: boolean;
+};
+
+type AvailableNowFailure = Error & {
+  status?: number;
+  reason?: string;
+  retryable?: boolean;
+  detail?: unknown;
+};
+
+const availableNowFailure = (error: unknown) => {
+  const failure = error as AvailableNowFailure;
+
+  const detail =
+    failure?.detail &&
+    typeof failure.detail === "object"
+      ? failure.detail as Record<string, unknown>
+      : null;
+
+  const reason =
+    failure?.reason ||
+    (typeof detail?.reason === "string" ? detail.reason : "") ||
+    (error instanceof Error ? error.message : "");
+
+  const retryable =
+    failure?.retryable === true ||
+    detail?.retryable === true;
+
+  return {
+    status: failure?.status,
+    reason,
+    retryable,
+  };
 };
 
 const bookingIsActionable = (category?: CategoryData) => {
@@ -91,6 +125,7 @@ export function useActionableCard(
   const [mode, setMode] = useState<"auto" | "published">("auto");
   const [bookable, setBookable] = useState<BookableNowResponse | null>(null);
   const [bookableLoading, setBookableLoading] = useState(false);
+  const [bookableNotice, setBookableNotice] = useState<string | null>(null);
   const [fetchedAt, setFetchedAt] = useState(0);
   const [now, setNow] = useState(() => Date.now());
   const requestIdRef = useRef(0);
@@ -106,6 +141,7 @@ export function useActionableCard(
     setMode("auto");
     setBookable(null);
     setBookableLoading(false);
+    setBookableNotice(null);
     setFetchedAt(0);
   }, [cardDate]);
 
@@ -116,7 +152,6 @@ export function useActionableCard(
 
   useEffect(() => {
     if (!actionability.needsReplacement || mode === "published") return;
-    if (bookableLoading) return;
 
     const freshEnough =
       bookable !== null &&
@@ -126,30 +161,75 @@ export function useActionableCard(
     if (freshEnough) return;
 
     const requestId = ++requestIdRef.current;
-    setBookableLoading(true);
+    let retryTimer: number | null = null;
 
-    api.getBookableNow()
-      .then(result => {
+    setBookableLoading(true);
+    setBookableNotice(null);
+
+    const load = async (attempt: number) => {
+      try {
+        const result = await api.getBookableNow();
+
         if (requestId !== requestIdRef.current) return;
+
         setBookable(result);
         setFetchedAt(Date.now());
-      })
-      .catch((error: unknown) => {
+        setBookableNotice(null);
+        setBookableLoading(false);
+      } catch (error: unknown) {
         if (requestId !== requestIdRef.current) return;
+
+        const failure = availableNowFailure(error);
+
+        if (
+          failure.status === 503 &&
+          failure.reason === "board_refreshing" &&
+          failure.retryable &&
+          attempt < BOARD_REFRESH_RETRY_LIMIT
+        ) {
+          setBookableNotice(
+            "The current fixture board is refreshing. Retrying automatically…",
+          );
+
+          retryTimer = window.setTimeout(() => {
+            if (requestId === requestIdRef.current) {
+              void load(attempt + 1);
+            }
+          }, BOARD_REFRESH_RETRY_MS);
+
+          return;
+        }
+
+        const reason =
+          failure.reason === "board_refreshing"
+            ? "The current fixture board is still refreshing. Please try again."
+            : failure.reason
+              ? `Could not verify current SportyBet availability: ${failure.reason.replaceAll("_", " ")}.`
+              : "Could not verify current SportyBet availability. Please try again.";
+
         setBookable({
           status: "error",
           available: false,
-          reason: error instanceof Error
-            ? `Available-now rebuild failed: ${error.message}`
-            : "Available-now rebuild failed. Please try again.",
+          reason,
         });
+
         setFetchedAt(Date.now());
-      })
-      .finally(() => {
-        if (requestId === requestIdRef.current) {
-          setBookableLoading(false);
-        }
-      });
+        setBookableNotice(null);
+        setBookableLoading(false);
+      }
+    };
+
+    void load(0);
+
+    return () => {
+      if (retryTimer != null) {
+        window.clearTimeout(retryTimer);
+      }
+
+      if (requestId === requestIdRef.current) {
+        requestIdRef.current += 1;
+      }
+    };
   }, [
     actionability.needsReplacement,
     mode,
@@ -161,6 +241,7 @@ export function useActionableCard(
   const showAvailable = useCallback(() => {
     setMode("auto");
     setBookable(null);
+    setBookableNotice(null);
     setFetchedAt(0);
     setNow(Date.now());
   }, []);
@@ -178,10 +259,17 @@ export function useActionableCard(
     mode === "published" &&
     actionability.needsReplacement;
 
+  const bookableError =
+    mode === "auto" &&
+    actionability.needsReplacement &&
+    !bookableLoading &&
+    bookable?.status === "error";
+
   const unavailable =
     mode === "auto" &&
     actionability.needsReplacement &&
     !bookableLoading &&
+    !bookableError &&
     bookable?.available === false;
 
   const mergedAvailable =
@@ -207,6 +295,8 @@ export function useActionableCard(
     accumulators,
     bookable,
     bookableLoading,
+    bookableNotice,
+    bookableError,
     viewingBookable,
     viewingPublishedRecord,
     unavailable,

@@ -110,7 +110,7 @@ export function HomePage() {
         <div className="home-hero-copy">
           <div className="market-status">
             <span className="market-status-dot" />
-            Models online
+            Published card
             <span aria-hidden="true">·</span>
             {data?.date
               ? new Date(data.date + "T12:00:00Z").toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" })
@@ -153,7 +153,7 @@ export function HomePage() {
           </div>
           <div className="signal-list">
             <div><span>Probability model</span><b>Calibrated</b></div>
-            <div><span>Market scan</span><b>Current</b></div>
+            <div><span>Market scan</span><b>Daily snapshot</b></div>
             <div><span>Risk filter</span><b>Applied</b></div>
           </div>
           <div className="signal-foot">
@@ -204,9 +204,11 @@ export function HomePage() {
                 ? "Checking what is still bookable"
                 : actionable.viewingBookable
                   ? "Showing matches you can still bet"
-                  : actionable.unavailable
-                    ? "No verified bookable slip remains right now"
-                    : actionable.viewingPublishedRecord
+                  : actionable.bookableError
+                    ? "Couldn’t verify current SportyBet availability"
+                    : actionable.unavailable
+                      ? "No verified bookable slip remains right now"
+                      : actionable.viewingPublishedRecord
                       ? "Viewing the original published card"
                       : "Refreshing the stale published card"}
             </strong>
@@ -219,8 +221,12 @@ export function HomePage() {
               color: "var(--text-3)",
             }}>
               {actionable.bookableLoading
-                ? "Showing the original published card while we verify which remaining matches are still exactly bookable."
-                : actionable.viewingPublishedRecord
+                ? (actionable.bookableNotice ||
+                  "Showing the original published card while we verify which remaining matches are still exactly bookable.")
+                : actionable.bookableError
+                  ? (actionable.bookable?.reason ||
+                    "Current SportyBet availability could not be verified.")
+                  : actionable.viewingPublishedRecord
                   ? "The original card is preserved for the public record and may include matches already under way."
                   : actionable.bookable?.reason ||
                     "Late visitors automatically see the current exact-bookable card. The original publication remains unchanged for Results."}
@@ -250,8 +256,8 @@ export function HomePage() {
               ? "Checking…"
               : actionable.viewingBookable
                 ? "View original card"
-                : actionable.unavailable
-                  ? "Check again"
+                : actionable.bookableError || actionable.unavailable
+                  ? "Try again"
                   : "Show available now"}
           </button>
         </div>

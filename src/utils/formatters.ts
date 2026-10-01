@@ -188,12 +188,16 @@ const localTimeParts = (
   }).formatToParts(date);
   const part = (type: Intl.DateTimeFormatPartTypes) =>
     parts.find(item => item.type === type)?.value ?? '';
+  const resolvedTimeZone = options.timeZone ?? 'Africa/Lagos';
+
   return {
     day: part('day'),
     month: part('month'),
     hour: part('hour'),
     minute: part('minute'),
-    zone: part('timeZoneName'),
+    zone: resolvedTimeZone === 'Africa/Lagos'
+      ? 'WAT'
+      : part('timeZoneName'),
   };
 };
 

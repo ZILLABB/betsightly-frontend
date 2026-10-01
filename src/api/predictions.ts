@@ -20,16 +20,50 @@ async function request<T>(
       signal: ctrl.signal,
     });
     if (!res.ok) {
-      // Carry the status and whatever the server said. This helper used to
-      // throw a bare "HTTP 405", which is what turned a GET sent to a POST
-      // route into an unexplained "could not build a slip" on screen.
-      let detail = '';
+      // FastAPI may return a string detail or a structured object such as:
+      // { detail: { reason: "board_refreshing", retryable: true } }.
+      // Never stringify that object implicitly as "[object Object]".
+      let body: any = null;
+
       try {
-        const body = await res.json();
-        detail = body?.detail || body?.reason || body?.message || '';
-      } catch { /* body was not json */ }
-      const err = new Error(detail || `HTTP ${res.status}`);
-      (err as Error & { status?: number }).status = res.status;
+        body = await res.json();
+      } catch {
+        // Non-JSON error bodies fall back to the HTTP status below.
+      }
+
+      const rawDetail =
+        body?.detail ??
+        body?.reason ??
+        body?.message ??
+        null;
+
+      const structured =
+        rawDetail &&
+        typeof rawDetail === "object"
+          ? rawDetail
+          : body;
+
+      const reason =
+        typeof rawDetail === "string"
+          ? rawDetail
+          : typeof structured?.reason === "string"
+            ? structured.reason
+            : typeof structured?.message === "string"
+              ? structured.message
+              : "";
+
+      const err = new Error(reason || `HTTP ${res.status}`) as Error & {
+        status?: number;
+        reason?: string;
+        retryable?: boolean;
+        detail?: unknown;
+      };
+
+      err.status = res.status;
+      err.reason = reason || undefined;
+      err.retryable = structured?.retryable === true;
+      err.detail = rawDetail;
+
       throw err;
     }
     return res.json() as Promise<T>;
