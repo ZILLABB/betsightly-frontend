@@ -7,6 +7,8 @@ import {
 } from "react";
 
 import { api } from "../api/predictions";
+import type { BuilderV2GenerateRequest, BuilderV2ManualRequest } from "../api/predictions";
+import { anonymousBuilderId } from "../utils/anonymousIdentity";
 import {
   reviseBuilderSlip,
   type BuilderAction,
@@ -108,6 +110,9 @@ export function BuilderProvider({
   const revisionSequence = useRef(0);
   const revisionController = useRef<AbortController | null>(null);
   const feedbackTimer = useRef<number | null>(null);
+  const lastV2Request = useRef<
+    BuilderV2GenerateRequest | BuilderV2ManualRequest | null
+  >(null);
 
   useEffect(() => {
     try {
@@ -163,6 +168,8 @@ export function BuilderProvider({
       const requestedTarget =
         targetOverride ?? target;
 
+      // An explicit legacy build must not accidentally retry an older V2 request.
+      lastV2Request.current = null;
       inFlight.current = true;
       const startedAt = performance.now();
 
@@ -272,9 +279,112 @@ export function BuilderProvider({
     [horizon, target],
   );
 
+  const clearSlip = useCallback(() => {
+    setSlip(null);
+    setError(null);
+    recoveryAttempts.current = 0;
+  }, []);
+
+  const buildV2 = useCallback(async (
+    input: BuilderV2GenerateRequest | BuilderV2ManualRequest,
+    preserveSlip = false,
+  ) => {
+    if (inFlight.current) return;
+
+    const identifiedInput = { ...input, anonymous_id: anonymousBuilderId() };
+    lastV2Request.current = identifiedInput;
+    inFlight.current = true;
+    const startedAt = performance.now();
+    setLoading(true);
+    setError(null);
+    if (!preserveSlip) {
+      setSlip(null);
+    }
+
+    try {
+      const result = identifiedInput.mode === "manual"
+        ? await api.buildManualBuilderV2(identifiedInput)
+        : await api.generateBuilderV2(identifiedInput);
+
+      setSlip(result as EditableBuiltSlip);
+      recoveryAttempts.current = 0;
+
+      trackProductEvent(
+        result.status === "success" ? "builder_generated" : "builder_unavailable",
+        {
+          product_area: "builder",
+          source: "generator_v2",
+          mode: identifiedInput.mode,
+          horizon: input.horizon,
+          target_odds: input.mode === "target_odds" ? input.target_odds : undefined,
+          requested_game_count: input.mode === "game_count" ? input.game_count : undefined,
+          delivered_game_count: result.delivered_game_count,
+          leg_count: result.legs,
+          duration_ms: Math.round(performance.now() - startedAt),
+        },
+      );
+    } catch (caught) {
+      const err = caught as Error & { name?: string };
+
+      setError(
+        err?.name === "AbortError"
+          ? "That took longer than expected — the server may be waking up. Try once more."
+          : "The Builder could not reach the prediction service. Your choices were kept—try again.",
+      );
+    } finally {
+      inFlight.current = false;
+      setLoading(false);
+    }
+  }, []);
+
+  const buildAnother = useCallback(async () => {
+    const previous = lastV2Request.current;
+
+    // Manual mode reflects the user's explicit selections; automatic
+    // diversification must not silently replace those choices.
+    if (!previous || previous.mode === "manual") {
+      return;
+    }
+
+    trackProductEvent("builder_build_another", {
+      product_area: "builder",
+      source: "generator_v2",
+      mode: previous.mode,
+      horizon: previous.horizon,
+      target_odds:
+        previous.mode === "target_odds"
+          ? previous.target_odds
+          : undefined,
+      requested_game_count:
+        previous.mode === "game_count"
+          ? previous.game_count
+          : undefined,
+    });
+
+    await buildV2(
+      {
+        ...previous,
+        build_another: true,
+      },
+    );
+  }, [buildV2]);
+
+
+  const retryBuild = useCallback(async () => {
+    const previousV2 = lastV2Request.current;
+
+    if (previousV2) {
+      await buildV2(previousV2);
+      return;
+    }
+
+    await build(false);
+  }, [build, buildV2]);
+
   useEffect(() => {
     if (
       slip?.status !== "success" ||
+      Boolean(slip?.mode) ||
       slip.booking?.status === "active" ||
       slip.booking?.status === "not_requested" ||
       editingSelectionId !== null ||
@@ -521,6 +631,10 @@ export function BuilderProvider({
         chooseTarget,
         chooseHorizon,
         build,
+        buildV2,
+        buildAnother,
+        retryBuild,
+        clearSlip,
         reviseLeg,
       }}
     >

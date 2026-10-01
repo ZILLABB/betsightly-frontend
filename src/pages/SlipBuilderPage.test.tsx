@@ -1,11 +1,17 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
-import SlipBuilderPage from "./SlipBuilderPage";
+import SlipBuilderPage, { formatKickoffWindow } from "./SlipBuilderPage";
 import { api } from "../api/predictions";
 import { reviseBuilderSlip } from "../api/builderRevisions";
 import { BuilderProvider } from "../contexts/BuilderProvider";
+import { BuilderContext } from "../contexts/BuilderContextInstance";
 
-jest.mock("../api/predictions", () => ({ api: { buildSlip: jest.fn() } }));
+jest.mock("../api/predictions", () => ({
+  api: {
+    buildSlip: jest.fn(),
+    generateBuilderV2: jest.fn(),
+  },
+}));
 jest.mock("../api/builderRevisions", () => ({
   reviseBuilderSlip: jest.fn(),
 }));
@@ -18,6 +24,7 @@ jest.mock("../components/predictions/BookingCode", () => ({ booking }: any) => (
 jest.mock("../services/bookingTracking", () => ({ trackProductEvent: jest.fn() }));
 
 const buildSlip = api.buildSlip as jest.Mock;
+const generateBuilderV2 = api.generateBuilderV2 as jest.Mock;
 const reviseSlip = reviseBuilderSlip as jest.Mock;
 
 const renderBuilder = () =>
@@ -29,8 +36,28 @@ const renderBuilder = () =>
 
 beforeEach(() => {
   buildSlip.mockReset();
+  generateBuilderV2.mockReset();
   reviseSlip.mockReset();
   sessionStorage.clear();
+  localStorage.clear();
+
+  // Existing page tests describe the returned slip through buildSlip mocks.
+  // Proxy the V2 request into that same test double so these tests keep
+  // asserting page behavior while the real UI now routes Target Odds via V2.
+  generateBuilderV2.mockImplementation((payload: any) =>
+    buildSlip(
+      payload.target_odds,
+      payload.horizon === "7_days" ? "week" : payload.horizon,
+      false,
+    ),
+  );
+});
+
+test("formats Builder kickoff windows consistently in WAT", () => {
+  expect(formatKickoffWindow("2026-09-29T17:05:00Z", "2026-09-29T20:30:00Z"))
+    .toBe("29 Sep · 18:05–21:30 WAT");
+  expect(formatKickoffWindow("2026-09-29T17:05:00Z", "2026-10-06T11:30:00Z"))
+    .toBe("29 Sep 18:05 – 6 Oct 12:30 WAT");
 });
 
 const editableSlip = (games: any[] = [{
@@ -63,6 +90,151 @@ test("shows every editable leg action with accessible button alternatives", asyn
   fireEvent.click(screen.getByRole("button", { name: /why this pick/i }));
   expect(screen.getByText(/conservative builder probability/i)).toBeInTheDocument();
 });
+
+test("Build Another preserves the last V2 settings and requests diversification", async () => {
+  buildSlip.mockResolvedValue({
+    ...editableSlip(),
+    mode: "target_odds",
+    diversification: {
+      applied: false,
+      build_another: false,
+      history_ticket_count: 0,
+      strategy_used: "normal",
+      fresh_selection_count: 1,
+      repeated_selection_count: 0,
+      repeated_fixture_count: 0,
+      unavoidable_reuse_count: 0,
+      quality_floor_preserved: true,
+    },
+  });
+
+  renderBuilder();
+
+  fireEvent.click(
+    screen.getByRole("button", {
+      name: /10x lower target/i,
+    }),
+  );
+
+  fireEvent.click(
+    screen.getByRole("button", {
+      name: /build my 10x slip/i,
+    }),
+  );
+
+  const another = await screen.findByRole(
+    "button",
+    { name: /build another qualified ticket/i },
+  );
+
+  fireEvent.click(another);
+
+  await waitFor(() =>
+    expect(generateBuilderV2).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        mode: "target_odds",
+        target_odds: 10,
+        horizon: "7_days",
+        build_another: true,
+        anonymous_id: expect.stringMatching(/^anon_/),
+      }),
+    ),
+  );
+});
+
+test("Build Another clears the previous booking code while the diversified request is pending", async () => {
+  let resolveDiversified: ((value: ReturnType<typeof editableSlip>) => void) | undefined;
+  const diversified = new Promise<ReturnType<typeof editableSlip>>((resolve) => {
+    resolveDiversified = resolve;
+  });
+  buildSlip
+    .mockResolvedValueOnce({
+      ...editableSlip(),
+      mode: "target_odds",
+      diversification: {
+        applied: false,
+        build_another: false,
+        history_ticket_count: 0,
+        strategy_used: "normal",
+        fresh_selection_count: 1,
+        repeated_selection_count: 0,
+        repeated_fixture_count: 0,
+        unavoidable_reuse_count: 0,
+        quality_floor_preserved: true,
+      },
+    })
+    .mockReturnValueOnce(diversified);
+
+  renderBuilder();
+  fireEvent.click(screen.getByRole("button", { name: /10x lower target/i }));
+  fireEvent.click(screen.getByRole("button", { name: /build my 10x slip/i }));
+  await screen.findByTestId("booking-code");
+
+  fireEvent.click(await screen.findByRole("button", { name: /build another qualified ticket/i }));
+  expect(screen.queryByTestId("booking-code")).not.toBeInTheDocument();
+
+  await act(async () => resolveDiversified?.(editableSlip()));
+});
+
+
+test("explains portfolio reuse without describing it as lower quality", async () => {
+  buildSlip
+    .mockResolvedValueOnce({
+      ...editableSlip(),
+      mode: "target_odds",
+    })
+    .mockResolvedValueOnce({
+      ...editableSlip(),
+      mode: "target_odds",
+      diversification: {
+        applied: true,
+        build_another: true,
+        history_ticket_count: 4,
+        strategy_used: "fresh",
+        fresh_selection_count: 1,
+        repeated_selection_count: 0,
+        repeated_fixture_count: 0,
+        repeated_team_count: 2,
+        repeated_league_count: 1,
+        repeated_market_count: 1,
+        unavoidable_reuse_count: 0,
+        quality_floor_preserved: true,
+        portfolio_quality_delta: 0.005,
+      },
+    });
+
+  renderBuilder();
+
+  fireEvent.click(
+    screen.getByRole("button", {
+      name: /10x lower target/i,
+    }),
+  );
+
+  fireEvent.click(
+    screen.getByRole("button", {
+      name: /build my 10x slip/i,
+    }),
+  );
+
+  fireEvent.click(
+    await screen.findByRole(
+      "button",
+      { name: /build another qualified ticket/i },
+    ),
+  );
+
+  expect(
+    await screen.findByText(
+      /stronger picks are not discarded merely for novelty/i,
+    ),
+  ).toBeInTheDocument();
+
+  expect(
+    screen.getByText(/2 previously used teams/i),
+  ).toBeInTheDocument();
+});
+
 
 test("preview requests a code only after explicit final confirmation", async () => {
   const preview = {
@@ -334,7 +506,7 @@ test("uses horizon-aware board refresh copy", async () => {
     status: "unavailable", target: 50, reason: "board_refreshing",
   });
   renderBuilder();
-  fireEvent.click(screen.getByRole("button", { name: /today only/i }));
+  fireEvent.click(screen.getByRole("button", { name: /today fast settlement/i }));
   fireEvent.click(screen.getByRole("button", { name: /build my 50x slip/i }));
   expect(await screen.findByText(/Today’s board is being evaluated/i)).toBeInTheDocument();
   expect(screen.queryByText(/weekly predictions/i)).not.toBeInTheDocument();
@@ -345,7 +517,7 @@ test("turns a network failure into a clean retry state without losing choices", 
     .mockResolvedValueOnce({ status: "unavailable", target: 100 });
   renderBuilder();
   fireEvent.click(screen.getByRole("button", { name: /100x high target/i }));
-  fireEvent.click(screen.getByRole("button", { name: /today only/i }));
+  fireEvent.click(screen.getByRole("button", { name: /today fast settlement/i }));
   fireEvent.click(screen.getByRole("button", { name: /build my 100x slip/i }));
   expect(await screen.findByText(/could not reach the prediction service/i)).toBeInTheDocument();
   expect(screen.queryByText(/Failed to fetch/i)).not.toBeInTheDocument();
@@ -393,7 +565,7 @@ test("accepts a bounded custom target up to 200x", async () => {
 test("switches between today and seven-day windows", async () => {
   buildSlip.mockResolvedValue({ status: "unavailable", target: 50 });
   renderBuilder();
-  fireEvent.click(screen.getByRole("button", { name: /today only/i }));
+  fireEvent.click(screen.getByRole("button", { name: /today fast settlement/i }));
   fireEvent.click(screen.getByRole("button", { name: /build my 50x slip/i }));
   await waitFor(() => expect(buildSlip).toHaveBeenCalledWith(50, "today", false));
 });
@@ -509,4 +681,678 @@ test("terminal best-available result shows the original target and no cascade CT
   expect(screen.getByText(/best found on the current board; a maximum has not been proven/i)).toBeInTheDocument();
   expect(screen.queryByRole("button", { name: /build verified/i })).not.toBeInTheDocument();
   expect(reviseSlip).not.toHaveBeenCalled();
+});
+
+test("game-count results use a structural heading and show market balance", async () => {
+  buildSlip.mockResolvedValue({
+    status: "success",
+    mode: "game_count",
+    requested_game_count: 20,
+    delivered_game_count: 20,
+    odds: 48.2,
+    legs: 20,
+    estimated_all_leg_probability: .000001,
+    lowest_trust_grade: "A",
+    market_distribution: {
+      over_1_5: 14,
+      over_2_5: 6,
+    },
+    market_balance: {
+      applied: true,
+      requested_markets: ["over_1_5", "over_2_5"],
+      target_distribution: {
+        over_1_5: 10,
+        over_2_5: 10,
+      },
+      delivered_distribution: {
+        over_1_5: 14,
+        over_2_5: 6,
+      },
+      shortfalls: {
+        over_2_5: 4,
+      },
+      quality_floor_preserved: true,
+      strategy: "even_requested_markets_then_quality_backfill",
+    },
+    games: [],
+    booking: {
+      status: "active",
+      booking_status: "FULL",
+      share_code: "BAL20",
+    },
+  });
+
+  renderBuilder();
+
+  fireEvent.click(
+    screen.getByRole("button", { name: /number of games/i }),
+  );
+  fireEvent.click(
+    screen.getByRole("button", { name: /build best 20 games/i }),
+  );
+
+  expect(
+    await screen.findByText("20 qualifying games"),
+  ).toBeInTheDocument();
+
+  expect(screen.getByText("Market mix")).toBeInTheDocument();
+
+  const marketDistribution = screen.getByLabelText("Market distribution");
+  expect(marketDistribution).toHaveTextContent("Over 1.5");
+  expect(marketDistribution).toHaveTextContent("Over 2.5");
+
+  expect(
+    screen.getByText(/Over 2.5 was 4 picks short/i),
+  ).toBeInTheDocument();
+
+  expect(screen.getByText("<0.01%")).toBeInTheDocument();
+});
+
+test("strongest results lead with strongest picks instead of total odds", async () => {
+  buildSlip.mockResolvedValue({
+    status: "success",
+    mode: "strongest",
+    odds: 62.77,
+    legs: 30,
+    hit_probability: .000001,
+    lowest_trust_grade: "A",
+    market_distribution: {
+      home_over_0_5: 22,
+      over_1_5: 8,
+    },
+    games: [],
+    booking: {
+      status: "active",
+      booking_status: "FULL",
+      share_code: "STR30",
+    },
+  });
+
+  renderBuilder();
+
+  fireEvent.click(
+    screen.getByRole("button", { name: /strongest picks/i }),
+  );
+
+  fireEvent.change(
+    screen.getByLabelText(/maximum strongest picks/i),
+    { target: { value: "30" } },
+  );
+
+  fireEvent.click(
+    screen.getByRole("button", { name: /build strongest 30 picks/i }),
+  );
+
+  expect(
+    await screen.findByText("30 strongest qualifying picks"),
+  ).toBeInTheDocument();
+
+  expect(screen.getByText("Strongest picks ready")).toBeInTheDocument();
+  expect(screen.getByText("Market mix")).toBeInTheDocument();
+});
+
+
+test("partial game-count result shows honest market shortfalls and read-only legs", async () => {
+  buildSlip.mockResolvedValue({
+    ...editableSlip(),
+    mode: "game_count",
+    editing_supported: false,
+    requested_game_count: 50,
+    delivered_game_count: 16,
+    shortfall: 34,
+    odds: 71.005,
+    legs: 16,
+    estimated_all_leg_probability: .000001,
+    lowest_trust_grade: "A",
+    market_distribution: {
+      over_1_5: 15,
+      home_win: 1,
+    },
+    market_balance: {
+      applied: true,
+      requested_markets: ["over_1_5", "home_win", "away_win"],
+      target_distribution: {
+        over_1_5: 17,
+        home_win: 17,
+        away_win: 16,
+      },
+      delivered_distribution: {
+        over_1_5: 15,
+        home_win: 1,
+        away_win: 0,
+      },
+      shortfalls: {
+        over_1_5: 2,
+        home_win: 16,
+        away_win: 16,
+      },
+      quality_floor_preserved: true,
+      strategy: "even_requested_markets_then_quality_backfill",
+    },
+    market_availability: {
+      over_1_5: {
+        target: 17,
+        raw: 16,
+        after_trust_and_policy: 16,
+        approved: 16,
+        selected: 15,
+        shortfall: 2,
+        primary_reason: "FIXTURE_OR_TEAM_DIVERSITY",
+      },
+      home_win: {
+        target: 17,
+        raw: 1,
+        after_trust_and_policy: 1,
+        approved: 1,
+        selected: 1,
+        shortfall: 16,
+        primary_reason: "INSUFFICIENT_APPROVED_SELECTIONS",
+      },
+      away_win: {
+        target: 16,
+        raw: 0,
+        after_trust_and_policy: 0,
+        approved: 0,
+        selected: 0,
+        shortfall: 16,
+        primary_reason: "NO_RAW_CANDIDATES",
+      },
+    },
+    booking: {
+      status: "active",
+      booking_status: "FULL",
+      booked_leg_count: 16,
+      original_leg_count: 16,
+      share_code: "VD5G95",
+      readback_validation: "PASSED",
+    },
+  });
+
+  renderBuilder();
+
+  fireEvent.click(
+    screen.getByRole("button", { name: /number of games/i }),
+  );
+
+  fireEvent.change(
+    screen.getByLabelText(/number of games/i),
+    { target: { value: "50" } },
+  );
+
+  fireEvent.click(
+    screen.getByRole("button", { name: /build best 50 games/i }),
+  );
+
+  expect(
+    await screen.findByText("16 of 50 qualifying games"),
+  ).toBeInTheDocument();
+
+  expect(
+    screen.getByText("Best available game count"),
+  ).toBeInTheDocument();
+
+  expect(
+    screen.getByText(/Lowest selected grade:\s*A/i),
+  ).toBeInTheDocument();
+
+  const mix = screen.getByLabelText("Market distribution");
+
+  expect(mix).toHaveTextContent("Over 1.5");
+  expect(mix).toHaveTextContent("15 / 17");
+  expect(mix).toHaveTextContent("Home Win");
+  expect(mix).toHaveTextContent("1 / 17");
+  expect(mix).toHaveTextContent("Away Win");
+  expect(mix).toHaveTextContent("0 / 16");
+
+  expect(
+    screen.getByText(/only 16 of 50 requested games passed/i),
+  ).toBeInTheDocument();
+
+  expect(
+    screen.getByText(/Away Win: no qualifying candidate was available/i),
+  ).toBeInTheDocument();
+
+  expect(
+    screen.getByText(/Home Win: only 1 approved selection passed all current gates/i),
+  ).toBeInTheDocument();
+
+  expect(screen.getByText("Shortfall")).toBeInTheDocument();
+  expect(screen.getByText("34")).toBeInTheDocument();
+
+  expect(screen.getByText("Review this slip")).toBeInTheDocument();
+
+  expect(
+    screen.getByRole("button", { name: /why this pick/i }),
+  ).toBeInTheDocument();
+
+  expect(
+    screen.queryByRole("button", { name: /safer market/i }),
+  ).not.toBeInTheDocument();
+
+  expect(
+    screen.queryByRole("button", { name: /^replace$/i }),
+  ).not.toBeInTheDocument();
+
+  expect(
+    screen.queryByRole("button", { name: /^lock$/i }),
+  ).not.toBeInTheDocument();
+
+  expect(
+    screen.queryByRole("button", { name: /more leg actions/i }),
+  ).not.toBeInTheDocument();
+
+  expect(
+    screen.queryByText(/remaining slots were filled only/i),
+  ).not.toBeInTheDocument();
+});
+
+test("complete game-count result may explain market backfill without calling it partial", async () => {
+  buildSlip.mockResolvedValue({
+    status: "success",
+    mode: "game_count",
+    editing_supported: false,
+    requested_game_count: 20,
+    delivered_game_count: 20,
+    shortfall: 0,
+    odds: 48.2,
+    legs: 20,
+    estimated_all_leg_probability: .000001,
+    lowest_trust_grade: "A",
+    market_distribution: {
+      over_1_5: 14,
+      over_2_5: 6,
+    },
+    market_balance: {
+      applied: true,
+      requested_markets: ["over_1_5", "over_2_5"],
+      target_distribution: {
+        over_1_5: 10,
+        over_2_5: 10,
+      },
+      delivered_distribution: {
+        over_1_5: 14,
+        over_2_5: 6,
+      },
+      shortfalls: {
+        over_2_5: 4,
+      },
+      quality_floor_preserved: true,
+      strategy: "even_requested_markets_then_quality_backfill",
+    },
+    games: [],
+    booking: {
+      status: "active",
+      booking_status: "FULL",
+      share_code: "FULL20",
+    },
+  });
+
+  renderBuilder();
+
+  fireEvent.click(
+    screen.getByRole("button", { name: /number of games/i }),
+  );
+
+  fireEvent.click(
+    screen.getByRole("button", { name: /build best 20 games/i }),
+  );
+
+  expect(
+    await screen.findByText("20 qualifying games"),
+  ).toBeInTheDocument();
+
+  expect(
+    screen.getByText(/remaining slots were filled only/i),
+  ).toBeInTheDocument();
+
+  expect(
+    screen.queryByText(/20 of 20 qualifying games/i),
+  ).not.toBeInTheDocument();
+});
+
+test("safe broader fill explains requested and fallback picks honestly", async () => {
+  buildSlip.mockResolvedValue({
+    status: "success",
+    mode: "game_count",
+    editing_supported: false,
+    fill_strategy: "selected_first_then_eligible",
+    requested_game_count: 30,
+    delivered_game_count: 22,
+    requested_market_leg_count: 14,
+    fallback_market_leg_count: 8,
+    fallback_market_distribution: {
+      under_4_5: 3,
+      home_or_draw: 5,
+    },
+    fallback_markets_used: ["home_or_draw", "under_4_5"],
+    shortfall: 8,
+    odds: 41.2,
+    legs: 22,
+    estimated_all_leg_probability: .000001,
+    lowest_trust_grade: "A",
+    market_distribution: {
+      over_1_5: 13,
+      home_win: 1,
+      under_4_5: 3,
+      home_or_draw: 5,
+    },
+    market_balance: {
+      applied: true,
+      requested_markets: ["over_1_5", "home_win"],
+      target_distribution: {
+        over_1_5: 15,
+        home_win: 15,
+      },
+      delivered_distribution: {
+        over_1_5: 13,
+        home_win: 1,
+      },
+      shortfalls: {
+        over_1_5: 2,
+        home_win: 14,
+      },
+      quality_floor_preserved: true,
+      strategy: "even_requested_markets_then_quality_backfill_then_eligible",
+      fill_strategy: "selected_first_then_eligible",
+      requested_market_leg_count: 14,
+      fallback_market_leg_count: 8,
+      fallback_market_distribution: {
+        under_4_5: 3,
+        home_or_draw: 5,
+      },
+      fallback_markets_used: ["home_or_draw", "under_4_5"],
+    },
+    market_availability: {
+      over_1_5: {
+        target: 15,
+        raw: 14,
+        after_trust_and_policy: 14,
+        approved: 14,
+        selected: 13,
+        shortfall: 2,
+        primary_reason: "FIXTURE_OR_TEAM_DIVERSITY",
+      },
+      home_win: {
+        target: 15,
+        raw: 1,
+        after_trust_and_policy: 1,
+        approved: 1,
+        selected: 1,
+        shortfall: 14,
+        primary_reason: "INSUFFICIENT_APPROVED_SELECTIONS",
+      },
+    },
+    games: [],
+    booking: {
+      status: "active",
+      booking_status: "FULL",
+      share_code: "SAFE22",
+      readback_validation: "PASSED",
+    },
+  });
+
+  renderBuilder();
+
+  fireEvent.click(screen.getByRole("button", { name: /number of games/i }));
+  fireEvent.click(screen.getByRole("button", { name: /over 1.5/i }));
+  fireEvent.click(
+    screen.getByRole("button", {
+      name: /smart fill/i,
+    }),
+  );
+  fireEvent.change(
+    screen.getByLabelText(/number of games/i),
+    { target: { value: "30" } },
+  );
+  fireEvent.click(
+    screen.getByRole("button", { name: /build best 30 games/i }),
+  );
+
+  expect(
+    await screen.findByText("22 of 30 qualifying games"),
+  ).toBeInTheDocument();
+
+  expect(
+    screen.getByText(/selected markets produced 14 qualifying picks/i),
+  ).toBeInTheDocument();
+  expect(
+    screen.getByText(/added 8 picks from other eligible markets/i),
+  ).toBeInTheDocument();
+  expect(
+    screen.getByText(/stopped at 22 of 30/i),
+  ).toBeInTheDocument();
+
+  expect(screen.getByText("Selected-market picks")).toBeInTheDocument();
+  expect(screen.getByText("Other eligible picks")).toBeInTheDocument();
+
+  const fallback = screen.getByLabelText("Fallback market distribution");
+  expect(fallback).toHaveTextContent("Under 4.5");
+  expect(fallback).toHaveTextContent("3");
+  expect(fallback).toHaveTextContent("Home / Draw");
+  expect(fallback).toHaveTextContent("5");
+
+  const requested = screen.getByLabelText("Market distribution");
+  expect(requested).toHaveTextContent("Over 1.5");
+  expect(requested).toHaveTextContent("13 / 15");
+  expect(requested).toHaveTextContent("Home Win");
+  expect(requested).toHaveTextContent("1 / 15");
+});
+
+test("safe fill says when selected markets alone were enough", async () => {
+  buildSlip.mockResolvedValue({
+    status: "success",
+    mode: "game_count",
+    editing_supported: false,
+    fill_strategy: "selected_first_then_eligible",
+    requested_game_count: 10,
+    delivered_game_count: 10,
+    requested_market_leg_count: 10,
+    fallback_market_leg_count: 0,
+    fallback_market_distribution: {},
+    fallback_markets_used: [],
+    shortfall: 0,
+    odds: 12.4,
+    legs: 10,
+    estimated_all_leg_probability: .01,
+    lowest_trust_grade: "A",
+    market_distribution: { over_1_5: 10 },
+    market_balance: {
+      applied: true,
+      requested_markets: ["over_1_5"],
+      target_distribution: { over_1_5: 10 },
+      delivered_distribution: { over_1_5: 10 },
+      shortfalls: {},
+      quality_floor_preserved: true,
+      strategy: "quality_first",
+      fill_strategy: "selected_first_then_eligible",
+      requested_market_leg_count: 10,
+      fallback_market_leg_count: 0,
+      fallback_market_distribution: {},
+      fallback_markets_used: [],
+    },
+    games: [],
+    booking: {
+      status: "active",
+      booking_status: "FULL",
+      share_code: "NOFALL",
+      readback_validation: "PASSED",
+    },
+  });
+
+  renderBuilder();
+
+  fireEvent.click(screen.getByRole("button", { name: /number of games/i }));
+  fireEvent.click(screen.getByRole("button", { name: /over 1.5/i }));
+  fireEvent.click(
+    screen.getByRole("button", {
+      name: /smart fill/i,
+    }),
+  );
+  fireEvent.change(
+    screen.getByLabelText(/number of games/i),
+    { target: { value: "10" } },
+  );
+  fireEvent.click(
+    screen.getByRole("button", { name: /build best 10 games/i }),
+  );
+
+  expect(
+    await screen.findByText("10 qualifying games"),
+  ).toBeInTheDocument();
+  expect(
+    screen.getByText(/selected markets alone filled the requested game count/i),
+  ).toBeInTheDocument();
+  expect(
+    screen.queryByLabelText("Fallback market distribution"),
+  ).not.toBeInTheDocument();
+});
+
+test("manual selection changes use dedicated recovery instead of the generic unavailable card", () => {
+  const context = {
+    target: 50,
+    horizon: "week",
+    slip: {
+      status: "SELECTIONS_CHANGED",
+      mode: "manual",
+      reason:
+        "One or more selections are no longer approved and exactly bookable.",
+      invalid_selections: [{
+        selection_id: "sel-stale",
+        reason: "STALE_OR_UNAVAILABLE_SELECTION",
+        actions: ["REMOVE", "REPLACE", "SAFER_MARKET"],
+      }],
+    },
+    loading: false,
+    recoveringCode: false,
+    error: null,
+    editingSelectionId: null,
+    editingMessage: null,
+    editingAction: null,
+    revisionFeedback: null,
+    chooseTarget: jest.fn(),
+    chooseHorizon: jest.fn(),
+    build: jest.fn(),
+    buildV2: jest.fn(),
+    retryBuild: jest.fn(),
+    clearSlip: jest.fn(),
+    reviseLeg: jest.fn(),
+  };
+
+  render(
+    <BuilderContext.Provider value={context as any}>
+      <SlipBuilderPage />
+    </BuilderContext.Provider>,
+  );
+
+  fireEvent.click(
+    screen.getByRole("button", { name: /pick my games/i }),
+  );
+
+  expect(
+    screen.getByText(/SportyBet changed your selected slip/i),
+  ).toBeInTheDocument();
+
+  expect(
+    screen.queryByText(/No qualifying combination is available right now/i),
+  ).not.toBeInTheDocument();
+});
+
+test("shows complete Builder V2 risk context for a generated slip", async () => {
+  const base = editableSlip().games![0];
+
+  const games = [
+    {
+      ...base,
+      selection_id: "risk-a",
+      match_id: "risk-a",
+      fixture_id: 101,
+      league: "Premier League",
+      date: "2026-09-28T12:00:00Z",
+      selection_probability: .72,
+    },
+    {
+      ...base,
+      selection_id: "risk-b",
+      match_id: "risk-b",
+      fixture_id: 102,
+      home_team: "Gamma",
+      away_team: "Delta",
+      league: "Premier League",
+      date: "2026-09-28T14:00:00Z",
+      selection_probability: .70,
+    },
+    {
+      ...base,
+      selection_id: "risk-c",
+      match_id: "risk-c",
+      fixture_id: 103,
+      home_team: "Roma",
+      away_team: "Torino",
+      league: "Premier League",
+      date: "2026-09-28T16:00:00Z",
+      selection_probability: .68,
+    },
+    {
+      ...base,
+      selection_id: "risk-d",
+      match_id: "risk-d",
+      fixture_id: 104,
+      home_team: "Sevilla",
+      away_team: "Betis",
+      league: "LaLiga",
+      date: "2026-09-28T18:00:00Z",
+      selection_probability: .66,
+    },
+  ];
+
+  buildSlip.mockResolvedValue({
+    ...editableSlip(games),
+    target: 50,
+    odds: 51.2,
+    legs: 4,
+    lowest_probability: .66,
+    average_probability: .69,
+    first_kickoff: "2026-09-28T12:00:00Z",
+    last_kickoff: "2026-09-28T18:00:00Z",
+    board: {
+      board_age_seconds: 185,
+      board_complete: true,
+      board_degraded: false,
+      board_generated_at: "2026-09-28T11:56:55Z",
+      sportybet_generated_at: "2026-09-28T11:56:30Z",
+    },
+  });
+
+  renderBuilder();
+
+  fireEvent.click(
+    screen.getByRole("button", { name: /build my 50x slip/i }),
+  );
+
+  await screen.findByText("Lowest selected probability");
+
+  expect(
+    screen.getByText("Lowest selected probability").parentElement,
+  ).toHaveTextContent("66.00%");
+
+  expect(
+    screen.getByText("Board freshness").parentElement,
+  ).toHaveTextContent("3m old");
+
+  expect(
+    screen.getByText("Kickoff window"),
+  ).toBeInTheDocument();
+
+  const leagues = screen.getByLabelText("League distribution");
+
+  expect(leagues).toHaveTextContent("Premier League");
+  expect(leagues).toHaveTextContent("LaLiga");
+
+  expect(
+    screen.getByText(/3 of 4 picks are from Premier League/i),
+  ).toBeInTheDocument();
+
+  expect(
+    screen.getByText(/Concentration check:/i),
+  ).toBeInTheDocument();
 });

@@ -2,9 +2,8 @@ import type { AccumulatorResponse, GamePrediction, TierBooking } from '../types'
 
 const BASE = import.meta.env.VITE_API_BASE_URL || 'https://betsightly-api.onrender.com/api';
 
-/** Requests that build something can take a while — the slip builder runs the
- *  whole model pipeline on a cold instance — so the timeout is per call rather
- *  than one number for everything. */
+/** Booking/optimization have bounded per-call timeouts. Cold Builder requests
+ * return a retryable prepared-board state, never a synchronous model rebuild. */
 const DEFAULT_TIMEOUT = 30_000;
 
 async function request<T>(
@@ -97,6 +96,63 @@ export interface ResultsResponse {
   categories: Record<string, CategoryResult>;
 }
 
+export type BuilderV2Mode = "target_odds" | "game_count" | "strongest" | "manual";
+export type BuilderV2Horizon = "today" | "3_days" | "7_days";
+export type BuilderV2FillStrategy =
+  | "strict_selected_markets"
+  | "selected_first_then_eligible";
+
+export interface BuilderV2Filters {
+  horizon: BuilderV2Horizon;
+  anonymous_id?: string;
+  markets?: string[];
+  min_odds?: number;
+  max_odds?: number;
+  min_probability?: number;
+  min_trust_grade?: "A" | "B";
+  include_leagues?: string[];
+  exclude_leagues?: string[];
+  exclude_fixture_ids?: string[];
+  exclude_team_ids?: string[];
+  require_bookable?: true;
+}
+
+export interface BuilderV2GenerateRequest extends BuilderV2Filters {
+  mode: "target_odds" | "game_count" | "strongest";
+  target_odds?: number;
+  game_count?: number;
+  max_games?: number;
+  fill_strategy?: BuilderV2FillStrategy;
+  refresh?: boolean;
+  build_another?: boolean;
+}
+
+export interface BuilderV2ManualRequest extends BuilderV2Filters {
+  mode: "manual";
+  selection_ids: string[];
+}
+
+export interface BuilderV2Candidate extends GamePrediction {
+  recommended_for_fixture?: boolean;
+  lower_reliability_bound?: number;
+  trust_grade?: "A" | "B" | "C" | "D";
+  trust_score?: number;
+  market_capability?: string;
+}
+
+export interface BuilderV2CandidatesResponse {
+  status: "success" | "unavailable" | "error";
+  mode?: "manual";
+  origin?: "USER_MANUAL";
+  horizon?: BuilderV2Horizon;
+  markets_requested?: string[];
+  candidate_count?: number;
+  candidates: BuilderV2Candidate[];
+  reason?: string;
+  selection_diagnostics?: Record<string, unknown>;
+  board?: Record<string, unknown>;
+}
+
 /* ── API ─────────────────────────────────────────────── */
 
 export const api = {
@@ -133,10 +189,39 @@ export const api = {
    * a larger qualifying board but takes longer to resolve. */
   buildSlip: (target: number, horizon: "today" | "week" = "week", refresh = false) =>
     request<BuiltSlip>(
-      `/leagues/slip-builder/generate?target=${target}&horizon=${horizon}${refresh ? "&refresh=true" : ""}`,
-      // Generous: on a cold instance this runs the pipeline across a week of
-      // fixtures before it can answer.
-      { method: "POST", timeoutMs: 240_000 }),
+      '/leagues/slip-builder/v2/generate',
+      // Compatibility helper for target recovery/edit flows. Never use the
+      // independent legacy generator, and never force provider preparation.
+      { method: "POST", timeoutMs: 240_000,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: "target_odds", target_odds: target,
+          horizon: horizon === "week" ? "7_days" : "today", refresh,
+          markets: [], min_trust_grade: "B", require_bookable: true }),
+      }),
+
+  generateBuilderV2: (payload: BuilderV2GenerateRequest) =>
+    request<BuiltSlip>('/leagues/slip-builder/v2/generate', {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      timeoutMs: 240_000,
+    }),
+
+  getBuilderV2Candidates: (payload: BuilderV2Filters) =>
+    request<BuilderV2CandidatesResponse>('/leagues/slip-builder/v2/candidates', {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      timeoutMs: 240_000,
+    }),
+
+  buildManualBuilderV2: (payload: BuilderV2ManualRequest) =>
+    request<BuiltSlip>('/leagues/slip-builder/v2/manual', {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      timeoutMs: 240_000,
+    }),
 
   getSlipTargets: () => request<SlipTargets>('/leagues/slip-builder/targets'),
 
@@ -161,10 +246,64 @@ export const api = {
 
 };
 
+export interface BuilderV2MarketBalance {
+  applied: boolean;
+  requested_markets: string[];
+  target_distribution: Record<string, number>;
+  delivered_distribution: Record<string, number>;
+  shortfalls: Record<string, number>;
+  quality_floor_preserved: boolean;
+  strategy: string;
+  fill_strategy?: BuilderV2FillStrategy;
+  requested_market_leg_count?: number;
+  fallback_market_leg_count?: number;
+  fallback_market_distribution?: Record<string, number>;
+  fallback_markets_used?: string[];
+}
+
+export interface BuilderDiversification {
+  applied: boolean;
+  build_another: boolean;
+  history_ticket_count: number;
+  strategy_used:
+    | "normal"
+    | "no_history"
+    | "fresh"
+    | "fixture_reuse"
+    | "qualified_repeat_fallback"
+    | string;
+  fresh_selection_count: number;
+  repeated_selection_count: number;
+  repeated_fixture_count: number;
+  repeated_team_count?: number;
+  repeated_league_count?: number;
+  repeated_market_count?: number;
+  unavoidable_reuse_count: number;
+  quality_floor_preserved: boolean;
+  portfolio_quality_delta?: number;
+}
+
+export interface BuilderV2MarketAvailability {
+  target: number;
+  raw: number;
+  after_trust_and_policy: number;
+  approved: number;
+  selected: number;
+  shortfall: number;
+  primary_reason:
+    | "TARGET_SHARE_FILLED"
+    | "NO_RAW_CANDIDATES"
+    | "TRUST_OR_MARKET_POLICY_REJECTED"
+    | "BELOW_FINAL_BUILDER_GATES"
+    | "FIXTURE_OR_TEAM_DIVERSITY"
+    | "INSUFFICIENT_APPROVED_SELECTIONS"
+    | string;
+}
+
 /** A slip built to a requested multiplier. */
 export interface BuiltSlip {
   status: "success" | "unavailable" | "error";
-  result_status?: "TARGET_REACHED" | "TARGET_BAND_REACHED" | "TARGET_CAPPED" | "QUALITY_CAPPED" | "EXPOSURE_CAPPED" | "MAX_LEGS_CAPPED" | "INSUFFICIENT_BOOKABLE_FIXTURES" | "INSUFFICIENT_TRUSTED_FIXTURES" | "NO_SAFE_COMBINATION" | "BOARD_UNAVAILABLE" | "BEST_REACHABLE_MATERIALIZED";
+  result_status?: "TARGET_REACHED" | "TARGET_BAND_REACHED" | "TARGET_CAPPED" | "QUALITY_CAPPED" | "EXPOSURE_CAPPED" | "MAX_LEGS_CAPPED" | "INSUFFICIENT_BOOKABLE_FIXTURES" | "INSUFFICIENT_TRUSTED_FIXTURES" | "NO_SAFE_COMBINATION" | "BOARD_UNAVAILABLE" | "BEST_REACHABLE_MATERIALIZED" | "BEST_AVAILABLE";
   optimization_status?: "OPTIMAL" | "TIME_LIMIT_INCUMBENT" | "INFEASIBLE" | "SOLVER_ERROR" | "HEURISTIC";
   solver_proof?: {
     status: string;
@@ -173,13 +312,25 @@ export interface BuiltSlip {
     objective_bound?: number | null;
     message?: string;
   };
-  target: number;
-  horizon?: "today" | "week";
+  target?: number;
+  horizon?: "today" | "3_days" | "7_days" | "week";
+  mode?: BuilderV2Mode;
+  origin?: "BETSIGHTLY_AUTO" | "USER_MANUAL";
+  requested_target?: number;
+  requested_game_count?: number;
+  delivered_game_count?: number;
+  shortfall?: number;
+  shortfall_reason?: string | null;
+  markets_requested?: string[];
+  markets_used?: string[];
   odds?: number;
   legs?: number;
   /** Probability that every selected leg wins at its quoted odds. For DNB,
    *  this excludes draw/push branches, because a push pays 1.00x. */
   hit_probability?: number;
+  /** Product of evidence-adjusted leg probabilities for Builder V2
+   *  game-count, strongest and manual modes. */
+  estimated_all_leg_probability?: number;
   /** Probability the final positive payout still reaches the requested target.
    *  This can exceed `hit_probability` when a DNB draw pushes at 1.00x and the
    *  remaining winning legs still produce at least the requested multiplier. */
@@ -192,6 +343,10 @@ export interface BuiltSlip {
   dnb_leg_count?: number;
   /** Model-estimated expected positive payout per unit across win/push branches. */
   expected_return?: number;
+  /** Average conservative Builder selection probability. */
+  average_probability?: number;
+  /** Lowest conservative probability among selected Builder legs. */
+  lowest_probability?: number;
   avg_confidence?: number;
   avg_evidence_probability?: number;
   minimum_trust_score?: number;
@@ -214,6 +369,15 @@ export interface BuiltSlip {
   optimizer_candidate_count?: number;
   fixture_count?: number;
   market_distribution?: Record<string, number>;
+  market_balance?: BuilderV2MarketBalance;
+  market_availability?: Record<string, BuilderV2MarketAvailability>;
+  fill_strategy?: BuilderV2FillStrategy;
+  requested_market_leg_count?: number;
+  fallback_market_leg_count?: number;
+  fallback_market_distribution?: Record<string, number>;
+  fallback_markets_used?: string[];
+  diversification?: BuilderDiversification;
+  editing_supported?: boolean;
   binding_constraints?: string[];
   max_legs?: number;
   cached?: boolean;

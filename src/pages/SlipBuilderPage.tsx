@@ -1,23 +1,22 @@
 import {
-  CalendarDays,
   CheckCircle2,
   ShieldCheck,
   Sparkles,
   Target,
 } from "lucide-react";
-import { useState } from "react";
 
 import BookingCode from "../components/predictions/BookingCode";
 import { BuilderLeg } from "../components/builder/BuilderLeg";
+import { BuilderV2Controls } from "../components/builder/BuilderV2Controls";
 import { BrandLoader } from "../components/ui/BrandLoader";
 import { SEO } from "../components/common/SEO";
 import { CATEGORIES } from "../types";
-import { trackProductEvent } from "../services/bookingTracking";
 import { useBuilder } from "../contexts/BuilderContextInstance";
+import { trackProductEvent } from "../services/bookingTracking";
 import "../styles/builder-editor.css";
 import "../styles/product-experience.css";
 
-const TARGETS = [10, 20, 30, 50, 70, 100];
+const TARGETS = [2, 5, 10, 20, 30, 50, 70, 100, 200];
 const suggestedTargets = (requested: number) =>
   TARGETS.filter((value) => value < requested).slice(-3).reverse();
 const accent = CATEGORIES.find((c) => c.key === "5_odds")!;
@@ -29,6 +28,139 @@ const capHeading = (status: string | undefined, target: number) => ({
   BOOKABILITY_CAPPED: `${target}x is limited by exact SportyBet availability`,
   EXPECTED_RETURN_CAPPED: `${target}x does not clear the expected-return policy`,
 }[status || ""] || `${target}x isn’t supported by the current board`);
+
+const MARKET_LABELS: Record<string, string> = {
+  over_1_5: "Over 1.5",
+  over_2_5: "Over 2.5",
+  under_3_5: "Under 3.5",
+  under_4_5: "Under 4.5",
+  home_or_draw: "Home / Draw",
+  away_or_draw: "Away / Draw",
+  dnb_home: "Home DNB",
+  dnb_away: "Away DNB",
+  home_win: "Home Win",
+  away_win: "Away Win",
+  home_over_0_5: "Home O0.5",
+  away_over_0_5: "Away O0.5",
+};
+
+const marketLabel = (market: string) =>
+  MARKET_LABELS[market] ??
+  market.replaceAll("_", " ").replace(/\b\w/g, (value) => value.toUpperCase());
+
+const formatProbabilityPercent = (value: number) => {
+  if (value > 0 && value < 0.0001) return "<0.01%";
+  return `${(value * 100).toFixed(2)}%`;
+};
+
+const selectedProbability = (game: {
+  selection_probability?: number;
+  evidence_adjusted_probability?: number;
+  confidence?: number;
+}) => {
+  for (const value of [
+    game.selection_probability,
+    game.evidence_adjusted_probability,
+    game.confidence,
+  ]) {
+    if (typeof value === "number" && Number.isFinite(value)) {
+      return value;
+    }
+  }
+
+  return null;
+};
+
+const formatBoardAge = (value: unknown) => {
+  const seconds = Number(value);
+
+  if (!Number.isFinite(seconds) || seconds < 0) return null;
+  if (seconds < 60) return "Just refreshed";
+  if (seconds < 3600) return `${Math.max(1, Math.round(seconds / 60))}m old`;
+
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.round((seconds % 3600) / 60);
+
+  return minutes > 0 ? `${hours}h ${minutes}m old` : `${hours}h old`;
+};
+
+const WAT_TIME_ZONE = "Africa/Lagos";
+
+const kickoffDate = new Intl.DateTimeFormat("en-GB", {
+  day: "numeric",
+  month: "short",
+  timeZone: WAT_TIME_ZONE,
+});
+
+const kickoffTime = new Intl.DateTimeFormat("en-GB", {
+  hour: "2-digit",
+  minute: "2-digit",
+  hourCycle: "h23",
+  timeZone: WAT_TIME_ZONE,
+});
+
+const parseKickoff = (value?: string | null) => {
+  if (!value) return null;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
+const formatKickoffDate = (value: Date) => kickoffDate.format(value).replace("Sept", "Sep");
+
+export const formatKickoffWindow = (
+  first?: string | null,
+  last?: string | null,
+) => {
+  const start = parseKickoff(first);
+  const end = parseKickoff(last);
+
+  if (!start && !end) return first ?? last ?? null;
+  if (!start) return `${formatKickoffDate(end!)} · ${kickoffTime.format(end!)} WAT`;
+  if (!end || start.getTime() === end.getTime()) {
+    return `${formatKickoffDate(start)} · ${kickoffTime.format(start)} WAT`;
+  }
+
+  if (formatKickoffDate(start) === formatKickoffDate(end)) {
+    return `${formatKickoffDate(start)} · ${kickoffTime.format(start)}–${kickoffTime.format(end)} WAT`;
+  }
+  return `${formatKickoffDate(start)} ${kickoffTime.format(start)} – ${formatKickoffDate(end)} ${kickoffTime.format(end)} WAT`;
+};
+
+const marketAvailabilityMessage = (
+  market: string,
+  info?: {
+    approved?: number;
+    primary_reason?: string;
+  },
+) => {
+  if (!info) return null;
+
+  const label = marketLabel(market);
+
+  switch (info.primary_reason) {
+    case "NO_RAW_CANDIDATES":
+      return `${label}: no qualifying candidate was available on the current board.`;
+
+    case "TRUST_OR_MARKET_POLICY_REJECTED":
+      return `${label}: available candidates did not pass the current evidence and trust policy.`;
+
+    case "BELOW_FINAL_BUILDER_GATES":
+      return `${label}: candidates reached policy review but did not pass the final Builder quality gates.`;
+
+    case "FIXTURE_OR_TEAM_DIVERSITY":
+      return `${label}: qualifying selections were limited by fixture or team diversity.`;
+
+    case "INSUFFICIENT_APPROVED_SELECTIONS": {
+      const approved = Number(info.approved ?? 0);
+      return `${label}: only ${approved} approved ${
+        approved === 1 ? "selection" : "selections"
+      } passed all current gates.`;
+    }
+
+    default:
+      return null;
+  }
+};
 
 export default function SlipBuilderPage() {
   const {
@@ -45,9 +177,10 @@ export default function SlipBuilderPage() {
     chooseTarget,
     chooseHorizon,
     build,
+    buildAnother,
+    retryBuild,
     reviseLeg,
   } = useBuilder();
-  const [customTarget, setCustomTarget] = useState("");
 
   const acceptBestReachable = () => {
     if (!slip?.best_reachable) return;
@@ -60,10 +193,34 @@ export default function SlipBuilderPage() {
 
   const dnbLegCount = slip?.dnb_leg_count ?? 0;
   const hasDnb = dnbLegCount > 0;
+  const capStatus = String(slip?.result_status || "");
+  const slipMode = slip?.mode ?? "target_odds";
+  const isTargetMode = slipMode === "target_odds";
+  const gameCountRequested = Number(slip?.requested_game_count ?? 0);
+  const gameCountDelivered = Number(
+    slip?.delivered_game_count ?? slip?.legs ?? 0,
+  );
+  const isPartialGameCount = Boolean(
+    slipMode === "game_count" &&
+    gameCountRequested > 0 &&
+    gameCountDelivered < gameCountRequested,
+  );
+  const isManualSelectionChanged = Boolean(
+    slipMode === "manual" &&
+    String(slip?.status || "") === "SELECTIONS_CHANGED",
+  );
+  const canEditSlip = Boolean(
+    slip?.editing_supported !== false &&
+    slip?.builder_run_id &&
+    slip?.edit_token &&
+    slip?.revision,
+  );
   const headlineProbability = hasDnb
     ? (slip?.target_hit_probability ?? slip?.hit_probability ?? 0)
-    : (slip?.hit_probability ?? 0);
-  const capStatus = String(slip?.result_status || "");
+    : isTargetMode
+      ? (slip?.hit_probability ?? 0)
+      : (slip?.estimated_all_leg_probability ?? slip?.hit_probability ?? 0);
+  const boardWindowLabel = horizon === "today" ? "Today’s board" : horizon === "3_days" ? "The 3-day board" : "The 7-day board";
   const isBestAvailable = Boolean(
     slip?.status === "success" && (
       slip.materialized_best_reachable ||
@@ -74,6 +231,164 @@ export default function SlipBuilderPage() {
     slip?.solver_proof?.optimality_proven === true &&
     slip.solver_proof.solution_kind === "MAX_REACHABLE"
   );
+
+  const resultEyebrow = isBestAvailable
+    ? "Best available"
+    : slipMode === "game_count"
+      ? isPartialGameCount
+        ? "Best available game count"
+        : "Game count ready"
+      : slipMode === "strongest"
+        ? "Strongest picks ready"
+        : slipMode === "manual"
+          ? "Your picks ready"
+          : "Combination ready";
+
+  const resultHeading = isBestAvailable
+    ? `${provenMaximum ? "Best verified" : "Best available"} ${slip?.odds?.toFixed(2)}x slip`
+    : slipMode === "game_count"
+      ? isPartialGameCount
+        ? `${gameCountDelivered} of ${gameCountRequested} qualifying games`
+        : `${gameCountDelivered} qualifying games`
+      : slipMode === "strongest"
+        ? `${slip?.legs ?? 0} strongest qualifying picks`
+        : slipMode === "manual"
+          ? `${slip?.legs ?? 0} selected ${slip?.legs === 1 ? "game" : "games"}`
+          : `Your ${slip?.odds?.toFixed(2)}x slip`;
+
+  const marketShortfalls = Object.entries(
+    slip?.market_balance?.shortfalls ?? {},
+  ).filter(([, count]) => Number(count) > 0);
+
+  const requestedMarketLegCount = Number(
+    slip?.requested_market_leg_count ??
+    slip?.market_balance?.requested_market_leg_count ??
+    gameCountDelivered,
+  );
+  const fallbackMarketLegCount = Number(
+    slip?.fallback_market_leg_count ??
+    slip?.market_balance?.fallback_market_leg_count ??
+    0,
+  );
+  const fallbackMarketDistribution =
+    slip?.fallback_market_distribution ??
+    slip?.market_balance?.fallback_market_distribution ??
+    {};
+  const fallbackMarketEntries = Object.entries(
+    fallbackMarketDistribution,
+  ).filter(([, count]) => Number(count) > 0);
+  const safeFallbackEnabled =
+    slipMode === "game_count" &&
+    slip?.fill_strategy === "selected_first_then_eligible";
+
+  const marketMixEntries =
+    slipMode === "game_count" &&
+    (slip?.market_balance?.requested_markets?.length ?? 0) > 0
+      ? (slip?.market_balance?.requested_markets ?? []).map((market) => ({
+          market,
+          count: Number(
+            slip?.market_balance?.delivered_distribution?.[market] ??
+            slip?.market_distribution?.[market] ??
+            0
+          ),
+          target: Number(
+            slip?.market_balance?.target_distribution?.[market] ?? 0
+          ),
+        }))
+      : Object.entries(slip?.market_distribution ?? {}).map(
+          ([market, count]) => ({
+            market,
+            count: Number(count),
+            target: undefined as number | undefined,
+          }),
+        );
+
+  const marketAvailabilityMessages =
+    slipMode === "game_count"
+      ? (slip?.market_balance?.requested_markets ?? [])
+          .filter(
+            (market) =>
+              Number(
+                slip?.market_balance?.shortfalls?.[market] ?? 0
+              ) > 0,
+          )
+          .map((market) =>
+            marketAvailabilityMessage(
+              market,
+              slip?.market_availability?.[market],
+            ),
+          )
+          .filter((message): message is string => Boolean(message))
+      : [];
+  const selectedGames = slip?.games ?? [];
+
+  const selectedProbabilities = selectedGames
+    .map(selectedProbability)
+    .filter((value): value is number => value !== null);
+
+  const lowestSelectedProbability =
+    typeof slip?.lowest_probability === "number"
+      ? slip.lowest_probability
+      : selectedProbabilities.length
+        ? Math.min(...selectedProbabilities)
+        : null;
+
+  const leagueCounts = selectedGames.reduce<Record<string, number>>(
+    (counts, game) => {
+      const league = String(game.league || "Unknown league");
+      counts[league] = (counts[league] ?? 0) + 1;
+      return counts;
+    },
+    {},
+  );
+
+  const leagueMixEntries = Object.entries(leagueCounts).sort(
+    ([leagueA, countA], [leagueB, countB]) =>
+      countB - countA || leagueA.localeCompare(leagueB),
+  );
+
+  const selectedLegCount = Number(slip?.legs ?? selectedGames.length);
+  const topLeague = leagueMixEntries[0];
+
+  const concentrationWarning =
+    topLeague &&
+    selectedLegCount >= 4 &&
+    topLeague[1] >= 3 &&
+    topLeague[1] / selectedLegCount >= 0.6
+      ? `${topLeague[1]} of ${selectedLegCount} picks are from ${topLeague[0]}.`
+      : null;
+
+  const boardContext = (slip?.board ?? {}) as Record<string, unknown>;
+
+  const boardFreshness = formatBoardAge(
+    boardContext.board_age_seconds,
+  );
+
+  const datedKickoffs = selectedGames
+    .map((game) => game.date)
+    .filter(
+      (value): value is string =>
+        typeof value === "string" &&
+        value.includes("T") &&
+        !Number.isNaN(new Date(value).getTime()),
+    )
+    .sort(
+      (a, b) =>
+        new Date(a).getTime() - new Date(b).getTime(),
+    );
+
+  const firstKickoff =
+    slip?.first_kickoff ??
+    datedKickoffs[0] ??
+    null;
+
+  const lastKickoff =
+    slip?.last_kickoff ??
+    datedKickoffs[datedKickoffs.length - 1] ??
+    null;
+
+  const kickoffWindow = formatKickoffWindow(firstKickoff, lastKickoff);
+
   const acceptingBest = editingAction === "accept_best_reachable";
   const confirmingBooking = editingAction === "confirm_booking";
   const bookingConfirmed = Boolean(
@@ -82,6 +397,56 @@ export default function SlipBuilderPage() {
   const belowBuilderMinimum = Boolean(
     slip?.best_reachable && slip.best_reachable < 2,
   );
+  const diversification = slip?.diversification;
+
+  const diversificationMessage = (() => {
+    if (!diversification?.build_another) {
+      return null;
+    }
+
+    if (diversification.history_ticket_count === 0) {
+      return "No recent ticket history was available yet. This ticket becomes your freshness baseline.";
+    }
+
+    if (diversification.unavoidable_reuse_count > 0) {
+      const count = diversification.unavoidable_reuse_count;
+
+      return `${count} previously used qualified ${
+        count === 1 ? "pick was" : "picks were"
+      } reused because fresh alternatives could not satisfy the same Builder requirements. Quality standards were not lowered.`;
+    }
+
+    if (diversification.repeated_fixture_count > 0) {
+      const count = diversification.repeated_fixture_count;
+
+      return `Fresh selections were used, although ${
+        count === 1 ? "1 recent fixture appears" : `${count} recent fixtures appear`
+      } again with a different qualified selection.`;
+    }
+
+    const teamCount = diversification.repeated_team_count ?? 0;
+    const leagueCount = diversification.repeated_league_count ?? 0;
+    const marketCount = diversification.repeated_market_count ?? 0;
+
+    if (teamCount || leagueCount || marketCount) {
+      const exposure = [
+        teamCount
+          ? `${teamCount} previously used ${teamCount === 1 ? "team" : "teams"}`
+          : null,
+        leagueCount
+          ? `${leagueCount} previously used ${leagueCount === 1 ? "league" : "leagues"}`
+          : null,
+        marketCount
+          ? `${marketCount} previously used ${marketCount === 1 ? "market" : "markets"}`
+          : null,
+      ].filter(Boolean);
+
+      return `A new qualified combination was built while keeping football quality first. It still contains ${exposure.join(", ")} because stronger picks are not discarded merely for novelty.`;
+    }
+
+    return "Fresh combination generated from qualified alternatives without lowering BetSightly's quality standards.";
+  })();
+
   const displayedBooking = editingSelectionId && slip?.booking
     ? {
         ...slip.booking,
@@ -119,143 +484,21 @@ export default function SlipBuilderPage() {
             </span>
           </div>
         </div>
-        <div className="builder-hero__target" aria-label="Selected target">
-          <span>Your target</span>
-          <strong>
-            {target}
-            <small>x</small>
-          </strong>
-          <em>{horizon === "today" ? "Today" : "7-day board"}</em>
+        <div className="builder-hero__target" aria-label="Builder V2">
+          <span>Builder V2</span>
+          <strong>4</strong>
+          <em>ways to build · quality stays fixed</em>
         </div>
       </section>
 
-      <section
-        className="builder-config"
-        aria-labelledby="builder-config-title"
-      >
-        <div className="builder-section-heading">
-          <div>
-            <span>01</span>
-            <h2 id="builder-config-title">Choose total odds</h2>
-          </div>
-          <p>
-            Higher targets usually need more legs and have a lower chance of
-            landing.
-          </p>
-        </div>
-        <div className="builder-targets" role="group" aria-label="Target odds">
-          {TARGETS.map((t) => (
-            <button
-              key={t}
-              type="button"
-              className={t === target ? "is-active" : ""}
-              aria-pressed={t === target}
-              onClick={() => {
-                chooseTarget(t);
-
-                trackProductEvent("builder_target_selected", {
-                  product_area: "builder",
-                  source: "generator",
-                  target_odds: t,
-                  tier: horizon,
-                  horizon,
-                });
-              }}
-            >
-              <strong>{t}x</strong>
-              <span>
-                {t <= 20
-                  ? "Lower target"
-                  : t <= 50
-                    ? "Balanced"
-                    : "High target"}
-              </span>
-            </button>
-          ))}
-        </div>
-        <div className="builder-custom-target">
-          <label htmlFor="builder-custom-target">Custom target (2x–200x)</label>
-          <div>
-            <input id="builder-custom-target" type="number" min="2" max="200"
-              step="0.01" inputMode="decimal" value={customTarget}
-              placeholder="e.g. 125"
-              onChange={(event) => setCustomTarget(event.target.value)} />
-            <button type="button" disabled={loading || Number(customTarget) < 2 || Number(customTarget) > 200}
-              onClick={() => {
-                const value = Number(customTarget);
-                chooseTarget(value);
-                trackProductEvent("builder_target_selected", {
-                  product_area: "builder", source: "custom",
-                  target_odds: value, horizon,
-                });
-              }}>
-              Use target
-            </button>
-          </div>
-          <small>A higher request is not a promise; quality rules stay unchanged.</small>
-        </div>
-        <div className="builder-divider" />
-        <div className="builder-section-heading">
-          <div>
-            <span>02</span>
-            <h2>Choose the window</h2>
-          </div>
-          <p>A wider window gives the model a deeper board to search.</p>
-        </div>
-        <div
-          className="builder-horizons"
-          role="group"
-          aria-label="Fixture window"
-        >
-          <button
-            type="button"
-            className={horizon === "today" ? "is-active" : ""}
-            aria-pressed={horizon === "today"}
-            onClick={() => chooseHorizon("today")}
-          >
-            <CalendarDays size={22} />
-            <span>
-              <strong>Today only</strong>
-              <small>All legs settle from today’s fixtures.</small>
-            </span>
-          </button>
-
-          <button
-            type="button"
-            className={horizon === "week" ? "is-active" : ""}
-            aria-pressed={horizon === "week"}
-            onClick={() => chooseHorizon("week")}
-          >
-            <CalendarDays size={22} />
-            <span>
-              <strong>Across 7 days</strong>
-              <small>A larger board for stronger combinations.</small>
-            </span>
-          </button>
-        </div>
-        <button
-          className="builder-submit"
-          type="button"
-          onClick={() => void build(false)}
-          disabled={loading}
-        >
-          <Target size={19} />
-          {loading ? "Searching the board…" : `Build my ${target}x slip`}
-        </button>
-        {loading && (
-          <div className="builder-loading">
-            <BrandLoader />
-            <span>Checking evidence and current SportyBet availability.</span>
-          </div>
-        )}
-      </section>
+      <BuilderV2Controls />
 
       {error && (
         <div className="builder-message builder-message--error" role="alert">
           <p>{error}</p>
           {!editingSelectionId && (
             <button className="builder-cap__cta" type="button"
-              onClick={() => void build(false)} disabled={loading}>
+              onClick={() => void retryBuild()} disabled={loading}>
               <Target size={17} />
               {loading ? "Trying again…" : "Try again"}
             </button>
@@ -277,20 +520,23 @@ export default function SlipBuilderPage() {
           <span className="builder-cap__badge">Board updating</span>
           <h2>We’re preparing the latest fixture board</h2>
           <p>
-            {horizon === "today" ? "Today’s board" : "The 7-day board"} is being evaluated now. Please try again
+            {boardWindowLabel} is being evaluated now. Please try again
             shortly—your request was controlled safely and was not a CORS error.
           </p>
           <button className="builder-cap__cta" type="button"
-            onClick={() => void build(false)} disabled={loading}>
+            onClick={() => void retryBuild()} disabled={loading}>
             <Target size={17} />
             {loading ? "Checking the board…" : "Try again"}
           </button>
         </section>
       )}
-      {slip && slip.status !== "success" && slip.reason !== "board_refreshing" && (
+      {slip &&
+        slip.status !== "success" &&
+        slip.reason !== "board_refreshing" &&
+        !isManualSelectionChanged && (
         <section className="builder-message builder-cap" aria-live="polite">
           <span className="builder-cap__badge">Best available</span>
-          <h2>{capHeading(capStatus, target)}</h2>
+          <h2>{isTargetMode ? capHeading(capStatus, target) : "No qualifying combination is available right now"}</h2>
           {belowBuilderMinimum && (
             <p className="builder-cap__minimum-note">
               The current verified combination is below the Builder’s 2x minimum.
@@ -321,9 +567,15 @@ export default function SlipBuilderPage() {
                 ? "Approved picks may remain beyond the current leg ceiling; BetSightly will not silently create an oversized slip."
                 : capStatus === "EXPECTED_RETURN_CAPPED"
                   ? "A combination can reach the requested odds, but it does not meet BetSightly’s minimum expected-return policy."
-                : `We will not add weaker picks simply to manufacture ${target}x.`}
+                : slipMode === "game_count"
+                  ? `We will not add weaker selections simply to reach ${gameCountRequested || "the requested number of"} games.`
+                : slipMode === "strongest"
+                  ? "We will not add weaker selections simply to fill the requested Strongest Picks count."
+                : isTargetMode
+                  ? `We will not add weaker picks simply to manufacture ${target}x.`
+                  : "We will not lower the quality or exact-bookability gates to force a result."}
           </p>
-          {slip.best_reachable && !belowBuilderMinimum && slip.builder_run_id
+          {isTargetMode && slip.best_reachable && !belowBuilderMinimum && slip.builder_run_id
             && slip.best_reachable_combination && (
             <button
               className="builder-cap__cta"
@@ -337,7 +589,7 @@ export default function SlipBuilderPage() {
                 `Build ${provenMaximum ? "verified" : "the best reachable"} ${slip.best_reachable.toFixed(2)}x slip`}
             </button>
           )}
-          {!!suggestedTargets(target).length && (
+          {isTargetMode && !!suggestedTargets(target).length && (
             <div className="builder-cap__alternatives" aria-label="Try another target">
               <span>Try another target</span>
               {suggestedTargets(target).map((value) => (
@@ -355,19 +607,41 @@ export default function SlipBuilderPage() {
             <div>
               <span className="builder-eyebrow">
                 <CheckCircle2 size={14} />
-                {isBestAvailable ? "Best available" : "Combination ready"}
+                {resultEyebrow}
               </span>
-              <h2>
-                {isBestAvailable
-                  ? `${provenMaximum ? "Best verified" : "Best available"} ${slip.odds?.toFixed(2)}x slip`
-                  : `Your ${slip.odds?.toFixed(2)}x slip`}
-              </h2>
+              <h2>{resultHeading}</h2>
             </div>
             <span className="builder-trust-chip">
-              <ShieldCheck size={15} /> Grade {slip.lowest_trust_grade ?? "B"}{" "}
-              minimum
+              <ShieldCheck size={15} /> Lowest selected grade:{" "}
+              {slip.lowest_trust_grade ?? "B"}
             </span>
           </header>
+          {Boolean(slip.mode) && slipMode !== "manual" && (
+            <div className="builder-build-another">
+              <button
+                className="builder-cap__cta"
+                type="button"
+                aria-label="Build another qualified ticket"
+                onClick={() => void buildAnother()}
+                disabled={loading}
+              >
+                <Sparkles size={17} />
+                {loading
+                  ? "Finding another combination…"
+                  : "Build Another"}
+              </button>
+
+              {diversificationMessage && (
+                <p
+                  className="builder-explainer"
+                  role="status"
+                >
+                  {diversificationMessage}
+                </p>
+              )}
+            </div>
+          )}
+
           {(slip.board?.degraded || slip.board?.complete === false) && (
             <p className="builder-board-state">
               {provenMaximum
@@ -380,6 +654,162 @@ export default function SlipBuilderPage() {
           {isBestAvailable && slip.reason && (
             <p className="builder-explainer">{slip.reason}</p>
           )}
+
+          {(slip.mode === "game_count" || slip.mode === "strongest") &&
+            marketMixEntries.length > 0 && (
+              <section
+                className="builder-market-mix"
+                aria-label="Market distribution"
+              >
+                <div className="builder-market-mix__heading">
+                  <strong>Market mix</strong>
+                  <span>
+                    {slip.mode === "game_count"
+                      ? "Built from your selected market structure"
+                      : "Strongest qualifying markets"}
+                  </span>
+                </div>
+
+                <div className="builder-market-mix__chips">
+                  {marketMixEntries.map(({ market, count, target }) => (
+                    <span key={market}>
+                      {marketLabel(market)}
+                      <strong>
+                        {slip.mode === "game_count" && target != null
+                          ? `${count} / ${target}`
+                          : count}
+                      </strong>
+                    </span>
+                  ))}
+                </div>
+
+                {slip.mode === "game_count" &&
+                  safeFallbackEnabled &&
+                  fallbackMarketEntries.length > 0 && (
+                    <div
+                      className="builder-market-mix__fallback"
+                      aria-label="Fallback market distribution"
+                    >
+                      <div className="builder-market-mix__heading">
+                        <strong>Other eligible markets</strong>
+                        <span>
+                          {fallbackMarketLegCount} {
+                            fallbackMarketLegCount === 1 ? "pick" : "picks"
+                          } added after your selected markets
+                        </span>
+                      </div>
+                      <div className="builder-market-mix__chips">
+                        {fallbackMarketEntries.map(([market, count]) => (
+                          <span key={market}>
+                            {marketLabel(market)}
+                            <strong>{Number(count)}</strong>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                {slip.mode === "game_count" &&
+                  slip.market_balance?.applied &&
+                  marketShortfalls.length === 0 && (
+                    <p>
+                      {safeFallbackEnabled && fallbackMarketLegCount === 0
+                        ? "Your selected markets alone filled the requested game count; no fallback markets were needed."
+                        : "Your selected markets were balanced to the requested mix without lowering BetSightly's quality floor."}
+                    </p>
+                  )}
+
+                {slip.mode === "game_count" &&
+                  slip.market_balance?.applied &&
+                  marketShortfalls.length > 0 && (
+                    safeFallbackEnabled ? (
+                      isPartialGameCount ? (
+                        <p>
+                          Your selected markets produced {requestedMarketLegCount} qualifying {
+                            requestedMarketLegCount === 1 ? "pick" : "picks"
+                          }.
+                          {fallbackMarketLegCount > 0
+                            ? <>{" "}BetSightly added {fallbackMarketLegCount} {
+                                fallbackMarketLegCount === 1 ? "pick" : "picks"
+                              } from other eligible markets that passed the same quality and exact SportyBet gates.</>
+                            : <>{" "}No additional eligible fallback selections passed all current gates.</>}
+                          {" "}It stopped at {gameCountDelivered} of {gameCountRequested} because no additional safe selections qualified.
+                          {marketAvailabilityMessages.length > 0 &&
+                            <>{" "}{marketAvailabilityMessages.join(" ")}</>}
+                        </p>
+                      ) : (
+                        <p>
+                          Your selected markets produced {requestedMarketLegCount} qualifying {
+                            requestedMarketLegCount === 1 ? "pick" : "picks"
+                          }.
+                          {fallbackMarketLegCount > 0
+                            ? <>{" "}BetSightly added {fallbackMarketLegCount} {
+                                fallbackMarketLegCount === 1 ? "pick" : "picks"
+                              } from other eligible markets that passed the same quality and exact SportyBet gates.</>
+                            : <>{" "}Your selected markets alone filled the requested game count; no fallback markets were needed.</>}
+                          {marketAvailabilityMessages.length > 0 &&
+                            <>{" "}{marketAvailabilityMessages.join(" ")}</>}
+                        </p>
+                      )
+                    ) : isPartialGameCount ? (
+                      <p>
+                        Only {gameCountDelivered} of {gameCountRequested} requested
+                        games passed the selected market, quality and exact
+                        SportyBet gates.
+                        {marketAvailabilityMessages.length > 0 &&
+                          <>{" "}{marketAvailabilityMessages.join(" ")}</>}
+                        {" "}BetSightly did not add weaker picks to manufacture
+                        the requested game count.
+                      </p>
+                    ) : (
+                      <p>
+                        {marketShortfalls
+                          .map(
+                            ([market, count]) =>
+                              `${marketLabel(market)} was ${count} ${
+                                Number(count) === 1 ? "pick" : "picks"
+                              } short of its target share`,
+                          )
+                          .join("; ")}.
+                        {" "}Remaining slots were filled only from your other
+                        selected markets that still passed the same quality and
+                        SportyBet bookability gates.
+                      </p>
+                    )
+                  )}
+              </section>
+            )}
+
+          {leagueMixEntries.length > 0 && (
+            <section
+              className="builder-market-mix"
+              aria-label="League distribution"
+            >
+              <div className="builder-market-mix__heading">
+                <strong>League mix</strong>
+                <span>Where this slip's selections come from</span>
+              </div>
+
+              <div className="builder-market-mix__chips">
+                {leagueMixEntries.map(([league, count]) => (
+                  <span key={league}>
+                    {league}
+                    <strong>{count}</strong>
+                  </span>
+                ))}
+              </div>
+
+              {concentrationWarning && (
+                <p>
+                  <strong>Concentration check:</strong>{" "}
+                  {concentrationWarning} A large share of this slip
+                  depends on one competition, so review that exposure
+                  before staking.
+                </p>
+              )}
+            </section>
+          )}
+
           {slip.change_summary && (
             <section className="builder-change-summary" aria-label="Latest slip changes">
               <strong>Rebuilt your slip</strong>
@@ -420,15 +850,48 @@ export default function SlipBuilderPage() {
               <Stat label={provenMaximum ? "Best verified available" : "Best found available"}
                   value={`${slip.odds?.toFixed(2)}x`} />
             )}
+            {slip.mode === "game_count" && slip.requested_game_count != null && (
+              <Stat label="Requested games" value={String(slip.requested_game_count)} />
+            )}
+            {slip.mode === "game_count" && slip.delivered_game_count != null && (
+              <Stat label="Delivered games" value={String(slip.delivered_game_count)} />
+            )}
+            {safeFallbackEnabled && (
+              <Stat label="Selected-market picks" value={String(requestedMarketLegCount)} />
+            )}
+            {safeFallbackEnabled && (
+              <Stat label="Other eligible picks" value={String(fallbackMarketLegCount)} />
+            )}
+            {slip.mode === "game_count" && Number(slip.shortfall ?? 0) > 0 && (
+              <Stat label="Shortfall" value={String(slip.shortfall)} />
+            )}
             <Stat label="Total odds" value={`${slip.odds?.toFixed(2)}x`} />
             <Stat label="Legs" value={String(slip.legs)} />
+            {lowestSelectedProbability != null && (
+              <Stat
+                label="Lowest selected probability"
+                value={formatProbabilityPercent(lowestSelectedProbability)}
+              />
+            )}
+            {boardFreshness && (
+              <Stat
+                label="Board freshness"
+                value={boardFreshness}
+              />
+            )}
+            {kickoffWindow && (
+              <Stat
+                label="Kickoff window"
+                value={kickoffWindow}
+              />
+            )}
             <Stat
               label={hasDnb ? "Target hit chance" : "All legs win"}
-              value={`${(headlineProbability * 100).toFixed(2)}%`}
+              value={formatProbabilityPercent(headlineProbability)}
             />
             <Stat
               label="Bookmaker break-even"
-              value={`${(100 / (slip.odds || 1)).toFixed(2)}%`}
+              value={formatProbabilityPercent(1 / (slip.odds || 1))}
             />
           </div>
           {hasDnb ? (
@@ -437,9 +900,11 @@ export default function SlipBuilderPage() {
               {" "}A draw on {dnbLegCount === 1 ? "that leg" : "those legs"} voids it at 1.00x
               instead of losing the ticket.
               {" "}Target hit chance is the probability that the final payout still reaches
-              {" "}{slip.target}x after any DNB pushes.
-              {" "}All-win chance: {((slip.hit_probability ?? 0) * 100).toFixed(2)}%.
-              {" "}No-loss chance: {((slip.no_loss_probability ?? slip.hit_probability ?? 0) * 100).toFixed(2)}%.
+              {" "}{slip.target ?? target}x after any DNB pushes.
+              {" "}All-win chance: {formatProbabilityPercent(slip.hit_probability ?? 0)}.
+              {" "}No-loss chance: {formatProbabilityPercent(
+                slip.no_loss_probability ?? slip.hit_probability ?? 0,
+              )}.
               {" "}These are evidence-adjusted estimates, not promised results or profit.
             </p>
           ) : (
@@ -502,7 +967,7 @@ export default function SlipBuilderPage() {
               </span>
             </p>
           </div>
-          {slip.booking?.status === "active" && slip.booking?.actionable !== false && (
+          {!slip.mode && slip.booking?.status === "active" && slip.booking?.actionable !== false && (
             <div className="builder-regenerate">
               <button
                 type="button"
@@ -518,14 +983,19 @@ export default function SlipBuilderPage() {
           <div className="builder-leg-list">
             <div className="builder-leg-list__heading">
               <div>
-                <h2>Shape this slip</h2>
-                <p>Replace a pick, request a safer market, exclude a game, or lock what you want to keep.</p>
+                <h2>{canEditSlip ? "Shape this slip" : "Review this slip"}</h2>
+                <p>
+                  {canEditSlip
+                    ? "Replace a pick, request a safer market, exclude a game, or lock what you want to keep."
+                    : "Review every selected market and why it qualified. Use the controls above to rebuild with a different structure."}
+                </p>
               </div>
-              {slip.revision && <span>Revision {slip.revision}</span>}
+              {canEditSlip && slip.revision && <span>Revision {slip.revision}</span>}
             </div>
             {(slip.games ?? []).map((game, index) => (
               <BuilderLeg key={game.selection_id || `${game.fixture_id}-${index}`}
                 game={game} index={index} accent={accent}
+                editable={canEditSlip}
                 locked={Boolean(game.selection_id && slip.locked_selection_ids?.includes(game.selection_id))}
                 pending={editingSelectionId === game.selection_id}
                 pendingAction={editingAction}
