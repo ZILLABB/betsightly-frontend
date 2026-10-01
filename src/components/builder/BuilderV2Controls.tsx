@@ -23,7 +23,7 @@ import type {
 import { useBuilder } from "../../contexts/BuilderContextInstance";
 import "../../styles/builder-v2.css";
 
-const TARGETS = [10, 20, 30, 50, 70, 100];
+const TARGETS = [2, 5, 10, 20, 30, 50, 70, 100, 200];
 const GAME_COUNTS = [5, 10, 15, 20, 30, 40, 50];
 const STRONGEST_COUNTS = [5, 10, 20, 30];
 const MANUAL_PAGE_SIZE = 20;

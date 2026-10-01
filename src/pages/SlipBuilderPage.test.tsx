@@ -142,6 +142,40 @@ test("Build Another preserves the last V2 settings and requests diversification"
   );
 });
 
+test("Build Another clears the previous booking code while the diversified request is pending", async () => {
+  let resolveDiversified: ((value: ReturnType<typeof editableSlip>) => void) | undefined;
+  const diversified = new Promise<ReturnType<typeof editableSlip>>((resolve) => {
+    resolveDiversified = resolve;
+  });
+  buildSlip
+    .mockResolvedValueOnce({
+      ...editableSlip(),
+      mode: "target_odds",
+      diversification: {
+        applied: false,
+        build_another: false,
+        history_ticket_count: 0,
+        strategy_used: "normal",
+        fresh_selection_count: 1,
+        repeated_selection_count: 0,
+        repeated_fixture_count: 0,
+        unavoidable_reuse_count: 0,
+        quality_floor_preserved: true,
+      },
+    })
+    .mockReturnValueOnce(diversified);
+
+  renderBuilder();
+  fireEvent.click(screen.getByRole("button", { name: /10x lower target/i }));
+  fireEvent.click(screen.getByRole("button", { name: /build my 10x slip/i }));
+  await screen.findByTestId("booking-code");
+
+  fireEvent.click(await screen.findByRole("button", { name: /build another qualified ticket/i }));
+  expect(screen.queryByTestId("booking-code")).not.toBeInTheDocument();
+
+  await act(async () => resolveDiversified?.(editableSlip()));
+});
+
 
 test("explains portfolio reuse without describing it as lower quality", async () => {
   buildSlip

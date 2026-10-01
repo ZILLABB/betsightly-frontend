@@ -129,6 +129,18 @@ test("default target mode uses Builder V2 with the 7-day horizon", async () => {
   );
 });
 
+test("offers every supported target preset, including 2x, 5x and 200x", () => {
+  render(
+    <BuilderContext.Provider value={makeContext() as any}>
+      <BuilderV2Controls />
+    </BuilderContext.Provider>,
+  );
+
+  for (const target of [2, 5, 10, 20, 30, 50, 70, 100, 200]) {
+    expect(screen.getByRole("button", { name: new RegExp(`^${target}x`, "i") })).toBeInTheDocument();
+  }
+});
+
 test("manual mode replaces a previous market from the same fixture", async () => {
   const buildV2 = jest.fn();
 

@@ -16,7 +16,7 @@ import { trackProductEvent } from "../services/bookingTracking";
 import "../styles/builder-editor.css";
 import "../styles/product-experience.css";
 
-const TARGETS = [10, 20, 30, 50, 70, 100];
+const TARGETS = [2, 5, 10, 20, 30, 50, 70, 100, 200];
 const suggestedTargets = (requested: number) =>
   TARGETS.filter((value) => value < requested).slice(-3).reverse();
 const accent = CATEGORIES.find((c) => c.key === "5_odds")!;

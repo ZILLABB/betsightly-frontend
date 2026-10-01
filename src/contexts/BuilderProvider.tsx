@@ -366,7 +366,6 @@ export function BuilderProvider({
         ...previous,
         build_another: true,
       },
-      true,
     );
   }, [buildV2]);
 
