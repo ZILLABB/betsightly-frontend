@@ -193,10 +193,14 @@ export function useActionableCard(
         } as AccumulatorResponse["accumulators"])
       : undefined;
 
+  // Never replace real published data with an empty loading state.
+  // While Available Now is being verified, keep the frozen publication
+  // visible as a clearly labelled record. Swap only after the replacement
+  // has been successfully verified.
   const accumulators =
-    viewingPublishedRecord || !actionability.needsReplacement
-      ? published
-      : mergedAvailable;
+    viewingBookable && mergedAvailable
+      ? mergedAvailable
+      : published;
 
   return {
     accumulators,

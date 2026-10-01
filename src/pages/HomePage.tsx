@@ -218,10 +218,12 @@ export function HomePage() {
               lineHeight: 1.45,
               color: "var(--text-3)",
             }}>
-              {actionable.viewingPublishedRecord
-                ? "The original card is preserved for the public record and may include matches already under way."
-                : actionable.bookable?.reason ||
-                  "Late visitors automatically see the current exact-bookable card. The original publication remains unchanged for Results."}
+              {actionable.bookableLoading
+                ? "Showing the original published card while we verify which remaining matches are still exactly bookable."
+                : actionable.viewingPublishedRecord
+                  ? "The original card is preserved for the public record and may include matches already under way."
+                  : actionable.bookable?.reason ||
+                    "Late visitors automatically see the current exact-bookable card. The original publication remains unchanged for Results."}
             </span>
           </div>
 
