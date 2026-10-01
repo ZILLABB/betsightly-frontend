@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Menu, X, Home, Target, BarChart2, RefreshCw, Settings, Users, Sliders, Radio } from "lucide-react";
 
@@ -101,7 +101,12 @@ export function Header() {
       </header>
 
       {/* Mobile overlay */}
-      <nav aria-label="Mobile navigation" role="dialog" aria-modal={open} style={{
+      <nav
+        aria-label="Mobile navigation"
+        role="dialog"
+        aria-modal={open}
+        aria-hidden={!open}
+        style={{
         position:"fixed", inset:0, zIndex:49,
         background:"var(--nav-overlay)", backdropFilter:"blur(20px)",
         display:"flex", flexDirection:"column", paddingTop:80, paddingLeft:24, paddingRight:24,
@@ -109,6 +114,7 @@ export function Header() {
         opacity: open ? 1 : 0,
         transform: open ? "translateY(0)" : "translateY(-8px)",
         pointerEvents: open ? "auto" : "none",
+        visibility: open ? "visible" : "hidden",
       }}>
         {NAV.map(({ path, label, icon: Icon }) => {
           const active = isActive(path);

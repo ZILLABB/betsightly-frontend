@@ -4,6 +4,9 @@ import { HomePage } from "./HomePage";
 import { usePredictions } from "../hooks/usePredictions";
 
 jest.mock("../hooks/usePredictions", () => ({ usePredictions: jest.fn() }));
+jest.mock("../api/predictions", () => ({
+  api: { getBookableNow: jest.fn() },
+}));
 jest.mock("react-router-dom", () => ({
   Link: ({ children, to }: any) => <a href={to}>{children}</a>,
 }));
@@ -26,7 +29,8 @@ const game = (id: number, confidence = 0.75) => ({
   home_team: `Home ${id}`,
   away_team: `Away ${id}`,
   league: "Test League",
-  date: "2026-09-09T18:00:00Z",
+  date: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+  kickoff: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
   prediction: "Over 1.5 Goals",
   prediction_type: "goals",
   confidence,

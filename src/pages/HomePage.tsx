@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Activity, ArrowRight, CircleCheck, Flame, RefreshCw, Shield, Sliders, Target, TrendingUp } from "lucide-react";
 import { usePredictions } from "../hooks/usePredictions";
 import { useFormatOdds } from "../hooks/useFormatOdds";
+import { useActionableCard } from "../hooks/useActionableCard";
 import { WelcomeBanner } from "../components/common/WelcomeBanner";
 import { JoinTelegram } from "../components/common/JoinTelegram";
 import { AccuracyBadge } from "../components/common/AccuracyBadge";
@@ -64,7 +65,9 @@ export function HomePage() {
   const [spinning, setSpinning] = useState(false);
   const { formatOdds: fmtOdds, oddsSuffix } = useFormatOdds();
 
-  const accumulators = data?.accumulators;
+  const published = data?.accumulators;
+  const actionable = useActionableCard(published, data?.date);
+  const accumulators = actionable.accumulators;
   const activeCat = accumulators?.[activeKey];
   const catMeta = CATEGORIES.find(c => c.key === activeKey)!;
   const isSingles = activeCat?.presentation === "singles";
@@ -179,6 +182,78 @@ export function HomePage() {
         />
         <StatBubble label="Categories" value={String(CATEGORIES.length)} icon={<Flame size={17} color="var(--gold)" />} color="var(--gold)" />
       </div>
+
+      {actionable.needsReplacement && (
+        <div className="card available-now" role="status" aria-live="polite" style={{
+          padding: "12px 14px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 12,
+          flexWrap: "wrap",
+          borderLeft: "4px solid var(--gold)",
+        }}>
+          <div style={{ minWidth: 0 }}>
+            <strong style={{
+              display: "block",
+              fontFamily: "var(--font-body)",
+              fontSize: 13,
+              color: "var(--text-1)",
+            }}>
+              {actionable.bookableLoading
+                ? "Checking what is still bookable"
+                : actionable.viewingBookable
+                  ? "Showing matches you can still bet"
+                  : actionable.unavailable
+                    ? "No verified bookable slip remains right now"
+                    : actionable.viewingPublishedRecord
+                      ? "Viewing the original published card"
+                      : "Refreshing the stale published card"}
+            </strong>
+            <span style={{
+              display: "block",
+              marginTop: 3,
+              fontFamily: "var(--font-body)",
+              fontSize: 12,
+              lineHeight: 1.45,
+              color: "var(--text-3)",
+            }}>
+              {actionable.viewingPublishedRecord
+                ? "The original card is preserved for the public record and may include matches already under way."
+                : actionable.bookable?.reason ||
+                  "Late visitors automatically see the current exact-bookable card. The original publication remains unchanged for Results."}
+            </span>
+          </div>
+
+          <button
+            type="button"
+            disabled={actionable.bookableLoading}
+            onClick={() => actionable.viewingBookable
+              ? actionable.showPublished()
+              : actionable.showAvailable()}
+            style={{
+              minHeight: 38,
+              padding: "7px 12px",
+              borderRadius: 8,
+              border: "1px solid var(--border)",
+              background: "var(--surface-2)",
+              color: "var(--text-1)",
+              fontFamily: "var(--font-body)",
+              fontSize: 12,
+              fontWeight: 700,
+              cursor: actionable.bookableLoading ? "wait" : "pointer",
+            }}
+          >
+            {actionable.bookableLoading
+              ? "Checking…"
+              : actionable.viewingBookable
+                ? "View original card"
+                : actionable.unavailable
+                  ? "Check again"
+                  : "Show available now"}
+          </button>
+        </div>
+      )}
 
       {/* Tabs + content */}
       <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>

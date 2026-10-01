@@ -1,11 +1,16 @@
 import { formatCompetitionContext, formatKickoffDateTime, formatLeagueName, formatLocalTimeWithZone } from "./formatters";
 
-test("formats kickoff and compact times in the requested zone with a label", () => {
+test("formats kickoff in WAT by default and allows an explicit override", () => {
   const kickoff = "2026-09-20T19:45:00Z";
-  expect(formatKickoffDateTime(kickoff, { timeZone: "Africa/Lagos" }))
+
+  expect(formatKickoffDateTime(kickoff))
     .toBe("20 Sept · 20:45 GMT+1");
-  expect(formatLocalTimeWithZone(kickoff, { timeZone: "Africa/Lagos" }))
+
+  expect(formatLocalTimeWithZone(kickoff))
     .toBe("20:45 GMT+1");
+
+  expect(formatKickoffDateTime(kickoff, { timeZone: "UTC" }))
+    .toBe("20 Sept · 19:45 UTC");
 });
 
 test("formats provider season league names without hardcoding a competition", () => {

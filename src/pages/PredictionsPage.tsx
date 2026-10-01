@@ -1,4 +1,4 @@
-﻿import React, { useState } from "react";
+import React, { useState } from "react";
 import { useParams } from "react-router-dom";
 import { ArrowRight, Clock3, RotateCcw } from "lucide-react";
 import { usePredictions } from "../hooks/usePredictions";
@@ -16,8 +16,9 @@ import { BrandLoader } from "../components/ui/BrandLoader";
 import { CATEGORIES } from "../types";
 import type { CategoryKey } from "../types";
 import { SEO } from "../components/common/SEO";
-import { api, type BookableNowResponse } from "../api/predictions";
+import { api } from "../api/predictions";
 import { useRecommendations } from "../hooks/useRecommendations";
+import { useActionableCard } from "../hooks/useActionableCard";
 import { RecommendationBoard } from "../components/predictions/RecommendationBoard";
 import "../styles/product-experience.css";
 
@@ -33,23 +34,10 @@ export function PredictionsPage() {
   const [activeKey, setActiveKey] = useState<CategoryKey>(initialKey);
   const { formatOdds: fmtOdds, oddsSuffix } = useFormatOdds();
 
-  // The morning card is frozen, so by the afternoon some legs have kicked off.
-  // Rather than rewrite the card — which would change the slip under anyone who
-  // already booked it — a separate still-bookable slip is offered, and only
-  // once something has actually started.
-  // "What is on today" is the question people actually arrive with, and the
-  // tab bar answers it one slip at a time. This shows every tier at once.
+  // The original daily card remains frozen for the public record, but it is
+  // not the right default action surface once a leg has started, entered the
+  // kickoff buffer, or lost its verified SportyBet booking.
   const [showAll, setShowAll] = useState(false);
-  const [showBookable, setShowBookable] = useState(false);
-  const [bookable, setBookable] = useState<BookableNowResponse | null>(null);
-  const [bookableLoading, setBookableLoading] = useState(false);
-  const requestBookableSlip = React.useCallback(() => {
-    // Availability and booking codes are time-sensitive.  A second request
-    // must not revive the response that was built before the user returned to
-    // the published card (or before a fixture was suspended on SportyBet).
-    setBookable(null);
-    setShowBookable(true);
-  }, []);
 
   // Scores are fetched apart from the card and refreshed on a timer: the card
   // is frozen at 08:00, a score is not, and merging them would mean choosing
@@ -66,31 +54,17 @@ export function PredictionsPage() {
   }, []);
 
   const published = data?.accumulators;
-  const startedCount = React.useMemo(() => {
-    if (!published) return 0;
-    return CATEGORIES.reduce(
-      (n, c) => n + (published[c.key]?.games?.filter(g => g.started).length ?? 0), 0);
-  }, [published]);
-
-  React.useEffect(() => {
-    if (!showBookable || bookable || bookableLoading) return;
-    setBookableLoading(true);
-    api.getBookableNow()
-      .then(setBookable)
-      .catch((error: unknown) => setBookable({
-        status: "error", available: false,
-        reason: error instanceof Error
-          ? `Available-now rebuild failed: ${error.message}`
-          : "Available-now rebuild failed. Please try again.",
-      }))
-      .finally(() => setBookableLoading(false));
-  }, [showBookable, bookable, bookableLoading]);
-
-  const viewingBookable = showBookable && bookable?.available === true;
-  const bookableUnavailable = showBookable && bookable?.available === false;
-  const accumulators = viewingBookable
-    ? bookable.accumulators
-    : published;
+  const actionable = useActionableCard(published, data?.date);
+  const {
+    accumulators,
+    bookable,
+    bookableLoading,
+    viewingBookable,
+    viewingPublishedRecord,
+    unavailable: bookableUnavailable,
+    affectedSelections: startedCount,
+    showAvailable: requestBookableSlip,
+  } = actionable;
   const activeCat = accumulators?.[activeKey];
   const catMeta = CATEGORIES.find(c => c.key === activeKey)!;
   // Over 1.5 is a list of independent bets rather than one slip, so the
@@ -129,9 +103,9 @@ export function PredictionsPage() {
         <h2 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>Premium slips</h2>
       </div>
 
-      {/* Only offered once something has actually kicked off — before that the
-          published card is fully bookable and a second slip is just noise. */}
-      {startedCount > 0 && (
+      {/* Preserve the locked publication for auditability, but default late
+          visitors to the exact-bookable card they can still act on. */}
+      {actionable.needsReplacement && (
         <div className="card available-now" role="status" aria-live="polite" style={{
           padding: "16px 18px", display: "flex", alignItems: "center",
           justifyContent: "space-between", gap: 16, flexWrap: "wrap",
@@ -154,21 +128,25 @@ export function PredictionsPage() {
             <div style={{ fontFamily: "var(--font-body)" }}>
               <strong style={{ display: "block", fontSize: 14, color: "var(--text-1)", marginBottom: 3 }}>
                 {bookableLoading
-                  ? "Building an available-now slip"
+                  ? "Checking what is still bookable"
                   : viewingBookable
-                    ? "You’re viewing the available-now slip"
+                    ? "Showing matches you can still bet"
                     : bookableUnavailable
-                      ? "No available-now slip could be built"
-                      : `${startedCount} ${startedCount === 1 ? "pick has" : "picks have"} already started`}
+                      ? "No verified bookable slip remains right now"
+                      : viewingPublishedRecord
+                        ? "Viewing the original published card"
+                        : `${startedCount} published ${startedCount === 1 ? "selection is" : "selections are"} no longer actionable`}
               </strong>
               <span style={{ display: "block", fontSize: 13, lineHeight: 1.5, color: "var(--text-2)" }}>
                 {bookableLoading
-                  ? "Checking the remaining fixtures and their SportyBet availability."
+                  ? "Checking upcoming fixtures against the current SportyBet board."
                   : viewingBookable
-                    ? "Only matches outside the 20-minute kickoff buffer are included. This does not change today’s published record."
+                    ? "Only exact-bookable matches outside the 20-minute kickoff buffer are shown. The original published record remains unchanged."
                     : bookableUnavailable
-                      ? (bookable?.reason || "The remaining fixtures could not produce a valid SportyBet-ready slip. You can try the check again.")
-                      : "Build a fresh slip using only matches that can still be booked. Today’s published card stays unchanged."}
+                      ? (bookable?.reason || "No exact SportyBet-ready replacement could be verified.")
+                      : viewingPublishedRecord
+                        ? "This is the frozen record used for transparent results tracking; it may contain matches that have already started."
+                        : "The original publication stays locked for results, while this page automatically moves late visitors to a current actionable card."}
               </span>
             </div>
           </div>
@@ -188,17 +166,17 @@ export function PredictionsPage() {
             }}
             onClick={() => {
               if (viewingBookable) {
-                setShowBookable(false);
+                actionable.showPublished();
                 return;
               }
               requestBookableSlip();
             }}
           >
             {bookableLoading
-              ? "Building…"
+              ? "Checking…"
               : viewingBookable
-                ? <><RotateCcw size={15} /> Back to published card</>
-                : <>{bookableUnavailable ? "Try again" : "Build available slip"} <ArrowRight size={15} /></>}
+                ? <><RotateCcw size={15} /> View original card</>
+                : <>{bookableUnavailable ? "Check again" : "Show available now"} <ArrowRight size={15} /></>}
           </button>
         </div>
       )}

@@ -1,4 +1,4 @@
-﻿import React from "react";
+import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Home, Target, Settings, RefreshCw, Sliders } from "lucide-react";
 
@@ -12,7 +12,9 @@ const NAV = [
 
 export function BottomNav() {
   const location = useLocation();
-  const isActive = (p: string) => location.pathname === p;
+  const isActive = (p: string) => p === "/"
+    ? location.pathname === "/"
+    : location.pathname === p || location.pathname.startsWith(`${p}/`);
 
   return (
     <>

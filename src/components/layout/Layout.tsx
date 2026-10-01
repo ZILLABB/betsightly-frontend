@@ -1,4 +1,4 @@
-﻿import React from "react";
+import React from "react";
 import { Header } from "./Header";
 import { BottomNav } from "./BottomNav";
 import { Link } from "react-router-dom";
@@ -40,7 +40,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
                 <Link to="/predictions" style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text-3)", textDecoration:"none" }}>Today's Picks</Link>
                 <Link to="/predictions/2_odds" style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text-3)", textDecoration:"none" }}>2 Odds</Link>
-                <Link to="/predictions/rollover" style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text-3)", textDecoration:"none" }}>Rollover</Link>
+                <Link to="/rollover" style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text-3)", textDecoration:"none" }}>Rollover</Link>
                 <Link to="/results" style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text-3)", textDecoration:"none" }}>Results</Link>
               </div>
             </div>
@@ -48,7 +48,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             {/* Leagues */}
             <div>
               <h4 style={{ fontFamily:"var(--font-body)", fontSize:11, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.1em", color:"var(--text-2)", marginBottom:12 }}>
-                Leagues
+                Products
               </h4>
               <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
                 <Link to="/predictions" style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text-3)", textDecoration:"none" }}>All Predictions</Link>

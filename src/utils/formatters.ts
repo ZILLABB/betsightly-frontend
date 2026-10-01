@@ -164,8 +164,9 @@ export const formatLocalDateTime = (dateString: string | Date): string => {
 };
 
 type LocalTimeOptions = {
-  /** Omit to use the viewer's browser timezone. Primarily injectable so tests
-   * and server-side rendering can be deterministic. */
+  /** BetSightly publishes and settles its daily card in WAT. Callers may
+   * explicitly override this, but browser/device timezone is not the default
+   * because it made the same card display a different betting day. */
   timeZone?: string;
 };
 
@@ -183,7 +184,7 @@ const localTimeParts = (
     minute: '2-digit',
     hour12: false,
     timeZoneName: 'short',
-    ...(options.timeZone ? { timeZone: options.timeZone } : {}),
+    timeZone: options.timeZone ?? 'Africa/Lagos',
   }).formatToParts(date);
   const part = (type: Intl.DateTimeFormatPartTypes) =>
     parts.find(item => item.type === type)?.value ?? '';
@@ -196,7 +197,7 @@ const localTimeParts = (
   };
 };
 
-/** User-local kickoff with an explicit timezone label. */
+/** WAT kickoff by default, with an explicit timezone label. */
 export const formatKickoffDateTime = (
   dateString: string | Date,
   options: LocalTimeOptions = {},
@@ -207,7 +208,7 @@ export const formatKickoffDateTime = (
     : '';
 };
 
-/** Compact user-local time with the same explicit timezone policy. */
+/** Compact WAT time by default, with the same explicit timezone policy. */
 export const formatLocalTimeWithZone = (
   dateString: string | Date,
   options: LocalTimeOptions = {},
