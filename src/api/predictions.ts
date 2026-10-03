@@ -392,6 +392,8 @@ export interface BuiltSlip {
   booking?: TierBooking;
   /** Present when the target could not be reached honestly. */
   reason?: string;
+  /** Whether this request actually started a safe background board refresh. */
+  refresh_started?: boolean;
   best_reachable?: number;
   achieved_odds?: number;
   /** Server-side stage counts explaining a quality cap; safe to ignore in UI. */

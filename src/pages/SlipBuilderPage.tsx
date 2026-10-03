@@ -220,7 +220,6 @@ export default function SlipBuilderPage() {
     : isTargetMode
       ? (slip?.hit_probability ?? 0)
       : (slip?.estimated_all_leg_probability ?? slip?.hit_probability ?? 0);
-  const boardWindowLabel = horizon === "today" ? "Today’s board" : horizon === "3_days" ? "The 3-day board" : "The 7-day board";
   const isBestAvailable = Boolean(
     slip?.status === "success" && (
       slip.materialized_best_reachable ||
@@ -523,11 +522,18 @@ export default function SlipBuilderPage() {
       )}
       {slip?.reason === "board_refreshing" && (
         <section className="builder-message builder-cap" aria-live="polite">
-          <span className="builder-cap__badge">Board updating</span>
-          <h2>We’re preparing the latest fixture board</h2>
+          <span className="builder-cap__badge">
+            {slip.refresh_started ? "Board updating" : "Board unavailable"}
+          </span>
+          <h2>
+            {slip.refresh_started
+              ? "Refreshing fixture board"
+              : "Fixture board temporarily unavailable"}
+          </h2>
           <p>
-            {boardWindowLabel} is being evaluated now. Please try again
-            shortly—your request was controlled safely and was not a CORS error.
+            {slip.refresh_started
+              ? "BetSightly is preparing the latest verified fixture board."
+              : "The latest verified board is not ready yet. BetSightly’s background refresh is catching up. Your selections are safe — try again shortly."}
           </p>
           <button className="builder-cap__cta" type="button"
             onClick={() => void retryBuild()} disabled={loading}>
