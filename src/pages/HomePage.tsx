@@ -16,7 +16,27 @@ import { BrandLoader } from "../components/ui/BrandLoader";
 import { CATEGORIES } from "../types";
 import { SEO } from "../components/common/SEO";
 import type { CategoryKey } from "../types";
-import { resolveHeroCampaign } from "../config/heroCampaigns";
+import { resolveHeroCampaign, selectHeroFixtures } from "../config/heroCampaigns";
+import { getTeamFlag, isWcNation, teamColor, teamInitials } from "../data/wcFlags";
+import type { GamePrediction } from "../types";
+
+function HeroBadge({ team, logo, preferFlag }: { team: string; logo?: string; preferFlag: boolean }) {
+  const [failed, setFailed] = useState(false);
+  const source = !failed ? (preferFlag && isWcNation(team) ? getTeamFlag(team) : logo) : undefined;
+  return source ? <img className="hero-fixture-badge" src={source} alt={`${team} badge`} width={34} height={34} onError={() => setFailed(true)} /> : (
+    <span className="hero-fixture-fallback" aria-label={`${team} initials`} style={{ background: teamColor(team) }}>{teamInitials(team)}</span>
+  );
+}
+
+export function HeroFixture({ game, preferFlag }: { game: GamePrediction; preferFlag: boolean }) {
+  const kickoff = game.date ? new Date(game.date) : null;
+  const time = kickoff && !Number.isNaN(kickoff.getTime()) ? kickoff.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "Africa/Lagos" }) : "Kickoff TBC";
+  return <div className="hero-fixture">
+    <div className="hero-fixture-team"><HeroBadge team={game.home_team} logo={game.home_team_logo} preferFlag={preferFlag} /><span>{game.home_team}</span></div>
+    <span className="hero-fixture-time">{time}</span>
+    <div className="hero-fixture-team hero-fixture-team--away"><span>{game.away_team}</span><HeroBadge team={game.away_team} logo={game.away_team_logo} preferFlag={preferFlag} /></div>
+  </div>;
+}
 
 function StatBubble({ label, value, icon, color }: { label: string; value: string; icon: React.ReactNode; color: string }) {
   return (
@@ -93,7 +113,12 @@ export function HomePage() {
   const activeCompetitions = accumulators
     ? Object.values(accumulators).flatMap((card) => card?.games?.map((game) => game.league || "") ?? [])
     : [];
-  const hero = resolveHeroCampaign({ now: new Date(), activeCompetitions, fixtureCount: totalGames });
+  const heroNow = new Date();
+  const hero = resolveHeroCampaign({ now: heroNow, activeCompetitions, fixtureCount: totalGames });
+  const featuredFixtures = accumulators
+    ? selectHeroFixtures(Object.values(accumulators).flatMap((card) => card?.games ?? []), hero, heroNow) as GamePrediction[]
+    : [];
+  const preferFlags = ["world-cup", "afcon", "euros", "qualifiers", "afcon-qualifiers", "euro-qualifiers", "womens-international"].includes(hero.id);
 
   const avgConf = activeCat?.games?.length
     ? Math.round(activeCat.games.reduce((s, g) => s + g.confidence, 0) / activeCat.games.length * 100)
@@ -162,6 +187,10 @@ export function HomePage() {
           <div className="signal-foot">
             <Shield size={14} /> No result is guaranteed. Stake responsibly.
           </div>
+          {featuredFixtures.length > 0 && <div className="hero-fixtures" aria-label="Featured upcoming fixtures">
+            <span className="hero-fixtures-label">Featured fixtures</span>
+            {featuredFixtures.map((game) => <HeroFixture key={game.fixture_id} game={game} preferFlag={preferFlags} />)}
+          </div>}
         </aside>
       </section>
 

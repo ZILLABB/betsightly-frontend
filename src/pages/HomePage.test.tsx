@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
-import { HomePage } from "./HomePage";
+import { HeroFixture, HomePage } from "./HomePage";
 import { usePredictions } from "../hooks/usePredictions";
 
 jest.mock("../hooks/usePredictions", () => ({ usePredictions: jest.fn() }));
@@ -79,4 +79,11 @@ test("homepage presents Over 1.5 as independent picks, never a multiplied slip",
   expect(screen.queryByText(/All 3 legs land about/)).not.toBeInTheDocument();
   expect(screen.queryByText("6.04x")).not.toBeInTheDocument();
   expect(screen.getByText("Independent picks")).toBeInTheDocument();
+});
+
+test("hero fixture uses an API logo when provided without changing prediction data", () => {
+  render(<HeroFixture game={{ ...game(10), home_team_logo: "https://example.test/home.png" } as any} preferFlag={false} />);
+
+  expect(screen.getByAltText("Home 10 badge")).toHaveAttribute("src", "https://example.test/home.png");
+  expect(screen.getByText("Away 10")).toBeInTheDocument();
 });
