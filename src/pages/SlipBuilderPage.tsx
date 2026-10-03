@@ -924,9 +924,10 @@ export default function SlipBuilderPage() {
             </p>
           ) : (
             <p className="builder-explainer">
-              All {slip.legs} legs must win. The probability shown is
-              evidence-adjusted and remains an estimate—not a promised result or
-              profit.
+              Every leg must win. A ticket can contain individually strong
+              selections while still having a low combined hit probability.
+              The probability shown is evidence-adjusted and remains an
+              estimate—not a promised result or profit.
             </p>
           )}
           {!bookingConfirmed && slip.builder_run_id ? (

@@ -427,6 +427,7 @@ renderBuilder();
   expect(screen.getByText("Bookmaker break-even")).toBeInTheDocument();
   expect(screen.getByText(/Review every match and market yourself/)).toBeInTheDocument();
   expect(screen.getByText("Strong evidence")).toBeInTheDocument();
+  expect(screen.getByText(/Every leg must win/i)).toBeInTheDocument();
 });
 
 test("explains DNB pushes and shows target-hit probability", async () => {

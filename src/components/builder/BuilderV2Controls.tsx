@@ -34,10 +34,10 @@ const MODES: Array<{
   copy: string;
   icon: typeof Target;
 }> = [
-  { key: "target_odds", label: "Target Odds", copy: "Build toward a multiplier", icon: Target },
-  { key: "game_count", label: "Number of Games", copy: "Choose 1–50 games", icon: ListChecks },
-  { key: "strongest", label: "Strongest Picks", copy: "Take the best available", icon: Sparkles },
-  { key: "manual", label: "Pick My Games", copy: "Choose from approved picks", icon: MousePointer2 },
+  { key: "target_odds", label: "Target Odds", copy: "Choose a multiplier; BetSightly finds the strongest qualifying combination it can support.", icon: Target },
+  { key: "game_count", label: "Number of Games", copy: "Choose how many games and, optionally, which markets shape the slip.", icon: ListChecks },
+  { key: "strongest", label: "Strongest Picks", copy: "Let BetSightly choose the strongest qualifying market for each fixture.", icon: Sparkles },
+  { key: "manual", label: "Pick My Games", copy: "You choose selections; BetSightly validates and books that exact combination.", icon: MousePointer2 },
 ];
 
 const MARKETS = [
@@ -694,7 +694,7 @@ export function BuilderV2Controls() {
                   >
                     <span className="builder-v2-choice-copy">
                       <strong>Selected markets only</strong>
-                      <small>Stay strictly within your choices.</small>
+                      <small>Use only your selected markets, even if other qualified markets are stronger.</small>
                     </span>
                   </button>
                   <button
@@ -708,12 +708,12 @@ export function BuilderV2Controls() {
                   >
                     <span className="builder-v2-choice-copy">
                       <strong>Smart fill</strong>
-                      <small>Your choices first, then other qualified markets.</small>
+                      <small>Prioritise your choices. Only missing places can use other approved markets.</small>
                     </span>
                   </button>
                 </div>
                 <p className="builder-v2-inline-note">
-                  Quality standards are never lowered to fill the slip.
+                  Smart Fill never replaces an already-qualified selected-market pick. Quality standards are never lowered to fill the slip.
                 </p>
               </div>
             )}

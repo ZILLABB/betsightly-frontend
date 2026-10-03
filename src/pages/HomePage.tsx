@@ -16,6 +16,7 @@ import { BrandLoader } from "../components/ui/BrandLoader";
 import { CATEGORIES } from "../types";
 import { SEO } from "../components/common/SEO";
 import type { CategoryKey } from "../types";
+import { resolveHeroCampaign } from "../config/heroCampaigns";
 
 function StatBubble({ label, value, icon, color }: { label: string; value: string; icon: React.ReactNode; color: string }) {
   return (
@@ -89,6 +90,10 @@ export function HomePage() {
   const totalGames = accumulators
     ? CATEGORIES.reduce((s, c) => s + (accumulators[c.key]?.games?.length ?? 0), 0)
     : 0;
+  const activeCompetitions = accumulators
+    ? Object.values(accumulators).flatMap((card) => card?.games?.map((game) => game.league || "") ?? [])
+    : [];
+  const hero = resolveHeroCampaign({ now: new Date(), activeCompetitions, fixtureCount: totalGames });
 
   const avgConf = activeCat?.games?.length
     ? Math.round(activeCat.games.reduce((s, g) => s + g.confidence, 0) / activeCat.games.length * 100)
@@ -110,26 +115,24 @@ export function HomePage() {
         <div className="home-hero-copy">
           <div className="market-status">
             <span className="market-status-dot" />
-            Published card
+            {hero.eyebrow}
             <span aria-hidden="true">·</span>
             {data?.date
               ? new Date(data.date + "T12:00:00Z").toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" })
               : new Date().toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })}
           </div>
           <h1 id="home-title">
-            Today&apos;s<br />
-            <span>Smart Picks.</span>
+            {hero.headline.split("\n").map((line, index) => <React.Fragment key={line}>{index > 0 && <br />}<span>{line}</span></React.Fragment>)}
           </h1>
           <p>
-            Curated football picks and accumulators backed by real bookmaker odds and statistical
-            analysis, with every published result tracked transparently.
+            {hero.subheadline}
           </p>
           <div className="home-hero-actions">
             <Link to="/predictions" className="hero-action hero-action-primary">
-              Explore today&apos;s picks <ArrowRight size={16} />
+              {hero.ctaLabel} <ArrowRight size={16} />
             </Link>
             <Link to="/build-slip" className="hero-action hero-action-secondary">
-              <Sliders size={16} /> Build a slip
+              <Sliders size={16} /> {hero.secondaryCtaLabel}
             </Link>
           </div>
           <div className="trust-row" aria-label="Product principles">
