@@ -488,28 +488,29 @@ test("does not offer an unusable CTA below the public 2x minimum", async () => {
     .not.toBeInTheDocument();
 });
 
-test("shows board refreshing as a controlled retry state", async () => {
+test("explains an actively started board refresh as a controlled retry state", async () => {
   buildSlip.mockResolvedValue({
-    status: "unavailable", target: 50, reason: "board_refreshing",
+    status: "unavailable", target: 50, reason: "board_refreshing", refresh_started: true,
   });
   renderBuilder();
   fireEvent.click(screen.getByRole("button", { name: /build my 50x slip/i }));
-  await waitFor(() => expect(screen.getByText(/preparing the latest fixture board/i))
+  await waitFor(() => expect(screen.getByText(/refreshing fixture board/i))
     .toBeInTheDocument());
-  expect(screen.getByText(/not a CORS error/i)).toBeInTheDocument();
+  expect(screen.getByText(/preparing the latest verified fixture board/i)).toBeInTheDocument();
   expect(screen.queryByText(/isn’t supported by the current board/i))
     .not.toBeInTheDocument();
 });
 
-test("uses horizon-aware board refresh copy", async () => {
+test("does not claim a request started a refresh when production reports none", async () => {
   buildSlip.mockResolvedValue({
-    status: "unavailable", target: 50, reason: "board_refreshing",
+    status: "unavailable", target: 50, reason: "board_refreshing", refresh_started: false,
   });
   renderBuilder();
   fireEvent.click(screen.getByRole("button", { name: /today fast settlement/i }));
   fireEvent.click(screen.getByRole("button", { name: /build my 50x slip/i }));
-  expect(await screen.findByText(/Today’s board is being evaluated/i)).toBeInTheDocument();
-  expect(screen.queryByText(/weekly predictions/i)).not.toBeInTheDocument();
+  expect(await screen.findByText(/fixture board temporarily unavailable/i)).toBeInTheDocument();
+  expect(screen.getByText(/background refresh is catching up/i)).toBeInTheDocument();
+  expect(screen.queryByText(/preparing the latest verified fixture board/i)).not.toBeInTheDocument();
 });
 
 test("turns a network failure into a clean retry state without losing choices", async () => {
