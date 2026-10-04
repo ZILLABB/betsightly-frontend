@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { usePredictions } from "../hooks/usePredictions";
 import { useFormatOdds } from "../hooks/useFormatOdds";
 import { PredictionCardSkeleton } from "../components/ui/Skeleton";
@@ -9,6 +9,7 @@ import { getTeamFlag, isWcNation, teamInitials, teamColor } from "../data/wcFlag
 import { SEO } from "../components/common/SEO";
 import BookingCode from "../components/predictions/BookingCode";
 import { formatLocalTimeWithZone } from "../utils/formatters";
+import { api, type LiveScoresResponse } from "../api/predictions";
 import "../styles/product-experience.css";
 
 function TeamBadge({ team, logo }: { team: string; logo?: string | null }) {
@@ -56,6 +57,31 @@ function fmtDate(iso: string) {
   return new Date(safe).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" });
 }
 
+type LiveScore = LiveScoresResponse["scores"][string];
+
+function RolloverMatchState({ score, officialStatus, kickoff }: {
+  score?: LiveScore;
+  officialStatus?: string;
+  kickoff?: string;
+}) {
+  if (score?.live && score.home_score != null && score.away_score != null) {
+    return <span aria-label="Live score" style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, color: "var(--red)" }}>
+      {score.home_score}–{score.away_score} · LIVE{score.clock ? ` ${score.clock}` : ""}
+    </span>;
+  }
+  if (score?.finished && score.home_score != null && score.away_score != null) {
+    return <span aria-label="Final score" style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, color: "var(--text-2)" }}>
+      {score.home_score}–{score.away_score} · FT{officialStatus === "pending" ? " · Awaiting settlement" : ""}
+    </span>;
+  }
+  if (kickoff) {
+    return <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--text-3)" }}>
+      ⏱ {formatLocalTimeWithZone(kickoff)}
+    </span>;
+  }
+  return null;
+}
+
 export function RolloverPage() {
   const { data, loading, error, usingFallback, lastUpdated, refetch } = usePredictions();
   const [view, setView] = useState<"today" | "all">("today");
@@ -65,6 +91,29 @@ export function RolloverPage() {
   const chain = rollover?.chain ?? [];
   const targetDays = rollover?.target_days ?? 3;
   const completionProbability = rollover?.completion_probability;
+  const [scores, setScores] = useState<LiveScoresResponse["scores"]>({});
+  const refetchRef = useRef(refetch);
+  useEffect(() => { refetchRef.current = refetch; }, [refetch]);
+
+  // The daily card is immutable prediction evidence, but its settlement state
+  // and the companion score snapshot are not.  These are both read-only GETs:
+  // polling here cannot trigger a provider/model rebuild or regenerate a card.
+  const shouldPoll = useMemo(() => chain.some(day => day.picks.some(pick =>
+    pick.status !== "won" && pick.status !== "lost" && pick.status !== "void"
+  )), [chain]);
+  useEffect(() => {
+    if (!shouldPoll) return;
+    let active = true;
+    const refreshLiveState = () => {
+      void api.getLiveScores()
+        .then(response => { if (active) setScores(response.scores || {}); })
+        .catch(() => { /* the locked card remains useful when score fetches fail */ });
+      void refetchRef.current();
+    };
+    refreshLiveState();
+    const timer = window.setInterval(refreshLiveState, 75_000);
+    return () => { active = false; window.clearInterval(timer); };
+  }, [shouldPoll]);
 
   // Stats
   const wonDays = chain.filter(d => d.status === "won").length;
@@ -90,7 +139,9 @@ export function RolloverPage() {
   const todaysDay = isAlive
     ? chain.find(d => d.date >= today && d.status === "pending")
     : undefined;
-  const visibleDays = view === "today" ? (todaysDay ? [todaysDay] : []) : chain;
+  // Once an official settlement marks the chain lost, keep all of its legs in
+  // view.  A user should never have to infer what broke a published challenge.
+  const visibleDays = lostDays > 0 || view === "all" ? chain : (todaysDay ? [todaysDay] : []);
 
   // Cumulative odds
   const cumOdds = rollover?.cumulative_odds ?? rollover?.total_odds ?? 0;
@@ -226,7 +277,7 @@ export function RolloverPage() {
           {/* Header + toggle */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, flexWrap: "wrap", gap: 12 }}>
             <h2 style={{ fontFamily: "var(--font-display)", fontSize: 18, fontWeight: 700, color: "var(--text-1)" }}>
-              {view === "today" ? "Today's pick" : `Full chain (${chain.length} days)`}
+              {lostDays > 0 || view === "all" ? `Full chain (${chain.length} days)` : "Today's pick"}
             </h2>
             <div style={{ display: "flex", padding: 2, background: "var(--surface-2)", borderRadius: 8, border: "1px solid var(--border)" }}>
               <button
@@ -368,11 +419,11 @@ export function RolloverPage() {
                               <span style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-2)", fontWeight: 600 }}>
                                 {pick.prediction}
                               </span>
-                              {pick.commence_time && (
-                                <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--text-3)" }}>
-                                  ⏱ {formatLocalTimeWithZone(pick.commence_time)}
-                                </span>
-                              )}
+                              <RolloverMatchState
+                                score={scores[pick.match_id]}
+                                officialStatus={pick.status}
+                                kickoff={pick.commence_time}
+                              />
                             </div>
                           </div>
                           {/* Odds + conf */}
