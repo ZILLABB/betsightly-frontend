@@ -64,26 +64,115 @@ function RolloverMatchState({ score, officialStatus, kickoff }: {
   officialStatus?: string;
   kickoff?: string;
 }) {
+  const settledLabel =
+    officialStatus === "won"
+      ? "Won"
+      : officialStatus === "lost"
+        ? "Lost"
+        : officialStatus === "void"
+          ? "Void"
+          : null;
+
   if (score?.live && score.home_score != null && score.away_score != null) {
-    return <span aria-label="Live score" style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, color: "var(--red)" }}>
-      {score.home_score}–{score.away_score} · LIVE{score.clock ? ` ${score.clock}` : ""}
-    </span>;
+    return (
+      <span
+        aria-label="Live score"
+        style={{
+          fontFamily: "var(--font-mono)",
+          fontSize: 10,
+          fontWeight: 700,
+          color: "var(--red)",
+        }}
+      >
+        {score.home_score}?{score.away_score} ? LIVE
+        {score.clock ? ` ${score.clock}` : ""}
+      </span>
+    );
   }
-  if (score?.finished && score.home_score != null && score.away_score != null) {
-    return <span aria-label="Final score" style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, color: "var(--text-2)" }}>
-      {score.home_score}–{score.away_score} · FT{officialStatus === "pending" ? " · Awaiting settlement" : ""}
-    </span>;
+
+  if (
+    score?.finished
+    && score.home_score != null
+    && score.away_score != null
+  ) {
+    return (
+      <span
+        aria-label="Final score"
+        style={{
+          fontFamily: "var(--font-mono)",
+          fontSize: 10,
+          fontWeight: 700,
+          color: "var(--text-2)",
+        }}
+      >
+        {score.home_score}?{score.away_score} ? FT ?{" "}
+        {settledLabel ?? "Awaiting settlement"}
+      </span>
+    );
   }
+
+  if (settledLabel) {
+    return (
+      <span
+        aria-label="Settlement status"
+        style={{
+          fontFamily: "var(--font-mono)",
+          fontSize: 10,
+          fontWeight: 700,
+          color: officialStatus === "lost"
+            ? "var(--red)"
+            : officialStatus === "won"
+              ? "var(--green)"
+              : "var(--text-3)",
+        }}
+      >
+        {settledLabel}
+      </span>
+    );
+  }
+
   if (kickoff) {
-    return <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--text-3)" }}>
-      ⏱ {formatLocalTimeWithZone(kickoff)}
-    </span>;
+    const kickoffMs = Date.parse(kickoff);
+    const hasStarted =
+      Number.isFinite(kickoffMs) && kickoffMs <= Date.now();
+
+    return (
+      <span
+        style={{
+          fontFamily: "var(--font-mono)",
+          fontSize: 9,
+          color: "var(--text-3)",
+        }}
+      >
+        {hasStarted ? "Awaiting score" : "Upcoming"} ?{" "}
+        {formatLocalTimeWithZone(kickoff)}
+      </span>
+    );
   }
-  return null;
+
+  return (
+    <span
+      style={{
+        fontFamily: "var(--font-mono)",
+        fontSize: 9,
+        color: "var(--text-3)",
+      }}
+    >
+      Pending
+    </span>
+  );
 }
 
 export function RolloverPage() {
-  const { data, loading, error, usingFallback, lastUpdated, refetch } = usePredictions();
+  const {
+    data,
+    loading,
+    error,
+    usingFallback,
+    lastUpdated,
+    refetch,
+    refetchSilent = refetch,
+  } = usePredictions();
   const [view, setView] = useState<"today" | "all">("today");
   const { formatOdds: fmtOdds, oddsSuffix } = useFormatOdds();
   const rollover = data?.accumulators?.rollover;
@@ -92,28 +181,74 @@ export function RolloverPage() {
   const targetDays = rollover?.target_days ?? 3;
   const completionProbability = rollover?.completion_probability;
   const [scores, setScores] = useState<LiveScoresResponse["scores"]>({});
-  const refetchRef = useRef(refetch);
-  useEffect(() => { refetchRef.current = refetch; }, [refetch]);
+  const silentRefetchRef = useRef(refetchSilent);
 
-  // The daily card is immutable prediction evidence, but its settlement state
-  // and the companion score snapshot are not.  These are both read-only GETs:
-  // polling here cannot trigger a provider/model rebuild or regenerate a card.
-  const shouldPoll = useMemo(() => chain.some(day => day.picks.some(pick =>
-    pick.status !== "won" && pick.status !== "lost" && pick.status !== "void"
-  )), [chain]);
   useEffect(() => {
-    if (!shouldPoll) return;
+    silentRefetchRef.current = refetchSilent;
+  }, [refetchSilent]);
+
+  const today = new Date(
+    Date.now() + 60 * 60 * 1000
+  ).toISOString().slice(0, 10);
+
+  // A pending future rollover day must not keep the browser polling all day.
+  // Poll settlement/card state only once its WAT calendar day has arrived.
+  const shouldPoll = useMemo(
+    () =>
+      chain.some(
+        day =>
+          day.date <= today
+          && day.picks.some(
+            pick =>
+              pick.status !== "won"
+              && pick.status !== "lost"
+              && pick.status !== "void",
+          ),
+      ),
+    [chain, today],
+  );
+
+  useEffect(() => {
+    if (chain.length === 0) return;
+
     let active = true;
-    const refreshLiveState = () => {
+
+    const refreshScores = () => {
       void api.getLiveScores()
-        .then(response => { if (active) setScores(response.scores || {}); })
-        .catch(() => { /* the locked card remains useful when score fetches fail */ });
-      void refetchRef.current();
+        .then(response => {
+          if (active) setScores(response.scores || {});
+        })
+        .catch(() => {
+          // Live scores are presentation-only. A provider failure must never
+          // hide or mutate the persisted rollover chain.
+        });
     };
-    refreshLiveState();
-    const timer = window.setInterval(refreshLiveState, 75_000);
-    return () => { active = false; window.clearInterval(timer); };
-  }, [shouldPoll]);
+
+    // Always fetch once. This is important for a visitor opening the page
+    // after a match has already settled: they should still see the FT score.
+    refreshScores();
+
+    if (!shouldPoll) {
+      return () => {
+        active = false;
+      };
+    }
+
+    // The hook may have served its normal five-minute cache. Refresh the
+    // backend settlement state immediately without switching the whole page
+    // back into its loading skeleton.
+    void silentRefetchRef.current();
+
+    const timer = window.setInterval(() => {
+      refreshScores();
+      void silentRefetchRef.current();
+    }, 75_000);
+
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
+  }, [chain.length, shouldPoll]);
 
   // Stats
   const wonDays = chain.filter(d => d.status === "won").length;
@@ -134,14 +269,22 @@ export function RolloverPage() {
     day.picks.some(pick => pick.safe_tier_eligible !== true),
   );
 
-  // Find today's day slot (first pending day whose date is >= today)
-  const today = new Date(Date.now() + 60 * 60 * 1000).toISOString().slice(0, 10);
-  const todaysDay = isAlive
+  // Prefer the actual WAT calendar day even after it has settled, so a user
+  // returning after full time can still see today's result and score.
+  const calendarDay = chain.find(d => d.date === today);
+  const nextPendingDay = isAlive
     ? chain.find(d => d.date >= today && d.status === "pending")
     : undefined;
+  const todaysDay = calendarDay ?? nextPendingDay;
+
   // Once an official settlement marks the chain lost, keep all of its legs in
-  // view.  A user should never have to infer what broke a published challenge.
-  const visibleDays = lostDays > 0 || view === "all" ? chain : (todaysDay ? [todaysDay] : []);
+  // view. A user should never have to infer what broke a published challenge.
+  const visibleDays =
+    lostDays > 0 || view === "all"
+      ? chain
+      : todaysDay
+        ? [todaysDay]
+        : [];
 
   // Cumulative odds
   const cumOdds = rollover?.cumulative_odds ?? rollover?.total_odds ?? 0;
@@ -328,7 +471,7 @@ export function RolloverPage() {
             )}
             {visibleDays.map(day => {
               const status = STATUS_CONFIG[day.status] || STATUS_CONFIG.pending;
-              const isToday = todaysDay?.date === day.date;
+              const isToday = day.date === today;
 
               return (
                 <div
@@ -439,7 +582,7 @@ export function RolloverPage() {
                       );
                     })}
                   </div>
-                  {isToday && (
+                  {isToday && day.status === "pending" && (
                     <BookingCode
                       booking={rollover?.booking}
                       category={catMeta}

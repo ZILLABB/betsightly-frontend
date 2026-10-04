@@ -103,7 +103,7 @@ export function usePredictions() {
   const [lastUpdated, setLastUpdated] = useState<number | null>(initial?.ts ?? null);
   const mountedRef = useRef(true);
 
-  const load = useCallback(async (force = false) => {
+  const load = useCallback(async (force = false, silent = false) => {
     const now = Date.now();
     const available = usableCache();
     if (!force && available?.data && now - available.ts < TTL) {
@@ -115,9 +115,11 @@ export function usePredictions() {
       }
       return;
     }
-    setLoading(true);
-    setError(null);
-    setUsingFallback(false);
+    if (!silent) {
+      setLoading(true);
+      setError(null);
+      setUsingFallback(false);
+    }
     try {
       const result = await api.getTodaysAccumulators();
       const timestamp = Date.now();
@@ -126,6 +128,7 @@ export function usePredictions() {
         setData(result);
         setLastUpdated(timestamp);
         setError(null);
+        setUsingFallback(false);
       }
     } catch (err) {
       logFetchFailure(err);
@@ -144,7 +147,7 @@ export function usePredictions() {
         }
       }
     } finally {
-      if (mountedRef.current) setLoading(false);
+      if (mountedRef.current && !silent) setLoading(false);
     }
   }, []);
 
@@ -157,6 +160,7 @@ export function usePredictions() {
   return {
     data, loading, error, usingFallback, lastUpdated,
     refetch: () => load(true),
+    refetchSilent: () => load(true, true),
   };
 }
 

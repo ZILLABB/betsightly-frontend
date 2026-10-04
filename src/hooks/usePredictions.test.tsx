@@ -78,6 +78,42 @@ test("a retry can recover after the initial request fails", async () => {
   expect(result.current.usingFallback).toBe(false);
 });
 
+test("silent refetch refreshes data without re-entering loading state", async () => {
+  getToday.mockResolvedValueOnce(response());
+
+  const { result } = renderHook(() => usePredictions());
+
+  await waitFor(() => expect(result.current.loading).toBe(false));
+
+  let resolveRequest:
+    | ((value: ReturnType<typeof response>) => void)
+    | undefined;
+
+  getToday.mockImplementationOnce(
+    () =>
+      new Promise(resolve => {
+        resolveRequest = resolve;
+      }),
+  );
+
+  let refreshPromise: Promise<void> | undefined;
+
+  act(() => {
+    refreshPromise = result.current.refetchSilent();
+  });
+
+  expect(result.current.loading).toBe(false);
+
+  await act(async () => {
+    resolveRequest?.(response());
+    await refreshPromise;
+  });
+
+  expect(result.current.loading).toBe(false);
+  expect(result.current.data?.date).toBe("2026-09-12");
+});
+
+
 test("ignores and clears a previous-day session response", async () => {
   sessionStorage.setItem("betsightly_predictions_same_day_v1", JSON.stringify({
     data: response("2026-09-11"),

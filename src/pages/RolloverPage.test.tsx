@@ -111,18 +111,138 @@ test("polls only the read-only score/card endpoints and cleans up the interval",
   const setIntervalSpy = jest.spyOn(window, "setInterval");
   const clearIntervalSpy = jest.spyOn(window, "clearInterval");
   const refetch = jest.fn();
+  const refetchSilent = jest.fn();
   jest.spyOn(api, "getLiveScores").mockResolvedValue({ status: "success", count: 0, leagues: [], scores: {} });
   mockedPredictions.mockReturnValue({
     data: liveData, loading: false, error: null, usingFallback: false,
-    lastUpdated: Date.now(), refetch,
+    lastUpdated: Date.now(), refetch, refetchSilent,
   });
   const { unmount } = render(<RolloverPage />);
   expect(setIntervalSpy).toHaveBeenCalledWith(expect.any(Function), 75_000);
   await waitFor(() => expect(api.getLiveScores).toHaveBeenCalled());
-  expect(refetch).toHaveBeenCalled();
+  expect(refetchSilent).toHaveBeenCalled();
+  expect(refetch).not.toHaveBeenCalled();
   unmount();
   expect(clearIntervalSpy).toHaveBeenCalled();
 });
+
+test("fetches and renders final score even when the chain is already settled", async () => {
+  jest.spyOn(api, "getLiveScores").mockResolvedValue({
+    status: "success",
+    count: 1,
+    leagues: [],
+    scores: {
+      "match-live": {
+        home_score: 2,
+        away_score: 1,
+        state: "post",
+        state_label: "Final",
+        live: false,
+        finished: true,
+      },
+    },
+  });
+
+  const settled = JSON.parse(JSON.stringify(liveData));
+  settled.accumulators.rollover.chain[0].status = "won";
+  settled.accumulators.rollover.chain[0].picks[0].status = "won";
+
+  mockedPredictions.mockReturnValue({
+    data: settled,
+    loading: false,
+    error: null,
+    usingFallback: false,
+    lastUpdated: Date.now(),
+    refetch: jest.fn(),
+    refetchSilent: jest.fn(),
+  });
+
+  render(<RolloverPage />);
+
+  expect(await screen.findByLabelText("Final score"))
+    .toHaveTextContent("2?1 ? FT ? Won");
+
+  expect(api.getLiveScores).toHaveBeenCalledTimes(1);
+});
+
+
+test("does not start 75-second polling for a future-only pending rollover day", async () => {
+  const setIntervalSpy = jest.spyOn(window, "setInterval");
+
+  jest.spyOn(api, "getLiveScores").mockResolvedValue({
+    status: "success",
+    count: 0,
+    leagues: [],
+    scores: {},
+  });
+
+  const future = JSON.parse(JSON.stringify(liveData));
+  const tomorrow = new Date(
+    Date.now() + 25 * 60 * 60 * 1000,
+  ).toISOString().slice(0, 10);
+
+  future.accumulators.rollover.chain[0].date = tomorrow;
+  future.accumulators.rollover.chain[0].picks[0].commence_time =
+    `${tomorrow}T18:00:00Z`;
+
+  mockedPredictions.mockReturnValue({
+    data: future,
+    loading: false,
+    error: null,
+    usingFallback: false,
+    lastUpdated: Date.now(),
+    refetch: jest.fn(),
+    refetchSilent: jest.fn(),
+  });
+
+  render(<RolloverPage />);
+
+  await waitFor(() => expect(api.getLiveScores).toHaveBeenCalledTimes(1));
+
+  expect(setIntervalSpy).not.toHaveBeenCalledWith(
+    expect.any(Function),
+    75_000,
+  );
+});
+
+
+test("shows official lost and void state on the individual finished leg", async () => {
+  jest.spyOn(api, "getLiveScores").mockResolvedValue({
+    status: "success",
+    count: 1,
+    leagues: [],
+    scores: {
+      "match-live": {
+        home_score: 1,
+        away_score: 0,
+        state: "post",
+        state_label: "Final",
+        live: false,
+        finished: true,
+      },
+    },
+  });
+
+  const lost = JSON.parse(JSON.stringify(liveData));
+  lost.accumulators.rollover.chain[0].status = "lost";
+  lost.accumulators.rollover.chain[0].picks[0].status = "lost";
+
+  mockedPredictions.mockReturnValue({
+    data: lost,
+    loading: false,
+    error: null,
+    usingFallback: false,
+    lastUpdated: Date.now(),
+    refetch: jest.fn(),
+    refetchSilent: jest.fn(),
+  });
+
+  render(<RolloverPage />);
+
+  expect(await screen.findByLabelText("Final score"))
+    .toHaveTextContent("1?0 ? FT ? Lost");
+});
+
 
 test("uses backend settlement status after FT and keeps a broken chain visible", async () => {
   jest.spyOn(api, "getLiveScores").mockResolvedValue({
