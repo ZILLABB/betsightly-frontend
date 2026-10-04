@@ -1,4 +1,9 @@
-import type { AccumulatorResponse, GamePrediction, TierBooking } from '../types';
+import type {
+  AccumulatorResponse,
+  GamePrediction,
+  PortfolioMetadata,
+  TierBooking,
+} from '../types';
 
 const BASE = import.meta.env.VITE_API_BASE_URL || 'https://betsightly-api.onrender.com/api';
 
@@ -436,6 +441,8 @@ export interface BookableNowResponse {
   date?: string;
   kickoffs_remaining?: number;
   accumulators?: AccumulatorResponse["accumulators"];
+  /** Live-card integrity diagnostics. Older responses legitimately omit it. */
+  _portfolio?: PortfolioMetadata;
 }
 
 export interface LiveScoresResponse {

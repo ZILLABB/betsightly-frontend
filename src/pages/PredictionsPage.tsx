@@ -65,6 +65,7 @@ export function PredictionsPage() {
     viewingPublishedRecord,
     unavailable: bookableUnavailable,
     affectedSelections: startedCount,
+    portfolioIntegrityInvalid,
     showAvailable: requestBookableSlip,
   } = actionable;
   const activeCat = accumulators?.[activeKey];
@@ -130,9 +131,13 @@ export function PredictionsPage() {
             <div style={{ fontFamily: "var(--font-body)" }}>
               <strong style={{ display: "block", fontSize: 14, color: "var(--text-1)", marginBottom: 3 }}>
                 {bookableLoading
-                  ? "Checking what is still bookable"
+                  ? (portfolioIntegrityInvalid
+                    ? "Checking a freshly diversified card"
+                    : "Checking what is still bookable")
                   : viewingBookable
-                    ? "Showing matches you can still bet"
+                    ? (portfolioIntegrityInvalid
+                      ? "Showing a freshly diversified card"
+                      : "Showing matches you can still bet")
                     : bookableError
                       ? "Couldn’t verify current SportyBet availability"
                       : bookableUnavailable
@@ -144,9 +149,13 @@ export function PredictionsPage() {
               <span style={{ display: "block", fontSize: 13, lineHeight: 1.5, color: "var(--text-2)" }}>
                 {bookableLoading
                   ? (bookableNotice ||
-                    "Checking upcoming fixtures against the current SportyBet board.")
+                    (portfolioIntegrityInvalid
+                      ? "Checking a currently available card that avoids repeating official fixtures."
+                      : "Checking upcoming fixtures against the current SportyBet board."))
                   : viewingBookable
-                    ? "Only exact-bookable matches outside the 20-minute kickoff buffer are shown. The original published record remains unchanged."
+                    ? (portfolioIntegrityInvalid
+                      ? "Today’s original published card is preserved for transparent results tracking. This version uses currently available fixtures and avoids repeating the same match across official slips."
+                      : "Only exact-bookable matches outside the 20-minute kickoff buffer are shown. The original published record remains unchanged.")
                     : bookableError
                       ? (bookable?.reason ||
                         "Current SportyBet availability could not be verified.")
@@ -155,7 +164,9 @@ export function PredictionsPage() {
                           "No exact SportyBet-ready replacement could be verified.")
                         : viewingPublishedRecord
                         ? "This is the frozen record used for transparent results tracking; it may contain matches that have already started."
-                        : "The original publication stays locked for results, while this page automatically moves late visitors to a current actionable card."}
+                        : portfolioIntegrityInvalid
+                          ? "The original publication stays locked for results while we verify a diversified current card."
+                          : "The original publication stays locked for results, while this page automatically moves late visitors to a current actionable card."}
               </span>
             </div>
           </div>

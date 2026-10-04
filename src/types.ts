@@ -431,6 +431,27 @@ export interface CategoryData {
   completion_probability?: number;
 }
 
+export interface PortfolioValidation {
+  valid?: boolean;
+  exact_selection_overlap_count?: number;
+  fixture_overlap_count?: number;
+  max_selection_exposure?: number;
+  max_fixture_exposure?: number;
+}
+
+/** Metadata for an official or live action-card portfolio. It is deliberately
+ * optional: older immutable published cards predate this audit information. */
+export interface PortfolioMetadata {
+  portfolio_version?: string;
+  policy?: string;
+  portfolio_validation?: PortfolioValidation | null;
+  withheld_products?: Array<{
+    product: string;
+    duplicate_selection_ids?: string[];
+    duplicate_fixture_ids?: string[];
+  }>;
+}
+
 export interface AccumulatorResponse {
   status: string;
   date: string;
@@ -447,6 +468,7 @@ export interface AccumulatorResponse {
     '10_odds': CategoryData;
     over_1_5: CategoryData;
     rollover: CategoryData;
+    _portfolio?: PortfolioMetadata;
   };
 }
 

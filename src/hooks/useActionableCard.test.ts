@@ -1,4 +1,4 @@
-import { renderHook, waitFor } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import { api } from "../api/predictions";
 import { cardActionability, useActionableCard } from "./useActionableCard";
 
@@ -88,6 +88,44 @@ test("requires replacement inside the kickoff buffer or after booking failure", 
   expect(unavailable.needsReplacement).toBe(true);
 });
 
+test("uses Available Now for an explicitly unvalidated modern portfolio only", () => {
+  const now = Date.parse("2026-10-01T10:00:00Z");
+  const base = {
+    banker: empty,
+    "2_odds": category("2026-10-01T14:00:00Z"),
+    "5_odds": empty,
+    "10_odds": empty,
+    over_1_5: empty,
+    rollover: empty,
+  } as any;
+
+  const valid = cardActionability({
+    ...base,
+    _portfolio: { portfolio_validation: { valid: true } },
+  }, now);
+  expect(valid.needsReplacement).toBe(false);
+  expect(valid.portfolioIntegrityInvalid).toBe(false);
+
+  const nullValidation = cardActionability({
+    ...base,
+    _portfolio: { portfolio_validation: null },
+  }, now);
+  expect(nullValidation.needsReplacement).toBe(true);
+  expect(nullValidation.portfolioIntegrityInvalid).toBe(true);
+  expect(nullValidation.affectedSelections).toBe(0);
+
+  const invalid = cardActionability({
+    ...base,
+    _portfolio: { portfolio_validation: { valid: false } },
+  }, now);
+  expect(invalid.needsReplacement).toBe(true);
+
+  // A historical card with no portfolio diagnostics is not retroactively
+  // treated as invalid just because that field did not exist then.
+  const legacy = cardActionability(base, now);
+  expect(legacy.needsReplacement).toBe(false);
+});
+
 
 test("finishes the available-now request instead of getting stuck loading", async () => {
   const staleKickoff = new Date(Date.now() - 60 * 60 * 1000).toISOString();
@@ -169,4 +207,65 @@ test("shows a human API failure instead of object-object text", async () => {
 
   expect(result.current.bookable?.reason)
     .toMatch(/availability temporarily unavailable/i);
+});
+
+test("portfolio replacement keeps the frozen card available and rejects an invalid live response", async () => {
+  const futureKickoff = new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString();
+  const published = {
+    banker: empty,
+    "2_odds": category(futureKickoff),
+    "5_odds": empty,
+    "10_odds": empty,
+    over_1_5: empty,
+    rollover: empty,
+    _portfolio: { portfolio_validation: null },
+  } as any;
+  const getBookableNow = api.getBookableNow as jest.Mock;
+  getBookableNow.mockResolvedValueOnce({
+    status: "success",
+    available: true,
+    accumulators: { ...published, _portfolio: undefined },
+    _portfolio: { portfolio_validation: { valid: false } },
+  });
+
+  const { result } = renderHook(() => useActionableCard(published, "2026-10-04"));
+
+  await waitFor(() => expect(result.current.bookableError).toBe(true));
+  expect(result.current.viewingBookable).toBe(false);
+  expect(result.current.accumulators).toBe(published);
+  expect(result.current.bookable?.reason).toMatch(/portfolio validation/i);
+});
+
+test("portfolio replacement swaps only after valid response and View original restores publication", async () => {
+  const futureKickoff = new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString();
+  const published = {
+    banker: empty,
+    "2_odds": category(futureKickoff),
+    "5_odds": empty,
+    "10_odds": empty,
+    over_1_5: empty,
+    rollover: empty,
+    _portfolio: { portfolio_validation: null },
+  } as any;
+  const replacement = {
+    banker: empty,
+    "2_odds": category(new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString()),
+    "5_odds": empty,
+    "10_odds": empty,
+    over_1_5: empty,
+  } as any;
+  const getBookableNow = api.getBookableNow as jest.Mock;
+  getBookableNow.mockResolvedValueOnce({
+    status: "success", available: true, accumulators: replacement,
+    _portfolio: { portfolio_validation: { valid: true } },
+  });
+
+  const { result } = renderHook(() => useActionableCard(published, "2026-10-04"));
+  await waitFor(() => expect(result.current.viewingBookable).toBe(true));
+  expect(result.current.accumulators?.["2_odds"]?.games[0].kickoff)
+    .toBe(replacement["2_odds"].games[0].kickoff);
+
+  act(() => result.current.showPublished());
+  await waitFor(() => expect(result.current.viewingPublishedRecord).toBe(true));
+  expect(result.current.accumulators).toBe(published);
 });

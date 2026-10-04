@@ -89,10 +89,19 @@ export const cardActionability = (
     return {
       needsReplacement: false,
       affectedSelections: 0,
+      timingAffected: false,
+      portfolioIntegrityInvalid: false,
     };
   }
 
   let affectedSelections = 0;
+  const portfolioMetadataPresent = Boolean(published._portfolio);
+  // Do not punish historical cards that predate portfolio diagnostics. An
+  // explicit metadata record with absent/null/false final validation means the
+  // frozen card predates (or failed) final integrity verification instead.
+  const portfolioIntegrityInvalid =
+    portfolioMetadataPresent &&
+    published._portfolio?.portfolio_validation?.valid !== true;
 
   for (const key of REPLACEABLE_KEYS) {
     const category = published[key];
@@ -113,10 +122,15 @@ export const cardActionability = (
   }
 
   return {
-    needsReplacement: affectedSelections > 0,
+    needsReplacement: affectedSelections > 0 || portfolioIntegrityInvalid,
     affectedSelections,
+    timingAffected: affectedSelections > 0,
+    portfolioIntegrityInvalid,
   };
 };
+
+const availableNowIsPortfolioSafe = (result: BookableNowResponse) =>
+  !result._portfolio || result._portfolio.portfolio_validation?.valid === true;
 
 export function useActionableCard(
   published?: AccumulatorResponse["accumulators"],
@@ -172,7 +186,20 @@ export function useActionableCard(
 
         if (requestId !== requestIdRef.current) return;
 
-        setBookable(result);
+        // A modern live response that carries integrity metadata must have
+        // passed it. Keep the immutable published card on screen otherwise.
+        if (!result.available || !result.accumulators || !availableNowIsPortfolioSafe(result)) {
+          setBookable({
+            ...result,
+            status: "error",
+            available: false,
+            reason: !availableNowIsPortfolioSafe(result)
+              ? "The live replacement card did not pass portfolio validation."
+              : (result.reason || "No verified bookable slip remains right now."),
+          });
+        } else {
+          setBookable(result);
+        }
         setFetchedAt(Date.now());
         setBookableNotice(null);
         setBookableLoading(false);
@@ -253,7 +280,9 @@ export function useActionableCard(
   const viewingBookable =
     mode === "auto" &&
     actionability.needsReplacement &&
-    bookable?.available === true;
+    bookable?.available === true &&
+    !!bookable.accumulators &&
+    availableNowIsPortfolioSafe(bookable);
 
   const viewingPublishedRecord =
     mode === "published" &&
@@ -302,6 +331,8 @@ export function useActionableCard(
     unavailable,
     needsReplacement: actionability.needsReplacement,
     affectedSelections: actionability.affectedSelections,
+    timingAffected: actionability.timingAffected,
+    portfolioIntegrityInvalid: actionability.portfolioIntegrityInvalid,
     showAvailable,
     showPublished,
   };

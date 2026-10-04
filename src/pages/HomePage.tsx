@@ -201,9 +201,13 @@ export function HomePage() {
               color: "var(--text-1)",
             }}>
               {actionable.bookableLoading
-                ? "Checking what is still bookable"
+                ? (actionable.portfolioIntegrityInvalid
+                  ? "Checking a freshly diversified card"
+                  : "Checking what is still bookable")
                 : actionable.viewingBookable
-                  ? "Showing matches you can still bet"
+                  ? (actionable.portfolioIntegrityInvalid
+                    ? "Showing a freshly diversified card"
+                    : "Showing matches you can still bet")
                   : actionable.bookableError
                     ? "Couldn’t verify current SportyBet availability"
                     : actionable.unavailable
@@ -222,14 +226,18 @@ export function HomePage() {
             }}>
               {actionable.bookableLoading
                 ? (actionable.bookableNotice ||
-                  "Showing the original published card while we verify which remaining matches are still exactly bookable.")
+                  (actionable.portfolioIntegrityInvalid
+                    ? "Showing the original published card while we verify a diversified current card."
+                    : "Showing the original published card while we verify which remaining matches are still exactly bookable."))
                 : actionable.bookableError
                   ? (actionable.bookable?.reason ||
                     "Current SportyBet availability could not be verified.")
                   : actionable.viewingPublishedRecord
                   ? "The original card is preserved for the public record and may include matches already under way."
-                  : actionable.bookable?.reason ||
-                    "Late visitors automatically see the current exact-bookable card. The original publication remains unchanged for Results."}
+                  : actionable.viewingBookable && actionable.portfolioIntegrityInvalid
+                    ? "Today’s original published card is preserved for transparent results tracking. This version uses currently available fixtures and avoids repeating the same match across official slips."
+                    : actionable.bookable?.reason ||
+                      "Late visitors automatically see the current exact-bookable card. The original publication remains unchanged for Results."}
             </span>
           </div>
 
