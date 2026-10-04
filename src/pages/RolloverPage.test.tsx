@@ -18,6 +18,12 @@ jest.mock("../components/ui/BrandLoader", () => ({
 }));
 
 const mockedPredictions = usePredictions as jest.Mock;
+
+beforeEach(() => {
+  jest.clearAllMocks();
+  mockedPredictions.mockReset();
+});
+
 afterEach(() => jest.restoreAllMocks());
 const emptyData = {
   date: "2026-09-12",
@@ -104,7 +110,7 @@ test("shows final score as awaiting settlement instead of inferring an official 
     lastUpdated: Date.now(), refetch: jest.fn(),
   });
   render(<RolloverPage />);
-  expect(await screen.findByLabelText("Final score")).toHaveTextContent("1–0 · FT · Awaiting settlement");
+  expect(await screen.findByLabelText("Final score")).toHaveTextContent("1\u20130 \u00b7 FT \u00b7 Awaiting settlement");
 });
 
 test("polls only the read-only score/card endpoints and cleans up the interval", async () => {
@@ -160,7 +166,7 @@ test("fetches and renders final score even when the chain is already settled", a
   render(<RolloverPage />);
 
   expect(await screen.findByLabelText("Final score"))
-    .toHaveTextContent("2?1 ? FT ? Won");
+    .toHaveTextContent("2\u20131 \u00b7 FT \u00b7 Won");
 
   expect(api.getLiveScores).toHaveBeenCalledTimes(1);
 });
@@ -240,7 +246,7 @@ test("shows official lost and void state on the individual finished leg", async 
   render(<RolloverPage />);
 
   expect(await screen.findByLabelText("Final score"))
-    .toHaveTextContent("1?0 ? FT ? Lost");
+    .toHaveTextContent("1\u20130 \u00b7 FT \u00b7 Lost");
 });
 
 
@@ -264,7 +270,7 @@ test("uses backend settlement status after FT and keeps a broken chain visible",
     lastUpdated: Date.now(), refetch: jest.fn(),
   });
   render(<RolloverPage />);
-  expect(await screen.findByLabelText("Final score")).toHaveTextContent("1–0 · FT");
+  expect(await screen.findByLabelText("Final score")).toHaveTextContent("1\u20130 \u00b7 FT");
   expect(screen.queryByText(/Awaiting settlement/i)).not.toBeInTheDocument();
   expect(screen.getByText("Lost")).toBeInTheDocument();
   expect(screen.getByText(/Full chain \(1 days\)/)).toBeInTheDocument();

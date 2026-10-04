@@ -59,6 +59,9 @@ function fmtDate(iso: string) {
 
 type LiveScore = LiveScoresResponse["scores"][string];
 
+const ROLLOVER_POLL_MS = 75_000;
+const ROLLOVER_POLL_LEAD_MS = 15 * 60 * 1000;
+
 function RolloverMatchState({ score, officialStatus, kickoff }: {
   score?: LiveScore;
   officialStatus?: string;
@@ -84,7 +87,8 @@ function RolloverMatchState({ score, officialStatus, kickoff }: {
           color: "var(--red)",
         }}
       >
-        {score.home_score}?{score.away_score} ? LIVE
+        {score.home_score}{"\u2013"}{score.away_score}
+        {" \u00b7 LIVE"}
         {score.clock ? ` ${score.clock}` : ""}
       </span>
     );
@@ -105,7 +109,8 @@ function RolloverMatchState({ score, officialStatus, kickoff }: {
           color: "var(--text-2)",
         }}
       >
-        {score.home_score}?{score.away_score} ? FT ?{" "}
+        {score.home_score}{"\u2013"}{score.away_score}
+        {" \u00b7 FT \u00b7 "}
         {settledLabel ?? "Awaiting settlement"}
       </span>
     );
@@ -144,7 +149,8 @@ function RolloverMatchState({ score, officialStatus, kickoff }: {
           color: "var(--text-3)",
         }}
       >
-        {hasStarted ? "Awaiting score" : "Upcoming"} ?{" "}
+        {hasStarted ? "Awaiting score" : "Upcoming"}
+        {" \u00b7 "}
         {formatLocalTimeWithZone(kickoff)}
       </span>
     );
@@ -180,7 +186,9 @@ export function RolloverPage() {
   const chain = rollover?.chain ?? [];
   const targetDays = rollover?.target_days ?? 3;
   const completionProbability = rollover?.completion_probability;
-  const [scores, setScores] = useState<LiveScoresResponse["scores"]>({});
+  const [scores, setScores] =
+    useState<LiveScoresResponse["scores"]>({});
+  const [pollClock, setPollClock] = useState(() => Date.now());
   const silentRefetchRef = useRef(refetchSilent);
 
   useEffect(() => {
@@ -191,22 +199,76 @@ export function RolloverPage() {
     Date.now() + 60 * 60 * 1000
   ).toISOString().slice(0, 10);
 
-  // A pending future rollover day must not keep the browser polling all day.
-  // Poll settlement/card state only once its WAT calendar day has arrived.
-  const shouldPoll = useMemo(
-    () =>
-      chain.some(
-        day =>
-          day.date <= today
-          && day.picks.some(
-            pick =>
-              pick.status !== "won"
-              && pick.status !== "lost"
-              && pick.status !== "void",
-          ),
-      ),
-    [chain, today],
-  );
+  const pollingWindow = useMemo(() => {
+    let shouldPoll = false;
+    let nextStartMs: number | null = null;
+
+    for (const day of chain) {
+      for (const pick of day.picks) {
+        if (
+          pick.status === "won"
+          || pick.status === "lost"
+          || pick.status === "void"
+        ) {
+          continue;
+        }
+
+        const kickoffMs = Date.parse(pick.commence_time || "");
+
+        let startMs: number;
+
+        if (Number.isFinite(kickoffMs)) {
+          startMs = kickoffMs - ROLLOVER_POLL_LEAD_MS;
+        } else {
+          // Fallback for old persisted legs that do not have a usable
+          // commence_time. Start polling when their WAT calendar day begins.
+          const dayStartMs = Date.parse(
+            `${day.date}T00:00:00+01:00`,
+          );
+          startMs = Number.isFinite(dayStartMs)
+            ? dayStartMs
+            : pollClock;
+        }
+
+        if (startMs <= pollClock) {
+          shouldPoll = true;
+        } else if (
+          nextStartMs == null
+          || startMs < nextStartMs
+        ) {
+          nextStartMs = startMs;
+        }
+      }
+    }
+
+    return { shouldPoll, nextStartMs };
+  }, [chain, pollClock]);
+
+  const shouldPoll = pollingWindow.shouldPoll;
+
+  // If the page was opened hours before kickoff, wake the polling policy when
+  // the earliest unresolved fixture enters the 15-minute live window.
+  useEffect(() => {
+    if (
+      shouldPoll
+      || pollingWindow.nextStartMs == null
+    ) {
+      return;
+    }
+
+    const delay = Math.max(
+      0,
+      pollingWindow.nextStartMs - Date.now(),
+    );
+
+    const wakeTimer = window.setTimeout(() => {
+      setPollClock(Date.now());
+    }, delay);
+
+    return () => {
+      window.clearTimeout(wakeTimer);
+    };
+  }, [shouldPoll, pollingWindow.nextStartMs]);
 
   useEffect(() => {
     if (chain.length === 0) return;
@@ -216,16 +278,18 @@ export function RolloverPage() {
     const refreshScores = () => {
       void api.getLiveScores()
         .then(response => {
-          if (active) setScores(response.scores || {});
+          if (active) {
+            setScores(response.scores || {});
+          }
         })
         .catch(() => {
-          // Live scores are presentation-only. A provider failure must never
-          // hide or mutate the persisted rollover chain.
+          // Score data is presentation-only. Keep the persisted rollover
+          // visible if the score provider is temporarily unavailable.
         });
     };
 
-    // Always fetch once. This is important for a visitor opening the page
-    // after a match has already settled: they should still see the FT score.
+    // Always fetch once, including an already-settled chain. This lets a user
+    // returning after full time see the final score.
     refreshScores();
 
     if (!shouldPoll) {
@@ -234,15 +298,14 @@ export function RolloverPage() {
       };
     }
 
-    // The hook may have served its normal five-minute cache. Refresh the
-    // backend settlement state immediately without switching the whole page
-    // back into its loading skeleton.
+    // Settlement refresh must not put the whole page back into its loading
+    // skeleton.
     void silentRefetchRef.current();
 
     const timer = window.setInterval(() => {
       refreshScores();
       void silentRefetchRef.current();
-    }, 75_000);
+    }, ROLLOVER_POLL_MS);
 
     return () => {
       active = false;
