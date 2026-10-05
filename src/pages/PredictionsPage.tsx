@@ -78,6 +78,13 @@ export function PredictionsPage() {
     ? (Object.fromEntries(CATEGORIES.map(c => [c.key, accumulators[c.key]?.total_odds])) as Partial<Record<CategoryKey, number>>)
     : {};
 
+  const availabilityMap = accumulators
+    ? (Object.fromEntries(CATEGORIES.map(c => [
+        c.key,
+        Boolean(accumulators[c.key]?.selected && (accumulators[c.key]?.games?.length ?? 0) > 0),
+      ])) as Partial<Record<CategoryKey, boolean>>)
+    : {};
+
   // Singles tiers advertise how many picks they hold rather than a combined
   // price, since combining them is not what the tier is offering.
   const singlesMap = accumulators
@@ -202,7 +209,7 @@ export function PredictionsPage() {
       )}
 
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-        <CategoryTabs active={activeKey} onChange={setActiveKey} oddsMap={oddsMap} singlesMap={singlesMap} />
+        <CategoryTabs active={activeKey} onChange={setActiveKey} oddsMap={oddsMap} singlesMap={singlesMap} availabilityMap={availabilityMap} />
         <button
           className="btn-ghost"
           style={{ fontFamily: "var(--font-body)", fontSize: 13, fontWeight: 600, whiteSpace: "nowrap" }}

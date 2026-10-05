@@ -402,7 +402,7 @@ export interface RecommendationBoardResponse {
 
 export interface CategoryData {
   selected: boolean;
-  result_status?: "TARGET_REACHED" | "QUALITY_CAPPED" | "EXPOSURE_CAPPED" | "MAX_LEGS_CAPPED" | "INSUFFICIENT_BOOKABLE_FIXTURES" | "INSUFFICIENT_TRUSTED_FIXTURES" | "NO_SAFE_COMBINATION";
+  result_status?: "TARGET_REACHED" | "QUALITY_CAPPED" | "EXPOSURE_CAPPED" | "MAX_LEGS_CAPPED" | "INSUFFICIENT_BOOKABLE_FIXTURES" | "INSUFFICIENT_TRUSTED_FIXTURES" | "NO_SAFE_COMBINATION" | "PUBLICATION_POLICY_BLOCKED";
   games: GamePrediction[];
   total_odds: number;
   risk_level: string;
@@ -422,6 +422,14 @@ export interface CategoryData {
   revision?: number;
   last_updated_at?: string;
   reason?: string;
+  /** Conservative expected return per 1 unit under the official publication contract. */
+  model_estimated_return?: number;
+  publication_policy?: {
+    allowed?: boolean;
+    policy_version?: string;
+    model_estimated_return?: number;
+    reasons?: string[];
+  };
   // Rollover-specific fields
   chain?: RolloverChainDay[];
   chain_length?: number;
@@ -469,6 +477,12 @@ export interface AccumulatorResponse {
     over_1_5: CategoryData;
     rollover: CategoryData;
     _portfolio?: PortfolioMetadata;
+    _publication_policy?: {
+      version?: string;
+      minimum_leg_model_return?: number;
+      minimum_slip_model_return?: number;
+      products?: Record<string, unknown>;
+    };
   };
 }
 

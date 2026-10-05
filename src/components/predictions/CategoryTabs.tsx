@@ -11,6 +11,8 @@ interface Props {
    *  shows a pick count, because a combined multiplier across bets nobody is
    *  being asked to combine is a number that means nothing. */
   singlesMap?: Partial<Record<CategoryKey, number>>;
+  /** Explicit product availability from the backend publication contract. */
+  availabilityMap?: Partial<Record<CategoryKey, boolean>>;
 }
 
 const TARGETS: Partial<Record<CategoryKey, number>> = {
@@ -19,7 +21,7 @@ const TARGETS: Partial<Record<CategoryKey, number>> = {
   "10_odds": 10,
 };
 
-export function CategoryTabs({ active, onChange, oddsMap = {}, singlesMap = {} }: Props) {
+export function CategoryTabs({ active, onChange, oddsMap = {}, singlesMap = {}, availabilityMap = {} }: Props) {
   const [hovered, setHovered] = useState<CategoryKey | null>(null);
   const { formatOdds: fmtOdds, oddsSuffix } = useFormatOdds();
 
@@ -37,6 +39,7 @@ export function CategoryTabs({ active, onChange, oddsMap = {}, singlesMap = {} }
         const odds = oddsMap[cat.key];
         const singlesCount = singlesMap[cat.key];
         const target = TARGETS[cat.key];
+        const available = availabilityMap[cat.key] !== false;
         const belowTarget = target != null && odds != null && odds > 0 && odds < target;
 
         return (
@@ -92,7 +95,9 @@ export function CategoryTabs({ active, onChange, oddsMap = {}, singlesMap = {} }
             }}>
               {/* A tier with nothing to show reads "0.00x odds" otherwise,
                   which looks like a bug rather than a thin match day. */}
-              {singlesCount != null && singlesCount > 0
+              {!available
+                ? "Unavailable"
+                : singlesCount != null && singlesCount > 0
                 ? `${singlesCount} pick${singlesCount === 1 ? "" : "s"}`
                 : odds != null && odds > 0
                 ? `${belowTarget ? "Best available " : ""}${fmtOdds(odds)}${oddsSuffix}`
