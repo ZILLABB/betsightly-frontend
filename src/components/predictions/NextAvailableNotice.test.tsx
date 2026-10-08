@@ -45,6 +45,7 @@ const futurePreview: NextAvailableResponse = {
 };
 
 describe("NextAvailableNotice", () => {
+  beforeEach(() => jest.clearAllMocks());
   afterEach(() => jest.restoreAllMocks());
 
   it("labels future fixtures as unverified previews and links to Builder", async () => {
