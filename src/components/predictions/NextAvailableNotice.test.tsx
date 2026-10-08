@@ -7,6 +7,10 @@ jest.mock("react-router-dom", () => ({
   Link: ({ to, children }: { to: string; children: React.ReactNode }) =>
     require("react").createElement("a", { href: to }, children),
 }));
+// The API module uses Vite import.meta and must not be evaluated by Jest.
+jest.mock("../../api/predictions", () => ({
+  api: { getNextAvailable: jest.fn() },
+}));
 import { api, type NextAvailableResponse } from "../../api/predictions";
 import { NextAvailableNotice } from "./NextAvailableNotice";
 
