@@ -31,9 +31,7 @@ const futurePreview: NextAvailableResponse = {
       odds: 1.40,
       market: "over_1_5",
       prediction_type: "goals",
-    }] as NextAvailableResponse["next_available"] extends infer T
-      ? NonNullable<T>["candidates"]
-      : never,
+    }] as NonNullable<NextAvailableResponse["next_available"]>["candidates"],
   },
 };
 
