@@ -18,22 +18,50 @@ export function NextAvailableNotice({
   publicationDate?: string;
 }) {
   const [preview, setPreview] = React.useState<NextAvailableResponse | null>(null);
+  const [previewState, setPreviewState] = React.useState<"loading" | "ready" | "empty" | "error">("loading");
 
   React.useEffect(() => {
     if (!enabled || !publicationDate) {
       setPreview(null);
+      setPreviewState("loading");
       return;
     }
     let alive = true;
+    setPreviewState("loading");
     api.getNextAvailable()
-      .then(result => { if (alive) setPreview(result); })
-      .catch(() => { if (alive) setPreview(null); });
+      .then(result => {
+        if (!alive) return;
+        setPreview(result);
+        setPreviewState(
+          result.available && result.next_available?.candidates?.length ? "ready" : "empty",
+        );
+      })
+      .catch(() => {
+        if (!alive) return;
+        setPreview(null);
+        setPreviewState("error");
+      });
     return () => { alive = false; };
   }, [enabled, publicationDate]);
 
+  if (!enabled || !publicationDate || previewState === "loading") return null;
+
   const next = preview?.next_available;
-  if (!enabled || !preview?.available || !next || !next.candidates?.length) {
-    return null;
+  if (previewState !== "ready" || !next) {
+    return (
+      <section className="card" aria-label="Next available prediction status" style={{
+        padding: "14px 16px", borderLeft: "4px solid var(--border)",
+      }}>
+        <strong style={{ color: "var(--text-1)", fontSize: 14 }}>
+          No verified future slip available yet
+        </strong>
+        <p style={{ color: "var(--text-2)", fontSize: 13, marginTop: 6 }}>
+          {previewState === "error"
+            ? "The prediction board is being refreshed or is temporarily unavailable. We won't show old odds as fresh picks."
+            : "Upcoming fixtures haven't met BetSightly's confidence, value and availability checks."}
+        </p>
+      </section>
+    );
   }
 
   return (
