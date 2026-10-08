@@ -1,7 +1,12 @@
 import React from "react";
 import "@testing-library/jest-dom";
 import { render, screen, waitFor } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
+// The component only needs Link; avoid React Router's TextEncoder dependency
+// in Jest's jsdom environment, where navigation itself is not under test.
+jest.mock("react-router-dom", () => ({
+  Link: ({ to, children }: { to: string; children: React.ReactNode }) =>
+    require("react").createElement("a", { href: to }, children),
+}));
 import { api, type NextAvailableResponse } from "../../api/predictions";
 import { NextAvailableNotice } from "./NextAvailableNotice";
 
@@ -41,9 +46,7 @@ describe("NextAvailableNotice", () => {
   it("labels future fixtures as unverified previews and links to Builder", async () => {
     jest.spyOn(api, "getNextAvailable").mockResolvedValue(futurePreview);
     render(
-      <MemoryRouter>
-        <NextAvailableNotice enabled publicationDate="2026-10-08" />
-      </MemoryRouter>,
+      <NextAvailableNotice enabled publicationDate="2026-10-08" />,
     );
     expect(await screen.findByText(/Saturday 10 October/)).toBeInTheDocument();
     expect(screen.getByText(/not official published picks or verified SportyBet codes/))
@@ -56,9 +59,7 @@ describe("NextAvailableNotice", () => {
   it("does not fetch or display preview when official day is healthy", () => {
     const request = jest.spyOn(api, "getNextAvailable");
     render(
-      <MemoryRouter>
-        <NextAvailableNotice enabled={false} publicationDate="2026-10-08" />
-      </MemoryRouter>,
+      <NextAvailableNotice enabled={false} publicationDate="2026-10-08" />,
     );
     expect(request).not.toHaveBeenCalled();
     expect(screen.queryByLabelText("Next available prediction preview")).toBeNull();
@@ -69,9 +70,7 @@ describe("NextAvailableNotice", () => {
       ...futurePreview, available: false, next_available: null,
     });
     render(
-      <MemoryRouter>
-        <NextAvailableNotice enabled publicationDate="2026-10-08" />
-      </MemoryRouter>,
+      <NextAvailableNotice enabled publicationDate="2026-10-08" />,
     );
     await waitFor(() => expect(request).toHaveBeenCalledTimes(1));
     expect(screen.queryByLabelText("Next available prediction preview")).toBeNull();
