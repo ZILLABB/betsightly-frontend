@@ -79,5 +79,21 @@ describe("NextAvailableNotice", () => {
     );
     await waitFor(() => expect(request).toHaveBeenCalledTimes(1));
     expect(screen.queryByLabelText("Next available prediction preview")).toBeNull();
+    expect(await screen.findByText("No verified future slip available yet"))
+      .toBeInTheDocument();
+    expect(screen.getByText(/haven't met BetSightly's confidence, value and availability checks/))
+      .toBeInTheDocument();
+  });
+
+  it("explains when stale board prevents verified previews", async () => {
+    jest.spyOn(api, "getNextAvailable").mockRejectedValue(new Error("503 stale"));
+    render(
+      <NextAvailableNotice enabled publicationDate="2026-10-08" />,
+    );
+    expect(await screen.findByText("No verified future slip available yet"))
+      .toBeInTheDocument();
+    expect(screen.getByText(/won't show old odds as fresh picks/))
+      .toBeInTheDocument();
+    expect(screen.queryByLabelText("Next available prediction preview")).toBeNull();
   });
 });
