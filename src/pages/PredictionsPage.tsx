@@ -19,6 +19,7 @@ import { SEO } from "../components/common/SEO";
 import { api } from "../api/predictions";
 import { useRecommendations } from "../hooks/useRecommendations";
 import { useActionableCard } from "../hooks/useActionableCard";
+import { firstAvailablePredictionTier } from "../utils/firstAvailablePredictionTier";
 import { RecommendationBoard } from "../components/predictions/RecommendationBoard";
 import "../styles/product-experience.css";
 
@@ -32,6 +33,7 @@ export function PredictionsPage() {
   const { data, loading, error, usingFallback, lastUpdated, refetch } = usePredictions();
   const recommendations = useRecommendations();
   const [activeKey, setActiveKey] = useState<CategoryKey>(initialKey);
+  const manuallyChosenTier = React.useRef(false);
   const { formatOdds: fmtOdds, oddsSuffix } = useFormatOdds();
 
   // The original daily card remains frozen for the public record, but it is
@@ -68,6 +70,17 @@ export function PredictionsPage() {
     portfolioIntegrityInvalid,
     showAvailable: requestBookableSlip,
   } = actionable;
+  // When the default 2 Odds product is withheld, show an actually published
+  // tier immediately. Do not override an explicitly linked or user-chosen tab.
+  React.useEffect(() => {
+    if (category && VALID_KEYS.has(category)) {
+      setActiveKey(category as CategoryKey);
+      return;
+    }
+    if (!accumulators || manuallyChosenTier.current) return;
+    setActiveKey(current => firstAvailablePredictionTier(accumulators, current));
+  }, [accumulators, category]);
+
   const activeCat = accumulators?.[activeKey];
   const catMeta = CATEGORIES.find(c => c.key === activeKey)!;
   // Over 1.5 is a list of independent bets rather than one slip, so the
@@ -209,7 +222,7 @@ export function PredictionsPage() {
       )}
 
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-        <CategoryTabs active={activeKey} onChange={setActiveKey} oddsMap={oddsMap} singlesMap={singlesMap} availabilityMap={availabilityMap} />
+        <CategoryTabs active={activeKey} onChange={(key) => { manuallyChosenTier.current = true; setActiveKey(key); }} oddsMap={oddsMap} singlesMap={singlesMap} availabilityMap={availabilityMap} />
         <button
           className="btn-ghost"
           style={{ fontFamily: "var(--font-body)", fontSize: 13, fontWeight: 600, whiteSpace: "nowrap" }}
@@ -223,7 +236,7 @@ export function PredictionsPage() {
         <AllSlips
           accumulators={accumulators}
           scores={scores}
-          onOpen={(k) => { setActiveKey(k); setShowAll(false); }}
+          onOpen={(k) => { manuallyChosenTier.current = true; setActiveKey(k); setShowAll(false); }}
         />
       )}
 
