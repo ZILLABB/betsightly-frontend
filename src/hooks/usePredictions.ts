@@ -154,6 +154,21 @@ export function usePredictions() {
     return () => { mountedRef.current = false; };
   }, [load]);
 
+  // Same-day recovery fills only previously empty tiers. Keep the displayed
+  // locked record in view, but discover a newly recovered 10x (or 2x/5x)
+  // without requiring visitors to reload the page. No bookmaker calls here:
+  // this endpoint reads only the persisted publication.
+  useEffect(() => {
+    if (!data || data.date !== currentWatDate()) return;
+    const missing = (["banker", "2_odds", "5_odds", "10_odds"] as const)
+      .some(key => !data.accumulators?.[key]?.selected);
+    if (!missing) return;
+    const timer = window.setInterval(() => {
+      if (document.visibilityState !== "hidden") void load(true);
+    }, 5 * 60 * 1000);
+    return () => window.clearInterval(timer);
+  }, [data, load]);
+
   return {
     data, loading, error, usingFallback, lastUpdated,
     refetch: () => load(true),
