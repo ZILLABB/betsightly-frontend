@@ -109,3 +109,23 @@ test("clears malformed same-day session data without breaking the fetch", async 
   expect(JSON.parse(sessionStorage.getItem("betsightly_predictions_same_day_v1")!))
     .toMatchObject({ date: "2026-09-12" });
 });
+
+test("discovers a verified same-day 10 Odds refill while the page stays open", async () => {
+  const initial = response();
+  const restored = response();
+  restored.accumulators["10_odds"] = {
+    selected: true,
+    games: [{ match_id: "late-10x" }],
+    total_odds: 10.3,
+    risk_level: "high",
+  } as typeof restored.accumulators["10_odds"];
+  getToday.mockResolvedValueOnce(initial).mockResolvedValueOnce(restored);
+  const { result } = renderHook(() => usePredictions());
+  await waitFor(() => expect(result.current.loading).toBe(false));
+  await act(async () => {
+    jest.advanceTimersByTime(5 * 60 * 1000);
+    await Promise.resolve();
+  });
+  await waitFor(() => expect(result.current.data?.accumulators["10_odds"].selected).toBe(true));
+  expect(getToday).toHaveBeenCalledTimes(2);
+});
