@@ -21,6 +21,7 @@ import { useRecommendations } from "../hooks/useRecommendations";
 import { useActionableCard } from "../hooks/useActionableCard";
 import { firstAvailablePredictionTier } from "../utils/firstAvailablePredictionTier";
 import { RecommendationBoard } from "../components/predictions/RecommendationBoard";
+import { NextAvailableNotice } from "../components/predictions/NextAvailableNotice";
 import "../styles/product-experience.css";
 
 const VALID_KEYS = new Set<string>(CATEGORIES.map(c => c.key));
@@ -98,6 +99,13 @@ export function PredictionsPage() {
       ])) as Partial<Record<CategoryKey, boolean>>)
     : {};
 
+  // Offer an explicitly dated future preview when the official accumulator
+  // products cannot be filled. Never present that preview as Today's record.
+  const thinOfficialDay = Boolean(data?.date && published &&
+    (["2_odds", "5_odds", "10_odds"] as const).every(
+      key => !published[key]?.selected || !(published[key]?.games?.length),
+    ));
+
   // Singles tiers advertise how many picks they hold rather than a combined
   // price, since combining them is not what the tier is offering.
   const singlesMap = accumulators
@@ -120,6 +128,11 @@ export function PredictionsPage() {
             : "today"} — pick a tier that matches your risk appetite.
         </p>
       </header>
+
+      <NextAvailableNotice
+        enabled={!loading && thinOfficialDay}
+        publicationDate={data?.date}
+      />
 
       <div className="premium-slips-heading">
         <div className="eyebrow" style={{ marginBottom: 8 }}>Curated daily products</div>

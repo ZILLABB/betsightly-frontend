@@ -77,6 +77,31 @@ async function request<T>(
   }
 }
 
+export interface NextAvailableResponse {
+  status: "success";
+  publication_date_wat: string;
+  available: boolean;
+  preview_only: true;
+  official_publication: false;
+  bookable_code_verified: false;
+  actionable: false;
+  reason: string;
+  minimum_qualified_fixtures: number;
+  evaluated_dates: Array<{
+    fixture_date_wat: string;
+    raw_fixture_count: number;
+    ranked_selection_count: number;
+    qualified_selection_count: number;
+    qualified_unique_fixture_count: number;
+    rejection_reasons: Record<string, number>;
+  }>;
+  next_available: {
+    fixture_target_date: string;
+    qualified_unique_fixture_count: number;
+    candidates: GamePrediction[];
+  } | null;
+}
+
 /* ── History types ───────────────────────────────────── */
 
 export interface HistorySummary {
@@ -215,6 +240,11 @@ export const api = {
    * not archived and not settled — only the 08:00 card carries the record. */
   getBookableNow: () =>
     request<BookableNowResponse>('/leagues/bookable-now'),
+
+  /** Future WAT fixture dates passing the existing publication contract.
+   * PREVIEW ONLY: not an official slip or a readback-verified booking code. */
+  getNextAvailable: () =>
+    request<NextAvailableResponse>('/leagues/next-available'),
 
   /** Live scores for today's fixtures, keyed by match_id. Fetched apart from
    *  the card because the card is frozen at 08:00 and a score is not. */
