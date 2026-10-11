@@ -77,6 +77,31 @@ async function request<T>(
   }
 }
 
+export interface NextAvailableResponse {
+  status: "success";
+  publication_date_wat: string;
+  available: boolean;
+  preview_only: true;
+  official_publication: false;
+  bookable_code_verified: false;
+  actionable: false;
+  reason: string;
+  minimum_qualified_fixtures: number;
+  evaluated_dates: Array<{
+    fixture_date_wat: string;
+    raw_fixture_count: number;
+    ranked_selection_count: number;
+    qualified_selection_count: number;
+    qualified_unique_fixture_count: number;
+    rejection_reasons: Record<string, number>;
+  }>;
+  next_available: {
+    fixture_target_date: string;
+    qualified_unique_fixture_count: number;
+    candidates: GamePrediction[];
+  } | null;
+}
+
 /* ── History types ───────────────────────────────────── */
 
 export interface HistorySummary {
@@ -213,6 +238,9 @@ export const api = {
    * booked it, which means a visitor arriving mid-afternoon may find legs
    * already under way. This gives them something they can still place. It is
    * not archived and not settled — only the 08:00 card carries the record. */
+  getNextAvailable: () =>
+    request<NextAvailableResponse>('/leagues/next-available'),
+
   getBookableNow: () =>
     request<BookableNowResponse>('/leagues/bookable-now'),
 
