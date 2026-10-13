@@ -77,6 +77,7 @@ export function AllSlips({ accumulators, scores = {}, onOpen }: Props) {
                 }}>
                   {games.length} {games.length === 1 ? "pick" : "picks"}
                   {singles ? " · bet separately" : ""}
+                  {cat!.editorial_manual ? " · Admin curated" : ""}
                 </span>
               </span>
               <span style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
@@ -130,7 +131,7 @@ export function AllSlips({ accumulators, scores = {}, onOpen }: Props) {
                       fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-3)",
                       minWidth: 34, textAlign: "right",
                     }}>
-                      {Math.round((g.confidence ?? 0) * 100)}%
+                      {g.editorial_manual ? "Editorial" : `${Math.round((g.confidence ?? 0) * 100)}%`}
                     </span>
                     <span style={{
                       fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 700,

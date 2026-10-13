@@ -409,6 +409,20 @@ export function PredictionsPage() {
           />
           </div>
 
+          {activeCat.editorial_manual && (
+            <div role="note" style={{
+              border: "1px solid var(--border)", borderRadius: 12,
+              padding: "12px 16px", marginBottom: 14,
+              background: "var(--surface-1)", color: "var(--text-2)",
+              fontSize: 13, lineHeight: 1.6,
+            }}>
+              <strong>Admin-curated prediction</strong> — these selections were
+              entered manually, not selected or probability-scored by BetSightly's
+              automated model. The bookmaker code was verified for the displayed
+              selections, but the result is not guaranteed and does not count
+              toward the automated engine's prediction record.
+            </div>
+          )}
           <div className="cards-grid picks-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}>
             {activeCat.games
               .filter(g => !leagueFilter || g.league === leagueFilter)

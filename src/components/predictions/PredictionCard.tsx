@@ -159,7 +159,8 @@ function ScoreStamp({ score }: { score: LiveScore }) {
 }
 
 export function PredictionCard({ game, color, faint, index = 0, score }: Props) {
-  const pct = Math.round(game.confidence * 100);
+  const editorial = game.editorial_manual === true;
+  const pct = editorial ? null : Math.round(game.confidence * 100);
   const displayOdds = game.odds ?? game.real_odds ?? game.estimated_odds ?? 0;
   const displayPrediction = game.prediction || game.readable_prediction || game.prediction_value || "";
   const priceImplied = game.market_implied_probability
@@ -302,7 +303,7 @@ export function PredictionCard({ game, color, faint, index = 0, score }: Props) 
           <span style={{
             fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-3)",
           }}>
-            {pct}% confidence
+            {editorial ? "Admin curated · no model score" : `${pct}% confidence`}
           </span>
         </div>
 
@@ -336,7 +337,7 @@ export function PredictionCard({ game, color, faint, index = 0, score }: Props) 
           background: "var(--surface-2)", border: "1px solid var(--border)",
           fontFamily: "var(--font-body)", fontSize: 10, color: "var(--text-3)",
         }}>
-          <span>Our estimate<br /><strong style={{ color: "var(--text-1)" }}>{pct}%</strong></span>
+          <span>{editorial ? "Model confidence" : "Our estimate"}<br /><strong style={{ color: "var(--text-1)" }}>{editorial ? "Not model-scored" : `${pct}%`}</strong></span>
           <span>Book price implies<br /><strong style={{ color: "var(--text-1)" }}>
             {priceImplied != null
               ? `${Math.round(priceImplied * 100)}%`
@@ -351,7 +352,7 @@ export function PredictionCard({ game, color, faint, index = 0, score }: Props) 
               : "Not recorded on this card"}
           </strong></span>
           <span style={{ gridColumn: "1 / -1" }}>
-            Signals used: {(game.model_sources?.length
+            {editorial ? "Selection entered by an admin and price-verified on SportyBet. This is not a model-generated probability or an automated BetSightly result." : "Signals used:"} {(game.model_sources?.length
               ? game.model_sources
               : [game.model_type === "market_poisson" ? "market + Poisson" : "statistical model"]
             ).join(", ")}.
@@ -426,7 +427,7 @@ export function PredictionCard({ game, color, faint, index = 0, score }: Props) 
         )}
         <ShareButton
           compact
-          text={`${game.home_team} vs ${game.away_team} — ${displayPrediction} @${displayOdds.toFixed(2)} (${pct}% confidence) · BetSightly`}
+          text={`${game.home_team} vs ${game.away_team} — ${displayPrediction} @${displayOdds.toFixed(2)} (${editorial ? "admin curated · unscored" : `${pct}% model confidence`}) · BetSightly`}
         />
       </div>
     </div>
