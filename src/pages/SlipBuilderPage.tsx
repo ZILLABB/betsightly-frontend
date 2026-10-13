@@ -496,6 +496,14 @@ export default function SlipBuilderPage() {
         </div>
       </section>
 
+      <p style={{ fontSize: 12, color: "var(--text-3)",
+          margin: "3px 0 16px", lineHeight: 1.6 }}>
+        Generated ticket selections are associated with a random identifier
+        stored in this browser. This allows private, in-app winning prediction
+        alerts when you return; it does not record whether you actually
+        placed a bet. Clearing this site's browser storage resets that link.
+      </p>
+
       <BuilderV2Controls />
 
       {error && (
