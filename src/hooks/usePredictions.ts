@@ -16,6 +16,17 @@ interface StoredCache {
 
 const cache: Cache = { data: null, ts: 0, date: null };
 const TTL = 5 * 60 * 1000;
+const INCOMPLETE_TTL = 30 * 1000;
+const INCOMPLETE_POLL_INTERVAL = 60 * 1000;
+
+// Admin can publish a previously empty 2x/5x/10x tier during the day.
+// Incomplete cards are short-lived even in sessionStorage; complete cards
+// keep the existing five-minute TTL.
+const hasMissingTier = (data: AccumulatorResponse) =>
+  (["2_odds", "5_odds", "10_odds"] as const)
+    .some(key => !data.accumulators?.[key]?.selected);
+const cacheTTL = (data: AccumulatorResponse) =>
+  hasMissingTier(data) ? INCOMPLETE_TTL : TTL;
 const SESSION_KEY = 'betsightly_predictions_same_day_v1';
 const ENDPOINT = '/leagues/daily-accumulators';
 
@@ -96,7 +107,7 @@ export function usePredictions() {
   const initial = usableCache();
   const [data, setData] = useState<AccumulatorResponse | null>(initial?.data ?? null);
   const [loading, setLoading] = useState(
-    !initial?.data || Date.now() - initial.ts >= TTL,
+    !initial?.data || Date.now() - initial.ts >= cacheTTL(initial.data),
   );
   const [error, setError] = useState<string | null>(null);
   const [usingFallback, setUsingFallback] = useState(false);
@@ -106,7 +117,7 @@ export function usePredictions() {
   const load = useCallback(async (force = false) => {
     const now = Date.now();
     const available = usableCache();
-    if (!force && available?.data && now - available.ts < TTL) {
+    if (!force && available?.data && now - available.ts < cacheTTL(available.data)) {
       if (mountedRef.current) {
         setData(available.data);
         setLastUpdated(available.ts);
@@ -160,13 +171,22 @@ export function usePredictions() {
   // this endpoint reads only the persisted publication.
   useEffect(() => {
     if (!data || data.date !== currentWatDate()) return;
-    const missing = (["banker", "2_odds", "5_odds", "10_odds"] as const)
-      .some(key => !data.accumulators?.[key]?.selected);
-    if (!missing) return;
-    const timer = window.setInterval(() => {
-      if (document.visibilityState !== "hidden") void load(true);
-    }, 5 * 60 * 1000);
-    return () => window.clearInterval(timer);
+    if (!hasMissingTier(data)) return;
+    const maybeRefresh = () => {
+      if (document.visibilityState === "hidden") return;
+      const latest = usableCache();
+      if (Date.now() - (latest?.ts ?? 0) >= INCOMPLETE_TTL) {
+        void load(true);
+      }
+    };
+    const timer = window.setInterval(maybeRefresh, INCOMPLETE_POLL_INTERVAL);
+    window.addEventListener("focus", maybeRefresh);
+    document.addEventListener("visibilitychange", maybeRefresh);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focus", maybeRefresh);
+      document.removeEventListener("visibilitychange", maybeRefresh);
+    };
   }, [data, load]);
 
   return {
