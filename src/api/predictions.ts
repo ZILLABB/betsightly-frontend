@@ -230,7 +230,7 @@ export const api = {
    * path, so the Predictions page has been rendering a response that cannot
    * satisfy its own type and every tier reads as empty. */
   getTodaysAccumulators: () =>
-    request<AccumulatorResponse>('/leagues/daily-accumulators'),
+    request<AccumulatorResponse>('/leagues/daily-accumulators', { cache: 'no-store' }),
 
   /** A slip rebuilt from fixtures that have not kicked off yet.
    *
