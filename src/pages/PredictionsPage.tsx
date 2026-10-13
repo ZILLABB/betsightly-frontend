@@ -162,6 +162,29 @@ export function PredictionsPage() {
         publicationDate={data?.date}
       />
 
+      {thinOfficialDay && (
+        <section aria-label="Today's match predictions" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <div>
+            <div className="eyebrow" style={{ marginBottom: 8 }}>Today's football fixtures</div>
+            <h2 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>
+              Match-by-match predictions
+            </h2>
+            <p style={{ fontSize: 13, color: "var(--text-2)", marginTop: 8 }}>
+              Review real model forecasts for today's games below.
+              Predictions are not guarantees, and research-only selections are not
+              official verified SportyBet tickets.
+            </p>
+          </div>
+          <RecommendationBoard
+            data={recommendations.data}
+            loading={recommendations.loading}
+            error={recommendations.error}
+            onRetry={recommendations.refetch}
+          />
+          <AIScoutWatchlist />
+        </section>
+      )}
+
       <div className="premium-slips-heading">
         <div className="eyebrow" style={{ marginBottom: 8 }}>Curated daily products</div>
         <h2 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>Premium slips</h2>
@@ -396,13 +419,17 @@ export function PredictionsPage() {
         </div>
       )}
 
-      <AIScoutWatchlist />
-      <RecommendationBoard
-        data={recommendations.data}
-        loading={recommendations.loading}
-        error={recommendations.error}
-        onRetry={recommendations.refetch}
-      />
+      {!thinOfficialDay && (
+        <>
+          <AIScoutWatchlist />
+          <RecommendationBoard
+            data={recommendations.data}
+            loading={recommendations.loading}
+            error={recommendations.error}
+            onRetry={recommendations.refetch}
+          />
+        </>
+      )}
     </div>
   );
 }
