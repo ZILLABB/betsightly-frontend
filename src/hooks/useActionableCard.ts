@@ -154,7 +154,7 @@ export function useActionableCard(
   useEffect(() => {
     // Invalidate a response belonging to the previous published card.
     requestIdRef.current += 1;
-    setMode("available");
+    setMode("auto");
     setBookable(null);
     setBookableLoading(false);
     setBookableNotice(null);
@@ -291,7 +291,7 @@ export function useActionableCard(
   ]);
 
   const showAvailable = useCallback(() => {
-    setMode("auto");
+    setMode("available");
     setBookable(null);
     setBookableNotice(null);
     setFetchedAt(0);
@@ -303,7 +303,7 @@ export function useActionableCard(
   }, []);
 
   const viewingBookable =
-    mode === "auto" &&
+    mode !== "published" &&
     actionability.needsReplacement &&
     !preservePublishedManual &&
     bookable?.available === true &&
@@ -315,13 +315,13 @@ export function useActionableCard(
     actionability.needsReplacement;
 
   const bookableError =
-    mode === "auto" &&
+    mode !== "published" &&
     actionability.needsReplacement &&
     !bookableLoading &&
     bookable?.status === "error";
 
   const unavailable =
-    mode === "auto" &&
+    mode !== "published" &&
     actionability.needsReplacement &&
     !bookableLoading &&
     !bookableError &&
