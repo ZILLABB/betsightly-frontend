@@ -1,5 +1,6 @@
 import React from "react";
 import { ExternalLink, SearchCheck } from "lucide-react";
+import { getAIScoutWatchlist } from "../../api/aiScout";
 
 type ScoutVerdict = "RESEARCH_PRIORITY" | "NEEDS_VERIFICATION" | "NO_ADDITIONAL_EVIDENCE";
 type ScoutCandidate = {
@@ -30,20 +31,15 @@ type ScoutResponse = {
   official_predictions_unchanged?: boolean;
 };
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "https://betsightly-api.onrender.com/api";
-
 /** AI Scout has no booking action and never appears inside an official tier. */
 export function AIScoutWatchlist() {
   const [report, setReport] = React.useState<ScoutResponse | null>(null);
   React.useEffect(() => {
-    const controller = new AbortController();
-    fetch(`${API_BASE}/leagues/ai-scout/watchlist`, {
-      signal: controller.signal, headers: { Accept: "application/json" },
-    })
-      .then(res => res.ok ? res.json() as Promise<ScoutResponse> : null)
-      .then(data => { if (!controller.signal.aborted) setReport(data); })
+    let alive = true;
+    getAIScoutWatchlist<ScoutResponse>()
+      .then(data => { if (alive) setReport(data); })
       .catch(() => { /* Optional research must not interrupt official cards */ });
-    return () => controller.abort();
+    return () => { alive = false; };
   }, []);
 
   const candidates = report?.status === "SHADOW_EVIDENCE_ONLY"
