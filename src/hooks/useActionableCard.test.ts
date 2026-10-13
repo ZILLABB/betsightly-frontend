@@ -269,3 +269,81 @@ test("portfolio replacement swaps only after valid response and View original re
   await waitFor(() => expect(result.current.viewingPublishedRecord).toBe(true));
   expect(result.current.accumulators).toBe(published);
 });
+
+
+test("a stale Over 1.5 tier cannot silently hide active manual 2/5/10 Odds", async () => {
+  const soon = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+  const later = new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString();
+  const verifiedManual = (odds: number, code: string) => ({
+    ...category(later), editorial_manual: true, total_odds: odds,
+    booking: {
+      status: "active", actionable: true, lifecycle_status: "active",
+      booking_status: "FULL", share_code: code,
+    },
+  });
+  const published = {
+    banker: empty,
+    "2_odds": verifiedManual(2.272, "KCG0Y4"),
+    "5_odds": verifiedManual(5.055, "UTQQR4"),
+    "10_odds": verifiedManual(10.318, "M5NGWX"),
+    over_1_5: { ...verifiedManual(5.016, "KXEZTX"), games: category(soon).games },
+    rollover: empty,
+    _portfolio: { portfolio_validation: { valid: true } },
+  } as any;
+  const getBookableNow = api.getBookableNow as jest.Mock;
+  getBookableNow.mockReset();
+  getBookableNow.mockResolvedValue({
+    status: "success", available: true,
+    accumulators: {
+      banker: category(later), "2_odds": category(later),
+      "5_odds": empty, "10_odds": empty, over_1_5: empty,
+    },
+    _portfolio: { portfolio_validation: { valid: true } },
+  });
+
+  const { result } = renderHook(() =>
+    useActionableCard(published, "2026-10-13"));
+  expect(result.current.needsReplacement).toBe(true);
+  expect(result.current.activeManualPublication).toBe(true);
+  expect(result.current.viewingBookable).toBe(false);
+  expect(result.current.accumulators?.["10_odds"].total_odds).toBe(10.318);
+  expect(result.current.accumulators?.["10_odds"].booking?.share_code).toBe("M5NGWX");
+  expect(result.current.accumulators?.["2_odds"].booking?.share_code).toBe("KCG0Y4");
+  expect(result.current.accumulators?.["5_odds"].booking?.share_code).toBe("UTQQR4");
+  expect(result.current.accumulators?.over_1_5.editorial_manual).toBe(true);
+  expect(getBookableNow).not.toHaveBeenCalled();
+
+  // Customers may explicitly open an available-now preview; no automatic
+  // refresh is allowed to switch the entire ticket portfolio behind them.
+  act(() => result.current.showAvailable());
+  await waitFor(() => expect(result.current.viewingBookable).toBe(true));
+  expect(result.current.accumulators?.["10_odds"].selected).toBe(false);
+  act(() => result.current.showPublished());
+  await waitFor(() => expect(result.current.viewingBookable).toBe(false));
+  expect(result.current.accumulators?.["10_odds"].total_odds).toBe(10.318);
+});
+
+test("when no active manual tickets remain, Available Now still recovers stale tiers", async () => {
+  const expired = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+  const later = new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString();
+  const published = {
+    banker: empty,
+    "2_odds": { ...category(expired), editorial_manual: true },
+    "5_odds": empty, "10_odds": empty, over_1_5: empty,
+    rollover: empty,
+  } as any;
+  const getBookableNow = api.getBookableNow as jest.Mock;
+  getBookableNow.mockReset();
+  getBookableNow.mockResolvedValueOnce({
+    status: "success", available: true,
+    accumulators: {
+      banker: empty, "2_odds": category(later),
+      "5_odds": empty, "10_odds": empty, over_1_5: empty,
+    },
+  });
+  const { result } = renderHook(() =>
+    useActionableCard(published, "2026-10-13"));
+  await waitFor(() => expect(result.current.viewingBookable).toBe(true));
+  expect(result.current.activeManualPublication).toBe(false);
+  expect(result.current.accumulators?.["2_odds"].games[0].kickoff).toBe(later);
+});

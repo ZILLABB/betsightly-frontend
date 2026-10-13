@@ -136,7 +136,9 @@ export function useActionableCard(
   published?: AccumulatorResponse["accumulators"],
   cardDate?: string,
 ) {
-  const [mode, setMode] = useState<"auto" | "published">("auto");
+  // A visitor may explicitly request the available-now preview, but a
+  // background refresh must never silently hide an actionable admin ticket.
+  const [mode, setMode] = useState<"auto" | "published" | "available">("auto");
   const [bookable, setBookable] = useState<BookableNowResponse | null>(null);
   const [bookableLoading, setBookableLoading] = useState(false);
   const [bookableNotice, setBookableNotice] = useState<string | null>(null);
@@ -164,8 +166,30 @@ export function useActionableCard(
     [published, now],
   );
 
+  // A single stale tier (for example Over 1.5 entering its kickoff buffer)
+  // previously replaced ALL tiers with a new model-generated preview. This
+  // erased valid 2x/5x/10x manual tickets from the default screen. Keep the
+  // official published portfolio by default whenever at least one verified
+  // manual ticket is still actionable; started tickets stay visibly historical
+  // with their own bookmaker lifecycle applied by the API.
+  const activeManualPublication = useMemo(
+    () => REPLACEABLE_KEYS.some(key => {
+      const category = published?.[key];
+      return category?.editorial_manual === true &&
+        category.selected &&
+        category.games?.length > 0 &&
+        !!category.booking &&
+        bookingIsActionable(category) &&
+        category.games.every(game =>
+          !gameIsNoLongerActionable(game as RuntimeGame, now));
+    }),
+    [published, now],
+  );
+  const preservePublishedManual = activeManualPublication && mode === "auto";
+
   useEffect(() => {
-    if (!actionability.needsReplacement || mode === "published") return;
+    if (!actionability.needsReplacement ||
+        mode === "published" || preservePublishedManual) return;
 
     const freshEnough =
       bookable !== null &&
@@ -260,13 +284,14 @@ export function useActionableCard(
   }, [
     actionability.needsReplacement,
     mode,
+    preservePublishedManual,
     bookable,
     fetchedAt,
     now,
   ]);
 
   const showAvailable = useCallback(() => {
-    setMode("auto");
+    setMode("available");
     setBookable(null);
     setBookableNotice(null);
     setFetchedAt(0);
@@ -278,24 +303,25 @@ export function useActionableCard(
   }, []);
 
   const viewingBookable =
-    mode === "auto" &&
+    mode !== "published" &&
     actionability.needsReplacement &&
+    !preservePublishedManual &&
     bookable?.available === true &&
     !!bookable.accumulators &&
     availableNowIsPortfolioSafe(bookable);
 
   const viewingPublishedRecord =
-    mode === "published" &&
+    (mode === "published" || preservePublishedManual) &&
     actionability.needsReplacement;
 
   const bookableError =
-    mode === "auto" &&
+    mode !== "published" &&
     actionability.needsReplacement &&
     !bookableLoading &&
     bookable?.status === "error";
 
   const unavailable =
-    mode === "auto" &&
+    mode !== "published" &&
     actionability.needsReplacement &&
     !bookableLoading &&
     !bookableError &&
@@ -333,6 +359,7 @@ export function useActionableCard(
     affectedSelections: actionability.affectedSelections,
     timingAffected: actionability.timingAffected,
     portfolioIntegrityInvalid: actionability.portfolioIntegrityInvalid,
+    activeManualPublication,
     showAvailable,
     showPublished,
   };
