@@ -22,7 +22,6 @@ import { useActionableCard } from "../hooks/useActionableCard";
 import { firstAvailablePredictionTier } from "../utils/firstAvailablePredictionTier";
 import { isRolloverOnlyDay } from "../utils/isRolloverOnlyDay";
 import { RecommendationBoard } from "../components/predictions/RecommendationBoard";
-import { AIScoutWatchlist } from "../components/predictions/AIScoutWatchlist";
 import { NextAvailableNotice } from "../components/predictions/NextAvailableNotice";
 import "../styles/product-experience.css";
 
@@ -171,8 +170,8 @@ export function PredictionsPage() {
             </h2>
             <p style={{ fontSize: 13, color: "var(--text-2)", marginTop: 8 }}>
               Review real model forecasts for today's games below.
-              Predictions are not guarantees, and research-only selections are not
-              official verified SportyBet tickets.
+              Forecasts are informational and not guaranteed. Only published
+              tiers with verified booking codes are bookmaker-ready tickets.
             </p>
           </div>
           <RecommendationBoard
@@ -181,7 +180,6 @@ export function PredictionsPage() {
             error={recommendations.error}
             onRetry={recommendations.refetch}
           />
-          <AIScoutWatchlist />
         </section>
       )}
 
@@ -435,7 +433,6 @@ export function PredictionsPage() {
 
       {!thinOfficialDay && (
         <>
-          <AIScoutWatchlist />
           <RecommendationBoard
             data={recommendations.data}
             loading={recommendations.loading}
