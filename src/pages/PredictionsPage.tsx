@@ -22,6 +22,7 @@ import { useActionableCard } from "../hooks/useActionableCard";
 import { firstAvailablePredictionTier } from "../utils/firstAvailablePredictionTier";
 import { isRolloverOnlyDay } from "../utils/isRolloverOnlyDay";
 import { RecommendationBoard } from "../components/predictions/RecommendationBoard";
+import { AIScoutWatchlist } from "../components/predictions/AIScoutWatchlist";
 import { NextAvailableNotice } from "../components/predictions/NextAvailableNotice";
 import "../styles/product-experience.css";
 
@@ -395,6 +396,7 @@ export function PredictionsPage() {
         </div>
       )}
 
+      <AIScoutWatchlist />
       <RecommendationBoard
         data={recommendations.data}
         loading={recommendations.loading}
