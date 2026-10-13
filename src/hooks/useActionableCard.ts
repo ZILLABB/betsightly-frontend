@@ -166,24 +166,18 @@ export function useActionableCard(
     [published, now],
   );
 
-  // A single stale tier (for example Over 1.5 entering its kickoff buffer)
-  // previously replaced ALL tiers with a new model-generated preview. This
-  // erased valid 2x/5x/10x manual tickets from the default screen. Keep the
-  // official published portfolio by default whenever at least one verified
-  // manual ticket is still actionable; started tickets stay visibly historical
-  // with their own bookmaker lifecycle applied by the API.
+  // Do not hide published editorial tickets as soon as a match enters the
+  // kickoff buffer or starts. Their booking codes may become non-actionable,
+  // but the historical picks must remain visible until a separate verified
+  // new edition is explicitly published. Available Now is opt-in.
   const activeManualPublication = useMemo(
     () => REPLACEABLE_KEYS.some(key => {
       const category = published?.[key];
       return category?.editorial_manual === true &&
-        category.selected &&
-        category.games?.length > 0 &&
-        !!category.booking &&
-        bookingIsActionable(category) &&
-        category.games.every(game =>
-          !gameIsNoLongerActionable(game as RuntimeGame, now));
+        category.selected === true &&
+        (category.games?.length ?? 0) > 0;
     }),
-    [published, now],
+    [published],
   );
   const preservePublishedManual = activeManualPublication && mode === "auto";
 

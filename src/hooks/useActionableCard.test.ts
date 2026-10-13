@@ -323,7 +323,7 @@ test("a stale Over 1.5 tier cannot silently hide active manual 2/5/10 Odds", asy
   expect(result.current.accumulators?.["10_odds"].total_odds).toBe(10.318);
 });
 
-test("when no active manual tickets remain, Available Now still recovers stale tiers", async () => {
+test("an expired manual ticket remains visible as publication history instead of being silently replaced", async () => {
   const expired = new Date(Date.now() - 60 * 60 * 1000).toISOString();
   const later = new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString();
   const published = {
@@ -343,7 +343,35 @@ test("when no active manual tickets remain, Available Now still recovers stale t
   });
   const { result } = renderHook(() =>
     useActionableCard(published, "2026-10-13"));
+  expect(result.current.activeManualPublication).toBe(true);
+  expect(result.current.viewingBookable).toBe(false);
+  expect(result.current.accumulators?.["2_odds"].games[0].kickoff).toBe(expired);
+  expect(getBookableNow).not.toHaveBeenCalled();
+
+  // A conscious opt-in still allows fresh discovery while keeping the old
+  // publication reachable with View original card.
+  act(() => result.current.showAvailable());
+  await waitFor(() => expect(result.current.viewingBookable).toBe(true));
+  expect(result.current.accumulators?.["2_odds"].games[0].kickoff).toBe(later);
+  act(() => result.current.showPublished());
+  expect(result.current.accumulators?.["2_odds"].games[0].kickoff).toBe(expired);
+});
+
+test("no manual ticket means stale automatic picks can still be replaced", async () => {
+  const expired = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+  const later = new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString();
+  const published = { banker: empty, "2_odds": category(expired),
+    "5_odds": empty, "10_odds": empty, over_1_5: empty,
+    rollover: empty } as any;
+  const getBookableNow = api.getBookableNow as jest.Mock;
+  getBookableNow.mockReset();
+  getBookableNow.mockResolvedValueOnce({
+    status: "success", available: true,
+    accumulators: { banker: empty, "2_odds": category(later),
+      "5_odds": empty, "10_odds": empty, over_1_5: empty },
+  });
+  const { result } = renderHook(() =>
+    useActionableCard(published, "2026-10-13"));
   await waitFor(() => expect(result.current.viewingBookable).toBe(true));
   expect(result.current.activeManualPublication).toBe(false);
-  expect(result.current.accumulators?.["2_odds"].games[0].kickoff).toBe(later);
 });
