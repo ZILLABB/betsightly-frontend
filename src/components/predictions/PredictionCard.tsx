@@ -337,7 +337,7 @@ export function PredictionCard({ game, color, faint, index = 0, score }: Props) 
           background: "var(--surface-2)", border: "1px solid var(--border)",
           fontFamily: "var(--font-body)", fontSize: 10, color: "var(--text-3)",
         }}>
-          <span>Our estimate<br /><strong style={{ color: "var(--text-1)" }}>{pct}%</strong></span>
+          <span>{editorial ? "Model confidence" : "Our estimate"}<br /><strong style={{ color: "var(--text-1)" }}>{editorial ? "Not model-scored" : `${pct}%`}</strong></span>
           <span>Book price implies<br /><strong style={{ color: "var(--text-1)" }}>
             {priceImplied != null
               ? `${Math.round(priceImplied * 100)}%`
