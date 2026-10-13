@@ -14,7 +14,7 @@ export function EmptyState({ type, message, onRetry }: Props) {
       icon: <Calendar size={40} strokeWidth={1.5} color="var(--text-3)" />,
       title: "No matches for this category today",
       sub: message || "Odds refresh every 6 hours. New matches may appear later today or in the next match day.",
-      hint: "Other categories may still have picks. Busy match days (weekends) fill every tier.",
+      hint: "Other categories or the Rollover challenge may have qualifying games. Upcoming fixtures can be explored in Builder.",
     },
     error: {
       icon: <AlertCircle size={40} strokeWidth={1.5} color="var(--red)" />,
@@ -26,7 +26,7 @@ export function EmptyState({ type, message, onRetry }: Props) {
       icon: <Calendar size={40} strokeWidth={1.5} color="var(--text-3)" />,
       title: "No safe picks for this category right now",
       sub: message || "We only show picks when our model is highly confident. Days without safe matches are skipped rather than padded with risky bets.",
-      hint: "The Rollover chain auto-skips ahead to the next day with safe matches.",
+      hint: "A missing tier means the current rules withheld its picks, not that there are no football matches scheduled.",
     },
   };
 
@@ -95,6 +95,13 @@ export function EmptyState({ type, message, onRetry }: Props) {
           <p style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text-3)", lineHeight: 1.6 }}>
             {cfg.hint}
           </p>
+          <Link to="/build-slip" style={{
+            display: "inline-flex", alignItems: "center", gap: 6,
+            fontFamily: "var(--font-body)", fontSize: 12, fontWeight: 700,
+            color: "#fbbf24", textDecoration: "none",
+          }}>
+            Explore upcoming fixtures <ArrowRight size={12} />
+          </Link>
           <Link to="/rollover" style={{
             display: "inline-flex", alignItems: "center", gap: 6,
             fontFamily: "var(--font-body)", fontSize: 12, fontWeight: 700,

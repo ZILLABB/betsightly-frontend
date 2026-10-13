@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { ArrowRight, Clock3, RotateCcw } from "lucide-react";
 import { usePredictions } from "../hooks/usePredictions";
 import { useFormatOdds } from "../hooks/useFormatOdds";
@@ -20,6 +20,7 @@ import { api } from "../api/predictions";
 import { useRecommendations } from "../hooks/useRecommendations";
 import { useActionableCard } from "../hooks/useActionableCard";
 import { firstAvailablePredictionTier } from "../utils/firstAvailablePredictionTier";
+import { isRolloverOnlyDay } from "../utils/isRolloverOnlyDay";
 import { RecommendationBoard } from "../components/predictions/RecommendationBoard";
 import { NextAvailableNotice } from "../components/predictions/NextAvailableNotice";
 import "../styles/product-experience.css";
@@ -99,6 +100,7 @@ export function PredictionsPage() {
       ])) as Partial<Record<CategoryKey, boolean>>)
     : {};
 
+  const rolloverOnlyDay = isRolloverOnlyDay(accumulators);
   const thinOfficialDay = Boolean(data?.date && accumulators &&
     (["2_odds", "5_odds", "10_odds"] as const).every(
       key => !accumulators[key]?.selected || !(accumulators[key]?.games?.length),
@@ -126,6 +128,33 @@ export function PredictionsPage() {
             : "today"} — pick a tier that matches your risk appetite.
         </p>
       </header>
+
+      {!loading && rolloverOnlyDay && (
+        <section className="card" role="status" aria-label="Today's available prediction" style={{
+          padding: "18px 20px", borderLeft: "4px solid var(--gold)",
+          display: "flex", flexWrap: "wrap", alignItems: "center",
+          justifyContent: "space-between", gap: 14,
+        }}>
+          <div style={{ flex: "1 1 260px" }}>
+            <strong style={{ display: "block", fontSize: 16, color: "var(--text-1)" }}>
+              Today's active prediction: Rollover
+            </strong>
+            <p style={{ fontSize: 13, lineHeight: 1.55, color: "var(--text-2)", marginTop: 5 }}>
+              {accumulators!.rollover.games.length} published Rollover selections are available to review.
+              Other tiers did not meet today's confidence, evidence, price or
+              non-repetition rules. We won't fill them with unverified picks.
+            </p>
+          </div>
+          <div style={{ display: "flex", gap: 14, flexWrap: "wrap", alignItems: "center" }}>
+            <Link to="/rollover" style={{ color: "var(--gold)", fontSize: 13, fontWeight: 700 }}>
+              View Rollover <ArrowRight size={14} style={{ display: "inline", verticalAlign: "middle" }} />
+            </Link>
+            <Link to="/build-slip" style={{ color: "var(--text-1)", fontSize: 13, fontWeight: 700 }}>
+              Explore upcoming fixtures <ArrowRight size={14} style={{ display: "inline", verticalAlign: "middle" }} />
+            </Link>
+          </div>
+        </section>
+      )}
 
       <NextAvailableNotice
         enabled={!loading && thinOfficialDay}
