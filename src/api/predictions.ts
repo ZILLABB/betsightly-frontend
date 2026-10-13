@@ -302,6 +302,10 @@ export const api = {
   getLeagueResults: (days = 30) =>
     request<LeagueResultsResponse>(`/leagues/results?days=${days}`),
 
+  /** Human-curated slip settlement, excluded from engine calibration and ROI. */
+  getManualResults: (limit = 30) =>
+    request<ManualResultsResponse>(`/growth/editorial-results?limit=${limit}`),
+
   /** Predicted confidence vs measured hit rate. */
   getCalibration: (days = 180) =>
     request<CalibrationResponse>(`/leagues/calibration?days=${days}`),
@@ -614,4 +618,39 @@ export interface PerformanceResponse {
   days: number;
   summary: Record<string, CategoryPerformance>;
   current_policy?: CurrentPolicyPerformance;
+}
+
+
+/** Editorial picks are explicitly separate from official model performance. */
+export interface ManualResultLeg {
+  home_team: string;
+  away_team: string;
+  market: string;
+  odds?: number;
+  kickoff?: string;
+  status: "pending" | "won" | "lost" | "void";
+  settlement_pending_reason?: string | null;
+  settlement_evidence?: {
+    home_score?: number;
+    away_score?: number;
+    provider?: string;
+    match_status?: string;
+  };
+}
+
+export interface ManualResultSlip {
+  date: string;
+  tier: string;
+  total_odds: number;
+  status: "pending" | "won" | "lost" | "void";
+  settled_at?: string | null;
+  games: ManualResultLeg[];
+  editorial_manual: true;
+}
+
+export interface ManualResultsResponse {
+  status: string;
+  manual_editorial: true;
+  official_record_unchanged?: boolean;
+  results: ManualResultSlip[];
 }
