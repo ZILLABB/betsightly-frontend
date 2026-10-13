@@ -73,7 +73,7 @@ const data: RecommendationBoardResponse = {
 };
 
 describe("RecommendationBoard", () => {
-  it("defaults to upcoming SportyBet-bookable recommendations", () => {
+  it("shows all upcoming analysed matches by default without claiming they are bookable", () => {
     render(
       <RecommendationBoard
         data={data}
@@ -84,7 +84,8 @@ describe("RecommendationBoard", () => {
     );
 
     expect(screen.getByText("Home 1")).toBeTruthy();
-    expect(screen.queryByText("Home 2")).toBeNull();
+    expect(screen.getByText("Home 2")).toBeTruthy();
+    expect(screen.getByText("Research only · no verified booking")).toBeTruthy();
 
     expect(
       screen.getByLabelText("Upcoming only"),
@@ -92,7 +93,7 @@ describe("RecommendationBoard", () => {
 
     expect(
       screen.getByLabelText("SportyBet bookable"),
-    ).toBeChecked();
+    ).not.toBeChecked();
   });
 
   it("can reveal the wider analysis without turning every match into a large card", () => {
@@ -105,10 +106,11 @@ describe("RecommendationBoard", () => {
       />,
     );
 
-    fireEvent.click(
-      screen.getByRole("button", { name: "Show all analysis" }),
-    );
+    fireEvent.click(screen.getByLabelText("SportyBet bookable"));
+    expect(screen.queryByText("Home 2")).toBeNull();
+    expect(screen.getByText("Home 1")).toBeTruthy();
 
+    fireEvent.click(screen.getByLabelText("SportyBet bookable"));
     expect(screen.getByText("Home 2")).toBeTruthy();
 
     fireEvent.click(
