@@ -123,7 +123,46 @@ test("discovers a verified same-day 10 Odds refill while the page stays open", a
   const { result } = renderHook(() => usePredictions());
   await waitFor(() => expect(result.current.loading).toBe(false));
   await act(async () => {
-    jest.advanceTimersByTime(5 * 60 * 1000);
+    jest.advanceTimersByTime(60 * 1000);
+    await Promise.resolve();
+  });
+  await waitFor(() => expect(result.current.data?.accumulators["10_odds"].selected).toBe(true));
+  expect(getToday).toHaveBeenCalledTimes(2);
+});
+
+test("a stale incomplete session card is refetched immediately on a new visit", async () => {
+  const oldCard = response();
+  const withTen = response();
+  withTen.accumulators["10_odds"] = {
+    selected: true, games: [{ match_id: "manual-10x" }],
+    total_odds: 10.318, risk_level: "high",
+  } as typeof withTen.accumulators["10_odds"];
+
+  sessionStorage.setItem("betsightly_predictions_same_day_v1", JSON.stringify({
+    data: oldCard, date: "2026-09-12",
+    ts: Date.now() - 40_000,
+  }));
+  getToday.mockResolvedValueOnce(withTen);
+
+  const { result } = renderHook(() => usePredictions());
+  await waitFor(() => expect(result.current.data?.accumulators["10_odds"].selected).toBe(true));
+  expect(getToday).toHaveBeenCalledTimes(1);
+});
+
+test("returning to a tab refreshes an incomplete card without waiting five minutes", async () => {
+  const oldCard = response();
+  const updatedCard = response();
+  updatedCard.accumulators["10_odds"] = {
+    selected: true, games: [{ match_id: "published-10x" }],
+    total_odds: 10.318, risk_level: "high",
+  } as typeof updatedCard.accumulators["10_odds"];
+  getToday.mockResolvedValueOnce(oldCard).mockResolvedValueOnce(updatedCard);
+
+  const { result } = renderHook(() => usePredictions());
+  await waitFor(() => expect(result.current.loading).toBe(false));
+  await act(async () => {
+    jest.advanceTimersByTime(35_000);
+    window.dispatchEvent(new Event("focus"));
     await Promise.resolve();
   });
   await waitFor(() => expect(result.current.data?.accumulators["10_odds"].selected).toBe(true));
