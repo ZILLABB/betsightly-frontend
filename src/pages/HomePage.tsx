@@ -90,9 +90,25 @@ export function HomePage() {
     ? CATEGORIES.reduce((s, c) => s + (accumulators[c.key]?.games?.length ?? 0), 0)
     : 0;
 
-  const avgConf = activeCat?.games?.length
-    ? Math.round(activeCat.games.reduce((s, g) => s + g.confidence, 0) / activeCat.games.length * 100)
-    : 0;
+  // Manual editorial picks deliberately have no model confidence. Do not
+  // include unscored, missing, invalid or non-finite values in the average.
+  const scoredGames = (activeCat?.games ?? []).filter(g =>
+    !g.editorial_manual &&
+    g.model_probability_available !== false &&
+    typeof g.confidence === "number" &&
+    Number.isFinite(g.confidence) &&
+    g.confidence >= 0 &&
+    g.confidence <= 1
+  );
+  const avgConf = scoredGames.length
+    ? Math.round(scoredGames.reduce((sum, g) => sum + g.confidence, 0) / scoredGames.length * 100)
+    : null;
+  const confidenceLabel = avgConf === null ? "Not scored" : `${avgConf}%`;
+  const confidenceExplanation = avgConf === null
+    ? (activeCat?.editorial_manual
+      ? "Admin-curated ticket · no model confidence score"
+      : "No model confidence score available")
+    : "Average model confidence for scored picks in this tier";
 
   const handleRefresh = useCallback(() => {
     setSpinning(true);
@@ -134,7 +150,7 @@ export function HomePage() {
           </div>
           <div className="trust-row" aria-label="Product principles">
             <span><CircleCheck size={14} /> Real odds</span>
-            <span><CircleCheck size={14} /> Calibrated confidence</span>
+            <span><CircleCheck size={14} /> {activeCat?.editorial_manual ? "Bookmaker-verified selections" : "Calibrated confidence"}</span>
             <span><CircleCheck size={14} /> Results tracked</span>
           </div>
         </div>
@@ -148,11 +164,11 @@ export function HomePage() {
             <Activity size={18} />
           </div>
           <div className="signal-score">
-            <strong>{loading ? "—" : `${avgConf}%`}</strong>
-            <span>Average confidence in the active card</span>
+            <strong>{loading ? "—" : confidenceLabel}</strong>
+            <span>{confidenceExplanation}</span>
           </div>
           <div className="signal-list">
-            <div><span>Probability model</span><b>Calibrated</b></div>
+            <div><span>Probability model</span><b>{avgConf === null ? "Not evaluated" : "Calibrated"}</b></div>
             <div><span>Market scan</span><b>Daily snapshot</b></div>
             <div><span>Risk filter</span><b>Applied</b></div>
           </div>
@@ -171,7 +187,7 @@ export function HomePage() {
       {/* Stats row */}
       <div className="metric-grid">
         <StatBubble label="Picks today" value={loading ? "—" : String(totalGames)} icon={<Target size={17} color="var(--brand)" />} color="var(--brand)" />
-        <StatBubble label="Confidence" value={loading ? "—" : `${avgConf}%`} icon={<Shield size={17} color="var(--green)" />} color="var(--green)" />
+        <StatBubble label="Confidence" value={loading ? "—" : confidenceLabel} icon={<Shield size={17} color="var(--green)" />} color="var(--green)" />
         <StatBubble
           label={isSingles ? "Independent picks" : "Top odds"}
           value={loading ? "—" : isSingles
@@ -290,7 +306,7 @@ export function HomePage() {
               {isSingles && activeCat.games?.length > 0 && (
                 <p style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text-3)", marginTop: 3 }}>
                   {activeCat.games.length} independent picks · bet separately
-                  {avgConf > 0 ? ` · average pick confidence ${avgConf}%` : ""}
+                  {avgConf !== null ? ` · average model confidence ${avgConf}%` : ""}
                 </p>
               )}
               {!isSingles && typeof activeCat.hit_probability === "number" && activeCat.games?.length > 0 && (

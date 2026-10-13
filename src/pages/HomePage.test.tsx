@@ -80,3 +80,62 @@ test("homepage presents Over 1.5 as independent picks, never a multiplied slip",
   expect(screen.queryByText("6.04x")).not.toBeInTheDocument();
   expect(screen.getByText("Independent picks")).toBeInTheDocument();
 });
+
+
+test("manual tickets show Not scored in both homepage metrics, never NaN%", () => {
+  const existing = mockedPredictions();
+  const manualGames = [game(21), game(22)].map(g => ({
+    ...g,
+    confidence: undefined,
+    editorial_manual: true,
+    model_probability_available: false,
+  }));
+  mockedPredictions.mockReturnValue({
+    ...existing,
+    data: {
+      ...existing.data,
+      accumulators: {
+        ...existing.data.accumulators,
+        "2_odds": {
+          ...existing.data.accumulators["2_odds"],
+          editorial_manual: true,
+          games: manualGames,
+          hit_probability: null,
+        },
+      },
+    },
+  });
+
+  render(<HomePage />);
+  expect(screen.getAllByText("Not scored")).toHaveLength(2);
+  expect(screen.getByText("Admin-curated ticket · no model confidence score")).toBeInTheDocument();
+  expect(screen.getByText("Not evaluated")).toBeInTheDocument();
+  expect(screen.getByText("Bookmaker-verified selections")).toBeInTheDocument();
+  expect(screen.queryByText("NaN%")).not.toBeInTheDocument();
+  expect(screen.queryByText(/All 2 legs land about/)).not.toBeInTheDocument();
+});
+
+test("homepage averages only valid model probabilities, not unscored or malformed values", () => {
+  const existing = mockedPredictions();
+  mockedPredictions.mockReturnValue({
+    ...existing,
+    data: {
+      ...existing.data,
+      accumulators: {
+        ...existing.data.accumulators,
+        "2_odds": {
+          ...existing.data.accumulators["2_odds"],
+          games: [
+            game(1, 0.8),
+            { ...game(2, 0), editorial_manual: true, model_probability_available: false },
+            game(3, Number.NaN),
+            { ...game(4), confidence: undefined },
+          ],
+        },
+      },
+    },
+  });
+  render(<HomePage />);
+  expect(screen.getAllByText("80%")).toHaveLength(2);
+  expect(screen.queryByText("NaN%")).not.toBeInTheDocument();
+});
