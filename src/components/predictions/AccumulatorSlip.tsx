@@ -28,14 +28,18 @@ function generateSlipText(
     const pred = g.prediction || g.readable_prediction || g.prediction_value || "";
     lines.push(`${g.home_team} vs ${g.away_team}`);
     lines.push(`  ${pred} @ ${fmtOdds(odds)}`);
-    lines.push(`  ${formatLeagueName(g.league)} | ${Math.round(g.confidence * 100)}% confidence`);
+    lines.push(g.editorial_manual
+      ? `  ${formatLeagueName(g.league)} | Admin curated; no model score`
+      : `  ${formatLeagueName(g.league)} | ${Math.round(g.confidence * 100)}% confidence`);
     lines.push("");
   }
 
   lines.push("─".repeat(32));
   lines.push(`Total Odds: ${fmtOdds(totalOdds)}${oddsSuffix} | ${games.length} picks`);
   lines.push("");
-  lines.push("Powered by BetSightly AI");
+  lines.push(games.some(g => g.editorial_manual)
+    ? "BetSightly admin-curated picks; bookmaker-verified, not model-approved."
+    : "Powered by BetSightly AI");
 
   return lines.join("\n");
 }
