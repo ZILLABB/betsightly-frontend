@@ -8,6 +8,7 @@ import ThemeProvider from "./components/common/ThemeProvider";
 import { ErrorBoundary } from "./components/common/ErrorBoundary";
 import { BuilderProvider } from "./contexts/BuilderProvider";
 import { Layout } from "./components/layout/Layout";
+import { BuilderWinNotice } from "./components/builder/BuilderWinNotice";
 import { Spinner } from "./components/ui/Spinner";
 
 // HomePage stays eager (always the first paint)
@@ -61,6 +62,7 @@ export default function App() {
     <BrowserRouter>
       <ProductAnalytics />
       <Layout>
+        <BuilderWinNotice />
         <Suspense fallback={<Fallback />}>
           <Routes>
             <Route path="/" element={<HomePage />} />
