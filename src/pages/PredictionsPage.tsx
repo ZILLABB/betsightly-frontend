@@ -23,6 +23,7 @@ import { firstAvailablePredictionTier } from "../utils/firstAvailablePredictionT
 import { isRolloverOnlyDay } from "../utils/isRolloverOnlyDay";
 import { RecommendationBoard } from "../components/predictions/RecommendationBoard";
 import { AIScoutWatchlist } from "../components/predictions/AIScoutWatchlist";
+import { ManualEditorialSlips } from "../components/predictions/ManualEditorialSlips";
 import { NextAvailableNotice } from "../components/predictions/NextAvailableNotice";
 import "../styles/product-experience.css";
 
@@ -156,6 +157,8 @@ export function PredictionsPage() {
           </div>
         </section>
       )}
+
+      <ManualEditorialSlips />
 
       <NextAvailableNotice
         enabled={!loading && thinOfficialDay}
