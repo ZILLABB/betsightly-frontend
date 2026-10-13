@@ -62,9 +62,11 @@ export function RecommendationBoard({
   const [family, setFamily] = React.useState("All markets");
   const [league, setLeague] = React.useState("All leagues");
 
-  // A visitor arriving on the Predictions page normally wants something they
-  // can still place. Historical/in-play analysis remains available explicitly.
-  const [bookableOnly, setBookableOnly] = React.useState(true);
+  // On thin premium days, hiding every unbookable model opinion makes a
+  // populated analysis board look empty. Display upcoming football research
+  // by default, with a separate opt-in filter for bookmaker availability.
+  // An analysed market is NOT an official verified ticket or a share code.
+  const [bookableOnly, setBookableOnly] = React.useState(false);
   const [upcomingOnly, setUpcomingOnly] = React.useState(true);
 
   const leagues = React.useMemo(
@@ -126,8 +128,9 @@ export function RecommendationBoard({
           <div className="eyebrow">Match intelligence</div>
           <h2 id="match-board-title">Best view by analysed match</h2>
           <p>
-            Upcoming SportyBet-bookable matches are shown first. Open the wider
-            analysis only when you want historical, in-play, or non-bookable opinions.
+            Upcoming match forecasts are shown even when they cannot become official
+            SportyBet tickets. Enable the bookable filter to narrow the research;
+            only verified codes on published slips are ready for booking.
           </p>
         </div>
 
@@ -220,7 +223,7 @@ export function RecommendationBoard({
         </div>
       ) : shown.length === 0 ? (
         <div className="recommendation-board__state">
-          No upcoming exact-bookable matches fit these filters.
+          No upcoming analysed matches fit these filters.
           {(data?.recommendations?.length ?? 0) > 0 && (
             <button type="button" onClick={resetAnalysisFilters}>
               Show all analysis
@@ -274,8 +277,10 @@ export function RecommendationBoard({
                 <div className="recommendation-row__foot">
                   <span>
                     {item.premium_eligible
-                      ? "Premium eligible"
-                      : "Match intelligence"}
+                      ? "Model and price candidate · not a verified ticket"
+                      : (pick.bookable
+                        ? "Bookmaker market reported · not a verified ticket"
+                        : "Research only · no verified booking")}
                   </span>
 
                   {item.alternatives.length > 0 && (
