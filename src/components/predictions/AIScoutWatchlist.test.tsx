@@ -2,12 +2,11 @@ import React from "react";
 import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
 import { AIScoutWatchlist } from "./AIScoutWatchlist";
+import { getAIScoutWatchlist } from "../../api/aiScout";
 
-const savedFetch = globalThis.fetch;
-afterEach(() => {
-  globalThis.fetch = savedFetch;
-  jest.restoreAllMocks();
-});
+jest.mock("../../api/aiScout", () => ({ getAIScoutWatchlist: jest.fn() }));
+const mockLoad = getAIScoutWatchlist as jest.MockedFunction<typeof getAIScoutWatchlist>;
+afterEach(() => jest.clearAllMocks());
 
 const sample = {
   status: "SHADOW_EVIDENCE_ONLY",
@@ -28,9 +27,7 @@ const sample = {
 };
 
 test("renders only a clearly labelled, unverified research watchlist", async () => {
-  globalThis.fetch = jest.fn().mockResolvedValue({
-    ok: true, json: async () => sample,
-  }) as unknown as typeof fetch;
+  mockLoad.mockResolvedValue(sample);
   render(<AIScoutWatchlist />);
   expect(await screen.findByText("Home vs Away")).toBeInTheDocument();
   expect(screen.getByText(/not official BetSightly selections/i)).toBeInTheDocument();
@@ -41,9 +38,7 @@ test("renders only a clearly labelled, unverified research watchlist", async () 
 });
 
 test("never presents missing or unpublished research as official picks", async () => {
-  globalThis.fetch = jest.fn().mockResolvedValue({
-    ok: true, json: async () => ({...sample, status: "NO_API_KEY"}),
-  }) as unknown as typeof fetch;
+  mockLoad.mockResolvedValue({...sample, status: "NO_API_KEY"});
   const { container } = render(<AIScoutWatchlist />);
   await new Promise(resolve => setTimeout(resolve, 0));
   expect(container.querySelector("section")).toBeNull();
