@@ -121,6 +121,9 @@ export interface Game {
 // ── Prediction-specific types ───────────────────────────────────────────
 
 export interface GamePrediction {
+  /** Human editorial selection; no statistically evaluated model confidence. */
+  editorial_manual?: boolean;
+  model_probability_available?: boolean;
   selection_id?: string;
   match_id?: string;
   fixture_id: number;
@@ -401,6 +404,9 @@ export interface RecommendationBoardResponse {
 }
 
 export interface CategoryData {
+  /** Manually curated, SportyBet-verified ticket; excluded from engine metrics. */
+  editorial_manual?: boolean;
+  source?: "admin_curated" | string;
   selected: boolean;
   result_status?: "TARGET_REACHED" | "QUALITY_CAPPED" | "EXPOSURE_CAPPED" | "MAX_LEGS_CAPPED" | "INSUFFICIENT_BOOKABLE_FIXTURES" | "INSUFFICIENT_TRUSTED_FIXTURES" | "NO_SAFE_COMBINATION" | "PUBLICATION_POLICY_BLOCKED";
   games: GamePrediction[];
