@@ -20,6 +20,7 @@ import {
   type ResultStatusFilter,
 } from "../components/results/ResultsDashboard";
 import "../components/results/results.css";
+import { ManualEditorialResults } from "../components/results/ManualEditorialResults";
 import {
   api,
   type CalibrationResponse,
@@ -27,7 +28,7 @@ import {
   type LeagueResultsResponse,
 } from "../api/predictions";
 
-type ResultsTab = "products" | "rollover";
+type ResultsTab = "products" | "rollover" | "manual";
 
 export function ResultsPage() {
   const { formatOdds, oddsSuffix } = useFormatOdds();
@@ -122,6 +123,7 @@ export function ResultsPage() {
       <nav className="results-tabs" aria-label="Results sections">
         <button type="button" className={tab === "products" ? "is-active" : ""} aria-pressed={tab === "products"} onClick={() => setTab("products")}>Product results</button>
         <button type="button" className={tab === "rollover" ? "is-active" : ""} aria-pressed={tab === "rollover"} onClick={() => setTab("rollover")}>Rollover chains</button>
+        <button type="button" className={tab === "manual" ? "is-active" : ""} aria-pressed={tab === "manual"} onClick={() => setTab("manual")}>Manual picks</button>
       </nav>
 
       {resultsError && <div className="results-error" role="alert"><AlertCircle size={17} aria-hidden="true" />Results are unavailable right now. Previously loaded figures remain visible when available.</div>}
@@ -172,6 +174,8 @@ export function ResultsPage() {
             </div>
           </details>
         </>
+      ) : tab === "manual" ? (
+        <ManualEditorialResults />
       ) : (
         <section className="results-history" aria-labelledby="rollover-history-title">
           <div className="results-history__heading">
