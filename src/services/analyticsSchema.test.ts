@@ -8,6 +8,12 @@ test("canonical events enforce required properties", () => {
   expect(validateAnalyticsEvent("booking_code_copied", {
     product_area: "predictions", booking_status: "FULL", booking_variant_id: "safe-id",
   })).toBe(true);
+  expect(validateAnalyticsEvent("booking_code_copied", {
+    product_area: "predictions", booking_status: "FULL",
+  })).toBe(true);
+  expect(validateAnalyticsEvent("sportybet_opened", {
+    product_area: "rollover", booking_status: "FULL",
+  })).toBe(true);
 });
 
 test("forbidden, free-form and non-finite properties cannot leave the abstraction", () => {

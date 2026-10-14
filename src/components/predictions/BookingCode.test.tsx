@@ -1,4 +1,5 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { trackBookingEvent } from "../../services/bookingTracking";
 import "@testing-library/jest-dom";
 
 import BookingCode from "./BookingCode";
@@ -83,4 +84,28 @@ test("excluded fixture facts override an unrelated kickoff reason", () => {
     .toHaveLength(3);
   expect(screen.queryByText(/FIXTURE_NOT_FOUND/)).not.toBeInTheDocument();
   expect(screen.queryByText(/starts within 20 minutes/i)).not.toBeInTheDocument();
+});
+
+
+test("homepage booking without explicit tracking counts successful copy and SportyBet click", async () => {
+  const writeText = jest.fn().mockResolvedValue(undefined);
+  Object.defineProperty(navigator, "clipboard", {
+    configurable: true, value: { writeText },
+  });
+  const tracker = trackBookingEvent as jest.Mock;
+  tracker.mockClear();
+  render(<BookingCode category={category} booking={{
+    status: "active", booking_status: "FULL", share_code: "READY2",
+    share_url: "https://www.sportybet.com/ng/?shareCode=READY2",
+    readback_validation: "PASSED",
+  }} />);
+  fireEvent.click(screen.getByRole("button", { name: /copy code/i }));
+  await waitFor(() => expect(writeText).toHaveBeenCalledWith("READY2"));
+  await waitFor(() => expect(tracker).toHaveBeenCalledWith("booking_code_copied", expect.objectContaining({
+    source: "daily_card", tier: category.key, bookingStatus: "FULL",
+  })));
+  fireEvent.click(screen.getByRole("link", { name: /open sportybet/i }));
+  expect(tracker).toHaveBeenCalledWith("sportybet_opened", expect.objectContaining({
+    source: "daily_card", tier: category.key, bookingStatus: "FULL",
+  }));
 });
