@@ -85,8 +85,9 @@ export function PredictionsPage() {
 
   const activeCat = accumulators?.[activeKey];
   const catMeta = CATEGORIES.find(c => c.key === activeKey)!;
-  // Over 1.5 is a list of independent bets rather than one slip, so the
-  // combined price, the joint probability and the slip tools do not apply.
+  // The legacy Over Goals engine card is independent singles; a verified
+  // admin-curated manual replacement is explicitly an accumulator instead.
+  // Always obey the response presentation, not the category key.
   const isSingles = activeCat?.presentation === "singles";
 
   const oddsMap = accumulators
@@ -118,7 +119,7 @@ export function PredictionsPage() {
 
   return (
     <div className="page-stack predictions-page" style={{ display: "flex", flexDirection: "column", gap: 32 }}>
-      <SEO title="Predictions" description="Today's best football predictions — 2 Odds, 5 Odds, 10 Odds, and Over 1.5 picks backed by real bookmaker odds." path="/predictions" />
+      <SEO title="Predictions" description="Today's best football predictions — 2 Odds, 5 Odds, 10 Odds, and Over Goals picks backed by real bookmaker odds." path="/predictions" />
       <header className="predictions-hero">
         <div className="eyebrow" style={{ marginBottom: 8 }}>Today&apos;s Picks</div>
         <h1 style={{ fontSize: 32, fontWeight: 800 }}>Today&apos;s football intelligence</h1>
@@ -369,6 +370,13 @@ export function PredictionsPage() {
               />
             )}
           </div>
+          {activeKey === "over_1_5" && activeCat.editorial_manual && activeCat.replaces_official_display && (
+            <p style={{ margin: "6px 0 12px", fontSize: 13, color: "var(--text-2)" }}>
+              Administrator-curated Over Goals ticket · independently verified against
+              SportyBet. Today's original automated selection remains preserved in
+              the official Results history and is not part of this new ticket.
+            </p>
+          )}
           {/* Outside `.slip-meta`, which scrolls horizontally on narrow
               screens. Nested inside it the panel measured 817px wide in a
               347px viewport and sat at x=519 — present, correct, and off the

@@ -123,6 +123,11 @@ export interface Game {
 export interface GamePrediction {
   /** Human editorial selection; no statistically evaluated model confidence. */
   editorial_manual?: boolean;
+  /** True only for a manual Over Goals card replacing public display;
+   * the original engine publication and settlement remain preserved. */
+  replaces_official_display?: boolean;
+  original_official_record_preserved?: boolean;
+  replaced_official_selection_count?: number;
   model_probability_available?: boolean;
   selection_id?: string;
   match_id?: string;
@@ -526,9 +531,9 @@ export const CATEGORIES: CategoryMeta[] = [
   },
   {
     key: 'over_1_5',
-    label: 'Over 1.5',
-    shortLabel: '1.5+',
-    description: '2+ goals · very safe picks',
+    label: 'Over Goals',
+    shortLabel: 'Overs',
+    description: 'Bookmaker-verified goal totals · single matches or an admin-curated accumulator',
     color: '#10b981',
     faint: 'rgba(16,185,129,0.08)',
     riskLabel: 'Very Safe',
