@@ -278,7 +278,9 @@ export interface RolloverPick {
   market: 'match_result' | 'goals' | 'btts' | 'double_chance';
   prediction: string;
   odds: number;
-  confidence: number;
+  confidence: number | null;
+  editorial_manual?: boolean;
+  source?: string;
   market_key?: string;
   safe_tier_eligible?: boolean;
   calibration_sample?: number;
@@ -291,8 +293,10 @@ export interface RolloverChainDay {
   date: string;
   picks: RolloverPick[];
   combined_odds: number;
-  avg_confidence: number;
-  hit_probability?: number;
+  avg_confidence: number | null;
+  hit_probability?: number | null;
+  editorial_manual?: boolean;
+  source?: string;
   status: 'pending' | 'won' | 'lost' | 'void';
 }
 

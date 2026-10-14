@@ -81,8 +81,11 @@ export function RolloverPage() {
         : isComplete
           ? "Completed"
           : "Active";
+  const hasManual = chain.some(day => day.editorial_manual ||
+    day.picks.some(pick => pick.editorial_manual));
   const legacyChain = chain.some(day =>
-    day.picks.some(pick => pick.safe_tier_eligible !== true),
+    !day.editorial_manual &&
+    day.picks.some(pick => !pick.editorial_manual && pick.safe_tier_eligible !== true),
   );
 
   // Find today's day slot (first pending day whose date is >= today)
@@ -107,9 +110,9 @@ export function RolloverPage() {
           <div className="eyebrow" style={{ marginBottom: 6 }}>{targetDays}-day evidence challenge</div>
           <h1 style={{ fontSize: 30, fontWeight: 800 }}>Rollover</h1>
           <p style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text-3)", marginTop: 4, maxWidth: 560, lineHeight: 1.6 }}>
-            Each day uses up to six evidence-backed picks to reach 2x–3x.
-            Every leg must land for the day to count. If the board cannot support that
-            range honestly, the challenge waits instead of adding an unproven pick.
+            The engine selects evidence-backed picks. When no qualifying stage is
+            available, an admin can publish a separately labelled bookmaker-verified
+            selection targeting 2x–4x. Every leg must land to advance and no result is guaranteed.
           </p>
         </div>
       </div>
@@ -132,9 +135,9 @@ export function RolloverPage() {
               {chainStatus}
             </strong>
             <small>
-              {legacyChain
-                ? "Previous selection rules"
-                : "Evidence-backed picks"}
+              {hasManual
+                ? "Includes unscored admin-curated picks"
+                : legacyChain ? "Previous selection rules" : "Evidence-backed picks"}
             </small>
           </div>
 
@@ -306,6 +309,14 @@ export function RolloverPage() {
                         <p style={{ fontFamily: "var(--font-display)", fontSize: 15, fontWeight: 700, color: "var(--text-1)" }}>
                           Day {day.day_number}
                         </p>
+                        {(day.editorial_manual || day.picks.some(p => p.editorial_manual)) && (
+                          <span style={{
+                            fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 700,
+                            padding: "2px 6px", borderRadius: 4,
+                            background: "var(--surface-2)", color: "var(--text-2)",
+                            textTransform: "uppercase",
+                          }}>Admin curated · Not model scored</span>
+                        )}
                         {isToday && (
                           <span style={{
                             fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 700, padding: "2px 6px",
@@ -324,7 +335,10 @@ export function RolloverPage() {
                         {fmtOdds(day.combined_odds)}{oddsSuffix}
                       </p>
                       <p style={{ fontFamily: "var(--font-body)", fontSize: 10, color: "var(--text-3)", marginTop: 3 }}>
-                        lands ~{Math.round((day.hit_probability ?? day.avg_confidence) * 100)}%
+                        {day.editorial_manual || day.picks.some(p => p.editorial_manual) ||
+                         day.hit_probability == null && day.avg_confidence == null
+                          ? "Not model scored"
+                          : `lands ~${Math.round((day.hit_probability ?? day.avg_confidence ?? 0) * 100)}%`}
                       </p>
                     </div>
                     <div style={{
@@ -380,8 +394,9 @@ export function RolloverPage() {
                             <p style={{ fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 700, color: catMeta.color, lineHeight: 1 }}>
                               {fmtOdds(pick.odds)}{oddsSuffix}
                             </p>
-                            <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, color: pick.confidence >= 0.8 ? "var(--green)" : "var(--brand)", marginTop: 2 }}>
-                              {Math.round(pick.confidence * 100)}%
+                            <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, color: pick.confidence != null && pick.confidence >= 0.8 ? "var(--green)" : "var(--brand)", marginTop: 2 }}>
+                              {pick.editorial_manual || pick.confidence == null
+                                ? "Unscored" : `${Math.round(pick.confidence * 100)}%`}
                             </p>
                           </div>
                         </div>
@@ -409,7 +424,7 @@ export function RolloverPage() {
           <div style={{ marginTop: 18, padding: "12px 16px", background: "var(--surface-2)", borderRadius: 10, display: "flex", alignItems: "flex-start", gap: 10 }}>
             <TrendingUp size={14} color="var(--text-3)" style={{ marginTop: 2, flexShrink: 0 }} />
             <p style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text-3)", lineHeight: 1.6 }}>
-              Each day uses the highest-probability combination of up to six evidence-backed picks to land between 2x and 3x.
+              Automated stages use supported predictions; a manual fallback is bookmaker-verified but not model scored. The daily target is 2x–4x.
               No match appears more than once. Every extra leg is another chance to lose, and one
               losing leg ends the chain. Probabilities describe risk; they do not guarantee a return.
             </p>
