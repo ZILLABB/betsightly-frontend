@@ -71,7 +71,7 @@ test("homepage preserves accumulator odds and joint-probability copy", () => {
 
 test("homepage presents automated Over Goals as singles, not a multiplied slip", () => {
   render(<HomePage />);
-  fireEvent.click(screen.getByRole("button", { name: /Over 1\.5 3 picks/i }));
+  fireEvent.click(screen.getByRole("button", { name: /Over Goals 3 picks/i }));
 
   expect(screen.getByText("Over Goals Singles")).toBeInTheDocument();
   expect(screen.getByText(/3 independent picks · bet separately/)).toBeInTheDocument();
