@@ -69,13 +69,13 @@ test("homepage preserves accumulator odds and joint-probability copy", () => {
   expect(screen.getAllByText("2.12x").length).toBeGreaterThan(0);
 });
 
-test("homepage presents Over 1.5 as independent picks, never a multiplied slip", () => {
+test("homepage presents automated Over Goals as singles, not a multiplied slip", () => {
   render(<HomePage />);
   fireEvent.click(screen.getByRole("button", { name: /Over 1\.5 3 picks/i }));
 
-  expect(screen.getByText("Over 1.5 Singles")).toBeInTheDocument();
+  expect(screen.getByText("Over Goals Singles")).toBeInTheDocument();
   expect(screen.getByText(/3 independent picks · bet separately/)).toBeInTheDocument();
-  expect(screen.queryByText("Over 1.5 Accumulator")).not.toBeInTheDocument();
+  expect(screen.queryByText("Over Goals Accumulator")).not.toBeInTheDocument();
   expect(screen.queryByText(/All 3 legs land about/)).not.toBeInTheDocument();
   expect(screen.queryByText("6.04x")).not.toBeInTheDocument();
   expect(screen.getByText("Independent picks")).toBeInTheDocument();
