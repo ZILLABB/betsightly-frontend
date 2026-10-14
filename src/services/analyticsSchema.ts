@@ -55,9 +55,10 @@ const REQUIRED: Partial<Record<AnalyticsEvent, (keyof AnalyticsProperties)[]>> =
   builder_leg_unlocked: ["product_area", "target_odds"],
   builder_explanation_opened: ["product_area", "target_odds"],
   builder_best_reachable_accepted: ["product_area", "target_odds"],
-  booking_code_viewed: ["product_area", "booking_status", "booking_variant_id"],
-  booking_code_copied: ["product_area", "booking_status", "booking_variant_id"],
-  sportybet_opened: ["product_area", "booking_status", "booking_variant_id"],
+  // Variant fingerprints improve attribution but must not gate genuine clicks.
+  booking_code_viewed: ["product_area", "booking_status"],
+  booking_code_copied: ["product_area", "booking_status"],
+  sportybet_opened: ["product_area", "booking_status"],
   fallback_shown: ["product_area", "failure_category"],
 };
 
