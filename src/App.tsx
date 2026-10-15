@@ -14,6 +14,7 @@ import { Spinner } from "./components/ui/Spinner";
 // HomePage stays eager (always the first paint)
 import { HomePage } from "./pages/HomePage";
 import { analytics } from "./services/analytics";
+import { isAnalyticsExcluded } from "./services/internalTraffic";
 import { trackProductEvent } from "./services/bookingTracking";
 
 // Everything else is lazy-loaded for smaller initial bundle
@@ -79,8 +80,8 @@ export default function App() {
           </Routes>
         </Suspense>
       </Layout>
-      <Analytics />
-      <SpeedInsights />
+      {!isAnalyticsExcluded() && <Analytics />}
+      {!isAnalyticsExcluded() && <SpeedInsights />}
     </BrowserRouter>
     </ThemeProvider>
     </BuilderProvider>
