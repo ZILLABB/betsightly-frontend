@@ -14,6 +14,7 @@ import {
   getNotificationPermission,
 } from "../services/pushNotifications";
 import { SEO } from "../components/common/SEO";
+import { isAnalyticsExcluded, setAnalyticsExcluded } from "../services/internalTraffic";
 
 // ── Primitives ────────────────────────────────────────
 
@@ -164,6 +165,7 @@ export function SettingsPage() {
   const { preferences, updatePreference, resetPreferences } = usePreferences();
   const [pushActive, setPushActive] = useState(false);
   const [pushLoading, setPushLoading] = useState(false);
+  const [testingExcluded, setTestingExcluded] = useState(isAnalyticsExcluded);
   const pushSupported = isPushSupported();
 
   useEffect(() => {
@@ -250,6 +252,26 @@ export function SettingsPage() {
           <Toggle
             on={pushActive}
             onChange={handlePushToggle}
+          />
+        </Row>
+      </Section>
+
+      {/* Per-browser analytics controls: helpful for owners testing from multiple devices. */}
+      <Section title="Privacy & testing">
+        <Row
+          icon={<BarChart2 size={15} color="var(--green)" />}
+          label="Exclude this browser from analytics"
+          sub="Stops this browser from being counted in future visitor, pageview and conversion analytics. Other devices are unaffected."
+          last
+        >
+          <Toggle
+            on={testingExcluded}
+            onChange={excluded => {
+              setAnalyticsExcluded(excluded);
+              setTestingExcluded(excluded);
+              // Remove already mounted PostHog/Vercel trackers on activation.
+              window.location.reload();
+            }}
           />
         </Row>
       </Section>

@@ -1,4 +1,5 @@
 import { API_BASE_URL } from "../config/apiConfig";
+import { isAnalyticsExcluded } from "./internalTraffic";
 import {
   FORBIDDEN_PROPERTY_NAMES, sanitizeAnalyticsProperties, validateAnalyticsEvent,
   type AnalyticsEvent, type AnalyticsProperties,
@@ -57,10 +58,12 @@ const acquisition = () => {
 };
 
 function loadProvider(): Promise<PostHogClient | null> {
+  if (isAnalyticsExcluded()) return Promise.resolve(null);
   if (!projectToken) return Promise.resolve(null);
   if (provider) return Promise.resolve(provider);
   if (providerPromise) return providerPromise;
   providerPromise = import("posthog-js").then(({ default: posthog }) => {
+    if (isAnalyticsExcluded()) return null;
     posthog.init(projectToken, {
       api_host: apiHost,
       ui_host: import.meta.env.VITE_POSTHOG_UI_HOST || "https://us.posthog.com",
@@ -94,6 +97,7 @@ function init(): void {
 }
 
 function legacyCapture(event: string, properties: AnalyticsProperties): void {
+  if (isAnalyticsExcluded()) return;
   if (!Number.isFinite(dualWriteUntil) || Date.now() > dualWriteUntil) return;
   const attr = acquisition();
   const visitorId = legacyId(localStorage, "betsightly_visitor_id");
@@ -120,34 +124,38 @@ function legacyCapture(event: string, properties: AnalyticsProperties): void {
 }
 
 function capture(event: AnalyticsEvent, raw: AnalyticsProperties = {}): void {
+  if (isAnalyticsExcluded()) return;
   const properties = sanitizeAnalyticsProperties(raw);
   if (!validateAnalyticsEvent(event, properties)) {
     if (import.meta.env.DEV) console.warn(`Analytics event ${event} is missing required properties.`);
     return;
   }
   void loadProvider().then((posthog) => {
-    try { posthog?.capture(event, properties); } catch { /* non-blocking */ }
+    try { if (!isAnalyticsExcluded()) posthog?.capture(event, properties); } catch { /* non-blocking */ }
   });
   legacyCapture(event, properties);
 }
 
 function pageView(): void {
+  if (isAnalyticsExcluded()) return;
   void loadProvider().then((posthog) => {
-    try { posthog?.capture("$pageview"); } catch { /* non-blocking */ }
+    try { if (!isAnalyticsExcluded()) posthog?.capture("$pageview"); } catch { /* non-blocking */ }
   });
   legacyCapture("pageview", {});
 }
 
 function identify(userId: string): void {
+  if (isAnalyticsExcluded()) return;
   if (!userId || userId.length > 128) return;
   void loadProvider().then((posthog) => {
-    try { posthog?.identify(userId); } catch { /* non-blocking */ }
+    try { if (!isAnalyticsExcluded()) posthog?.identify(userId); } catch { /* non-blocking */ }
   });
 }
 
 function reset(): void {
+  if (isAnalyticsExcluded()) return;
   void loadProvider().then((posthog) => {
-    try { posthog?.reset(); } catch { /* non-blocking */ }
+    try { if (!isAnalyticsExcluded()) posthog?.reset(); } catch { /* non-blocking */ }
   });
 }
 
