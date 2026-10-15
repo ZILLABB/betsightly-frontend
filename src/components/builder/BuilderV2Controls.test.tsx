@@ -62,6 +62,27 @@ test("game-count mode sends count, market and 3-day horizon", async () => {
   })));
 });
 
+test("game-count can request Home/Away Over 1.5 inside existing Builder", async () => {
+  const buildV2 = jest.fn();
+  render(
+    <BuilderContext.Provider value={makeContext({ buildV2 }) as any}>
+      <BuilderV2Controls />
+    </BuilderContext.Provider>,
+  );
+
+  fireEvent.click(screen.getByRole("button", { name: /number of games/i }));
+  fireEvent.click(screen.getByRole("button", { name: /home scores 2\+/i }));
+  fireEvent.click(screen.getByRole("button", { name: /away scores 2\+/i }));
+  fireEvent.click(screen.getByRole("button", { name: /build best 20 games/i }));
+
+  await waitFor(() => expect(buildV2).toHaveBeenCalledWith(expect.objectContaining({
+    mode: "game_count",
+    markets: ["home_over_1_5", "away_over_1_5"],
+    require_bookable: true,
+    fill_strategy: "strict_selected_markets",
+  })));
+});
+
 test("manual mode books only selected approved IDs", async () => {
   const buildV2 = jest.fn();
   getCandidates.mockResolvedValue({
