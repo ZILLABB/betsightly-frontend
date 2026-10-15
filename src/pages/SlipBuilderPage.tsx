@@ -30,6 +30,7 @@ const capHeading = (status: string | undefined, target: number) => ({
 }[status || ""] || `${target}x isn’t supported by the current board`);
 
 const MARKET_LABELS: Record<string, string> = {
+  over_0_5: "Over 0.5 — match",
   over_1_5: "Over 1.5",
   over_2_5: "Over 2.5",
   under_3_5: "Under 3.5",
@@ -40,8 +41,10 @@ const MARKET_LABELS: Record<string, string> = {
   dnb_away: "Away DNB",
   home_win: "Home Win",
   away_win: "Away Win",
-  home_over_0_5: "Home O0.5",
-  away_over_0_5: "Away O0.5",
+  home_over_0_5: "Home team 1+ goals",
+  away_over_0_5: "Away team 1+ goals",
+  home_over_1_5: "Home team 2+ goals",
+  away_over_1_5: "Away team 2+ goals",
 };
 
 const marketLabel = (market: string) =>
