@@ -12,34 +12,34 @@ const KEY = "betsightly_internal_analytics_excluded_v1";
 const QUERY_KEY = "betsightly_testing";
 let currentPageExcluded = false;
 
-function getStored(storage: Storage): boolean {
+function getStored(storage: "localStorage" | "sessionStorage"): boolean {
   try {
-    return storage.getItem(KEY) === "1";
+    return window[storage].getItem(KEY) === "1";
   } catch {
     return false;
   }
 }
 
-function store(storage: Storage, excluded: boolean): void {
+function store(storage: "localStorage" | "sessionStorage", excluded: boolean): void {
   try {
-    if (excluded) storage.setItem(KEY, "1");
-    else storage.removeItem(KEY);
+    if (excluded) window[storage].setItem(KEY, "1");
+    else window[storage].removeItem(KEY);
   } catch { /* Browser storage may be disabled in private mode. */ }
 }
 
 export function isAnalyticsExcluded(): boolean {
   if (typeof window === "undefined") return false;
   return currentPageExcluded ||
-    getStored(window.localStorage) ||
-    getStored(window.sessionStorage);
+    getStored("localStorage") ||
+    getStored("sessionStorage");
 }
 
 /** The browser must reload after a settings change to remove mounted trackers. */
 export function setAnalyticsExcluded(excluded: boolean): void {
   if (typeof window === "undefined") return;
   currentPageExcluded = excluded;
-  store(window.localStorage, excluded);
-  store(window.sessionStorage, excluded);
+  store("localStorage", excluded);
+  store("sessionStorage", excluded);
 }
 
 /** Called before initializing any analytics on the initial page load. */
