@@ -41,6 +41,7 @@ const MODES: Array<{
 ];
 
 const MARKETS = [
+  ["over_0_5", "Over 0.5 — match total"],
   ["over_1_5", "Over 1.5"],
   ["over_2_5", "Over 2.5"],
   ["under_3_5", "Under 3.5"],
@@ -51,8 +52,10 @@ const MARKETS = [
   ["dnb_away", "Away DNB"],
   ["home_win", "Home Win"],
   ["away_win", "Away Win"],
-  ["home_over_0_5", "Home O0.5"],
-  ["away_over_0_5", "Away O0.5"],
+  ["home_over_0_5", "Home scores 1+"],
+  ["away_over_0_5", "Away scores 1+"],
+  ["home_over_1_5", "Home scores 2+"],
+  ["away_over_1_5", "Away scores 2+"],
 ] as const;
 
 const backendHorizon = (value: "today" | "3_days" | "week"): BuilderV2Horizon =>
