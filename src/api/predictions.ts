@@ -78,6 +78,21 @@ async function request<T>(
 }
 
 /** Cache-only upstream board summary, not a promise of published bookmaker picks. */
+export interface HomeCampaign {
+  eyebrow: string;
+  headline: string;
+  description: string;
+  cta_text: string;
+  cta_path: "/predictions" | "/build-slip" | "/results" | "/rollover";
+  starts_on: string;
+  ends_on: string;
+}
+
+export interface HomeCampaignResponse {
+  status: "success";
+  campaign: HomeCampaign | null;
+}
+
 export interface FixtureCompetitionSchedule {
   status: string;
   total: number;
@@ -238,6 +253,11 @@ export const api = {
    * satisfy its own type and every tier reads as empty. */
   /** Upcoming competition context; the public backend returns counts from
    * its already prepared fixture board, never a generated betting slip. */
+  getHomeCampaign: () =>
+    request<HomeCampaignResponse>('/growth/homepage-campaign', {
+      cache: 'no-store', timeoutMs: 8_000,
+    }),
+
   getFixtureCompetitionSchedule: () =>
     request<FixtureCompetitionSchedule>('/leagues/fixtures?days_ahead=7', {
       timeoutMs: 12_000,
