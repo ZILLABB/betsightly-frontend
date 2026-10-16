@@ -77,6 +77,13 @@ async function request<T>(
   }
 }
 
+/** Cache-only upstream board summary, not a promise of published bookmaker picks. */
+export interface FixtureCompetitionSchedule {
+  status: string;
+  total: number;
+  leagues: Array<{ slug: string; name: string; count: number }>;
+}
+
 export interface NextAvailableResponse {
   status: "success";
   publication_date_wat: string;
@@ -229,6 +236,13 @@ export const api = {
    * was migrated to the leagues shape but this call was left pointing at the old
    * path, so the Predictions page has been rendering a response that cannot
    * satisfy its own type and every tier reads as empty. */
+  /** Upcoming competition context; the public backend returns counts from
+   * its already prepared fixture board, never a generated betting slip. */
+  getFixtureCompetitionSchedule: () =>
+    request<FixtureCompetitionSchedule>('/leagues/fixtures?days_ahead=7', {
+      timeoutMs: 12_000,
+    }),
+
   getTodaysAccumulators: () =>
     request<AccumulatorResponse>('/leagues/daily-accumulators', { cache: 'no-store' }),
 
