@@ -35,3 +35,6 @@
 .bs-live-note--stale{border-color:rgba(245,158,11,.35);background:rgba(245,158,11,.08);color:var(--text-2)}
 .bs-live-fixture--stale{border-style:dashed;opacity:.84}
 .bs-live-fixture--stale .bs-live-score{color:var(--text-2)}
+
+/* A genuine score-source coverage warning, distinct from a settlement failure. */
+.bs-live-note--coverage{border-color:rgba(245,158,11,.32);background:rgba(245,158,11,.055);color:var(--text-2);line-height:1.55}
