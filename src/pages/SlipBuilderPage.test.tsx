@@ -64,8 +64,8 @@ test("mobile Builder prioritizes mode selection and keeps privacy details access
   expect(modeControls.compareDocumentPosition(
     screen.getByTestId("builder-privacy-disclosure")
   ) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-  expect(screen.getByRole("button", {name:/50x/})).toHaveTextContent("Long shot");
-  expect(screen.getByRole("button", {name:/50x/})).not.toHaveTextContent("Balanced");
+  expect(screen.getByRole("button", {name:/^50x long shot$/i})).toHaveTextContent("Long shot");
+  expect(screen.getByRole("button", {name:/^50x long shot$/i})).not.toHaveTextContent("Balanced");
 
   const privacy = screen.getByTestId("builder-privacy-disclosure");
   expect(privacy).not.toHaveAttribute("open");
@@ -100,7 +100,7 @@ const editableSlip = (games: any[] = [{
 test("shows every editable leg action with accessible button alternatives", async () => {
   buildSlip.mockResolvedValue(editableSlip());
   renderBuilder();
-  fireEvent.click(screen.getByRole("button", { name: /10x lower target/i }));
+  fireEvent.click(screen.getByRole("button", { name: /10x higher target/i }));
   fireEvent.click(screen.getByRole("button", { name: /build my 10x slip/i }));
   await screen.findByRole("button", { name: /why this pick/i });
   expect(screen.getByRole("button", { name: /safer market/i })).toBeInTheDocument();
@@ -134,7 +134,7 @@ test("Build Another preserves the last V2 settings and requests diversification"
 
   fireEvent.click(
     screen.getByRole("button", {
-      name: /10x lower target/i,
+      name: /10x higher target/i,
     }),
   );
 
@@ -188,7 +188,7 @@ test("Build Another clears the previous booking code while the diversified reque
     .mockReturnValueOnce(diversified);
 
   renderBuilder();
-  fireEvent.click(screen.getByRole("button", { name: /10x lower target/i }));
+  fireEvent.click(screen.getByRole("button", { name: /10x higher target/i }));
   fireEvent.click(screen.getByRole("button", { name: /build my 10x slip/i }));
   await screen.findByTestId("booking-code");
 
@@ -229,7 +229,7 @@ test("explains portfolio reuse without describing it as lower quality", async ()
 
   fireEvent.click(
     screen.getByRole("button", {
-      name: /10x lower target/i,
+      name: /10x higher target/i,
     }),
   );
 
@@ -272,7 +272,7 @@ test("preview requests a code only after explicit final confirmation", async () 
       actionable: true },
   });
   renderBuilder();
-  fireEvent.click(screen.getByRole("button", { name: /10x lower target/i }));
+  fireEvent.click(screen.getByRole("button", { name: /10x higher target/i }));
   fireEvent.click(screen.getByRole("button", { name: /build my 10x slip/i }));
 
   const confirm = await screen.findByRole("button", {
@@ -297,7 +297,7 @@ test("qualifies a verified maximum when the provider board is degraded", async (
       failed_league_count: 17 },
   });
   renderBuilder();
-  fireEvent.click(screen.getByRole("button", { name: /10x lower target/i }));
+  fireEvent.click(screen.getByRole("button", { name: /10x higher target/i }));
   fireEvent.click(screen.getByRole("button", { name: /build my 10x slip/i }));
   expect(await screen.findByText("reachable")).toBeInTheDocument();
   expect(screen.getByText(/some competitions were unavailable/i)).toBeInTheDocument();
@@ -308,7 +308,7 @@ test("hides the old code immediately and shows only the verified revision code",
   buildSlip.mockResolvedValue(editableSlip());
   reviseSlip.mockReturnValue(new Promise((resolve) => { finish = resolve; }));
   renderBuilder();
-  fireEvent.click(screen.getByRole("button", { name: /10x lower target/i }));
+  fireEvent.click(screen.getByRole("button", { name: /10x higher target/i }));
   fireEvent.click(screen.getByRole("button", { name: /build my 10x slip/i }));
   await screen.findByTestId("booking-code");
   fireEvent.click(screen.getByRole("button", { name: /^replace$/i }));
@@ -331,7 +331,7 @@ test("Replace keeps the slip visible then swaps exactly one different fixture", 
   buildSlip.mockResolvedValue(editableSlip([gameA, gameB]));
   reviseSlip.mockReturnValue(new Promise((resolve) => { finish = resolve; }));
   renderBuilder();
-  fireEvent.click(screen.getByRole("button", { name: /10x lower target/i }));
+  fireEvent.click(screen.getByRole("button", { name: /10x higher target/i }));
   fireEvent.click(screen.getByRole("button", { name: /build my 10x slip/i }));
   const replace = await screen.findAllByRole("button", { name: /^replace$/i });
   fireEvent.click(replace[0]);
@@ -368,7 +368,7 @@ test("rejects a same-fixture market response and keeps the old card", async () =
       added: [sameFixture] },
   });
   renderBuilder();
-  fireEvent.click(screen.getByRole("button", { name: /10x lower target/i }));
+  fireEvent.click(screen.getByRole("button", { name: /10x higher target/i }));
   fireEvent.click(screen.getByRole("button", { name: /build my 10x slip/i }));
   fireEvent.click(await screen.findByRole("button", { name: /^replace$/i }));
   expect(await screen.findByText(/No suitable replacement found/i))
@@ -386,7 +386,7 @@ test("failed Replace keeps both cards and reports local no-change", async () => 
     action_error: "No different approved fixture is available.",
   });
   renderBuilder();
-  fireEvent.click(screen.getByRole("button", { name: /10x lower target/i }));
+  fireEvent.click(screen.getByRole("button", { name: /10x higher target/i }));
   fireEvent.click(screen.getByRole("button", { name: /build my 10x slip/i }));
   fireEvent.click((await screen.findAllByRole("button", { name: /^replace$/i }))[0]);
   expect(await screen.findByText(/No suitable replacement found/i))
@@ -401,7 +401,7 @@ test("lock state persists in the atomically returned revision", async () => {
     ...editableSlip(), revision: 2, locked_selection_ids: ["leg-a"],
   });
   renderBuilder();
-  fireEvent.click(screen.getByRole("button", { name: /10x lower target/i }));
+  fireEvent.click(screen.getByRole("button", { name: /10x higher target/i }));
   fireEvent.click(screen.getByRole("button", { name: /build my 10x slip/i }));
   fireEvent.click(await screen.findByRole("button", { name: /^lock$/i }));
   expect(await screen.findByRole("button", { name: /^unlock$/i })).toBeInTheDocument();
@@ -416,7 +416,7 @@ test("an older edit response cannot overwrite a newer revision", async () => {
     .mockReturnValueOnce(new Promise((resolve) => { first = resolve; }))
     .mockReturnValueOnce(new Promise((resolve) => { second = resolve; }));
   renderBuilder();
-  fireEvent.click(screen.getByRole("button", { name: /10x lower target/i }));
+  fireEvent.click(screen.getByRole("button", { name: /10x higher target/i }));
   fireEvent.click(screen.getByRole("button", { name: /build my 10x slip/i }));
   const replace = await screen.findAllByRole("button", { name: /^replace$/i });
   fireEvent.click(replace[0]);
@@ -491,7 +491,7 @@ test("labels a below-target trustworthy result as quality capped", async () => {
     },
   });
   renderBuilder();
-  fireEvent.click(screen.getByRole("button", { name: /70x high target/i }));
+  fireEvent.click(screen.getByRole("button", { name: /70x long shot/i }));
   fireEvent.click(screen.getByRole("button", { name: /build my 70x slip/i }));
   await waitFor(() => expect(screen.getByText(/70x isn’t supported/)).toBeInTheDocument());
   expect(screen.getByRole("button", { name: /43.62x slip/i })).toBeInTheDocument();
@@ -503,7 +503,7 @@ test("does not offer an unusable CTA below the public 2x minimum", async () => {
     best_reachable: 1.18, optimization_status: "OPTIMAL",
   });
   renderBuilder();
-  fireEvent.click(screen.getByRole("button", { name: /10x lower target/i }));
+  fireEvent.click(screen.getByRole("button", { name: /10x higher target/i }));
   fireEvent.click(screen.getByRole("button", { name: /build my 10x slip/i }));
   expect(await screen.findByText(/below the Builder’s 2x minimum/i)).toBeInTheDocument();
   expect(screen.queryByRole("button", { name: /build verified 1.18x/i }))
@@ -539,7 +539,7 @@ test("turns a network failure into a clean retry state without losing choices", 
   buildSlip.mockRejectedValueOnce(new TypeError("Failed to fetch"))
     .mockResolvedValueOnce({ status: "unavailable", target: 100 });
   renderBuilder();
-  fireEvent.click(screen.getByRole("button", { name: /100x high target/i }));
+  fireEvent.click(screen.getByRole("button", { name: /100x long shot/i }));
   fireEvent.click(screen.getByRole("button", { name: /today fast settlement/i }));
   fireEvent.click(screen.getByRole("button", { name: /build my 100x slip/i }));
   expect(await screen.findByText(/could not reach the prediction service/i)).toBeInTheDocument();
@@ -555,7 +555,7 @@ test("times out an edit, clears pending state, and preserves the original slip",
     signal.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")));
   }));
   renderBuilder();
-  fireEvent.click(screen.getByRole("button", { name: /10x lower target/i }));
+  fireEvent.click(screen.getByRole("button", { name: /10x higher target/i }));
   fireEvent.click(screen.getByRole("button", { name: /build my 10x slip/i }));
   await screen.findByTestId("booking-code");
   fireEvent.click(screen.getByRole("button", { name: /^lock$/i }));
@@ -570,7 +570,7 @@ test("times out an edit, clears pending state, and preserves the original slip",
 test.each([10, 20, 30, 50, 70, 100])("selects and submits the %ix target", async (target) => {
   buildSlip.mockResolvedValue({ status: "unavailable", target });
   renderBuilder();
-  const band = target <= 20 ? "lower target" : target <= 50 ? "balanced" : "high target";
+  const band = target <= 5 ? "lower target" : target <= 10 ? "higher target" : "long shot";
   fireEvent.click(screen.getByRole("button", { name: new RegExp(`^${target}x ${band}$`, "i") }));
   fireEvent.click(screen.getByRole("button", { name: new RegExp(`build my ${target}x slip`, "i") }));
   await waitFor(() => expect(buildSlip).toHaveBeenCalledWith(target, "week", false));
@@ -608,7 +608,7 @@ test("100x best reachable CTA materializes its stored combination without a targ
   });
   reviseSlip.mockReturnValueOnce(new Promise((resolve) => { finish = resolve; }));
   renderBuilder();
-  fireEvent.click(screen.getByRole("button", { name: /100x high target/i }));
+  fireEvent.click(screen.getByRole("button", { name: /100x long shot/i }));
   fireEvent.click(screen.getByRole("button", { name: /build my 100x slip/i }));
   const cta = await screen.findByRole("button", { name: /build the best reachable 36.85x slip/i });
   fireEvent.click(cta);
