@@ -1,11 +1,17 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { HomePage } from "./HomePage";
 import { usePredictions } from "../hooks/usePredictions";
+import { api } from "../api/predictions";
 
 jest.mock("../hooks/usePredictions", () => ({ usePredictions: jest.fn() }));
 jest.mock("../api/predictions", () => ({
-  api: { getBookableNow: jest.fn() },
+  api: {
+    getBookableNow: jest.fn(),
+    getFixtureCompetitionSchedule: jest.fn().mockResolvedValue({
+      status: "success", total: 0, leagues: [],
+    }),
+  },
 }));
 jest.mock("react-router-dom", () => ({
   Link: ({ children, to }: any) => <a href={to}>{children}</a>,
@@ -115,6 +121,23 @@ test("manual tickets show Not scored in both homepage metrics, never NaN%", () =
   expect(screen.queryByText(/All 2 legs land about/)).not.toBeInTheDocument();
 });
 
+test("empty tier shows a neutral top-odds fallback, not 0.00x", () => {
+  const current = mockedPredictions();
+  mockedPredictions.mockReturnValue({
+    ...current,
+    data: {
+      ...current.data,
+      accumulators: {
+        ...current.data.accumulators,
+        "2_odds": { selected: false, games: [], total_odds: 0 },
+      },
+    },
+  });
+  render(<HomePage />);
+  expect(screen.queryByText("0.00x")).not.toBeInTheDocument();
+  expect(screen.getByText("Top odds")).toBeInTheDocument();
+});
+
 test("homepage averages only valid model probabilities, not unscored or malformed values", () => {
   const existing = mockedPredictions();
   mockedPredictions.mockReturnValue({
@@ -138,4 +161,23 @@ test("homepage averages only valid model probabilities, not unscored or malforme
   render(<HomePage />);
   expect(screen.getAllByText("80%")).toHaveLength(2);
   expect(screen.queryByText("NaN%")).not.toBeInTheDocument();
+});
+
+test("homepage highlights Champions League based on prepared fixtures only", async () => {
+  (api.getFixtureCompetitionSchedule as jest.Mock).mockResolvedValueOnce({
+    status: "success",
+    total: 19,
+    leagues: [{ slug: "uefa.champions", name: "UEFA Champions League", count: 19 }],
+  });
+  render(<HomePage />);
+  expect(await screen.findByText("Champions League week")).toBeInTheDocument();
+  expect(screen.getByText(/Picks are published only when they meet/)).toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: /Today.s Smart Picks/i })).toBeInTheDocument();
+});
+
+test("homepage leaves original hero alone if no reliable event calendar", async () => {
+  (api.getFixtureCompetitionSchedule as jest.Mock).mockRejectedValueOnce(new Error("offline"));
+  render(<HomePage />);
+  await waitFor(() => expect(api.getFixtureCompetitionSchedule).toHaveBeenCalled());
+  expect(screen.queryByText(/World Cup fixtures ahead|Champions League week/)).not.toBeInTheDocument();
 });
