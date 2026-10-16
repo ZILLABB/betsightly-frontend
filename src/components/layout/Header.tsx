@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Menu, X, Home, Target, BarChart2, RefreshCw, Settings, Users, Sliders, Radio } from "lucide-react";
+import { BetSightlyLogo } from "../brand/BetSightlyLogo";
 
 /* The navigation is competition-neutral, reflecting the current fixture calendar. */
 
@@ -56,8 +57,8 @@ export function Header() {
         <div style={{ maxWidth:1200, margin:"0 auto", padding:"0 20px", height:70, display:"flex", alignItems:"center", justifyContent:"space-between", gap:20 }}>
           
           {/* Logo */}
-          <Link to="/" className="brand-lockup" aria-label="BetSightly home">
-            <span className="brand-image" aria-hidden="true" />
+          <Link to="/" className="brand-lockup bs-brand-link" aria-label="BetSightly home">
+            <BetSightlyLogo />
           </Link>
 
           {/* Desktop Nav */}

@@ -57,3 +57,18 @@ test("renders cached rollover data with a compact reconnect warning", () => {
   expect(screen.getByText(/Last updated/i)).toBeInTheDocument();
   expect(screen.getByText(/No rollover chain yet/i)).toBeInTheDocument();
 });
+
+test("reference-edition progress renders three unpublished days, never fictional wins", () => {
+  mockedPredictions.mockReturnValue({
+    data: emptyData, loading: false, error: null, usingFallback: false,
+    lastUpdated: null, refetch: jest.fn(),
+  });
+  render(<RolloverPage />);
+  const progress = screen.getByRole("list", { name: "Rollover chain progress" });
+  expect(progress.querySelectorAll("li")).toHaveLength(3);
+  expect(progress.textContent).toContain("Day 1");
+  expect(progress.textContent).toContain("Day 2");
+  expect(progress.textContent).toContain("Day 3");
+  expect(progress.textContent).not.toContain("Won");
+  expect(progress.textContent).toMatch(/Not published/);
+});

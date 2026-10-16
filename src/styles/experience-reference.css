@@ -1,0 +1,389 @@
+/* BetSightly / Matchday Reference Edition
+   Implements the approved five-screen direction. CSS is presentation only:
+   data values, publication decisions and source-separated results stay intact.
+   The hero photograph is a freely reusable Unsplash image archived on
+   Wikimedia Commons: Mario Klassen / Well lit soccer stadium (Unsplash).
+   Photo is atmospheric only, never evidence of today's fixtures. */
+
+:root {
+  --bs-mint: #13e889;
+  --bs-mint-deep: #04784d;
+  --bs-ink: #031410;
+  --bs-panel: #0a1d17;
+  --bs-outline: rgba(73, 224, 157, .18);
+  --bs-glass: rgba(4, 19, 16, .9);
+  --bs-radius: 18px;
+}
+.bs-brand-link { text-decoration: none; min-width: 0; }
+.bs-brand {
+  display: inline-flex; align-items: center; gap: 7px; min-width: 0;
+  color: var(--text-1); vertical-align: middle; user-select: none;
+}
+.bs-brand__symbol { display: block; width: 42px; height: 42px; flex: 0 0 42px; }
+.bs-brand__words { display: grid; gap: 3px; min-width: 0; }
+.bs-brand__name {
+  display: flex; align-items: baseline;
+  color: var(--text-1); letter-spacing: -.055em;
+  font: 800 clamp(18px,2.1vw,25px)/1 var(--font-display);
+  white-space: nowrap;
+}
+.bs-brand__name span:last-child { color: var(--brand); }
+.bs-brand__tagline {
+  font: 750 7px/1.1 var(--font-body);
+  color: var(--text-3); letter-spacing: .19em; white-space: nowrap;
+}
+.bs-brand--compact .bs-brand__symbol { width: 35px; height: 35px; flex-basis: 35px; }
+.bs-brand--compact .bs-brand__name { font-size: 18px; }
+.bs-brand--compact .bs-brand__tagline { font-size: 6px; }
+.bs-brand-link:focus-visible { outline: 2px solid var(--brand); outline-offset: 5px; border-radius: 8px; }
+@media(max-width: 430px) {
+ .bs-brand__symbol { width: 37px; height: 37px; flex-basis: 37px; }
+ .bs-brand__name { font-size: 19px; }
+ .bs-brand__tagline { font-size: 6px; letter-spacing: .14em; }
+}
+
+body { background-color: var(--bg); }
+.app-shell { overflow-x: clip; }
+.main-area { max-width: 1240px !important; }
+.v3-page { gap: 20px !important; }
+.v3-page :where(.card,.builder-config,.builder-results,.record-card,.results-section,.results-history,.rollover-summary) {
+  border-color: var(--bs-outline);
+}
+.v3-page :where(.card,.builder-config,.builder-results,.record-card,.results-section,.results-history) {
+  box-shadow: 0 8px 32px rgba(0,0,0,.09);
+}
+.v3-page :where(.eyebrow,.builder-eyebrow,.results-kicker,.results-eyebrow) {
+  color: var(--brand); letter-spacing: .085em; font-weight: 800;
+}
+.v3-page :where(button,a,summary):focus-visible {
+  outline: 3px solid var(--brand); outline-offset: 3px;
+}
+.v3-page :where(.v3-link--primary,.hero-action-primary,.builder-submit,.btn-primary) {
+  border-radius: 12px;
+}
+.v3-page :where(.v3-link--primary,.hero-action-primary,.builder-submit) {
+  background: linear-gradient(120deg,#0bbd73,#26e89a);
+  color: #04150f; border: 0;
+  box-shadow: 0 6px 17px rgba(7,168,99,.14);
+}
+.v3-page :where(.v3-link--primary,.hero-action-primary,.builder-submit):hover { filter: brightness(1.08); }
+.light .bs-brand__name { color: #091a13; }
+
+/* Home — live, evidence-led matchday cover rather than generic static landing */
+.v3-home .home-hero {
+  isolation: isolate; position: relative; overflow: hidden;
+  min-height: 490px; grid-template-columns: minmax(0,1.2fr) minmax(290px,.78fr);
+  gap: clamp(20px,3.5vw,42px); padding: clamp(27px,4vw,54px);
+  border-radius: 26px;
+  border: 1px solid rgba(68,223,147,.25);
+  background: linear-gradient(108deg,#04140f,#0b2b1d);
+}
+.v3-home .home-hero::before { display: none; }
+.v3-home .home-hero::after {
+  content: ""; position: absolute; z-index: -1; pointer-events: none;
+  inset: 0; opacity: .66;
+  background:
+    linear-gradient(90deg,rgba(1,14,11,.96) 0%,rgba(2,20,14,.78) 48%,rgba(3,17,13,.63) 100%),
+    linear-gradient(0deg,rgba(2,18,12,.9),transparent 58%),
+    url("https://commons.wikimedia.org/wiki/Special:FilePath/Well_lit_soccer_stadium_%28Unsplash%29.jpg?width=1280") center 54%/cover;
+}
+.v3-home .home-hero-copy { position: relative; z-index: 1; align-self: center; }
+.v3-home .home-hero .market-status {
+  width: fit-content; background: rgba(8,37,27,.68);
+  border: 1px solid rgba(53,216,137,.23);
+  padding: 8px 12px; border-radius: 999px;
+  color: #a8e9ca; font-size: 11px; letter-spacing: .055em;
+}
+.v3-home .home-hero h1 {
+  color: #f8fff9; max-width: 670px;
+  font-size: clamp(43px,5.2vw,68px);
+  line-height: 1.03; margin: 22px 0 15px;
+  letter-spacing: -.055em;
+}
+.v3-home .home-hero h1 span { color: #38efa0; }
+.v3-home .home-hero-copy > p { color: #d2e0d9; font-size: 14px; line-height: 1.72; max-width: 540px; }
+.v3-home .home-competition-spotlight {
+  margin-top: 17px; padding: 10px 14px; max-width: 560px;
+  background: rgba(3,28,20,.8); border: 1px solid rgba(58,221,143,.38); border-radius: 13px;
+}
+.v3-home .home-competition-spotlight > strong { font-size: 16px; color: #eafff3; }
+.v3-home .home-competition-spotlight > span:last-child { color: #c5d6cd; }
+.v3-home .home-hero-actions { margin-top: 21px; }
+.v3-home .home-hero .hero-action { min-height: 49px; border-radius: 12px; }
+.v3-home .trust-row { color: #b4d6c1; }
+.v3-home .signal-panel {
+  align-self: center; position: relative; z-index: 1;
+  background: rgba(4,20,16,.92);
+  border: 1px solid rgba(70,209,147,.3);
+  box-shadow: 0 24px 60px rgba(0,0,0,.35);
+  border-radius: 20px; backdrop-filter: blur(10px);
+}
+.v3-home .v3-feature {
+  background: linear-gradient(145deg,rgba(4,92,57,.32),rgba(8,40,29,.24));
+  border-color: rgba(39,232,151,.28);
+}
+.v3-home .v3-feature__label { color: #2eea9b; }
+.v3-home .v3-feature__name { color: #fff; }
+.v3-home .v3-feature__fixture { color: #c4d9ce; }
+.v3-home .v3-feature__state { color: #a2d4bc; }
+.v3-home .v3-feature__odds { color: #38eea0; }
+.v3-home .signal-panel :where(.signal-panel-head,.signal-list,.signal-foot) { color: #b8d8c8; }
+.v3-home .metric-card { background: linear-gradient(145deg,var(--surface),var(--bg-mid)); border-radius: 15px; }
+.v3-home .metric-grid { grid-template-columns: repeat(4,minmax(0,1fr)); }
+.v3-home .home-picks-anchor {
+  padding: clamp(16px,2.8vw,30px);
+  background: linear-gradient(145deg,var(--surface),var(--bg-mid));
+  border-radius: 21px;
+}
+.v3-home .home-support-grid > * { min-width: 0; }
+.v3-home .home-picks-anchor :where(.category-tabs,.pred-card) { border-color: var(--bs-outline); }
+
+/* Prediction dashboard — same broadcast/fixture aesthetic, not an unrelated page. */
+.v3-predictions .predictions-hero {
+  position: relative; isolation: isolate; overflow: hidden;
+  min-height: 245px; display: flex; flex-direction: column; justify-content: center;
+  border-radius: 22px; padding: clamp(25px,4vw,44px);
+  background:
+    radial-gradient(ellipse at 80% 20%,rgba(20,197,114,.17),transparent 55%),
+    linear-gradient(130deg,#071c15,#0c2c20);
+}
+.v3-predictions .predictions-hero::after {
+  content: ""; position: absolute; inset: 0 0 0 auto; z-index: -1;
+  width: 54%; opacity: .22;
+  background:
+    linear-gradient(90deg,#071b14 0%,transparent 65%),
+    url("https://commons.wikimedia.org/wiki/Special:FilePath/Well_lit_soccer_stadium_%28Unsplash%29.jpg?width=1280") center/cover;
+}
+.v3-predictions .predictions-hero h1 { color: #f8fff9; font-size: clamp(32px,4.3vw,54px) !important; }
+.v3-predictions .predictions-hero .eyebrow { color: #2cec9b; }
+.v3-predictions .predictions-hero .page-intro { color: #c7d9ce !important; }
+.v3-predictions .v3-hero-tools { gap: 9px; margin-top: 19px; }
+.v3-predictions .premium-slips-heading h2 { font-size: 28px !important; }
+.v3-predictions .slip-meta { padding: 14px 17px !important; }
+.v3-predictions .picks-grid {
+  gap: 13px !important;
+  grid-template-columns: repeat(auto-fill,minmax(min(100%,285px),1fr)) !important;
+}
+.v3-predictions .pred-card {
+  isolation: isolate; position: relative; overflow: hidden; min-width: 0;
+  border-radius: 16px; border: 1px solid var(--bs-outline) !important;
+  background: linear-gradient(153deg,var(--surface-2),var(--bg-mid));
+  box-shadow: 0 5px 22px rgba(0,0,0,.12);
+}
+.v3-predictions .pred-card::before {
+  content: ""; height: 3px; position: absolute; inset: 0 0 auto;
+  background: linear-gradient(90deg,var(--brand),transparent);
+  opacity: .7;
+}
+.v3-predictions .pred-card .pred-actions { background: var(--brand-faint); }
+.v3-predictions .booking-code { border-radius: 14px; border-color: var(--border-brand); }
+.v3-predictions .premium-slip-price { font-weight: 800; }
+.v3-predictions .tool-panel { border-radius: 16px; }
+.v3-predictions .v3-link { min-height: 43px; }
+
+/* Builder / radio buttons / progress. Real controls take precedence over prose. */
+.v3-builder .builder-hero {
+  border-radius: 19px !important; padding: clamp(20px,3vw,34px) !important;
+  background: linear-gradient(125deg,#09261b,#071913);
+  border: 1px solid rgba(60,223,145,.23);
+}
+.v3-builder .builder-hero h1 {
+  color: #f5fff9; font-size: clamp(31px,3.8vw,45px) !important;
+}
+.v3-builder .builder-hero p { color: #c7dbd0; }
+.v3-builder .builder-proof { color: #b5d5c3; }
+.v3-builder .v3-steps li {
+  border-color: var(--bs-outline); border-radius: 13px; box-shadow: none;
+}
+.v3-builder .v3-steps li.is-active { border-color: var(--brand); }
+.v3-builder .v3-steps li.is-complete { border-color: var(--border-brand); }
+.v3-builder .builder-config {
+  background: linear-gradient(140deg,var(--surface),var(--bg-mid));
+  border: 1px solid var(--bs-outline);
+}
+.v3-builder .builder-v2-modes > button {
+  border: 1px solid var(--bs-outline); background: var(--surface);
+  border-radius: 13px; transition: border-color .15s ease,background .15s ease;
+}
+.v3-builder .builder-v2-modes > button.is-active {
+  background: var(--brand-faint); border-color: var(--brand);
+}
+.v3-builder .builder-v2-targets > button {
+  min-height: 63px; border-color: var(--bs-outline); border-radius: 12px;
+}
+.v3-builder .builder-v2-targets > button.is-active { border-color: var(--brand); }
+.v3-builder .builder-v2-panel, .v3-builder .builder-v2-section {
+  background: var(--surface); border-color: var(--bs-outline);
+}
+.v3-builder .builder-results { border-color: var(--bs-outline); }
+.v3-builder .v3-privacy { border-color: var(--bs-outline); }
+
+/* Results — truthful performance dashboard, including the losing days. */
+.v3-results .results-hero {
+  min-height: 190px;
+  border: 1px solid rgba(56,229,140,.24);
+  border-radius: 22px;
+  background:
+    radial-gradient(ellipse at 90% 0%,rgba(40,214,128,.16),transparent 57%),
+    linear-gradient(132deg,#092419,#071813);
+}
+.v3-results .results-hero h1 { color: #f6fff8; font-size: clamp(32px,4.4vw,50px); }
+.v3-results .results-hero__copy > p:last-child { color: #c9ded1; }
+.v3-results .results-hero .results-eyebrow { color: #22ea91; }
+.v3-results .results-tabs {
+  padding: 5px; border: 1px solid var(--bs-outline);
+  background: var(--surface); border-radius: 12px;
+}
+.v3-results .results-tabs button.is-active {
+  background: var(--brand); color: #062018;
+}
+.v3-results .results-tabs button { min-height: 42px; }
+.v3-results .results-section,.v3-results .results-history {
+  background: linear-gradient(150deg,var(--surface),var(--bg-mid));
+}
+.v3-results .record-card {
+  border: 1px solid var(--bs-outline);
+  background: var(--surface-2);
+}
+.v3-results .history-item { background: var(--surface-2); }
+.v3-results .results-status--won { border: 1px solid rgba(54,218,130,.3); }
+.v3-results .results-status--lost { border: 1px solid rgba(248,113,113,.28); }
+.v3-results-overview {
+  display: grid; grid-template-columns: repeat(4,minmax(0,1fr));
+  gap: 1px; overflow: hidden;
+  padding: 1px; border: 1px solid var(--bs-outline);
+  border-radius: 16px; background: var(--border);
+}
+.v3-results-overview > div {
+  display: grid; gap: 7px; justify-items: center;
+  padding: 20px 8px; background: var(--surface);
+}
+.v3-results-overview dt {
+  color: var(--text-2); font: 650 11px/1.3 var(--font-body);
+}
+.v3-results-overview dd {
+  margin: 0; color: var(--text-1);
+  font: 800 clamp(18px,2.4vw,29px)/1.1 var(--font-mono);
+}
+.v3-results-overview .is-positive { color: var(--green); }
+.v3-results-overview .is-negative { color: var(--red); }
+.v3-results-overview small { color: var(--text-3); font-size: 10px; }
+
+/* Rollover — real 3-day chain progress with bookmaker confirmation below. */
+.v3-rollover .bs-rollover-hero {
+  border: 1px solid var(--bs-outline); border-radius: 22px;
+  padding: clamp(20px,3.1vw,35px);
+  display: grid; grid-template-columns: minmax(0,1fr) auto;
+  gap: 15px; align-items: center;
+  background: linear-gradient(135deg,#09291c,#071913);
+}
+.v3-rollover .bs-rollover-hero__copy h1 {
+  color: #f7fff8; font: 800 clamp(34px,4.5vw,52px)/1 var(--font-display);
+  letter-spacing: -.045em; margin: 7px 0 11px;
+}
+.v3-rollover .bs-rollover-hero__copy .eyebrow { color: #27ee97; }
+.v3-rollover .bs-rollover-hero__copy p { color: #c7d9cd; }
+.v3-rollover .bs-rollover-hero__icon {
+  display: grid; place-items: center; flex: 0 0 auto;
+  width: clamp(62px,9vw,99px); height: clamp(62px,9vw,99px);
+  border: 1px solid rgba(51,225,141,.32);
+  border-radius: 22px; color: #3af0a1;
+  background: rgba(0,0,0,.13);
+}
+.v3-rollover .bs-rollover-timeline {
+  display: grid; grid-template-columns: repeat(3,minmax(0,1fr));
+  gap: 12px; margin: 0; padding: 0; list-style: none;
+}
+.v3-rollover .bs-rollover-timeline li {
+  display: flex; gap: 12px; align-items: center;
+  border: 1px solid var(--bs-outline);
+  padding: 13px 15px; border-radius: 13px;
+  color: var(--text-3); background: var(--surface);
+}
+.v3-rollover .bs-rollover-timeline__step {
+  display: grid; place-items: center;
+  width: 32px; height: 32px; flex: 0 0 32px; border-radius: 50%;
+  background: var(--surface-2); color: var(--text-2);
+  font: 800 12px/1 var(--font-mono);
+}
+.v3-rollover .bs-rollover-timeline li.is-won {
+  color: var(--brand); border-color: var(--border-brand); background: var(--brand-faint);
+}
+.v3-rollover .bs-rollover-timeline li.is-won .bs-rollover-timeline__step {
+  background: var(--brand); color: #031c10;
+}
+.v3-rollover .bs-rollover-timeline li.is-active {
+  border-color: var(--brand); background: var(--brand-faint); color: var(--text-1);
+}
+.v3-rollover .bs-rollover-timeline li.is-lost { border-color: rgba(240,96,96,.34); }
+.v3-rollover .bs-rollover-timeline li.is-lost .bs-rollover-timeline__step {
+  color: var(--red); background: var(--red-faint);
+}
+.v3-rollover .bs-rollover-timeline strong { display: block; color: var(--text-1); font-size: 13px; }
+.v3-rollover .bs-rollover-timeline small { font-size: 11px; color: var(--text-2); }
+.v3-rollover .rollover-summary {
+  border: 1px solid var(--bs-outline); border-radius: 18px;
+  background: linear-gradient(145deg,var(--surface),var(--bg-mid));
+}
+.v3-rollover .rollover-summary__stats div { min-width: 0; }
+.v3-rollover .rollover-day-card { border-color: var(--bs-outline); }
+
+/* Phone matching the five-screen reference: safe-area nav, stacked cards, real controls. */
+@media (max-width: 960px) {
+  .v3-home .home-hero { grid-template-columns: minmax(0,1fr); min-height: auto; }
+  .v3-home .signal-panel { max-width: none; width: 100%; }
+}
+@media (max-width: 767px) {
+  .main-area { padding-inline: 15px !important; padding-top: 17px !important; }
+  .v3-page { gap: 15px !important; }
+  .bs-brand__symbol { width: 37px; height: 37px; flex-basis: 37px; }
+  .v3-home .home-hero {
+    padding: 23px 18px !important; border-radius: 20px;
+    gap: 18px;
+  }
+  .v3-home .home-hero::after {
+    opacity: .79;
+    background:
+      linear-gradient(180deg,rgba(0,15,10,.36),rgba(0,16,13,.91) 65%,rgba(0,16,13,.97)),
+      url("https://commons.wikimedia.org/wiki/Special:FilePath/Well_lit_soccer_stadium_%28Unsplash%29.jpg?width=1280") center top/cover;
+  }
+  .v3-home .home-hero h1 { font-size: clamp(38px,10vw,53px) !important; margin-top: 18px; }
+  .v3-home .home-hero-copy > p { font-size: 13px; line-height: 1.6; }
+  .v3-home .signal-panel { padding: 14px; }
+  .v3-home .signal-list { display: none; } /* available in full selection details below */
+  .v3-home .signal-score { padding: 8px 0; }
+  .v3-home .v3-feature { padding: 13px; margin-bottom: 8px; }
+  .v3-home .home-support-grid { grid-template-columns: minmax(0,1fr); }
+  .v3-home .metric-grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px; }
+  .v3-home .home-picks-anchor { padding: 12px; }
+  .v3-predictions .predictions-hero { padding: 22px !important; min-height: 0; }
+  .v3-predictions .predictions-hero h1 { font-size: clamp(31px,8vw,39px) !important; }
+  .v3-predictions .predictions-hero::after { width: 100%; opacity: .1; }
+  .v3-predictions .v3-hero-tools { display: grid; grid-template-columns: 1fr 1fr; }
+  .v3-predictions .v3-hero-tools .v3-link:first-child { grid-column: 1/-1; }
+  .v3-predictions .picks-grid { grid-template-columns: minmax(0,1fr) !important; }
+  .v3-results .results-hero { padding: 20px !important; }
+  .v3-results .results-hero h1 { font-size: 32px !important; }
+  .v3-results-overview { grid-template-columns: repeat(4,minmax(0,1fr)); }
+  .v3-results-overview > div { padding: 14px 3px; gap: 5px; }
+  .v3-results-overview dd { font-size: clamp(15px,4.4vw,21px); }
+  .v3-results-overview dt { font-size: 10px; }
+  .v3-rollover .bs-rollover-hero { padding: 20px; border-radius: 19px; }
+  .v3-rollover .bs-rollover-hero__icon { width: 50px; height: 50px; border-radius: 14px; }
+  .v3-rollover .bs-rollover-timeline { gap: 6px; }
+  .v3-rollover .bs-rollover-timeline li { padding: 9px 6px; gap: 5px; display: grid; justify-items: center; text-align: center; }
+  .v3-rollover .bs-rollover-timeline__step { width: 30px; height: 30px; flex-basis: 30px; }
+  .v3-rollover .bs-rollover-timeline strong { font-size: 12px; }
+  .v3-rollover .bs-rollover-timeline small { font-size: 10px; }
+  .bottom-nav--v3 { background: rgba(3,13,12,.97) !important; border-top-color: rgba(59,221,146,.16) !important; }
+}
+@media(max-width: 380px) {
+  .v3-predictions .v3-hero-tools { grid-template-columns: minmax(0,1fr); }
+  .v3-predictions .v3-hero-tools .v3-link:first-child { grid-column: auto; }
+  .v3-rollover .bs-rollover-timeline strong { font-size: 11px; }
+}
+@media(prefers-reduced-motion: reduce) {
+ .v3-page .pred-card,.v3-page .v3-link { transition: none !important; }
+}
+
+.v3-results-overview dd { order: -1; }
