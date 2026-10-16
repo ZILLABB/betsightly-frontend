@@ -372,3 +372,21 @@ html { scroll-behavior: smooth; }
     transition-duration: .01ms !important;
   }
 }
+
+/* Shared navigation: booking/results visible on mobile, balanced tap areas. */
+.bottom-nav--v3 { padding: 8px 8px max(8px,env(safe-area-inset-bottom)) !important; }
+.bottom-nav--v3 > a { min-height: 55px; border-radius: 12px; }
+.bottom-nav--v3 > a:focus-visible { outline: 2px solid var(--brand); outline-offset: -2px; }
+.bottom-nav--v3 > a > span { font-size: 11px !important; }
+.v3-source-action {
+  border: 0; border-radius: 9px;
+  min-height: 44px; padding: 9px 13px;
+  color: var(--brand); background: var(--brand-faint);
+  font: 750 12px/1.35 var(--font-body);
+  cursor: pointer;
+}
+.v3-source-action:hover { background: var(--surface-2); }
+@media (max-width: 767px) {
+  .bottom-nav--v3 { gap: 3px; }
+  .bottom-nav--v3 > a { min-width: 0; padding: 5px 1px !important; }
+}
