@@ -1,22 +1,31 @@
 import { useEffect, useState } from "react";
+import { CalendarDays, ChevronDown } from "lucide-react";
 import { api, type ManualResultsResponse } from "../../api/predictions";
 
 const title = (value: string) =>
   ({ banker: "Banker", "2_odds": "2 Odds", "5_odds": "5 Odds",
-     "10_odds": "10 Odds", over_1_5: "Over 1.5" } as Record<string, string>)[value]
+     "10_odds": "10 Odds", over_1_5: "Over Goals", rollover: "Rollover" } as Record<string, string>)[value]
   ?? value.replaceAll("_", " ");
 
 function statusLabel(value: string) {
-  return ({won:"Won",lost:"Lost",void:"Void",pending:"Pending"} as Record<string,string>)[value]
+  return ({ won: "Won", lost: "Lost", void: "Void", pending: "Pending" } as Record<string, string>)[value]
     ?? "Pending";
 }
+const friendlyDate = (date: string) => new Date(`${date}T12:00:00Z`)
+  .toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
+const oddsText = (value: number | null | undefined) =>
+  typeof value === "number" && Number.isFinite(value) && value > 1
+    ? `${value.toFixed(2)}x`
+    : null;
 
-/** Manual results never enter the official BetSightly model win-rate totals. */
+/** Manual results appear alongside normal history but are never included in
+ * the official model totals, ROI, calibration or retraining observations. */
 export function ManualEditorialResults({ recent = false }: { recent?: boolean }) {
   const [data, setData] = useState<ManualResultsResponse | null>(null);
   const [error, setError] = useState(false);
   useEffect(() => {
     let alive = true;
+    setError(false);
     api.getManualResults(recent ? 10 : 30)
       .then(result => { if (alive) setData(result); })
       .catch(() => { if (alive) setError(true); });
@@ -24,14 +33,14 @@ export function ManualEditorialResults({ recent = false }: { recent?: boolean })
   }, [recent]);
 
   return (
-    <section className="results-history" aria-labelledby="manual-results-heading">
+    <section className="results-history results-manual" aria-labelledby={recent ? "recent-manual-results-heading" : "manual-results-heading"}>
       <div className="results-history__heading">
         <div>
           <p className="results-kicker">Administrator-curated results</p>
-          <h2 id="manual-results-heading">{recent ? "Manual picks on recent days" : "Manual prediction results"}</h2>
+          <h2 id={recent ? "recent-manual-results-heading" : "manual-results-heading"}>{recent ? "Manual picks on recent days" : "Manual prediction results"}</h2>
         </div>
         <p>Every selection is graded from verified final scores. These bets
-          are <strong>not included</strong> in the official engine's accuracy,
+          are <strong>not included</strong> in the official engine&apos;s accuracy,
           calibration or ROI.</p>
       </div>
 
@@ -47,52 +56,49 @@ export function ManualEditorialResults({ recent = false }: { recent?: boolean })
         </div>
       ) : (
         <div className="history-list">
-          {(recent ? data.results.slice(0, 5) : data.results).map((slip, index) => (
-            <details key={`${slip.date}-${slip.tier}-${index}`}
-              className="card" style={{ padding: "16px 20px" }}>
-              <summary style={{ cursor: "pointer", display: "flex",
-                flexWrap: "wrap", justifyContent: "space-between", gap: 10 }}>
-                <span>
-                  <strong>{title(slip.tier)}</strong>
-                  <span style={{ color: "var(--text-3)", fontSize: 12, marginLeft: 8 }}>
-                    {slip.date} · {slip.games.length} legs ·
-                    {slip.total_odds?.toFixed(2)}x
+          {(recent ? data.results.slice(0, 5) : data.results).map((slip, index) => {
+            const odds = oddsText(slip.total_odds);
+            return (
+              <details key={`${slip.date}-${slip.tier}-${index}`}
+                className={`history-item history-item--${slip.status} manual-history-item`}>
+                <summary>
+                  <span className="history-date"><CalendarDays size={14} aria-hidden="true" />{friendlyDate(slip.date)}</span>
+                  <span className="history-product">
+                    <strong>{title(slip.tier)}</strong>
+                    <small>Admin-curated · separate record</small>
                   </span>
-                </span>
-                <strong style={{ fontSize: 13 }}>
-                  {statusLabel(slip.status)} · Admin-curated
-                </strong>
-              </summary>
-              <div style={{ display: "grid", gap: 10, marginTop: 15 }}>
-                {slip.games.map((game, i) => (
-                  <div key={`${game.kickoff || i}-${i}`}
-                    style={{ borderTop: "1px solid var(--border)", paddingTop: 10,
-                      display: "flex", justifyContent: "space-between",
-                      alignItems: "start", flexWrap: "wrap", gap: 9 }}>
-                    <div style={{ fontSize: 13 }}>
-                      <strong>{game.home_team} vs {game.away_team}</strong>
-                      <div style={{ color: "var(--text-3)" }}>
-                        {game.market?.replaceAll("_", " ")}
-                        {game.odds ? ` · ${game.odds.toFixed(2)}x` : ""}
+                  <span className="history-facts">
+                    <span>{slip.games.length} legs</span>
+                    {odds && <span>{odds}</span>}
+                  </span>
+                  <span className={`results-status results-status--${slip.status}`}>
+                    {statusLabel(slip.status)} · Admin-curated
+                  </span>
+                  <ChevronDown className="history-chevron" size={16} aria-hidden="true" />
+                </summary>
+                <div className="history-legs">
+                  {slip.games.map((game, i) => (
+                    <div key={`${game.kickoff || i}-${i}`}
+                      className={`result-leg result-leg--${game.status}`}>
+                      <div className="result-leg__fixture">
+                        <strong>{game.home_team} vs {game.away_team}</strong>
+                        <small>{game.settlement_evidence
+                          ? `FT ${game.settlement_evidence.home_score}–${game.settlement_evidence.away_score}`
+                          : game.status === "pending" && game.settlement_pending_reason
+                            ? game.settlement_pending_reason.replaceAll("_", " ")
+                            : "90-minute result"}</small>
                       </div>
-                      {game.status === "pending" && game.settlement_pending_reason &&
-                        <small style={{ color: "var(--text-3)" }}>
-                          {game.settlement_pending_reason.replaceAll("_", " ")}
-                        </small>}
+                      <div className="result-leg__market">
+                        <span>{game.market?.replaceAll("_", " ") ?? "Selection"}</span>
+                        {oddsText(game.odds) && <small>{oddsText(game.odds)}</small>}
+                      </div>
+                      <span className="result-leg__outcome">{statusLabel(game.status)}</span>
                     </div>
-                    <div style={{ textAlign: "right", fontSize: 13 }}>
-                      <strong>{statusLabel(game.status)}</strong>
-                      {game.settlement_evidence &&
-                        <div style={{ color: "var(--text-3)" }}>
-                          FT {game.settlement_evidence.home_score}
-                          –{game.settlement_evidence.away_score}
-                        </div>}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </details>
-          ))}
+                  ))}
+                </div>
+              </details>
+            );
+          })}
         </div>
       )}
     </section>
