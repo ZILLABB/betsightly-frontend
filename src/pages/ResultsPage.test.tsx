@@ -10,6 +10,7 @@ jest.mock("../api/predictions", () => ({
     getLeagueResults: jest.fn(),
     getCalibration: jest.fn(),
     getPerformance: jest.fn(),
+    getManualResults: jest.fn(),
   },
 }));
 
@@ -101,6 +102,10 @@ const mockedApi = api as jest.Mocked<typeof api>;
 beforeEach(() => {
   jest.clearAllMocks();
   mockedApi.getLeagueResults.mockResolvedValue(results);
+  mockedApi.getManualResults.mockResolvedValue({
+    status: "success", manual_editorial: true, results: [],
+    official_record_unchanged: true,
+  });
   mockedApi.getCalibration.mockResolvedValue(calibration);
   mockedApi.getPerformance.mockResolvedValue({ status: "success", days: 90, summary: results.summary, current_policy: { policy_version: "selection-policy-v1.1", settled_unique_forecasts: 40, settled_slips: 12, readiness: "PROVISIONAL", readiness_label: "Provisional sample" } });
 });

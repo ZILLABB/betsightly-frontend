@@ -154,6 +154,11 @@ export function ResultsPage() {
             )}
           </section>
 
+          {/* Manual results are visible on the same daily Results screen.
+              The official model summary/calibration above and below remains
+              sourced exclusively from the published engine history. */}
+          <ManualEditorialResults recent />
+
           <ProductPerformance summary={results?.summary} />
 
           <details className="results-diagnostics">
