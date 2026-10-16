@@ -89,7 +89,7 @@ test("V3 matchday panel only calls a booking verified with an active code", () =
           ...current.data.accumulators["2_odds"],
           booking: {
             status: "active", lifecycle_status: "active", actionable: true,
-            share_code: "VALID123", actual_sportybet_odds: 2.12,
+            share_code: "VALID123", actual_sportybet_odds: 2.21,
           },
         },
       },
@@ -98,6 +98,7 @@ test("V3 matchday panel only calls a booking verified with an active code", () =
   render(<HomePage />);
   expect(screen.getByText("Bookmaker-verified code")).toBeInTheDocument();
   expect(screen.getByText("Verified ticket odds")).toBeInTheDocument();
+  expect(screen.getByText("2.21x")).toBeInTheDocument();
   expect(screen.getByRole("link", { name: /review slip and code/i }))
     .toHaveAttribute("href", "#todays-picks");
 });
