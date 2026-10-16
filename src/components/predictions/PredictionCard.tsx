@@ -27,6 +27,9 @@ function TeamBadge({ team, logo }: { team: string; logo?: string | null }) {
 }
 
 export interface LiveScore {
+  stale?: boolean;
+  provisional?: boolean;
+  source?: string;
   home_score: number | null;
   away_score: number | null;
   state: "pre" | "in" | "post" | string;
@@ -135,7 +138,7 @@ function KickoffStamp({ iso }: { iso?: string }) {
 /** Score and match state, shown only once a match is under way or finished. */
 function ScoreStamp({ score }: { score: LiveScore }) {
   if (score.home_score == null || score.away_score == null) return null;
-  const live = score.live;
+  const live = score.live && !score.stale;
   return (
     <span style={{
       display: "inline-flex", alignItems: "center", gap: 6,
@@ -152,7 +155,7 @@ function ScoreStamp({ score }: { score: LiveScore }) {
       )}
       {score.home_score}–{score.away_score}
       <span style={{ fontWeight: 500, opacity: 0.8 }}>
-        {live ? (score.clock || "live") : "FT"}
+        {score.stale ? "stale" : live ? (score.clock || "live") : score.finished ? "FT" : "score"}
       </span>
     </span>
   );

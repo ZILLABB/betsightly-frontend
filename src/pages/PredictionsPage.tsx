@@ -49,12 +49,28 @@ export function PredictionsPage() {
   const [scores, setScores] = useState<Record<string, LiveScore>>({});
   React.useEffect(() => {
     let alive = true;
-    const load = () => api.getLiveScores()
-      .then(r => { if (alive) setScores(r.scores || {}); })
-      .catch(() => { /* scores are an extra; the card stands without them */ });
+    const load = () => {
+      if (document.visibilityState === "hidden") return;
+      void api.getLiveScores()
+        .then(r => { if (alive) setScores(r.scores || {}); })
+        .catch(() => {
+          // Preserve prior observations but visibly mark them as stale.
+          if (alive) setScores(prev => Object.fromEntries(
+            Object.entries(prev).map(([id, value]) => [id, { ...value, stale: true }])
+          ));
+        });
+    };
     load();
-    const id = setInterval(load, 90_000);
-    return () => { alive = false; clearInterval(id); };
+    const id = window.setInterval(load, 60_000);
+    const onVisible = () => { if (document.visibilityState === "visible") load(); };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", load);
+    return () => {
+      alive = false;
+      window.clearInterval(id);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", load);
+    };
   }, []);
 
   const published = data?.accumulators;

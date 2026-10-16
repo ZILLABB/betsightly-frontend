@@ -31,3 +31,7 @@
 .bs-live-results-link span{display:flex;align-items:center;gap:8px;color:var(--text-2);font-size:13px}
 .bs-live-results-link a{color:var(--brand);font-size:13px;font-weight:800}
 @media(max-width:430px){.bs-live-hero{padding:21px}.bs-live-fixture{padding:14px}.bs-live-head{align-items:flex-start}}
+
+.bs-live-note--stale{border-color:rgba(245,158,11,.35);background:rgba(245,158,11,.08);color:var(--text-2)}
+.bs-live-fixture--stale{border-style:dashed;opacity:.84}
+.bs-live-fixture--stale .bs-live-score{color:var(--text-2)}
