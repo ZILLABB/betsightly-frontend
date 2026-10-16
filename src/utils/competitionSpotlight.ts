@@ -80,7 +80,7 @@ export function competitionSpotlight(
   for (const event of COMPETITIONS) {
     const match = leagues.find(league =>
       league &&
-      Number.isFinite(league.count) &&
+      Number.isFinite(Number(league.count)) &&
       Number(league.count) > 0 &&
       event.matches.test(`${league.slug ?? ""} ${league.name ?? ""}`),
     );
