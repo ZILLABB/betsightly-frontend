@@ -390,3 +390,138 @@ html { scroll-behavior: smooth; }
   .bottom-nav--v3 { gap: 3px; }
   .bottom-nav--v3 > a { min-width: 0; padding: 5px 1px !important; }
 }
+
+/* V3 mobile Builder density correction, validated against a 414px iPhone
+ * screenshot. Functional Builder V2 engine remains untouched.
+ * The first real mode/target controls must not be buried below giant hero
+ * cards or a multi-paragraph mandatory privacy notice. */
+.v3-builder .v3-privacy {
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--overlay-1);
+}
+.v3-builder .v3-privacy > summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  padding: 10px 14px;
+  color: var(--text-1);
+  font: 700 12px/1.45 var(--font-body);
+  cursor: pointer;
+}
+.v3-builder .v3-privacy > summary span {
+  color: var(--text-3);
+  font-weight: 550;
+}
+.v3-builder .v3-privacy > summary:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+.v3-builder .v3-privacy > p {
+  padding: 0 14px 13px;
+  margin: 0;
+  color: var(--text-2);
+  font: 500 12px/1.65 var(--font-body);
+}
+.v3-builder .builder-v2-heading { gap: 8px; }
+.v3-builder .builder-v2-heading h2 {
+  font: 700 clamp(20px,2.5vw,26px)/1.2 var(--font-display);
+  letter-spacing: -.025em;
+}
+.v3-builder .builder-v2-heading p {
+  font-size: 12px;
+  line-height: 1.55;
+}
+@media (max-width: 767px) {
+  .v3-builder.builder-page { gap: 10px !important; }
+  .v3-builder .builder-hero {
+    padding: 17px 18px !important;
+    border-radius: 16px !important;
+    box-shadow: var(--shadow-sm);
+  }
+  .v3-builder .builder-hero h1 {
+    font-size: clamp(27px,7.1vw,34px) !important;
+    letter-spacing: -.038em;
+    line-height: 1.08 !important;
+    margin: 8px 0 !important;
+    max-width: none;
+  }
+  .v3-builder .builder-hero p {
+    font-size: 12px !important;
+    line-height: 1.55 !important;
+    max-width: 56ch;
+  }
+  .v3-builder .builder-hero .builder-eyebrow {
+    font-size: 11px !important;
+    letter-spacing: .075em;
+  }
+  .v3-builder .builder-proof {
+    margin-top: 12px !important;
+    gap: 7px 15px;
+    font-size: 11px !important;
+    line-height: 1.35;
+  }
+  .v3-builder .builder-proof svg { width: 15px; height: 15px; }
+  .v3-builder .v3-steps { gap: 6px; }
+  .v3-builder .v3-steps li {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    text-align: left;
+    gap: 7px;
+    padding: 8px 6px;
+    min-width: 0;
+    min-height: 51px;
+    border-radius: 11px;
+  }
+  .v3-builder .v3-steps__number {
+    flex: 0 0 25px;
+    height: 25px;
+    width: 25px;
+    border-radius: 8px;
+    font-size: 10px;
+  }
+  .v3-builder .v3-steps strong {
+    font-size: 12px;
+    line-height: 1.25;
+  }
+  .v3-builder .v3-steps small {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .v3-builder .builder-v2-heading { gap: 5px; }
+  .v3-builder .builder-v2-heading h2 {
+    font-size: clamp(19px,5vw,23px);
+    line-height: 1.22;
+  }
+  .v3-builder .builder-v2-heading p {
+    font-size: 12px; line-height: 1.5;
+  }
+  .v3-builder .builder-v2-config,
+  .v3-builder .builder-config { gap: 12px; }
+  .v3-builder .builder-config { padding: 15px !important; border-radius: 16px !important; }
+  .v3-builder .builder-v2-modes {
+    grid-template-columns: repeat(2,minmax(0,1fr)) !important;
+    gap: 7px;
+  }
+  .v3-builder .builder-v2-modes > button {
+    min-height: 53px;
+    padding: 9px 11px;
+  }
+  .v3-builder .builder-v2-modes strong { font-size: 12px; }
+  .v3-builder .builder-v2-modes small { font-size: 10px; line-height: 1.4; }
+}
+@media (max-width: 355px) {
+  .v3-builder .v3-steps li { flex-direction: column; gap: 3px; }
+  .v3-builder .builder-v2-modes > button { padding: 8px; }
+}

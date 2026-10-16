@@ -53,6 +53,21 @@ beforeEach(() => {
   );
 });
 
+test("mobile Builder prioritizes mode selection and keeps privacy details accessible", () => {
+  renderBuilder();
+  expect(screen.getByRole("heading", { name: "Build your slip." })).toBeInTheDocument();
+  expect(screen.getByText("Configure your slip")).toBeInTheDocument();
+  expect(screen.queryByText("Builder V2")).not.toBeInTheDocument();
+  expect(screen.getByRole("group", { name: "Builder mode" })).toBeInTheDocument();
+
+  const privacy = screen.getByTestId("builder-privacy-disclosure");
+  expect(privacy).not.toHaveAttribute("open");
+  expect(screen.getByText("Private ticket history")).toBeInTheDocument();
+  fireEvent.click(screen.getByText("Private ticket history"));
+  expect(privacy).toHaveAttribute("open");
+  expect(screen.getByText(/does not record whether you actually/)).toBeInTheDocument();
+});
+
 test("formats Builder kickoff windows consistently in WAT", () => {
   expect(formatKickoffWindow("2026-09-29T17:05:00Z", "2026-09-29T20:30:00Z"))
     .toBe("29 Sep · 18:05–21:30 WAT");
