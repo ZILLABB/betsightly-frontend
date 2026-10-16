@@ -512,6 +512,10 @@ export interface BookableNowResponse {
 }
 
 export interface LiveScoresResponse {
+  stale?: boolean;
+  refreshing?: boolean;
+  cache_age_seconds?: number | null;
+  source_error?: string | null;
   sportybet_source?: string;
   sportybet_live_matched?: number;
   tracked_fixtures?: number;
@@ -520,6 +524,7 @@ export interface LiveScoresResponse {
   status: string;
   count: number;
   scores: Record<string, {
+    stale?: boolean;
     match_id?: string;
     home_team?: string;
     away_team?: string;

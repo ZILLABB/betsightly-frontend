@@ -39,7 +39,7 @@ export function LivePage() {
     let active = true;
     const poll = () => { if (active && document.visibilityState !== "hidden") void refresh(); };
     poll();
-    const timer = window.setInterval(poll, 90_000);
+    const timer = window.setInterval(poll, 60_000);
     const onVisibility = () => { if (document.visibilityState === "visible") poll(); };
     document.addEventListener("visibilitychange", onVisibility);
     return () => {
@@ -72,7 +72,7 @@ export function LivePage() {
     });
   }, [card, board]);
 
-  const liveCount = matches.filter(m => board?.scores[m.match_id]?.live).length;
+  const liveCount = matches.filter(m => board?.scores[m.match_id]?.live && !board?.scores[m.match_id]?.stale).length;
   const scored = matches.filter(m => {
     const s = board?.scores[m.match_id];
     return s?.home_score != null && s?.away_score != null;
@@ -99,19 +99,26 @@ export function LivePage() {
           <h2>Published fixtures</h2>
           <p>{providerText}</p>
         </div>
-        <span>{updatedAt ? `Checked ${new Date(updatedAt).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})}` : "Checking"}</span>
+        <span>{board?.fetched_at
+          ? `Source snapshot ${new Date(board.fetched_at).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})}`
+          : updatedAt ? "No source snapshot available" : "Checking"}</span>
       </div>
       {error && <p role="status" className="bs-live-note">The score feed could not be refreshed. Existing verified results are still available on the Results page.</p>}
+      {board?.stale && <p role="status" className="bs-live-note bs-live-note--stale">
+        Score feed is delayed{board.cache_age_seconds != null ? ` (${Math.round(board.cache_age_seconds / 60)} min since last update)` : ""}.
+        Previously seen scores are displayed as stale and must not be treated as current or settled.
+        {board.refreshing ? " Refresh in progress." : ""}
+      </p>}
       {loading && !board && <p className="bs-live-note">Checking matchday scores…</p>}
       <div className="bs-live-board" aria-live="off">
         {matches.map(m => {
           const s = board?.scores[m.match_id];
           const haveScore = s?.home_score != null && s?.away_score != null;
-          const phase = s?.live ? "In play" : s?.finished ? "Final score reported" : "Awaiting score";
-          return <article className="bs-live-fixture" key={m.match_id}>
+          const phase = s?.stale ? "Last observed · delayed" : s?.live ? "In play" : s?.finished ? "Final score reported" : "Awaiting score";
+          return <article className={`bs-live-fixture${s?.stale ? " bs-live-fixture--stale" : ""}`} key={m.match_id}>
             <div className="bs-live-fixture-meta">
               <span>{m.league}</span>
-              <span className={s?.live ? "bs-live-indicator" : ""}>{s?.live ? "● " : ""}{phase}{s?.live && s?.clock ? ` · ${s.clock}` : ""}</span>
+              <span className={s?.live && !s?.stale ? "bs-live-indicator" : ""}>{s?.live && !s?.stale ? "● " : ""}{phase}{s?.live && !s?.stale && s?.clock ? ` · ${s.clock}` : ""}</span>
             </div>
             <div className="bs-live-fixture-row">
               <div className="bs-live-names"><strong>{m.home_team}</strong><strong>{m.away_team}</strong></div>
@@ -120,7 +127,7 @@ export function LivePage() {
                 <span>{haveScore ? s?.away_score : "–"}</span>
               </div>
             </div>
-            <div className="bs-live-source">{s?.source === "sportybet-via-parse" ? "SportyBet live observation" : haveScore ? "ESPN scoreboard observation" : "No verified score feed for this fixture yet"}</div>
+            <div className="bs-live-source">{s?.stale ? "Delayed observation · " : ""}{s?.source === "sportybet-via-parse" ? "SportyBet provisional score" : haveScore ? "ESPN scoreboard observation" : "No available score for this fixture yet"}</div>
           </article>;
         })}
       </div>
