@@ -121,6 +121,23 @@ test("manual tickets show Not scored in both homepage metrics, never NaN%", () =
   expect(screen.queryByText(/All 2 legs land about/)).not.toBeInTheDocument();
 });
 
+test("empty tier shows a neutral top-odds fallback, not 0.00x", () => {
+  const current = mockedPredictions();
+  mockedPredictions.mockReturnValue({
+    ...current,
+    data: {
+      ...current.data,
+      accumulators: {
+        ...current.data.accumulators,
+        "2_odds": { selected: false, games: [], total_odds: 0 },
+      },
+    },
+  });
+  render(<HomePage />);
+  expect(screen.queryByText("0.00x")).not.toBeInTheDocument();
+  expect(screen.getByText("Top odds")).toBeInTheDocument();
+});
+
 test("homepage averages only valid model probabilities, not unscored or malformed values", () => {
   const existing = mockedPredictions();
   mockedPredictions.mockReturnValue({
