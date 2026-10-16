@@ -199,8 +199,8 @@ export function HomePage() {
             <span>Smart Picks.</span>
           </h1>
           <p>
-            Curated football picks and accumulators backed by real bookmaker odds and statistical
-            analysis, with every published result tracked transparently.
+            Evidence-backed football picks, genuine bookmaker prices, and every
+            published result tracked transparently.
           </p>
           {(campaign || spotlight) && (
             <div className="home-competition-spotlight" role="status" aria-live="polite">
@@ -213,10 +213,10 @@ export function HomePage() {
           )}
           <div className="home-hero-actions">
             <a href="#todays-picks" className="hero-action hero-action-primary">
-              See today&apos;s picks &amp; codes <ArrowRight size={16} />
+              View picks &amp; codes <ArrowRight size={16} />
             </a>
             <Link to="/build-slip" className="hero-action hero-action-secondary">
-              <Sliders size={16} /> Build a slip
+              <Sliders size={16} /> Build slip
             </Link>
           </div>
           <div className="trust-row" aria-label="Product principles">
