@@ -2,7 +2,7 @@ import { Helmet } from "react-helmet-async";
 
 const SITE_NAME = "BetSightly";
 const BASE_URL = "https://betsightly.com";
-const DEFAULT_DESC = "Data-driven football predictions backed by real bookmaker odds. Daily picks, rollover challenge, and full World Cup 2026 coverage.";
+const DEFAULT_DESC = "Football predictions, verified SportyBet booking codes, daily picks, transparent settled results and the BetSightly Rollover challenge. Informational predictions only.";
 const DEFAULT_IMAGE = `${BASE_URL}/og-image.svg`;
 
 interface SEOProps {
