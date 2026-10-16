@@ -43,6 +43,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 <Link to="/predictions/2_odds" style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text-3)", textDecoration:"none" }}>2 Odds</Link>
                 <Link to="/rollover" style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text-3)", textDecoration:"none" }}>Rollover</Link>
                 <Link to="/results" style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text-3)", textDecoration:"none" }}>Results</Link>
+                <Link to="/live" style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text-3)", textDecoration:"none" }}>Live Scores</Link>
               </div>
             </div>
 
