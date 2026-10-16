@@ -29,7 +29,7 @@ export default defineConfig(({ mode }) => {
       srcDir: 'src',
       filename: 'sw.ts',
       registerType: 'autoUpdate',
-      includeAssets: ['brand-icon.svg', 'brand-logo.svg', 'favicon.svg', 'apple-touch-icon.png', 'pwa-192x192.png', 'pwa-512x512.png'],
+      includeAssets: ['brand-icon.svg', 'brand-logo.svg', 'favicon.svg', 'apple-touch-icon-v2.png', 'pwa-192x192-v2.png', 'pwa-512x512-v2.png', 'pwa-maskable-512x512-v2.png'],
       manifest: {
         name: 'BetSightly - Smart Betting Predictions',
         short_name: 'BetSightly',
@@ -48,20 +48,20 @@ export default defineConfig(({ mode }) => {
             purpose: 'any'
           },
           {
-            src: 'pwa-192x192.png',
+            src: 'pwa-192x192-v2.png',
             sizes: '192x192',
             type: 'image/png'
           },
           {
-            src: 'pwa-512x512.png',
+            src: 'pwa-512x512-v2.png',
             sizes: '512x512',
             type: 'image/png'
           },
           {
-            src: 'pwa-512x512.png',
+            src: 'pwa-maskable-512x512-v2.png',
             sizes: '512x512',
             type: 'image/png',
-            purpose: 'any maskable'
+            purpose: 'maskable'
           }
         ],
         categories: ['sports', 'entertainment', 'productivity'],
@@ -71,14 +71,14 @@ export default defineConfig(({ mode }) => {
             short_name: 'Predictions',
             description: 'View latest predictions',
             url: '/predictions',
-            icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }]
+            icons: [{ src: 'pwa-192x192-v2.png', sizes: '192x192' }]
           },
           {
             name: 'Results',
             short_name: 'Results',
             description: 'Check results',
             url: '/results',
-            icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }]
+            icons: [{ src: 'pwa-192x192-v2.png', sizes: '192x192' }]
           }
         ]
       },
