@@ -111,7 +111,7 @@ export function ResultsPage() {
   }, [results, statusFilter]);
 
   return (
-    <div className="results-page">
+    <div className="results-page v3-page v3-results">
       <SEO
         title="Results"
         description="The public BetSightly track record: settled accumulator slips, Over 1.5 singles, calibration and rollover chains."
@@ -120,7 +120,13 @@ export function ResultsPage() {
 
       <ResultsHero range={range} onRangeChange={setRange} refreshing={refreshing} onRefresh={refresh} lastUpdated={lastUpdated} />
 
-      <nav className="results-tabs" aria-label="Results sections">
+      <div className="v3-source-note" role="note">
+        <div><strong>Two transparent result records</strong>
+          <span> · Engine selections count toward model metrics; admin-curated picks do not.</span>
+        </div>
+        <a href="#manual-results" onClick={() => setTab("manual")}>View manual results</a>
+      </div>
+            <nav className="results-tabs" aria-label="Results sections">
         <button type="button" className={tab === "products" ? "is-active" : ""} aria-pressed={tab === "products"} onClick={() => setTab("products")}>Product results</button>
         <button type="button" className={tab === "rollover" ? "is-active" : ""} aria-pressed={tab === "rollover"} onClick={() => setTab("rollover")}>Rollover chains</button>
         <button type="button" className={tab === "manual" ? "is-active" : ""} aria-pressed={tab === "manual"} onClick={() => setTab("manual")}>Manual picks</button>
@@ -180,7 +186,9 @@ export function ResultsPage() {
           </details>
         </>
       ) : tab === "manual" ? (
+        <div id="manual-results">
         <ManualEditorialResults />
+        </div>
       ) : (
         <section className="results-history" aria-labelledby="rollover-history-title">
           <div className="results-history__heading">
