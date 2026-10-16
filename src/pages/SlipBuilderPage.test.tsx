@@ -59,6 +59,13 @@ test("mobile Builder prioritizes mode selection and keeps privacy details access
   expect(screen.getByText("Configure your slip")).toBeInTheDocument();
   expect(screen.queryByText("Builder V2")).not.toBeInTheDocument();
   expect(screen.getByRole("group", { name: "Builder mode" })).toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: "Choose a build mode" })).toBeInTheDocument();
+  const modeControls = screen.getByRole("group", { name: "Builder mode" });
+  expect(modeControls.compareDocumentPosition(
+    screen.getByTestId("builder-privacy-disclosure")
+  ) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  expect(screen.getByRole("button", {name:/50x/})).toHaveTextContent("Long shot");
+  expect(screen.getByRole("button", {name:/50x/})).not.toHaveTextContent("Balanced");
 
   const privacy = screen.getByTestId("builder-privacy-disclosure");
   expect(privacy).not.toHaveAttribute("open");
