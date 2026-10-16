@@ -483,10 +483,10 @@ export default function SlipBuilderPage() {
           <span className="builder-eyebrow">
             <Sparkles size={14} /> Smart slip builder
           </span>
-          <h1>Build around your target, not the hype.</h1>
+          <h1>Build your slip.</h1>
           <p>
-            We combine the strongest supported markets, check live SportyBet
-            availability, and stop when the evidence cannot justify your target.
+            Choose a target and the markets you prefer. We check qualified picks
+            and confirm SportyBet availability before showing a booking code.
           </p>
           <div className="builder-proof">
             <span>
@@ -513,12 +513,15 @@ export default function SlipBuilderPage() {
           <div><strong>Verify</strong><small>Check SportyBet code</small></div>
         </li>
       </ol>
-      <p className="v3-privacy">
-        Generated ticket selections are associated with a random identifier
-        stored in this browser. This allows private, in-app winning prediction
-        alerts when you return; it does not record whether you actually
-        placed a bet. Clearing this site's browser storage resets that link.
-      </p>
+      <details className="v3-privacy" data-testid="builder-privacy-disclosure">
+        <summary>Private ticket history <span>How it works</span></summary>
+        <p>
+          Generated ticket selections are associated with a random identifier
+          stored in this browser. This allows private, in-app winning prediction
+          alerts when you return; it does not record whether you actually
+          placed a bet. Clearing this site's browser storage resets that link.
+        </p>
+      </details>
 
       <section id="builder-controls" aria-label="Choose slip settings">
         <BuilderV2Controls />
