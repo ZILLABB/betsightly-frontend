@@ -808,3 +808,28 @@
     padding: 12px;
   }
 }
+
+/* Harmonised public + admin-curated result rows. Content is intentionally
+ * not visually privileged by source; the explicit admin-curated label remains. */
+.results-manual .manual-history-item > summary { outline-offset: -2px; }
+@media (max-width: 767px) {
+  .results-page .results-eyebrow,
+  .results-page .results-kicker { font-size: 12px; line-height: 1.4; }
+  .results-page .results-hero__copy > p:last-child,
+  .results-page .results-history__heading > p { font-size: 13px; line-height: 1.55; }
+  .results-page .history-product strong,
+  .results-page .history-date { font-size: 13px; line-height: 1.35; }
+  .results-page .history-product small,
+  .results-page .history-facts { font-size: 11px; line-height: 1.4; }
+  .results-page .history-item > summary { min-height: 68px; }
+  .results-page .result-leg__fixture strong,
+  .results-page .result-leg__market span { font-size: 12px; white-space: normal; }
+  .results-page .result-leg__fixture small,
+  .results-page .result-leg__market small,
+  .results-page .result-leg__outcome { font-size: 11px; line-height: 1.4; }
+  .results-page .results-status { font-size: 10px; padding: 7px 9px; }
+  .results-page .results-tabs button,
+  .results-page .results-range button,
+  .results-page .results-refresh,
+  .results-page .filter-chips button { min-height: 44px; }
+}
