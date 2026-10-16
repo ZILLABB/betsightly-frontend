@@ -118,7 +118,7 @@ export function PredictionsPage() {
     : {};
 
   return (
-    <div className="page-stack predictions-page" style={{ display: "flex", flexDirection: "column", gap: 32 }}>
+    <div className="page-stack predictions-page v3-page v3-predictions" style={{ display: "flex", flexDirection: "column", gap: 32 }}>
       <SEO title="Predictions" description="Today's best football predictions — 2 Odds, 5 Odds, 10 Odds, and Over Goals picks backed by real bookmaker odds." path="/predictions" />
       <header className="predictions-hero">
         <div className="eyebrow" style={{ marginBottom: 8 }}>Today&apos;s Picks</div>
@@ -128,6 +128,17 @@ export function PredictionsPage() {
             ? new Date(data.date + "T12:00:00Z").toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" })
             : "today"} — pick a tier that matches your risk appetite.
         </p>
+        <div className="v3-hero-tools">
+          <a className="v3-link v3-link--primary" href="#published-tiers">
+            Explore published tickets <ArrowRight size={16} aria-hidden="true" />
+          </a>
+          <Link className="v3-link" to="/build-slip">
+            Build your own slip <ArrowRight size={16} aria-hidden="true" />
+          </Link>
+          <Link className="v3-link" to="/results">
+            See settled results
+          </Link>
+        </div>
       </header>
 
       {!loading && rolloverOnlyDay && (
@@ -184,7 +195,7 @@ export function PredictionsPage() {
         </section>
       )}
 
-      <div className="premium-slips-heading">
+      <div id="published-tiers" className="premium-slips-heading" style={{ scrollMarginTop: 95 }}>
         <div className="eyebrow" style={{ marginBottom: 8 }}>Curated daily products</div>
         <h2 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>Premium slips</h2>
       </div>
