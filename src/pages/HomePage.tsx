@@ -136,7 +136,7 @@ export function HomePage() {
       const tier = accumulators?.[c.key];
       return tier?.selected && tier.games?.length > 0;
     })?.key;
-  const featuredTier = featuredKey ? accumulators?.[featuredKey] : null;
+  const featuredTier = featuredKey ? accumulators?.[featuredKey] : undefined;
   const featuredMeta = CATEGORIES.find(c => c.key === featuredKey);
   const featuredBookable = isVerifiedBooking(featuredTier);
   const featuredOdds = featuredBookable && featuredTier?.presentation !== "singles" &&
