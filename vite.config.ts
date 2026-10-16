@@ -29,7 +29,7 @@ export default defineConfig(({ mode }) => {
       srcDir: 'src',
       filename: 'sw.ts',
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'pwa-192x192.png', 'pwa-512x512.png'],
+      includeAssets: ['brand-icon.svg', 'brand-logo.svg', 'favicon.svg', 'apple-touch-icon.png', 'pwa-192x192.png', 'pwa-512x512.png'],
       manifest: {
         name: 'BetSightly - Smart Betting Predictions',
         short_name: 'BetSightly',
@@ -41,6 +41,12 @@ export default defineConfig(({ mode }) => {
         start_url: '/',
         scope: '/',
         icons: [
+          {
+            src: 'brand-icon.svg',
+            sizes: 'any',
+            type: 'image/svg+xml',
+            purpose: 'any'
+          },
           {
             src: 'pwa-192x192.png',
             sizes: '192x192',
