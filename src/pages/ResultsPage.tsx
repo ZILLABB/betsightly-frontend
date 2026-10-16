@@ -121,11 +121,11 @@ export function ResultsPage() {
       <ResultsHero range={range} onRangeChange={setRange} refreshing={refreshing} onRefresh={refresh} lastUpdated={lastUpdated} />
 
       <dl className="v3-results-overview" aria-label="Official settled accumulator record">
-        <div><dd className="is-positive">{results?.totals?.slips?.won ?? "—"}</dd><dt>Won</dt></div>
-        <div><dd className="is-negative">{results?.totals?.slips?.lost ?? "—"}</dd><dt>Lost</dt></div>
-        <div><dd>{results?.totals?.slips?.pending ?? "—"}</dd><dt>Pending</dt></div>
-        <div><dd>{results?.totals?.slips?.win_rate != null
-          ? `${Math.round(results.totals.slips.win_rate * 100)}%` : "—"}</dd><dt>Slip win rate</dt></div>
+        <div><dt>Won</dt><dd className="is-positive">{results?.totals?.slips?.won ?? "—"}</dd></div>
+        <div><dt>Lost</dt><dd className="is-negative">{results?.totals?.slips?.lost ?? "—"}</dd></div>
+        <div><dt>Settled</dt><dd>{results?.totals?.slips?.settled ?? "—"}</dd></div>
+        <div><dt>Slip win rate</dt><dd>{results?.totals?.slips?.win_rate != null
+          ? `${Math.round(results.totals.slips.win_rate * 100)}%` : "—"}</dd></div>
       </dl>
 
       <div className="v3-source-note" role="note">
