@@ -12,23 +12,23 @@ function statusLabel(value: string) {
 }
 
 /** Manual results never enter the official BetSightly model win-rate totals. */
-export function ManualEditorialResults() {
+export function ManualEditorialResults({ recent = false }: { recent?: boolean }) {
   const [data, setData] = useState<ManualResultsResponse | null>(null);
   const [error, setError] = useState(false);
   useEffect(() => {
     let alive = true;
-    api.getManualResults(30)
+    api.getManualResults(recent ? 10 : 30)
       .then(result => { if (alive) setData(result); })
       .catch(() => { if (alive) setError(true); });
     return () => { alive = false; };
-  }, []);
+  }, [recent]);
 
   return (
     <section className="results-history" aria-labelledby="manual-results-heading">
       <div className="results-history__heading">
         <div>
           <p className="results-kicker">Administrator-curated results</p>
-          <h2 id="manual-results-heading">Manual prediction results</h2>
+          <h2 id="manual-results-heading">{recent ? "Manual picks on recent days" : "Manual prediction results"}</h2>
         </div>
         <p>Every selection is graded from verified final scores. These bets
           are <strong>not included</strong> in the official engine's accuracy,
@@ -47,7 +47,7 @@ export function ManualEditorialResults() {
         </div>
       ) : (
         <div className="history-list">
-          {data.results.map((slip, index) => (
+          {(recent ? data.results.slice(0, 5) : data.results).map((slip, index) => (
             <details key={`${slip.date}-${slip.tier}-${index}`}
               className="card" style={{ padding: "16px 20px" }}>
               <summary style={{ cursor: "pointer", display: "flex",
