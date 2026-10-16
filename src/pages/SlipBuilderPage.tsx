@@ -473,7 +473,7 @@ export default function SlipBuilderPage() {
     : slip?.booking;
 
   return (
-    <main className="builder-page page-stack">
+    <main className="builder-page page-stack v3-page v3-builder">
       <SEO
         title="Build a slip · BetSightly"
         description="Choose your odds and get a qualifying slip with a SportyBet booking code."
@@ -499,15 +499,30 @@ export default function SlipBuilderPage() {
         </div>
       </section>
 
-      <p style={{ fontSize: 12, color: "var(--text-3)",
-          margin: "3px 0 16px", lineHeight: 1.6 }}>
+      <ol className="v3-steps" aria-label="Build Slip progress">
+        <li className={slip ? "is-complete" : "is-active"}>
+          <span className="v3-steps__number">01</span>
+          <div><strong>Choose</strong><small>Target and markets</small></div>
+        </li>
+        <li className={!slip ? "" : bookableBooking?.status === "active" ? "is-complete" : "is-active"}>
+          <span className="v3-steps__number">02</span>
+          <div><strong>Build</strong><small>Review qualifying picks</small></div>
+        </li>
+        <li className={bookableBooking?.status === "active" ? "is-active" : ""}>
+          <span className="v3-steps__number">03</span>
+          <div><strong>Verify</strong><small>Check SportyBet code</small></div>
+        </li>
+      </ol>
+      <p className="v3-privacy">
         Generated ticket selections are associated with a random identifier
         stored in this browser. This allows private, in-app winning prediction
         alerts when you return; it does not record whether you actually
         placed a bet. Clearing this site's browser storage resets that link.
       </p>
 
-      <BuilderV2Controls />
+      <section id="builder-controls" aria-label="Choose slip settings">
+        <BuilderV2Controls />
+      </section>
 
       {error && (
         <div className="builder-message builder-message--error" role="alert">
