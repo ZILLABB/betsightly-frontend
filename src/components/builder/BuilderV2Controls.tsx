@@ -572,9 +572,9 @@ export function BuilderV2Controls() {
       <div className="builder-v2-heading">
         <div>
           <span className="builder-eyebrow">Configure your slip</span>
-          <h2 id="builder-config-title">Choose how you want to build</h2>
+          <h2 id="builder-config-title">Choose a build mode</h2>
         </div>
-        <p>Structure is your choice. Quality and exact SportyBet bookability stay enforced.</p>
+        <p>Pick a method. Every selection must still meet our verification checks.</p>
       </div>
 
       <div className="builder-v2-modes" role="group" aria-label="Builder mode">
@@ -612,7 +612,7 @@ export function BuilderV2Controls() {
                   }}
                 >
                   <strong>{value}x</strong>
-                  <span>{value <= 20 ? "Lower target" : value <= 50 ? "Balanced" : "High target"}</span>
+                  <span>{value <= 5 ? "Lower target" : value <= 10 ? "Higher target" : "Long shot"}</span>
                 </button>
               ))}
             </div>
