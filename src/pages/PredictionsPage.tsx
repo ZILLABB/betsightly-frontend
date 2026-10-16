@@ -122,7 +122,7 @@ export function PredictionsPage() {
       <SEO title="Predictions" description="Today's best football predictions — 2 Odds, 5 Odds, 10 Odds, and Over Goals picks backed by real bookmaker odds." path="/predictions" />
       <header className="predictions-hero">
         <div className="eyebrow" style={{ marginBottom: 8 }}>Today&apos;s Picks</div>
-        <h1 style={{ fontSize: 32, fontWeight: 800 }}>Today&apos;s football intelligence</h1>
+        <h1>Today&apos;s Predictions</h1>
         <p className="page-intro" style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text-3)", marginTop: 6 }}>
           Curated products and one best prediction for each analysed fixture on {data?.date
             ? new Date(data.date + "T12:00:00Z").toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" })
@@ -197,7 +197,7 @@ export function PredictionsPage() {
 
       <div id="published-tiers" className="premium-slips-heading" style={{ scrollMarginTop: 95 }}>
         <div className="eyebrow" style={{ marginBottom: 8 }}>Curated daily products</div>
-        <h2 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>Premium slips</h2>
+        <h2 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>Published slips</h2>
       </div>
 
       {/* Preserve the locked publication for auditability, but default late
