@@ -357,13 +357,13 @@ export function HomePage() {
               )}
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              {!isSingles && <div style={{
+              {hasActiveBookableOdds && <div style={{
                 padding: "5px 14px", borderRadius: 8,
                 background: catMeta.faint, border: `1px solid ${catMeta.color}20`,
                 fontFamily: "var(--font-mono)", fontSize: 14, fontWeight: 700,
                 color: catMeta.color, letterSpacing: "-0.02em",
               }}>
-                {fmtOdds(activeCat.total_odds)}{oddsSuffix}
+                {fmtOdds(activeOdds!)}{oddsSuffix}
               </div>}
               <button
                 onClick={handleRefresh}
