@@ -93,6 +93,12 @@ export function HomePage() {
   const activeCat = accumulators?.[activeKey];
   const catMeta = CATEGORIES.find(c => c.key === activeKey)!;
   const isSingles = activeCat?.presentation === "singles";
+  const activeOdds = activeCat?.total_odds;
+  const hasActiveBookableOdds = Boolean(
+    !isSingles && activeCat?.selected && activeCat.games?.length &&
+    typeof activeOdds === "number" && Number.isFinite(activeOdds) && activeOdds > 1
+  );
+
 
   const oddsMap = accumulators
     ? Object.fromEntries(
@@ -221,7 +227,9 @@ export function HomePage() {
           label={isSingles ? "Independent picks" : "Top odds"}
           value={loading ? "—" : isSingles
             ? String(activeCat?.games?.length ?? 0)
-            : `${fmtOdds(activeCat?.total_odds ?? 0)}${oddsSuffix}`}
+            : hasActiveBookableOdds
+              ? `${fmtOdds(activeOdds!)}${oddsSuffix}`
+              : "—"}
           icon={<TrendingUp size={17} color="var(--blue)" />}
           color="var(--blue)"
         />
