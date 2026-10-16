@@ -1,10 +1,10 @@
-/* BETSIGHTLY — Option B identity integration.
+/* BETSIGHTLY — official geometric B identity, selected from the simple reference artwork.
  * Clean vector brand, accurate light/dark contrast and mobile-first matchday.
  * Loaded after V3/reference styles, without changing published data.
  */
-.bs-brand--new { gap: 7px; align-items: center; max-width: 100%; }
+.bs-brand--new { gap: 10px; align-items: center; max-width: 100%; }
 .bs-brand--new .bs-brand__symbol {
-  width: 45px; height: 48px; flex: 0 0 45px; overflow: visible;
+  width: 34px; height: 47px; flex: 0 0 34px; overflow: visible;
 }
 .bs-brand--new .bs-brand__words { gap: 4px; }
 .bs-brand--new .bs-brand__name {
@@ -12,26 +12,26 @@
   font-family: var(--font-body);
   font-size: clamp(19px,2.1vw,26px);
   font-weight: 800; line-height: 1;
-  letter-spacing: -.065em;
+  letter-spacing: -.057em;
 }
 .bs-brand--new .bs-brand__name span:first-child { color: var(--text-1); }
-.bs-brand--new .bs-brand__name span:last-child { color: #29da90; }
+.bs-brand--new .bs-brand__name span:last-child { color: #37E58C; }
 .bs-brand--new .bs-brand__tagline {
   letter-spacing: .135em; font-size: 8px;
   font-weight: 700; color: var(--text-2);
   white-space: nowrap;
 }
-.bs-brand--new.bs-brand--compact .bs-brand__symbol { width: 39px; height: 41px; flex-basis: 39px; }
+.bs-brand--new.bs-brand--compact .bs-brand__symbol { width: 30px; height: 41px; flex-basis: 30px; }
 .bs-brand--new.bs-brand--compact .bs-brand__name { font-size: 19px; }
 .bs-brand--new.bs-brand--compact .bs-brand__tagline { font-size: 7px; }
 .bs-brand-link { max-width: calc(100% - 65px); }
 header:has(> div > .bs-brand-link) { background: var(--nav-bg-scrolled) !important; border-bottom: 1px solid var(--border) !important; }
 header:has(> div > .bs-brand-link) > div { min-width: 0; }
 @media(max-width: 767px) {
-  .bs-brand--new .bs-brand__symbol { width: 40px; height: 43px; flex-basis: 40px; }
-  .bs-brand--new .bs-brand__name { font-size: clamp(17px,5vw,21px); }
+  .bs-brand--new .bs-brand__symbol { width: 27px; height: 39px; flex-basis: 27px; }
+  .bs-brand--new .bs-brand__name { font-size: clamp(17px,5vw,22px); }
   .bs-brand--new .bs-brand__tagline { display: none; }
-  header:has(> div > .bs-brand-link) > div { height: 64px !important; padding-inline: 17px !important; }
+  header:has(> div > .bs-brand-link) > div { height: 64px !important; padding-inline: 17px !important; gap: 10px !important; }
 }
 
 /* Homepage refinement following iPhone visual review: fewer nested boxes,
@@ -124,4 +124,11 @@ header:has(> div > .bs-brand-link) > div { min-width: 0; }
 @media(max-width: 359px) {
   .v3-home .home-hero-actions { grid-template-columns: minmax(0,1fr); }
   .v3-home .home-hero .hero-action { min-height: 44px; }
+}
+
+/* Keep the wordmark and hamburger apart even on 320px phones. */
+@media (max-width: 359px) {
+  .bs-brand--new { gap: 7px; }
+  .bs-brand--new .bs-brand__symbol { width: 24px; height: 35px; flex-basis: 24px; }
+  .bs-brand--new .bs-brand__name { font-size: 16px; }
 }
