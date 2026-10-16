@@ -75,6 +75,12 @@ export function LivePage() {
     });
   }, [card, board]);
 
+  const startedWithoutScore = matches.filter(m => {
+    const kickoffMs = Date.parse(m.kickoff || "");
+    if (!Number.isFinite(kickoffMs) || Date.now() < kickoffMs + 10 * 60 * 1000) return false;
+    const s = board?.scores[m.match_id];
+    return s?.home_score == null || s?.away_score == null;
+  }).length;
   const liveCount = matches.filter(m => board?.scores[m.match_id]?.live && !board?.scores[m.match_id]?.stale).length;
   const scored = matches.filter(m => {
     const s = board?.scores[m.match_id];
@@ -113,11 +119,20 @@ export function LivePage() {
         {board.refreshing ? " Refresh in progress." : ""}
       </p>}
       {loading && !board && <p className="bs-live-note">Checking matchday scores…</p>}
+      {board && startedWithoutScore > 0 && (
+        <p className="bs-live-note bs-live-note--coverage" role="status">
+          Live score feed unavailable for {startedWithoutScore} published
+          {startedWithoutScore === 1 ? " fixture" : " fixtures"} that already kicked off.
+          This does not mean those matches were cancelled or left unsettled.
+          BetSightly's official Results page is checked separately against verified finals.
+        </p>
+      )}
       <div className="bs-live-board" aria-live="off">
         {matches.map(m => {
           const s = board?.scores[m.match_id];
           const haveScore = s?.home_score != null && s?.away_score != null;
-          const phase = s?.stale ? "Last observed · delayed" : s?.live ? "In play" : s?.finished ? "Final score reported" : "Awaiting score";
+          const started = Number.isFinite(Date.parse(m.kickoff || "")) && Date.now() >= Date.parse(m.kickoff || "") + 10 * 60 * 1000;
+          const phase = s?.stale ? "Last observed · delayed" : s?.live ? "In play" : s?.finished ? "Final score reported" : started ? "Score unavailable" : "Not started";
           return <article className={`bs-live-fixture${s?.stale ? " bs-live-fixture--stale" : ""}`} key={m.match_id}>
             <div className="bs-live-fixture-meta">
               <span>{m.league}</span>
