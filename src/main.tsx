@@ -4,6 +4,7 @@ import App from './App'
 import './index.css'
 import './styles/experience-v3.css'
 import './styles/experience-reference.css'
+import './styles/brand-option-b.css'
 import { analytics } from './services/analytics'
 import { applyAnalyticsPreferenceFromUrl } from './services/internalTraffic'
 
