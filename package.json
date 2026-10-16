@@ -18,7 +18,9 @@
     "optimize-images": "node scripts/optimize-images.js",
     "generate-pwa-icons": "node scripts/generate-pwa-icons.js",
     "optimize": "npm run optimize-images && npm run generate-pwa-icons",
-    "perf": "npm run optimize && npm run build"
+    "perf": "npm run optimize && npm run build",
+    "predev": "node scripts/generate-pwa-icons.js",
+    "prebuild": "node scripts/generate-pwa-icons.js"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.0.2",
