@@ -69,6 +69,40 @@ beforeEach(() => {
   });
 });
 
+test("V3 matchday panel shows only published fixtures and never invents a booking code", () => {
+  render(<HomePage />);
+  expect(screen.getByText("Today's matchday desk")).toBeInTheDocument();
+  expect(screen.getByText(/Home 1 vs Away 1/)).toBeInTheDocument();
+  expect(screen.getByText("Review availability")).toBeInTheDocument();
+  expect(screen.queryByText("Verified ticket odds")).not.toBeInTheDocument();
+});
+
+test("V3 matchday panel only calls a booking verified with an active code", () => {
+  const current = mockedPredictions();
+  mockedPredictions.mockReturnValue({
+    ...current,
+    data: {
+      ...current.data,
+      accumulators: {
+        ...current.data.accumulators,
+        "2_odds": {
+          ...current.data.accumulators["2_odds"],
+          booking: {
+            status: "active", lifecycle_status: "active", actionable: true,
+            share_code: "VALID123", actual_sportybet_odds: 2.21,
+          },
+        },
+      },
+    },
+  });
+  render(<HomePage />);
+  expect(screen.getByText("Bookmaker-verified code")).toBeInTheDocument();
+  expect(screen.getByText("Verified ticket odds")).toBeInTheDocument();
+  expect(screen.getByText("2.21x")).toBeInTheDocument();
+  expect(screen.getByRole("link", { name: /review slip and code/i }))
+    .toHaveAttribute("href", "#todays-picks");
+});
+
 test("hero links directly to today's booking code section", () => {
   render(<HomePage />);
   expect(screen.getByRole("link", {name:/see today.s picks & codes/i})).toHaveAttribute("href","#todays-picks");

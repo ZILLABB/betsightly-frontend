@@ -1,13 +1,13 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Home, Target, Settings, RefreshCw, Sliders } from "lucide-react";
+import { Home, Target, BarChart2, RefreshCw, Sliders } from "lucide-react";
 
 const NAV = [
   { path:"/", label:"Home", icon:Home },
   { path:"/predictions", label:"Picks", icon:Target },
-  { path:"/rollover", label:"Rollover", icon:RefreshCw },
   { path:"/build-slip", label:"Build", icon:Sliders },
-  { path:"/settings", label:"Settings", icon:Settings },
+  { path:"/results", label:"Results", icon:BarChart2 },
+  { path:"/rollover", label:"Rollover", icon:RefreshCw },
 ];
 
 export function BottomNav() {
@@ -24,14 +24,14 @@ export function BottomNav() {
         borderTop:"1px solid var(--border)",
         display:"flex", alignItems:"center",
         padding:"8px 0 max(8px, env(safe-area-inset-bottom))",
-      }} className="bottom-nav">
+      }} className="bottom-nav bottom-nav--v3" aria-label="Quick navigation">
         {NAV.map(({ path, label, icon: Icon }) => {
           const active = isActive(path);
           const isWC = false;
           const activeColor = isWC ? "#f59e0b" : "var(--brand)";
           const activeBg = isWC ? "rgba(245,158,11,0.12)" : "var(--brand-faint)";
           return (
-            <Link key={path} to={path} style={{
+            <Link key={path} to={path} aria-current={active ? "page" : undefined} style={{
               flex:1, display:"flex", flexDirection:"column", alignItems:"center", gap:4,
               textDecoration:"none", padding:"4px 0", transition:"all 180ms ease",
             }}>

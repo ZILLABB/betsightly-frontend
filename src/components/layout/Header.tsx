@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Menu, X, Home, Target, BarChart2, RefreshCw, Settings, Users, Sliders, Radio } from "lucide-react";
 
-/* Official WC26 emblem as a nav icon — theme-conditional variant */
+/* The navigation is competition-neutral, reflecting the current fixture calendar. */
 
 const NAV = [
   { path:"/", label:"Home", icon:Home },
@@ -64,11 +64,10 @@ export function Header() {
           <nav aria-label="Main navigation" style={{ display:"flex", alignItems:"center", gap:2, flex:1, justifyContent:"center" }} className="hidden-mobile">
             {NAV.map(({ path, label }) => {
               const active = isActive(path);
-              const isWC = false;
-              const activeColor = isWC ? "#f59e0b" : "var(--brand)";
-              const activeBg = isWC ? "rgba(245,158,11,0.08)" : "var(--brand-faint)";
+              const activeColor = "var(--brand)";
+              const activeBg = "var(--brand-faint)";
               return (
-                <Link key={path} to={path} style={{
+                <Link key={path} to={path} aria-current={active ? "page" : undefined} style={{
                   padding:"7px 14px", borderRadius:8,
                   fontFamily:"var(--font-body)", fontSize:14, fontWeight:500,
                   textDecoration:"none", transition:"all 180ms ease",
@@ -84,8 +83,8 @@ export function Header() {
             })}
           </nav>
 
-          <div className="hidden-mobile header-live-pill" aria-label="Prediction service status">
-            <Radio size={13} /> Live
+          <div className="hidden-mobile header-live-pill" aria-label="Matchday navigation">
+            <Radio size={13} /> Matchday
           </div>
 
           {/* Mobile toggle */}
