@@ -47,7 +47,7 @@ header:has(> div > .bs-brand-link) > div { min-width: 0; }
   background:
     linear-gradient(115deg,rgba(3,17,13,.87),rgba(3,17,13,.75)),
     linear-gradient(0deg,#041611,transparent 80%),
-    url("https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/Well_lit_soccer_stadium_%28Unsplash%29.jpg/1280px-Well_lit_soccer_stadium_%28Unsplash%29.jpg") center 60%/cover;
+    url("https://thumb.wikimedia.org/wikipedia/commons/thumb/2/2f/Well_lit_soccer_stadium_%28Unsplash%29.jpg/1280px-Well_lit_soccer_stadium_%28Unsplash%29.jpg") center 60%/cover;
 }
 .v3-home .home-hero .home-competition-spotlight {
   border-left: 3px solid var(--brand);
@@ -75,7 +75,7 @@ header:has(> div > .bs-brand-link) > div { min-width: 0; }
     opacity: .29;
     background:
       linear-gradient(180deg,rgba(2,15,11,.65),rgba(3,21,15,.95) 70%),
-      url("https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/Well_lit_soccer_stadium_%28Unsplash%29.jpg/1280px-Well_lit_soccer_stadium_%28Unsplash%29.jpg") center 68%/cover;
+      url("https://thumb.wikimedia.org/wikipedia/commons/thumb/2/2f/Well_lit_soccer_stadium_%28Unsplash%29.jpg/1280px-Well_lit_soccer_stadium_%28Unsplash%29.jpg") center 68%/cover;
   }
   .v3-home .home-hero .market-status {
     font-size: 10px; min-height: 30px;
