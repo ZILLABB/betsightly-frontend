@@ -385,3 +385,5 @@ body { background-color: var(--bg); }
 @media(prefers-reduced-motion: reduce) {
  .v3-page .pred-card,.v3-page .v3-link { transition: none !important; }
 }
+
+.v3-results-overview dd { order: -1; }
