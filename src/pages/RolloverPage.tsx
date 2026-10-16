@@ -191,7 +191,7 @@ export function RolloverPage() {
               ? lostDays > 0
                 ? `${fmtOdds(cumOdds)}${oddsSuffix} was scheduled across ${chain.length} days.`
                 : `${fmtOdds(cumOdds)}${oddsSuffix} compounded only if every scheduled day lands.`
-              : `Targets 2x–3x per qualifying day.`}
+              : `Bookmaker-verified stages generally target 2x–4x. Daily eligibility is evidence-dependent.`}
           </p>
         </section>
       )}
