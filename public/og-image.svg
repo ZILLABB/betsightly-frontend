@@ -23,7 +23,7 @@
   <rect width="1200" height="630" fill="url(#bg)"/>
   <rect width="1200" height="630" fill="url(#glow)"/>
 
-  <!-- Top gold accent line -->
+  <!-- Emerald brand accent line -->
   <rect x="0" y="0" width="1200" height="4" fill="url(#gold)"/>
 
   <!-- Decorative grid -->
@@ -58,9 +58,11 @@
 
   <!-- Bottom row with brand + stats -->
   <g transform="translate(90, 530)">
-    <!-- BetSightly logotype -->
-    <text font-family="'Clash Display', 'Plus Jakarta Sans', sans-serif"
-          font-size="36" font-weight="800" fill="#eaeaf0">BetSightly</text>
+    <!-- Option B wordmark: crisp type, correct contrasting BET + emerald SIGHTLY -->
+    <text x="0" y="0" font-family="'Plus Jakarta Sans', Arial, sans-serif"
+          font-size="38" font-weight="900" fill="#f4fcf7" letter-spacing="-2">BET</text>
+    <text x="82" y="0" font-family="'Plus Jakarta Sans', Arial, sans-serif"
+          font-size="38" font-weight="900" fill="#25e69b" letter-spacing="-2">SIGHTLY</text>
 
     <!-- Right side stats -->
     <g transform="translate(700, 0)">
