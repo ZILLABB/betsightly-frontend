@@ -290,6 +290,34 @@ export function HomePage() {
         <JoinTelegram variant="card" />
       </div>
 
+      <section className="bs-matchday-strip" aria-labelledby="bs-matchday-strip-heading">
+        <div className="bs-matchday-strip__heading">
+          <div>
+            <span className="v3-kicker">Daily publishing desk</span>
+            <h2 id="bs-matchday-strip-heading">Today's published slips</h2>
+          </div>
+          <Link to="/predictions">View all <ArrowRight size={14} aria-hidden="true" /></Link>
+        </div>
+        <div className="bs-matchday-strip__grid">
+          {(["banker", "2_odds", "5_odds", "10_odds"] as CategoryKey[]).map(key => {
+            const tier = accumulators?.[key];
+            const booked = isVerifiedBooking(tier);
+            const price = tier?.booking?.actual_sportybet_odds;
+            const displayOdds = booked && typeof price === "number" &&
+              Number.isFinite(price) && price > 1 ? `${fmtOdds(price)}${oddsSuffix}` : "—";
+            return (
+              <a className="bs-matchday-strip__item" href="#todays-picks" key={key}
+                 onClick={() => setActiveKey(key)}
+                 aria-label={`Review ${CATEGORIES.find(c => c.key === key)?.label ?? key} selections`}>
+                <span>{CATEGORIES.find(c => c.key === key)?.label ?? key}</span>
+                <strong>{displayOdds}</strong>
+                <small>{booked ? "Verify booking code" : "Check availability"} <ArrowRight size={12} aria-hidden="true" /></small>
+              </a>
+            );
+          })}
+        </div>
+      </section>
+
       {/* Stats row */}
       <div className="metric-grid">
         <StatBubble label="Selections across tiers" value={loading ? "—" : String(totalGames)} icon={<Target size={17} color="var(--brand)" />} color="var(--brand)" />
