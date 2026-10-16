@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Activity, ArrowRight, CircleCheck, Flame, RefreshCw, Shield, Sliders, Target, TrendingUp } from "lucide-react";
+import { Activity, ArrowRight, CircleCheck, RefreshCw, Shield, Sliders, Target, TrendingUp } from "lucide-react";
 import { usePredictions } from "../hooks/usePredictions";
 import { useFormatOdds } from "../hooks/useFormatOdds";
 import { useActionableCard } from "../hooks/useActionableCard";
@@ -16,7 +16,8 @@ import { BrandLoader } from "../components/ui/BrandLoader";
 import { CATEGORIES } from "../types";
 import { SEO } from "../components/common/SEO";
 import type { CategoryKey } from "../types";
-import { api } from "../api/predictions";
+import { api, type HomeCampaign } from "../api/predictions";
+import { publishedCardCounts } from "../utils/publishedCardCounts";
 import { competitionSpotlight, type CompetitionSpotlight } from "../utils/competitionSpotlight";
 
 function StatBubble({ label, value, icon, color }: { label: string; value: string; icon: React.ReactNode; color: string }) {
@@ -66,9 +67,13 @@ export function HomePage() {
   const [activeKey, setActiveKey] = useState<CategoryKey>("2_odds");
   const [spinning, setSpinning] = useState(false);
   const [spotlight, setSpotlight] = useState<CompetitionSpotlight | null>(null);
+  const [campaign, setCampaign] = useState<HomeCampaign | null>(null);
   useEffect(() => {
     let alive = true;
     const refreshSpotlight = () => {
+      api.getHomeCampaign().then(response => {
+        if (alive) setCampaign(response.status === "success" ? response.campaign : null);
+      }).catch(() => { if (alive) setCampaign(null); });
       api.getFixtureCompetitionSchedule()
         .then(board => {
           if (alive) setSpotlight(
@@ -114,9 +119,7 @@ export function HomePage() {
       ) as Partial<Record<CategoryKey, number>>
     : {};
 
-  const totalGames = accumulators
-    ? CATEGORIES.reduce((s, c) => s + (accumulators[c.key]?.games?.length ?? 0), 0)
-    : 0;
+  const { selections: totalGames, uniqueFixtures } = publishedCardCounts(accumulators);
 
   // Manual editorial picks deliberately have no model confidence. Do not
   // include unscored, missing, invalid or non-finite values in the average.
@@ -146,7 +149,9 @@ export function HomePage() {
 
   return (
     <div className="page-stack" style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-      <SEO path="/" />
+      <SEO path="/" description={campaign
+        ? `${campaign.headline}. ${campaign.description} Football predictions and transparently tracked results.`
+        : undefined} />
       <WelcomeBanner />
 
       {/* Product hero */}
@@ -168,17 +173,19 @@ export function HomePage() {
             Curated football picks and accumulators backed by real bookmaker odds and statistical
             analysis, with every published result tracked transparently.
           </p>
-          {spotlight && (
+          {(campaign || spotlight) && (
             <div className="home-competition-spotlight" role="status" aria-live="polite">
-              <span className="home-competition-spotlight__label">{spotlight.label}</span>
-              <strong>{spotlight.headline}</strong>
-              <span>{spotlight.description} Picks are published only when they meet our usual verification checks.</span>
+              <span className="home-competition-spotlight__label">{campaign?.eyebrow || spotlight?.label}</span>
+              <strong>{campaign?.headline || spotlight?.headline}</strong>
+              <span>{campaign?.description || spotlight?.description} Picks are published only when they meet our usual verification checks.</span>
+              {campaign && <Link className="home-competition-spotlight__cta"
+                to={campaign.cta_path}>{campaign.cta_text || "View predictions"} <ArrowRight size={13} aria-hidden="true" /></Link>}
             </div>
           )}
           <div className="home-hero-actions">
-            <Link to="/predictions" className="hero-action hero-action-primary">
-              Explore today&apos;s picks <ArrowRight size={16} />
-            </Link>
+            <a href="#todays-picks" className="hero-action hero-action-primary">
+              See today&apos;s picks &amp; codes <ArrowRight size={16} />
+            </a>
             <Link to="/build-slip" className="hero-action hero-action-secondary">
               <Sliders size={16} /> Build a slip
             </Link>
@@ -221,7 +228,7 @@ export function HomePage() {
 
       {/* Stats row */}
       <div className="metric-grid">
-        <StatBubble label="Picks today" value={loading ? "—" : String(totalGames)} icon={<Target size={17} color="var(--brand)" />} color="var(--brand)" />
+        <StatBubble label="Selections across tiers" value={loading ? "—" : String(totalGames)} icon={<Target size={17} color="var(--brand)" />} color="var(--brand)" />
         <StatBubble label="Confidence" value={loading ? "—" : confidenceLabel} icon={<Shield size={17} color="var(--green)" />} color="var(--green)" />
         <StatBubble
           label={isSingles ? "Independent picks" : "Top odds"}
@@ -233,7 +240,7 @@ export function HomePage() {
           icon={<TrendingUp size={17} color="var(--blue)" />}
           color="var(--blue)"
         />
-        <StatBubble label="Categories" value={String(CATEGORIES.length)} icon={<Flame size={17} color="var(--gold)" />} color="var(--gold)" />
+        <StatBubble label="Unique matches" value={loading ? "—" : String(uniqueFixtures)} icon={<Target size={17} color="var(--gold)" />} color="var(--gold)" />
       </div>
 
       {actionable.needsReplacement && (
@@ -324,8 +331,8 @@ export function HomePage() {
         </div>
       )}
 
-      {/* Tabs + content */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      {/* Tabs + verified SportyBet booking code, reachable from the hero. */}
+      <div id="todays-picks" className="home-picks-anchor" style={{ display: "flex", flexDirection: "column", gap: 20 }}>
         <CategoryTabs active={activeKey} onChange={setActiveKey} oddsMap={oddsMap} singlesMap={singlesMap} />
 
         {/* Category header */}
