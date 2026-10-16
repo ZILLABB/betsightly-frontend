@@ -1,7 +1,8 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { HomePage } from "./HomePage";
 import { usePredictions } from "../hooks/usePredictions";
+import { api } from "../api/predictions";
 
 jest.mock("../hooks/usePredictions", () => ({ usePredictions: jest.fn() }));
 jest.mock("../api/predictions", () => ({
@@ -143,4 +144,23 @@ test("homepage averages only valid model probabilities, not unscored or malforme
   render(<HomePage />);
   expect(screen.getAllByText("80%")).toHaveLength(2);
   expect(screen.queryByText("NaN%")).not.toBeInTheDocument();
+});
+
+test("homepage highlights Champions League based on prepared fixtures only", async () => {
+  (api.getFixtureCompetitionSchedule as jest.Mock).mockResolvedValueOnce({
+    status: "success",
+    total: 19,
+    leagues: [{ slug: "uefa.champions", name: "UEFA Champions League", count: 19 }],
+  });
+  render(<HomePage />);
+  expect(await screen.findByText("Champions League week")).toBeInTheDocument();
+  expect(screen.getByText(/Picks are published only when they meet/)).toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: /Today.s Smart Picks/i })).toBeInTheDocument();
+});
+
+test("homepage leaves original hero alone if no reliable event calendar", async () => {
+  (api.getFixtureCompetitionSchedule as jest.Mock).mockRejectedValueOnce(new Error("offline"));
+  render(<HomePage />);
+  await waitFor(() => expect(api.getFixtureCompetitionSchedule).toHaveBeenCalled());
+  expect(screen.queryByText(/World Cup fixtures ahead|Champions League week/)).not.toBeInTheDocument();
 });
