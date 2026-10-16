@@ -513,6 +513,10 @@ export default function SlipBuilderPage() {
           <div><strong>Verify</strong><small>Check SportyBet code</small></div>
         </li>
       </ol>
+      <section id="builder-controls" aria-label="Choose slip settings">
+        <BuilderV2Controls />
+      </section>
+
       <details className="v3-privacy" data-testid="builder-privacy-disclosure">
         <summary>Private ticket history <span>How it works</span></summary>
         <p>
@@ -523,9 +527,7 @@ export default function SlipBuilderPage() {
         </p>
       </details>
 
-      <section id="builder-controls" aria-label="Choose slip settings">
-        <BuilderV2Controls />
-      </section>
+
 
       {error && (
         <div className="builder-message builder-message--error" role="alert">
