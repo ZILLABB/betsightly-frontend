@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Activity, ArrowRight, CircleCheck, Flame, RefreshCw, Shield, Sliders, Target, TrendingUp } from "lucide-react";
 import { usePredictions } from "../hooks/usePredictions";
@@ -16,6 +16,8 @@ import { BrandLoader } from "../components/ui/BrandLoader";
 import { CATEGORIES } from "../types";
 import { SEO } from "../components/common/SEO";
 import type { CategoryKey } from "../types";
+import { api } from "../api/predictions";
+import { competitionSpotlight, type CompetitionSpotlight } from "../utils/competitionSpotlight";
 
 function StatBubble({ label, value, icon, color }: { label: string; value: string; icon: React.ReactNode; color: string }) {
   return (
@@ -63,6 +65,26 @@ export function HomePage() {
   const { data, loading, error, refetch } = usePredictions();
   const [activeKey, setActiveKey] = useState<CategoryKey>("2_odds");
   const [spinning, setSpinning] = useState(false);
+  const [spotlight, setSpotlight] = useState<CompetitionSpotlight | null>(null);
+  useEffect(() => {
+    let alive = true;
+    const refreshSpotlight = () => {
+      api.getFixtureCompetitionSchedule()
+        .then(board => {
+          if (alive) setSpotlight(
+            board.status === "success" ? competitionSpotlight(board.leagues) : null
+          );
+        })
+        .catch(() => {
+          // A missing prepared weekly board is not evidence of an upcoming event.
+          if (alive) setSpotlight(null);
+        });
+    };
+    refreshSpotlight();
+    const timer = window.setInterval(refreshSpotlight, 30 * 60 * 1000);
+    return () => { alive = false; window.clearInterval(timer); };
+  }, []);
+
   const { formatOdds: fmtOdds, oddsSuffix } = useFormatOdds();
 
   const published = data?.accumulators;
@@ -140,6 +162,13 @@ export function HomePage() {
             Curated football picks and accumulators backed by real bookmaker odds and statistical
             analysis, with every published result tracked transparently.
           </p>
+          {spotlight && (
+            <div className="home-competition-spotlight" role="status" aria-live="polite">
+              <span className="home-competition-spotlight__label">{spotlight.label}</span>
+              <strong>{spotlight.headline}</strong>
+              <span>{spotlight.description} Picks are published only when they meet our usual verification checks.</span>
+            </div>
+          )}
           <div className="home-hero-actions">
             <Link to="/predictions" className="hero-action hero-action-primary">
               Explore today&apos;s picks <ArrowRight size={16} />
