@@ -99,23 +99,38 @@ export function RolloverPage() {
   const cumOdds = rollover?.cumulative_odds ?? rollover?.total_odds ?? 0;
 
   return (
-    <div className="page-stack rollover-page" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+    <div className="page-stack rollover-page v3-page v3-rollover" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <SEO title="Rollover Challenge" description="3-day rollover challenge using evidence-backed daily picks. Every leg must land for the chain to continue." path="/rollover" />
-      {/* Header */}
-      <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
-        <div style={{ width: 48, height: 48, borderRadius: 12, background: catMeta.faint, border: `1px solid ${catMeta.color}33`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-          <Repeat2 size={22} color={catMeta.color} />
-        </div>
-        <div>
-          <div className="eyebrow" style={{ marginBottom: 6 }}>{targetDays}-day evidence challenge</div>
-          <h1 style={{ fontSize: 30, fontWeight: 800 }}>Rollover</h1>
-          <p style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text-3)", marginTop: 4, maxWidth: 560, lineHeight: 1.6 }}>
-            The engine selects evidence-backed picks. When no qualifying stage is
-            available, an admin can publish a separately labelled bookmaker-verified
-            selection targeting 2x–4x. Every leg must land to advance and no result is guaranteed.
+      <header className="bs-rollover-hero">
+        <div className="bs-rollover-hero__copy">
+          <span className="eyebrow">${targetDays}-day evidence challenge</span>
+          <h1>Rollover</h1>
+          <p>
+            Follow the verified daily selections toward a ${targetDays}-day chain.
+            Missing or unverified stages are never presented as wins. Admin-curated
+            selections remain separate from model calibration.
           </p>
         </div>
-      </div>
+        <div className="bs-rollover-hero__icon" aria-hidden="true">
+          <Repeat2 size={35}/>
+        </div>
+      </header>
+      <ol className="bs-rollover-timeline" aria-label="Rollover chain progress">
+        {Array.from({ length: targetDays }, (_, index) => {
+          const day = chain.find(item => item.day_number === index + 1);
+          const state = day?.status ?? "future";
+          const active = day?.status === "pending";
+          const statusText = state === "won" ? "Won" :
+            state === "lost" ? "Lost" : state === "void" ? "Void" :
+            active ? "Awaiting final" : "Not published";
+          return (
+            <li key={index} className={`is-${state}${active ? " is-active" : ""}`}>
+              <span className="bs-rollover-timeline__step">{index + 1}</span>
+              <div><strong>Day {index + 1}</strong><small>{statusText}</small></div>
+            </li>
+          );
+        })}
+      </ol>
 
       {/* Compact chain summary */}
       {chain.length > 0 && (
