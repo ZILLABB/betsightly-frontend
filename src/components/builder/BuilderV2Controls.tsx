@@ -571,7 +571,7 @@ export function BuilderV2Controls() {
     <section className="builder-config builder-v2-config" aria-labelledby="builder-config-title">
       <div className="builder-v2-heading">
         <div>
-          <span className="builder-eyebrow">Builder V2</span>
+          <span className="builder-eyebrow">Configure your slip</span>
           <h2 id="builder-config-title">Choose how you want to build</h2>
         </div>
         <p>Structure is your choice. Quality and exact SportyBet bookability stay enforced.</p>
