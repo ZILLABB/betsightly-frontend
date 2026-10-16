@@ -83,7 +83,7 @@ export function Header() {
             })}
           </nav>
 
-          <div className="hidden-mobile header-live-pill" aria-label="Prediction service status">
+          <div className="hidden-mobile header-live-pill" aria-label="Matchday navigation">
             <Radio size={13} /> Matchday
           </div>
 
