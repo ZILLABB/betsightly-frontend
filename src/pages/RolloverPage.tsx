@@ -103,10 +103,10 @@ export function RolloverPage() {
       <SEO title="Rollover Challenge" description="3-day rollover challenge using evidence-backed daily picks. Every leg must land for the chain to continue." path="/rollover" />
       <header className="bs-rollover-hero">
         <div className="bs-rollover-hero__copy">
-          <span className="eyebrow">${targetDays}-day evidence challenge</span>
+          <span className="eyebrow">{targetDays}-day evidence challenge</span>
           <h1>Rollover</h1>
           <p>
-            Follow the verified daily selections toward a ${targetDays}-day chain.
+            Follow the verified daily selections toward a {targetDays}-day chain.
             Missing or unverified stages are never presented as wins. Admin-curated
             selections remain separate from model calibration.
           </p>
