@@ -85,7 +85,7 @@ body { background-color: var(--bg); }
   background:
     linear-gradient(90deg,rgba(1,14,11,.96) 0%,rgba(2,20,14,.78) 48%,rgba(3,17,13,.63) 100%),
     linear-gradient(0deg,rgba(2,18,12,.9),transparent 58%),
-    url("https://commons.wikimedia.org/wiki/Special:FilePath/Well_lit_soccer_stadium_%28Unsplash%29.jpg?width=1280") center 54%/cover;
+    url("https://thumb.wikimedia.org/wikipedia/commons/thumb/2/2f/Well_lit_soccer_stadium_%28Unsplash%29.jpg/1280px-Well_lit_soccer_stadium_%28Unsplash%29.jpg") center 54%/cover;
 }
 .v3-home .home-hero-copy { position: relative; z-index: 1; align-self: center; }
 .v3-home .home-hero .market-status {
@@ -152,7 +152,7 @@ body { background-color: var(--bg); }
   width: 54%; opacity: .22;
   background:
     linear-gradient(90deg,#071b14 0%,transparent 65%),
-    url("https://commons.wikimedia.org/wiki/Special:FilePath/Well_lit_soccer_stadium_%28Unsplash%29.jpg?width=1280") center/cover;
+    url("https://thumb.wikimedia.org/wikipedia/commons/thumb/2/2f/Well_lit_soccer_stadium_%28Unsplash%29.jpg/1280px-Well_lit_soccer_stadium_%28Unsplash%29.jpg") center/cover;
 }
 .v3-predictions .predictions-hero h1 { color: #f8fff9; font-size: clamp(32px,4.3vw,54px) !important; }
 .v3-predictions .predictions-hero .eyebrow { color: #2cec9b; }
@@ -345,7 +345,7 @@ body { background-color: var(--bg); }
     opacity: .79;
     background:
       linear-gradient(180deg,rgba(0,15,10,.36),rgba(0,16,13,.91) 65%,rgba(0,16,13,.97)),
-      url("https://commons.wikimedia.org/wiki/Special:FilePath/Well_lit_soccer_stadium_%28Unsplash%29.jpg?width=1280") center top/cover;
+      url("https://thumb.wikimedia.org/wikipedia/commons/thumb/2/2f/Well_lit_soccer_stadium_%28Unsplash%29.jpg/1280px-Well_lit_soccer_stadium_%28Unsplash%29.jpg") center top/cover;
   }
   .v3-home .home-hero h1 { font-size: clamp(38px,10vw,53px) !important; margin-top: 18px; }
   .v3-home .home-hero-copy > p { font-size: 13px; line-height: 1.6; }
