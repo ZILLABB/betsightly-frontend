@@ -98,7 +98,9 @@ test("V3 matchday panel only calls a booking verified with an active code", () =
   render(<HomePage />);
   expect(screen.getByText("Bookmaker-verified code")).toBeInTheDocument();
   expect(screen.getByText("Verified ticket odds")).toBeInTheDocument();
-  expect(screen.getByText("2.21x")).toBeInTheDocument();
+  expect(screen.getAllByText("2.21x").length).toBeGreaterThanOrEqual(2);
+  expect(screen.getByRole("link", { name: "Review 2 Odds selections" }))
+    .toHaveAttribute("href", "#todays-picks");
   expect(screen.getByRole("link", { name: /review slip and code/i }))
     .toHaveAttribute("href", "#todays-picks");
 });
@@ -235,4 +237,14 @@ test("homepage leaves original hero alone if no reliable event calendar", async 
   render(<HomePage />);
   await waitFor(() => expect(api.getFixtureCompetitionSchedule).toHaveBeenCalled());
   expect(screen.queryByText(/World Cup fixtures ahead|Champions League week/)).not.toBeInTheDocument();
+});
+
+test("published-slip shortcuts never present unverified bookmaker odds", () => {
+  render(<HomePage />);
+  const desk = screen.getByRole("region", {name:"Today's published slips"});
+  expect(desk).toBeInTheDocument();
+  expect(screen.getByRole("link", {name:"Review Banker selections"}))
+    .toHaveTextContent("Check availability");
+  expect(screen.getByRole("link", {name:"Review 2 Odds selections"}))
+    .not.toHaveTextContent("2.12x");
 });
