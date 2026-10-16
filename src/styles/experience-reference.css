@@ -387,3 +387,82 @@ body { background-color: var(--bg); }
 }
 
 .v3-results-overview dd { order: -1; }
+
+/* Tiny published-slip quick routes; only backend-verified bookmaker odds. */
+.bs-matchday-strip {
+  padding: clamp(16px,2vw,23px);
+  border: 1px solid var(--bs-outline);
+  border-radius: 18px;
+  background: linear-gradient(140deg,var(--surface),var(--bg-mid));
+}
+.bs-matchday-strip__heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 15px;
+}
+.bs-matchday-strip__heading h2 {
+  margin: 6px 0 0;
+  font: 750 clamp(19px,2.7vw,25px)/1.14 var(--font-display);
+  color: var(--text-1);
+}
+.bs-matchday-strip__heading a {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 44px;
+  color: var(--brand);
+  font: 750 12px/1.4 var(--font-body);
+  text-decoration: none;
+}
+.bs-matchday-strip__grid {
+  display: grid;
+  grid-template-columns: repeat(4,minmax(0,1fr));
+  gap: 10px;
+}
+.bs-matchday-strip__item {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  min-height: 116px;
+  padding: 15px;
+  border-radius: 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--bs-outline);
+  color: var(--text-1);
+  text-decoration: none;
+  transition: border-color .15s ease,background .15s ease;
+}
+.bs-matchday-strip__item:hover {
+  border-color: var(--brand);
+  background: var(--brand-faint);
+}
+.bs-matchday-strip__item span {
+  font: 700 12px/1.4 var(--font-body);
+  color: var(--text-2);
+}
+.bs-matchday-strip__item strong {
+  font: 800 22px/1 var(--font-mono);
+  color: var(--brand);
+}
+.bs-matchday-strip__item small {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font: 600 11px/1.4 var(--font-body);
+  color: var(--text-2);
+}
+@media(max-width:767px){
+ .bs-matchday-strip { padding:14px; }
+ .bs-matchday-strip__grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+ .bs-matchday-strip__item { min-height:93px; padding:11px; gap:4px; }
+ .bs-matchday-strip__item strong { font-size:19px; }
+ .bs-matchday-strip__heading { margin-bottom:11px; }
+}
+/* At large text sizes, allow key counts to wrap without horizontal scrolling. */
+@media(max-width:360px){
+ .bs-brand__name { font-size:17px; }
+ .bs-matchday-strip__item small { font-size:10px; }
+}
