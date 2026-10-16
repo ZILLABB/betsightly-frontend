@@ -504,11 +504,11 @@ export default function SlipBuilderPage() {
           <span className="v3-steps__number">01</span>
           <div><strong>Choose</strong><small>Target and markets</small></div>
         </li>
-        <li className={!slip ? "" : bookableBooking?.status === "active" ? "is-complete" : "is-active"}>
+        <li className={!slip ? "" : displayedBooking?.status === "active" && displayedBooking.actionable !== false && !!displayedBooking.share_code ? "is-complete" : "is-active"}>
           <span className="v3-steps__number">02</span>
           <div><strong>Build</strong><small>Review qualifying picks</small></div>
         </li>
-        <li className={bookableBooking?.status === "active" ? "is-active" : ""}>
+        <li className={displayedBooking?.status === "active" && displayedBooking.actionable !== false && !!displayedBooking.share_code ? "is-active" : ""}>
           <span className="v3-steps__number">03</span>
           <div><strong>Verify</strong><small>Check SportyBet code</small></div>
         </li>
