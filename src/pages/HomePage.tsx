@@ -128,14 +128,19 @@ export function HomePage() {
     (!tier.booking.lifecycle_status || tier.booking.lifecycle_status === "active") &&
     tier.booking.share_code
   );
+  // Matchday editorial priority: modest accumulator first, then Banker and
+  // independently published goal singles; never promote 10x just for drama.
+  const featureOrder: CategoryKey[] = [
+    "2_odds", "banker", "over_1_5", "5_odds", "rollover", "10_odds",
+  ];
   const featuredKey: CategoryKey | undefined =
-    CATEGORIES.find(c => {
-      const tier = accumulators?.[c.key];
+    featureOrder.find(key => {
+      const tier = accumulators?.[key];
       return tier?.selected && tier.games?.length > 0 && isVerifiedBooking(tier);
-    })?.key ?? CATEGORIES.find(c => {
-      const tier = accumulators?.[c.key];
+    }) ?? featureOrder.find(key => {
+      const tier = accumulators?.[key];
       return tier?.selected && tier.games?.length > 0;
-    })?.key;
+    });
   const featuredTier = featuredKey ? accumulators?.[featuredKey] : undefined;
   const featuredMeta = CATEGORIES.find(c => c.key === featuredKey);
   const featuredBookable = isVerifiedBooking(featuredTier);
