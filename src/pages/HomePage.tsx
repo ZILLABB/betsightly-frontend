@@ -144,9 +144,10 @@ export function HomePage() {
   const featuredTier = featuredKey ? accumulators?.[featuredKey] : undefined;
   const featuredMeta = CATEGORIES.find(c => c.key === featuredKey);
   const featuredBookable = isVerifiedBooking(featuredTier);
+  const bookedPrice = featuredTier?.booking?.actual_sportybet_odds;
   const featuredOdds = featuredBookable && featuredTier?.presentation !== "singles" &&
-    typeof featuredTier?.total_odds === "number" && Number.isFinite(featuredTier.total_odds) &&
-    featuredTier.total_odds > 1 ? featuredTier.total_odds : null;
+    typeof bookedPrice === "number" && Number.isFinite(bookedPrice) &&
+    bookedPrice > 1 ? bookedPrice : null;
 
 
   // Manual editorial picks deliberately have no model confidence. Do not
