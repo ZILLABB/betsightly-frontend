@@ -120,6 +120,14 @@ export function ResultsPage() {
 
       <ResultsHero range={range} onRangeChange={setRange} refreshing={refreshing} onRefresh={refresh} lastUpdated={lastUpdated} />
 
+      <dl className="v3-results-overview" aria-label="Official settled accumulator record">
+        <div><dd className="is-positive">{results?.totals?.slips?.won ?? "—"}</dd><dt>Won</dt></div>
+        <div><dd className="is-negative">{results?.totals?.slips?.lost ?? "—"}</dd><dt>Lost</dt></div>
+        <div><dd>{results?.totals?.slips?.pending ?? "—"}</dd><dt>Pending</dt></div>
+        <div><dd>{results?.totals?.slips?.win_rate != null
+          ? `${Math.round(results.totals.slips.win_rate * 100)}%` : "—"}</dd><dt>Slip win rate</dt></div>
+      </dl>
+
       <div className="v3-source-note" role="note">
         <div><strong>Two transparent result records</strong>
           <span> · Engine selections count toward model metrics; admin-curated picks do not.</span>
