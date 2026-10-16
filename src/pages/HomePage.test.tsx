@@ -8,6 +8,7 @@ jest.mock("../hooks/usePredictions", () => ({ usePredictions: jest.fn() }));
 jest.mock("../api/predictions", () => ({
   api: {
     getBookableNow: jest.fn(),
+    getHomeCampaign: jest.fn().mockResolvedValue({status:"success",campaign:null}),
     getFixtureCompetitionSchedule: jest.fn().mockResolvedValue({
       status: "success", total: 0, leagues: [],
     }),
@@ -66,6 +67,26 @@ beforeEach(() => {
       },
     },
   });
+});
+
+test("hero links directly to today's booking code section", () => {
+  render(<HomePage />);
+  expect(screen.getByRole("link", {name:/see today.s picks & codes/i})).toHaveAttribute("href","#todays-picks");
+  expect(document.getElementById("todays-picks")).toBeInTheDocument();
+});
+
+test("manual scheduled competition content takes priority over detected fixtures", async () => {
+  (api.getHomeCampaign as jest.Mock).mockResolvedValueOnce({
+    status: "success",
+    campaign: {
+      eyebrow: "European football", headline: "UCL special coverage",
+      description: "Verified weekly fixtures", cta_text: "Browse predictions",
+      cta_path: "/predictions", starts_on:"2026-10-16", ends_on:"2026-10-22",
+    },
+  });
+  render(<HomePage />);
+  expect(await screen.findByText("UCL special coverage")).toBeInTheDocument();
+  expect(screen.getByRole("link", {name:/browse predictions/i})).toHaveAttribute("href","/predictions");
 });
 
 test("homepage preserves accumulator odds and joint-probability copy", () => {
