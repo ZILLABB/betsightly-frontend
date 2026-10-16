@@ -251,3 +251,34 @@
     grid-column: 1;
   }
 }
+
+/* Main product journey: readable labels and full-size targets on small
+ * screens, retaining the existing BetSightly colours and panel hierarchy. */
+@media (max-width: 680px) {
+  .predictions-page .predictions-hero h1,
+  .builder-page .builder-hero h1 {
+    font-family: var(--font-display);
+    font-size: clamp(27px, 7vw, 35px) !important;
+    line-height: 1.1;
+  }
+  .predictions-page .predictions-hero .page-intro,
+  .builder-page .builder-hero p {
+    font-size: 13px !important;
+    line-height: 1.55 !important;
+  }
+  .predictions-page .eyebrow,
+  .builder-page .builder-eyebrow,
+  .builder-page .builder-proof {
+    font-size: 12px;
+    line-height: 1.4;
+  }
+  .builder-page :is(button, select, input),
+  .predictions-page :is(button, select, input) {
+    min-height: 44px;
+  }
+  .predictions-page .predictions-hero,
+  .builder-page .builder-hero {
+    border-radius: var(--radius-lg);
+    overflow-wrap: anywhere;
+  }
+}
