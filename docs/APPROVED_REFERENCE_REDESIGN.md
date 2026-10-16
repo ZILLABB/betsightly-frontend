@@ -27,7 +27,7 @@ made-up crest assets or guaranteed-win claims.
 
 The stadium in the hero is the historical *Well lit soccer stadium* photo
 by Mario Klassen, available from Wikimedia Commons / original Unsplash
-publication (2017) under the Unsplash licence:
+publication (2017) under the Creative Commons CC0 1.0 public-domain dedication:
 https://commons.wikimedia.org/wiki/File:Well_lit_soccer_stadium_(Unsplash).jpg
 
 The photographic treatment is atmospheric, does **not** purport to depict
