@@ -124,7 +124,7 @@ export function ResultsPage() {
         <div><strong>Two transparent result records</strong>
           <span> · Engine selections count toward model metrics; admin-curated picks do not.</span>
         </div>
-        <a href="#manual-results" onClick={() => setTab("manual")}>View manual results</a>
+        <button type="button" className="v3-source-action" onClick={() => setTab("manual")}>View manual results</button>
       </div>
             <nav className="results-tabs" aria-label="Results sections">
         <button type="button" className={tab === "products" ? "is-active" : ""} aria-pressed={tab === "products"} onClick={() => setTab("products")}>Product results</button>
