@@ -120,6 +120,29 @@ export function HomePage() {
     : {};
 
   const { selections: totalGames, uniqueFixtures } = publishedCardCounts(accumulators);
+  // Feature actual published selections. Prefer a still-actionable, verified
+  // SportyBet code. Never invent odds or a fixture when the board is thin.
+  const isVerifiedBooking = (tier: typeof activeCat) => Boolean(
+    tier?.booking?.status === "active" &&
+    tier.booking.actionable !== false &&
+    (!tier.booking.lifecycle_status || tier.booking.lifecycle_status === "active") &&
+    tier.booking.share_code
+  );
+  const featuredKey: CategoryKey | undefined =
+    CATEGORIES.find(c => {
+      const tier = accumulators?.[c.key];
+      return tier?.selected && tier.games?.length > 0 && isVerifiedBooking(tier);
+    })?.key ?? CATEGORIES.find(c => {
+      const tier = accumulators?.[c.key];
+      return tier?.selected && tier.games?.length > 0;
+    })?.key;
+  const featuredTier = featuredKey ? accumulators?.[featuredKey] : null;
+  const featuredMeta = CATEGORIES.find(c => c.key === featuredKey);
+  const featuredBookable = isVerifiedBooking(featuredTier);
+  const featuredOdds = featuredBookable && featuredTier?.presentation !== "singles" &&
+    typeof featuredTier?.total_odds === "number" && Number.isFinite(featuredTier.total_odds) &&
+    featuredTier.total_odds > 1 ? featuredTier.total_odds : null;
+
 
   // Manual editorial picks deliberately have no model confidence. Do not
   // include unscored, missing, invalid or non-finite values in the average.
@@ -148,7 +171,7 @@ export function HomePage() {
   }, [refetch]);
 
   return (
-    <div className="page-stack" style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+    <div className="page-stack v3-page v3-home" style={{ display: "flex", flexDirection: "column", gap: 24 }}>
       <SEO path="/" description={campaign
         ? `${campaign.headline}. ${campaign.description} Football predictions and transparently tracked results.`
         : undefined} />
@@ -197,7 +220,42 @@ export function HomePage() {
           </div>
         </div>
 
-        <aside className="signal-panel" aria-label="Selection process">
+        <aside className="signal-panel" aria-label="Featured matchday slip and selection process">
+          <div className="v3-feature">
+            <div className="v3-feature__top">
+              <span className="v3-feature__label">Today's matchday desk</span>
+              <span className="v3-feature__state">
+                {featuredBookable ? "Bookmaker-verified code" :
+                  featuredTier ? "Review availability" : "Awaiting qualifying picks"}
+              </span>
+            </div>
+            <h2 className="v3-feature__name">
+              {featuredTier ? `${featuredMeta?.label ?? "Published"} ${featuredTier.presentation === "singles" ? "singles" : "slip"}`
+                : "No qualifying ticket yet"}
+            </h2>
+            <p className="v3-feature__fixture">
+              {featuredTier?.games?.length
+                ? `${featuredTier.games[0].home_team} vs ${featuredTier.games[0].away_team}${featuredTier.games.length > 1 ? ` · +${featuredTier.games.length - 1} more` : ""}`
+                : "Only verified, evidence-supported selections are published. No bet is guaranteed."}
+            </p>
+            <div className="v3-feature__foot">
+              {featuredOdds !== null && (
+                <span className="v3-feature__odds"><small>Verified ticket odds</small>
+                  {fmtOdds(featuredOdds)}{oddsSuffix}
+                </span>
+              )}
+              {featuredTier && featuredKey ? (
+                <a href="#todays-picks" className="v3-link v3-link--primary"
+                   onClick={() => setActiveKey(featuredKey)}>
+                  Review slip and code <ArrowRight size={15} aria-hidden="true" />
+                </a>
+              ) : (
+                <Link to="/build-slip" className="v3-link">Explore available fixtures
+                  <ArrowRight size={15} aria-hidden="true" />
+                </Link>
+              )}
+            </div>
+          </div>
           <div className="signal-panel-head">
             <div>
               <span>Selection engine</span>
