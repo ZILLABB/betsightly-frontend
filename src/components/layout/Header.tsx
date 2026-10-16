@@ -10,6 +10,7 @@ const NAV = [
   { path:"/predictions", label:"Predictions", icon:Target },
   { path:"/build-slip", label:"Build Slip", icon:Sliders },
   { path:"/results", label:"Results", icon:BarChart2 },
+  { path:"/live", label:"Live", icon:Radio },
   { path:"/rollover", label:"Rollover", icon:RefreshCw },
   { path:"/punters", label:"Punters", icon:Users },
   { path:"/settings", label:"Settings", icon:Settings },

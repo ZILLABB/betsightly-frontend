@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertCircle, Trophy } from "lucide-react";
+import { AlertCircle, Radio, Trophy } from "lucide-react";
+import { Link } from "react-router-dom";
 import { SEO } from "../components/common/SEO";
 import { BrandLoader } from "../components/ui/BrandLoader";
 import { useFormatOdds } from "../hooks/useFormatOdds";
@@ -119,6 +120,11 @@ export function ResultsPage() {
       />
 
       <ResultsHero range={range} onRangeChange={setRange} refreshing={refreshing} onRefresh={refresh} lastUpdated={lastUpdated} />
+
+      <div className="bs-live-results-link">
+        <span><Radio size={16} aria-hidden="true" /> Following today's football scores?</span>
+        <Link to="/live">See live matchday scores →</Link>
+      </div>
 
       <dl className="v3-results-overview" aria-label="Official settled accumulator record">
         <div><dt>Won</dt><dd className="is-positive">{results?.totals?.slips?.won ?? "—"}</dd></div>

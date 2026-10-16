@@ -19,6 +19,7 @@ import { trackProductEvent } from "./services/bookingTracking";
 
 // Everything else is lazy-loaded for smaller initial bundle
 const PredictionsPage = lazy(() => import("./pages/PredictionsPage").then(m => ({ default: m.PredictionsPage })));
+const LivePage = lazy(() => import("./pages/LivePage").then(m => ({ default: m.LivePage })));
 const ResultsPage = lazy(() => import("./pages/ResultsPage").then(m => ({ default: m.ResultsPage })));
 const RolloverPage = lazy(() => import("./pages/RolloverPage").then(m => ({ default: m.RolloverPage })));
 const SettingsPage = lazy(() => import("./pages/SettingsPage").then(m => ({ default: m.SettingsPage })));
@@ -71,6 +72,7 @@ export default function App() {
             <Route path="/predictions/:category" element={<PredictionsPage />} />
             <Route path="/build-slip" element={<SlipBuilderPage />} />
             <Route path="/results" element={<ResultsPage />} />
+            <Route path="/live" element={<LivePage />} />
             <Route path="/rollover" element={<RolloverPage />} />
             <Route path="/punters" element={<PuntersPage />} />
             <Route path="/punters/:id" element={<PunterDetailPage />} />
