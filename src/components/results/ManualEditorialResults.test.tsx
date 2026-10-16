@@ -29,6 +29,11 @@ test("manual 5 Odds settles separately with exact leg outcome and evidence", asy
   expect(screen.getByText("FT 0–1")).toBeInTheDocument();
   expect(screen.getByText(/not included/i)).toBeInTheDocument();
   expect(screen.getByText(/Lost · Admin-curated/i)).toBeInTheDocument();
+  const entry = screen.getByText(/Lost · Admin-curated/i).closest("details");
+  expect(entry).toHaveClass("history-item", "history-item--lost", "manual-history-item");
+  expect(screen.getByText("Arsenal vs Lille").closest(".result-leg")).toHaveClass("result-leg--lost");
+  expect(screen.getByText("Admin-curated · separate record")).toBeInTheDocument();
+
 });
 
 test("no manual ticket does not falsify model record", async () => {
