@@ -30,6 +30,9 @@ export function LivePage() {
       setError(false);
     } catch {
       setError(true);
+      setBoard(prev => prev ? { ...prev, stale: true, scores: Object.fromEntries(
+        Object.entries(prev.scores ?? {}).map(([key, value]) => [key, { ...value, stale: true }]),
+      ) } : prev);
     } finally {
       setLoading(false);
     }
