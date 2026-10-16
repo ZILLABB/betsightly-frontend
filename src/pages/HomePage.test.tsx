@@ -105,7 +105,7 @@ test("V3 matchday panel only calls a booking verified with an active code", () =
 
 test("hero links directly to today's booking code section", () => {
   render(<HomePage />);
-  expect(screen.getByRole("link", {name:/see today.s picks & codes/i})).toHaveAttribute("href","#todays-picks");
+  expect(screen.getByRole("link", {name:/view picks & codes/i})).toHaveAttribute("href","#todays-picks");
   expect(document.getElementById("todays-picks")).toBeInTheDocument();
 });
 
