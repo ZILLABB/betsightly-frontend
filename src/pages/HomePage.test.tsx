@@ -5,7 +5,12 @@ import { usePredictions } from "../hooks/usePredictions";
 
 jest.mock("../hooks/usePredictions", () => ({ usePredictions: jest.fn() }));
 jest.mock("../api/predictions", () => ({
-  api: { getBookableNow: jest.fn() },
+  api: {
+    getBookableNow: jest.fn(),
+    getFixtureCompetitionSchedule: jest.fn().mockResolvedValue({
+      status: "success", total: 0, leagues: [],
+    }),
+  },
 }));
 jest.mock("react-router-dom", () => ({
   Link: ({ children, to }: any) => <a href={to}>{children}</a>,
