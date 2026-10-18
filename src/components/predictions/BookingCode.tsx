@@ -175,7 +175,7 @@ export default function BookingCode({
                     display: "inline-flex", alignItems: "center", justifyContent: "center",
                     marginTop: 12, minHeight: 40, padding: "8px 14px", borderRadius: 7,
                     border: `1px solid ${category.color}`, background: category.color,
-                    color: "#fff", fontFamily: "var(--font-body)", fontSize: 13,
+                    color: "var(--bg)", fontFamily: "var(--font-body)", fontSize: 13,
                     fontWeight: 700, cursor: "pointer",
                   }}>
             {fallbackActionLabel}
@@ -231,7 +231,7 @@ export default function BookingCode({
         marginTop: 12,
         padding: "12px 14px",
         borderRadius: 8,
-        border: `1px solid ${category.color}33`,
+        border: `1px solid color-mix(in srgb, ${category.color} 25%, transparent)`,
         background: category.faint,
         display: "flex",
         alignItems: "center",
@@ -289,7 +289,7 @@ export default function BookingCode({
             padding: "8px 14px",
             minHeight: 40,
             borderRadius: 6,
-            border: `1px solid ${category.color}55`,
+            border: `1px solid color-mix(in srgb, ${category.color} 35%, transparent)`,
             background: "transparent",
             color: category.color,
             cursor: "pointer",
@@ -316,7 +316,7 @@ export default function BookingCode({
               justifyContent: "center",
               borderRadius: 6,
               background: category.color,
-              color: "#fff",
+              color: "var(--bg)",
               textDecoration: "none",
               whiteSpace: "nowrap",
             }}
