@@ -110,7 +110,7 @@ export function RolloverPage() {
               after verified results, and manual selections remain outside model calibration.</p>
             <div className="editorial-rollover-overview__rule">
               <span>Daily target</span>
-              <strong>2×–4×</strong>
+              <strong>2×–3×</strong>
               <span>Subject to evidence and actual bookability</span>
             </div>
           </div>
