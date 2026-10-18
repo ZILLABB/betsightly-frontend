@@ -1,4 +1,3 @@
-import React, { useState } from "react";
 import type { CategoryKey, CategoryMeta } from "../../types";
 import { CATEGORIES } from "../../types";
 import { useFormatOdds } from "../../hooks/useFormatOdds";
@@ -7,105 +6,49 @@ interface Props {
   active: CategoryKey;
   onChange: (key: CategoryKey) => void;
   oddsMap?: Partial<Record<CategoryKey, number>>;
-  /** Tiers whose picks are independent bets rather than one slip. Their tab
-   *  shows a pick count, because a combined multiplier across bets nobody is
-   *  being asked to combine is a number that means nothing. */
   singlesMap?: Partial<Record<CategoryKey, number>>;
-  /** Explicit product availability from the backend publication contract. */
   availabilityMap?: Partial<Record<CategoryKey, boolean>>;
 }
-
 const TARGETS: Partial<Record<CategoryKey, number>> = {
   "2_odds": 2,
   "5_odds": 5,
   "10_odds": 10,
 };
 
-export function CategoryTabs({ active, onChange, oddsMap = {}, singlesMap = {}, availabilityMap = {} }: Props) {
-  const [hovered, setHovered] = useState<CategoryKey | null>(null);
-  const { formatOdds: fmtOdds, oddsSuffix } = useFormatOdds();
-
+export function CategoryTabs({
+  active, onChange, oddsMap = {}, singlesMap = {}, availabilityMap = {},
+}: Props) {
+  const { formatOdds, oddsSuffix } = useFormatOdds();
   return (
-    <div style={{
-      display: "flex",
-      gap: 6,
-      overflowX: "auto",
-      paddingBottom: 4,
-      scrollbarWidth: "none",
-    }}>
-      {CATEGORIES.map((cat: CategoryMeta) => {
-        const isActive = cat.key === active;
-        const isHov = hovered === cat.key;
-        const odds = oddsMap[cat.key];
-        const singlesCount = singlesMap[cat.key];
-        const target = TARGETS[cat.key];
-        const available = availabilityMap[cat.key] !== false;
+    <nav className="editorial-tiers" aria-label="Prediction categories">
+      {CATEGORIES.map((category: CategoryMeta) => {
+        const selected = category.key === active;
+        const odds = oddsMap[category.key];
+        const singlesCount = singlesMap[category.key];
+        const target = TARGETS[category.key];
         const belowTarget = target != null && odds != null && odds > 0 && odds < target;
-
+        const available = availabilityMap[category.key] !== false;
+        const detail = !available
+          ? "Unavailable"
+          : singlesCount != null && singlesCount > 0
+            ? `${singlesCount} ${singlesCount === 1 ? "single" : "singles"}`
+            : odds != null && Number.isFinite(odds) && odds > 0
+              ? `${belowTarget ? "Best " : ""}${formatOdds(odds)}${oddsSuffix}`
+              : category.riskLabel;
         return (
           <button
-            key={cat.key}
-            className="tab-btn"
-            data-active={isActive}
-            onClick={() => onChange(cat.key)}
-            onMouseEnter={() => setHovered(cat.key)}
-            onMouseLeave={() => setHovered(null)}
-            style={{
-              flexShrink: 0,
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "flex-start",
-              gap: 4,
-              minHeight: 56,
-              padding: "9px 16px",
-              borderRadius: "var(--radius-lg)",
-              border: `1px solid ${isActive ? cat.color + "55" : isHov ? "var(--border-hover)" : "var(--border)"}`,
-              background: isActive
-                ? cat.faint
-                : isHov
-                ? "var(--overlay-1)"
-                : "transparent",
-              cursor: "pointer",
-              transition: "all 180ms var(--ease)",
-              outline: "none",
-              minWidth: 98,
-              color: isActive ? cat.color : "var(--text-3)",
-            }}
+            key={category.key}
+            type="button"
+            className="editorial-tiers__item"
+            aria-pressed={selected}
+            data-active={selected}
+            onClick={() => onChange(category.key)}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-              <div style={{
-                width: 8, height: 8, borderRadius: "50%",
-                background: isActive ? cat.color : isHov ? "var(--text-2)" : "var(--text-3)",
-                transition: "all 180ms var(--ease)",
-                flexShrink: 0,
-                boxShadow: isActive ? `0 0 8px ${cat.color}66` : "none",
-              }} />
-              <span style={{
-                fontFamily: "var(--font-display)", fontSize: 14, fontWeight: 700,
-                color: isActive ? cat.color : isHov ? "var(--text-1)" : "var(--text-2)",
-                transition: "color 180ms var(--ease)",
-              }}>
-                {cat.label}
-              </span>
-            </div>
-            <span style={{
-              fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 500,
-              color: isActive ? "var(--text-2)" : "var(--text-3)",
-              lineHeight: 1.3,
-            }}>
-              {/* A tier with nothing to show reads "0.00x odds" otherwise,
-                  which looks like a bug rather than a thin match day. */}
-              {!available
-                ? "Unavailable"
-                : singlesCount != null && singlesCount > 0
-                ? `${singlesCount} pick${singlesCount === 1 ? "" : "s"}`
-                : odds != null && odds > 0
-                ? `${belowTarget ? "Best available " : ""}${fmtOdds(odds)}${oddsSuffix}`
-                : cat.riskLabel}
-            </span>
+            <span className="editorial-tiers__title">{category.label}</span>
+            <span className="editorial-tiers__detail">{detail}</span>
           </button>
         );
       })}
-    </div>
+    </nav>
   );
 }
