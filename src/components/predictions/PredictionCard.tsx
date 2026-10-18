@@ -161,278 +161,88 @@ function ScoreStamp({ score }: { score: LiveScore }) {
   );
 }
 
-export function PredictionCard({ game, color, faint, index = 0, score }: Props) {
-  const editorial = game.editorial_manual === true;
-  const pct = editorial ? null : Math.round(game.confidence * 100);
-  const displayOdds = game.odds ?? game.real_odds ?? game.estimated_odds ?? 0;
-  const displayPrediction = game.prediction || game.readable_prediction || game.prediction_value || "";
-  const priceImplied = game.market_implied_probability
-    ?? (game.odds_are_real && displayOdds > 0 ? 1 / displayOdds : null);
-
+export function PredictionCard({ game, score }: Props) {
+  const editorial = game.editorial_manual === true || game.model_probability_available === false;
+  const hasConfidence = !editorial && typeof game.confidence === "number" &&
+    Number.isFinite(game.confidence) && game.confidence >= 0 && game.confidence <= 1;
+  const pct = hasConfidence ? Math.round(game.confidence * 100) : null;
+  const odds = game.odds ?? game.real_odds ?? game.estimated_odds;
+  const displayOdds = typeof odds === "number" && Number.isFinite(odds) && odds > 1
+    ? odds.toFixed(2) : "—";
+  const selection = game.prediction || game.readable_prediction || game.prediction_value || "Selection unavailable";
+  const priceImplied = game.market_implied_probability ??
+    (game.odds_are_real && typeof odds === "number" && odds > 1 ? 1 / odds : null);
+  const hasScore = Boolean(score && (score.live || score.finished) && score.home_score != null && score.away_score != null);
   const sportyBetUrl = game.bookmaker?.toLowerCase().includes("sportybet")
-    ? "https://www.sportybet.com/ng"
-    : null;
+    ? "https://www.sportybet.com/ng" : null;
 
   return (
-    <div
-      className="card animate-fade-up pred-card"
-      style={{
-        "--card-accent": color,
-        padding: 0,
-        display: "flex",
-        flexDirection: "column",
-        animationDelay: `${index * 50}ms`,
-        overflow: "hidden",
-      } as React.CSSProperties}
-    >
-      {/* Top strip — league + date */}
-      <div style={{
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "10px 16px",
-        background: "var(--overlay-1)",
-        borderBottom: "1px solid var(--border)",
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0, flexWrap: "wrap" }}>
-          {game.league_logo && (
-            <img
-              src={game.league_logo}
-              alt=""
-              style={{ width: 14, height: 14, objectFit: "contain", borderRadius: 2, opacity: 0.7 }}
-              onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
-            />
-          )}
-          <span style={{
-            fontFamily: "var(--font-body)", fontSize: 11, fontWeight: 600,
-            letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--text-3)",
-          }}>
-            {formatLeagueName(game.league)}
-          </span>
-          {game.competition_context_label && (
-            <span style={{
-              fontFamily: "var(--font-body)", fontSize: 10, fontWeight: 600,
-              color: "var(--text-2)", whiteSpace: "nowrap",
-            }}>
-              · {formatCompetitionContext(game.competition_context_label)}
-            </span>
-          )}
-          {/* Only later picks are marked. The morning card is the default
-              reading, so badging everything would say nothing. */}
-          {game.added_later && game.added_at && (
-            <span
-              title={`Added after the card was first published`}
-              style={{
-                fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 700,
-                color: "var(--gold)", background: "rgba(245,158,11,0.12)",
-                padding: "1px 6px", borderRadius: 4, whiteSpace: "nowrap",
-              }}
-            >
-              added {formatLocalTimeWithZone(game.added_at)}
-            </span>
-          )}
+    <article className="editorial-fixture pred-card" data-source={editorial ? "manual" : "model"}>
+      <header className="editorial-fixture__top">
+        <div className="editorial-fixture__league">
+          {game.league_logo && <img src={game.league_logo} alt="" width={17} height={17}
+            onError={event => { (event.currentTarget as HTMLImageElement).style.display = "none"; }}/>}
+          <span>{formatLeagueName(game.league)}</span>
+          {game.competition_context_label && <span className="editorial-fixture__context">
+            / {formatCompetitionContext(game.competition_context_label)}
+          </span>}
         </div>
-        {/* Once a match is under way the score is the useful thing, not a
-            countdown to a kick-off that already happened. */}
-        {score && (score.live || score.finished) && score.home_score != null
-          ? <ScoreStamp score={score} />
-          : <KickoffStamp iso={game.kickoff || game.date} />}
-      </div>
-
-      {/* Teams — horizontal layout */}
-      <div style={{ padding: "16px 16px 12px", display: "flex", alignItems: "center", gap: 10 }}>
-        {/* Home */}
-        <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-          <TeamBadge team={game.home_team} logo={game.home_team_logo} />
-          <span style={{
-            fontFamily: "var(--font-display)", fontSize: 14, fontWeight: 700,
-            color: "var(--text-1)", lineHeight: 1.2, overflow: "hidden",
-            textOverflow: "ellipsis", whiteSpace: "nowrap",
-          }}>
-            {game.home_team}
-          </span>
+        <div className="editorial-fixture__time">
+          {hasScore && score ? <ScoreStamp score={score}/> : <KickoffStamp iso={game.kickoff || game.date}/>}
         </div>
+      </header>
 
-        {/* VS badge */}
-        <span style={{
-          fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 700,
-          color: "var(--text-3)", letterSpacing: "0.1em",
-          padding: "3px 8px", borderRadius: 6,
-          background: "var(--surface-2)", flexShrink: 0,
-        }}>VS</span>
-
-        {/* Away */}
-        <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, minWidth: 0, justifyContent: "flex-end" }}>
-          <span style={{
-            fontFamily: "var(--font-display)", fontSize: 14, fontWeight: 700,
-            color: "var(--text-1)", lineHeight: 1.2, overflow: "hidden",
-            textOverflow: "ellipsis", whiteSpace: "nowrap", textAlign: "right",
-          }}>
-            {game.away_team}
-          </span>
-          <TeamBadge team={game.away_team} logo={game.away_team_logo} />
-        </div>
-      </div>
-
-      {/* Recent form — most recent result last */}
-      {(game.match_info?.home_form || game.match_info?.away_form) && (
-        <div className="pred-form" style={{
-          padding: "0 16px 10px", display: "flex", alignItems: "center",
-          justifyContent: "space-between", gap: 10,
-        }}>
-          <FormRun form={game.match_info?.home_form} />
-          <span style={{ fontFamily: "var(--font-body)", fontSize: 9, color: "var(--text-3)", letterSpacing: "0.06em" }}>
-            LAST 5
-          </span>
-          <FormRun form={game.match_info?.away_form} align="flex-end" />
-        </div>
-      )}
-
-      {/* Prediction + Odds bar */}
-      <div style={{
-        margin: "0 16px 14px",
-        padding: "10px 14px",
-        borderRadius: 10,
-        background: faint,
-        border: `1px solid ${color}18`,
-        display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10,
-      }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0, flex: 1 }}>
-          <span style={{
-            fontFamily: "var(--font-body)", fontSize: 13, fontWeight: 700,
-            color, lineHeight: 1.3,
-            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-          }}>
-            {displayPrediction}
-          </span>
-          <span style={{
-            fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-3)",
-          }}>
-            {editorial ? "Admin curated · no model score" : `${pct}% confidence`}
-          </span>
-        </div>
-
-        {/* Odds pill */}
-        <div style={{ flexShrink: 0, textAlign: "right" }}>
-          <div style={{
-            fontFamily: "var(--font-mono)", fontSize: 20, fontWeight: 800,
-            color, letterSpacing: "-0.03em", lineHeight: 1,
-          }}>
-            {displayOdds.toFixed(2)}
+      <div className="editorial-fixture__body">
+        <div className="editorial-fixture__match">
+          <div className="editorial-fixture__teams">
+            <div><TeamBadge team={game.home_team} logo={game.home_team_logo}/><strong>{game.home_team}</strong></div>
+            <div><TeamBadge team={game.away_team} logo={game.away_team_logo}/><strong>{game.away_team}</strong></div>
           </div>
-          <div style={{ fontFamily: "var(--font-body)", fontSize: 9, color: "var(--text-3)", marginTop: 3 }}>
-            {game.odds_are_real ? (game.odds_provider ?? "live price") : "est. price"}
+          {(game.match_info?.home_form || game.match_info?.away_form) && (
+            <div className="editorial-fixture__form" aria-label="Recent team form">
+              <FormRun form={game.match_info?.home_form}/>
+              <span>FORM</span>
+              <FormRun form={game.match_info?.away_form} align="flex-end"/>
+            </div>
+          )}
+        </div>
+        <div className="editorial-fixture__selection">
+          <span className="editorial-fixture__label">SELECTION</span>
+          <strong>{selection}</strong>
+          <small>{editorial ? "Admin curated · not model-scored" : pct !== null ? `${pct}% estimated confidence` : "Confidence unavailable"}</small>
+        </div>
+        <div className="editorial-fixture__price">
+          <span className="editorial-fixture__label">DECIMAL ODDS</span>
+          <strong>{displayOdds}</strong>
+          <small>{game.odds_are_real ? game.odds_provider ?? "Bookmaker price" : "Estimated price"}</small>
+        </div>
+      </div>
+
+      <footer className="editorial-fixture__footer">
+        <details className="editorial-fixture__evidence">
+          <summary>Evidence &amp; context</summary>
+          <div className="editorial-fixture__evidence-content">
+            <dl>
+              <div><dt>Our estimate</dt><dd>{pct === null ? "Not model-scored" : `${pct}%`}</dd></div>
+              <div><dt>Book price implies</dt><dd>{priceImplied != null ? `${Math.round(priceImplied * 100)}%` : "Not available"}</dd></div>
+              <div><dt>Expected goals</dt><dd>{game.expected_goals != null ? game.expected_goals.toFixed(2) : "Not available"}</dd></div>
+              <div><dt>Calibration sample</dt><dd>{game.calibration_sample != null ? `${game.calibration_sample} picks` : "Not recorded"}</dd></div>
+            </dl>
+            {game.added_later && game.added_at && <p>Added after initial publication at {formatLocalTimeWithZone(game.added_at)}.</p>}
+            {(game.match_info?.venue || game.match_info?.city) && <p>
+              Venue: {[game.match_info.venue, game.match_info.city].filter(Boolean).join(" · ")}
+            </p>}
+            <p>{editorial
+              ? "Entered by an administrator and does not contribute to engine calibration."
+              : `Model inputs: ${(game.model_sources?.length ? game.model_sources : [game.model_type === "market_poisson" ? "market + Poisson" : "statistical model"]).join(", ")}.`}
+              {" "}Probabilities are estimates, not guarantees.</p>
           </div>
+        </details>
+        <div className="editorial-fixture__actions">
+          {sportyBetUrl && <a href={sportyBetUrl} target="_blank" rel="noopener noreferrer">SportyBet <span aria-hidden="true">↗</span></a>}
+          <ShareButton compact text={`${game.home_team} vs ${game.away_team} — ${selection} @${displayOdds} (${editorial ? "admin curated" : pct !== null ? `${pct}% model confidence` : "not scored"}) · BetSightly`}/>
         </div>
-      </div>
-
-      {/* Evidence is visible on demand without making every card taller. */}
-      <details style={{ margin: "-4px 16px 12px" }}>
-        <summary style={{
-          minHeight: 40, display: "flex", alignItems: "center",
-          cursor: "pointer", color: "var(--text-2)",
-          fontFamily: "var(--font-body)", fontSize: 11, fontWeight: 700,
-          listStyle: "none", userSelect: "none",
-        }}>
-          Why this pick?
-        </summary>
-        <div style={{
-          display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-          gap: 8, padding: "10px 12px", borderRadius: 9,
-          background: "var(--surface-2)", border: "1px solid var(--border)",
-          fontFamily: "var(--font-body)", fontSize: 10, color: "var(--text-3)",
-        }}>
-          <span>{editorial ? "Model confidence" : "Our estimate"}<br /><strong style={{ color: "var(--text-1)" }}>{editorial ? "Not model-scored" : `${pct}%`}</strong></span>
-          <span>Book price implies<br /><strong style={{ color: "var(--text-1)" }}>
-            {priceImplied != null
-              ? `${Math.round(priceImplied * 100)}%`
-              : "Not available"}
-          </strong></span>
-          <span>Expected goals<br /><strong style={{ color: "var(--text-1)" }}>
-            {game.expected_goals != null ? game.expected_goals.toFixed(2) : "Not available"}
-          </strong></span>
-          <span>Settled evidence<br /><strong style={{ color: "var(--text-1)" }}>
-            {game.calibration_sample != null
-              ? `${game.calibration_sample} similar picks`
-              : "Not recorded on this card"}
-          </strong></span>
-          <span style={{ gridColumn: "1 / -1" }}>
-            {editorial ? "Selection entered by an admin and price-verified on SportyBet. This is not a model-generated probability or an automated BetSightly result." : "Signals used:"} {(game.model_sources?.length
-              ? game.model_sources
-              : [game.model_type === "market_poisson" ? "market + Poisson" : "statistical model"]
-            ).join(", ")}.
-            {game.ml_confidence != null && ` ML estimate: ${Math.round(game.ml_confidence * 100)}%.`}
-          </span>
-          <span style={{ gridColumn: "1 / -1", lineHeight: 1.45 }}>
-            Probabilities are estimates, not guarantees. No pick can promise a profit.
-          </span>
-        </div>
-      </details>
-
-      {/* Venue / kickoff — hidden on mobile, where the row costs more height
-          than the information is worth on a card you scroll past. */}
-      {(game.match_info?.venue || game.match_info?.city) && (
-        <div className="pred-venue" style={{
-          padding: "0 16px 12px",
-          fontFamily: "var(--font-body)", fontSize: 10, color: "var(--text-3)",
-          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-        }}>
-          {[game.match_info.venue, game.match_info.city].filter(Boolean).join(" · ")}
-          {game.match_info.broadcast ? ` · ${game.match_info.broadcast}` : ""}
-        </div>
-      )}
-
-      {/* Bottom row: chips + actions */}
-      <div className="pred-actions" style={{
-        display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap",
-        padding: "0 16px 12px",
-      }}>
-        {(() => {
-          const MODEL_LABELS: Record<string, string> = {
-            elo_engine: "AI Pick",
-            leagues_safe: "AI Pick",
-            ensemble: "AI Pick",
-            club_odds: "Market Pick",
-            odds_implied: "Market Pick",
-          };
-          const label = game.model_type ? MODEL_LABELS[game.model_type] : undefined;
-          return label ? (
-            <span style={{
-              fontFamily: "var(--font-body)", fontSize: 10, fontWeight: 600,
-              letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-3)",
-              background: "var(--surface-2)", border: "1px solid var(--border)",
-              borderRadius: 5, padding: "3px 8px",
-            }}>
-              {label}
-            </span>
-          ) : null;
-        })()}
-        {game.bookmaker && (
-          <span style={{
-            fontFamily: "var(--font-body)", fontSize: 10, fontWeight: 500,
-            color: "var(--text-3)", marginLeft: "auto",
-          }}>
-            via {game.bookmaker}
-          </span>
-        )}
-        {sportyBetUrl && (
-          <a
-            href={sportyBetUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              fontFamily: "var(--font-body)", fontSize: 10, fontWeight: 700,
-              color: "#2DB544", background: "rgba(45,181,68,0.10)",
-              border: "1px solid rgba(45,181,68,0.20)", borderRadius: 5,
-              padding: "3px 8px", textDecoration: "none",
-            }}
-          >
-            Bet on SportyBet
-          </a>
-        )}
-        <ShareButton
-          compact
-          text={`${game.home_team} vs ${game.away_team} — ${displayPrediction} @${displayOdds.toFixed(2)} (${editorial ? "admin curated · unscored" : `${pct}% model confidence`}) · BetSightly`}
-        />
-      </div>
-    </div>
+      </footer>
+    </article>
   );
 }
