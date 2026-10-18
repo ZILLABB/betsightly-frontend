@@ -69,15 +69,15 @@ beforeEach(() => {
   });
 });
 
-test("V3 matchday panel shows only published fixtures and never invents a booking code", () => {
+test("editorial matchday desk shows only published fixtures and never invents a booking code", () => {
   render(<HomePage />);
-  expect(screen.getByText("Today's matchday desk")).toBeInTheDocument();
+  expect(screen.getByText("TODAY'S SELECTION DESK")).toBeInTheDocument();
   expect(screen.getByText(/Home 1 vs Away 1/)).toBeInTheDocument();
-  expect(screen.getByText("Review availability")).toBeInTheDocument();
-  expect(screen.queryByText("Verified ticket odds")).not.toBeInTheDocument();
+  expect(screen.getByText("Review booking availability")).toBeInTheDocument();
+  expect(screen.queryByText("2.21x")).not.toBeInTheDocument();
 });
 
-test("V3 matchday panel only calls a booking verified with an active code", () => {
+test("editorial matchday desk only calls a booking verified with an active code", () => {
   const current = mockedPredictions();
   mockedPredictions.mockReturnValue({
     ...current,
@@ -96,16 +96,16 @@ test("V3 matchday panel only calls a booking verified with an active code", () =
     },
   });
   render(<HomePage />);
-  expect(screen.getByText("Bookmaker-verified code")).toBeInTheDocument();
-  expect(screen.getByText("Verified ticket odds")).toBeInTheDocument();
+  expect(screen.getByText("Verified booking code")).toBeInTheDocument();
+  expect(screen.getByText("Actual bookmaker odds")).toBeInTheDocument();
   expect(screen.getByText("2.21x")).toBeInTheDocument();
-  expect(screen.getByRole("link", { name: /review slip and code/i }))
+  expect(screen.getByRole("link", { name: /open ticket/i }))
     .toHaveAttribute("href", "#todays-picks");
 });
 
 test("hero links directly to today's booking code section", () => {
   render(<HomePage />);
-  expect(screen.getByRole("link", {name:/view picks & codes/i})).toHaveAttribute("href","#todays-picks");
+  expect(screen.getByRole("link", {name:/explore today.s tickets/i})).toHaveAttribute("href","#todays-picks");
   expect(document.getElementById("todays-picks")).toBeInTheDocument();
 });
 
@@ -132,14 +132,13 @@ test("homepage preserves accumulator odds and joint-probability copy", () => {
 
 test("homepage presents automated Over Goals as singles, not a multiplied slip", () => {
   render(<HomePage />);
-  fireEvent.click(screen.getByRole("button", { name: /Over Goals 3 picks/i }));
+  fireEvent.click(screen.getByRole("button", { name: /Over Goals 3 singles/i }));
 
   expect(screen.getByText("Over Goals Singles")).toBeInTheDocument();
-  expect(screen.getByText(/3 independent picks · bet separately/)).toBeInTheDocument();
   expect(screen.queryByText("Over Goals Accumulator")).not.toBeInTheDocument();
   expect(screen.queryByText(/All 3 legs land about/)).not.toBeInTheDocument();
   expect(screen.queryByText("6.04x")).not.toBeInTheDocument();
-  expect(screen.getByText("Independent picks")).toBeInTheDocument();
+  expect(screen.getByText(/3 independent picks · bet separately/)).toBeInTheDocument();
 });
 
 
@@ -168,10 +167,10 @@ test("manual tickets show Not scored in both homepage metrics, never NaN%", () =
   });
 
   render(<HomePage />);
-  expect(screen.getAllByText("Not scored")).toHaveLength(2);
-  expect(screen.getByText("Admin-curated ticket · no model confidence score")).toBeInTheDocument();
-  expect(screen.getByText("Not evaluated")).toBeInTheDocument();
-  expect(screen.getByText("Bookmaker-verified selections")).toBeInTheDocument();
+  expect(screen.getAllByText("Not scored")).toHaveLength(1);
+  expect(screen.getByText("Manual picks not model-scored")).toBeInTheDocument();
+  expect(screen.getByText("TODAY'S SELECTION DESK")).toBeInTheDocument();
+  expect(screen.getByText("Review booking availability")).toBeInTheDocument();
   expect(screen.queryByText("NaN%")).not.toBeInTheDocument();
   expect(screen.queryByText(/All 2 legs land about/)).not.toBeInTheDocument();
 });
@@ -190,7 +189,7 @@ test("empty tier shows a neutral top-odds fallback, not 0.00x", () => {
   });
   render(<HomePage />);
   expect(screen.queryByText("0.00x")).not.toBeInTheDocument();
-  expect(screen.getByText("Top odds")).toBeInTheDocument();
+  expect(screen.getByText("Actual bookmaker odds")).toBeInTheDocument();
 });
 
 test("homepage averages only valid model probabilities, not unscored or malformed values", () => {
@@ -214,7 +213,7 @@ test("homepage averages only valid model probabilities, not unscored or malforme
     },
   });
   render(<HomePage />);
-  expect(screen.getAllByText("80%")).toHaveLength(2);
+  expect(screen.getAllByText("80%")).toHaveLength(1);
   expect(screen.queryByText("NaN%")).not.toBeInTheDocument();
 });
 
@@ -226,8 +225,7 @@ test("homepage highlights Champions League based on prepared fixtures only", asy
   });
   render(<HomePage />);
   expect(await screen.findByText("Champions League week")).toBeInTheDocument();
-  expect(screen.getByText(/Picks are published only when they meet/)).toBeInTheDocument();
-  expect(screen.getByRole("heading", { name: /Today.s Smart Picks/i })).toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: /Football intelligence/i })).toBeInTheDocument();
 });
 
 test("homepage leaves original hero alone if no reliable event calendar", async () => {
