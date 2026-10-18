@@ -5,6 +5,7 @@ import './index.css'
 import './styles/experience-v3.css'
 import './styles/experience-reference.css'
 import './styles/brand-option-b.css'
+import './styles/editorial-system.css'
 import { analytics } from './services/analytics'
 import { applyAnalyticsPreferenceFromUrl } from './services/internalTraffic'
 
