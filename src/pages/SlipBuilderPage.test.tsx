@@ -55,7 +55,7 @@ beforeEach(() => {
 
 test("mobile Builder prioritizes mode selection and keeps privacy details accessible", () => {
   renderBuilder();
-  expect(screen.getByRole("heading", { name: "Build your slip." })).toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: "Build to your criteria." })).toBeInTheDocument();
   expect(screen.getByText("Configure your slip")).toBeInTheDocument();
   expect(screen.queryByText("Builder V2")).not.toBeInTheDocument();
   expect(screen.getByRole("group", { name: "Builder mode" })).toBeInTheDocument();
