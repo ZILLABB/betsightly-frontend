@@ -5,6 +5,12 @@ import './index.css'
 import './styles/experience-v3.css'
 import './styles/experience-reference.css'
 import './styles/brand-option-b.css'
+// Shared page styles load before the final editorial layer so route-level CSS
+// in lazily loaded pages cannot unexpectedly override the redesign.
+import './styles/product-experience.css'
+import './styles/builder-editor.css'
+import './components/results/results.css'
+import './pages/live-scores.css'
 import './styles/editorial-system.css'
 import './styles/editorial-layout.css'
 import { analytics } from './services/analytics'
