@@ -95,7 +95,7 @@ export function AccumulatorSlip({ games, category, totalOdds, date }: Props) {
           gap: 6,
           padding: "8px 16px",
           borderRadius: 8,
-          border: `1px solid ${copied ? "#22c55e33" : category.color + "33"}`,
+          border: `1px solid color-mix(in srgb, ${copied ? "var(--green)" : category.color} 25%, transparent)`,
           background: copied ? "var(--green-faint)" : category.faint,
           color: copied ? "var(--green)" : category.color,
           fontFamily: "var(--font-body)",
