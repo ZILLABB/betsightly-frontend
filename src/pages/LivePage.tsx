@@ -21,6 +21,7 @@ export function LivePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [updatedAt, setUpdatedAt] = useState<string | null>(null);
+  const [view, setView] = useState<"all" | "in_play" | "missing">("all");
 
   const refresh = useCallback(async () => {
     try {
@@ -90,19 +91,33 @@ export function LivePage() {
     ? "SportyBet supplements ESPN for matched games."
     : "ESPN scores shown where available; SportyBet connection is not active.";
 
+  const visibleMatches = matches.filter(m => {
+    if (view === "in_play") return Boolean(board?.scores[m.match_id]?.live && !board?.scores[m.match_id]?.stale);
+    if (view === "missing") {
+      const kickoffMs = Date.parse(m.kickoff || "");
+      const started = Number.isFinite(kickoffMs) && Date.now() >= kickoffMs + 10 * 60 * 1000;
+      const s = board?.scores[m.match_id];
+      return started && (s?.home_score == null || s?.away_score == null);
+    }
+    return true;
+  });
+
   return (
     <div className="bs-live-page v3-page">
       <SEO title="Live Football Scores" description="In-play scores for BetSightly's published football selections. Live scores are provisional, not settled betting results." path="/live" />
-      <section className="bs-live-hero">
-        <div className="bs-live-eyebrow"><Radio size={15} aria-hidden="true" /> MATCHDAY DESK</div>
-        <h1>Live <span>scores.</span></h1>
-        <p>Follow the fixtures on BetSightly's published card. Updated scores remain provisional until an independent final result is verified.</p>
-        <div className="bs-live-hero-actions">
-          <span><CircleDot size={14} aria-hidden="true" /> {liveCount} in play</span>
-          <span>{scored} with scores</span>
-          <button type="button" onClick={() => void refresh()} disabled={loading}><RefreshCw size={14} aria-hidden="true" /> Refresh</button>
+      <header className="editorial-live-intro">
+        <div>
+          <span className="editorial-overline">MATCHDAY / LIVE COVERAGE</span>
+          <h1>Scoreboard</h1>
+          <p>Follow fixtures on BetSightly's published tickets. Live observations are
+            provisional; only independently verified finals update official results.</p>
         </div>
-      </section>
+        <button type="button" className="editorial-live-refresh" onClick={() => void refresh()} disabled={loading}>
+          <RefreshCw size={16} aria-hidden="true" /> {loading ? "Updating…" : "Refresh scores"}
+        </button>
+      </header>
+      <div className="editorial-live-layout">
+        <section className="editorial-live-main" aria-label="Published fixture scoreboard">
       <div className="bs-live-head">
         <div>
           <h2>Published fixtures</h2>
@@ -111,6 +126,16 @@ export function LivePage() {
         <span>{board?.fetched_at
           ? `Source snapshot ${new Date(board.fetched_at).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})}`
           : updatedAt ? "No source snapshot available" : "Checking"}</span>
+      </div>
+      <div className="editorial-live-filter" role="group" aria-label="Scoreboard view">
+        {([
+          ["all", "All published", matches.length],
+          ["in_play", "In play", liveCount],
+          ["missing", "Feed gaps", startedWithoutScore],
+        ] as const).map(([key, label, count]) => (
+          <button key={key} type="button" aria-pressed={view === key}
+            onClick={() => setView(key)}>{label}<span>{count}</span></button>
+        ))}
       </div>
       {error && <p role="status" className="bs-live-note">The score feed could not be refreshed. Existing verified results are still available on the Results page.</p>}
       {board?.stale && <p role="status" className="bs-live-note bs-live-note--stale">
@@ -128,7 +153,7 @@ export function LivePage() {
         </p>
       )}
       <div className="bs-live-board" aria-live="off">
-        {matches.map(m => {
+        {visibleMatches.map(m => {
           const s = board?.scores[m.match_id];
           const haveScore = s?.home_score != null && s?.away_score != null;
           const started = Number.isFinite(Date.parse(m.kickoff || "")) && Date.now() >= Date.parse(m.kickoff || "") + 10 * 60 * 1000;
@@ -150,6 +175,30 @@ export function LivePage() {
         })}
       </div>
       {!cardLoading && matches.length === 0 && <div className="bs-live-empty">No published fixtures on the current card. <Link to="/predictions">View predictions <ArrowRight size={14}/></Link></div>}
+      {visibleMatches.length === 0 && matches.length > 0 && (
+        <div className="editorial-live-empty-filter" role="status">
+          No published fixtures match this view. Select “All published” to see the full matchday board.
+        </div>
+      )}
+        </section>
+        <aside className="editorial-live-sidebar" aria-label="Live coverage information">
+          <span className="editorial-overline">SCORE COVERAGE</span>
+          <h2>Today's board</h2>
+          <div className="editorial-live-sidebar__metrics">
+            <div><strong>{matches.length}</strong><span>Published fixtures</span></div>
+            <div><strong>{liveCount}</strong><span>Currently in play</span></div>
+            <div><strong>{scored}</strong><span>With reported scores</span></div>
+            <div><strong>{startedWithoutScore}</strong><span>Started, score missing</span></div>
+          </div>
+          <div className="editorial-live-sidebar__guidance">
+            <ShieldCheck size={19} aria-hidden="true"/>
+            <strong>Live is not settled.</strong>
+            <p>Feeds can lag or correct scores. The public win/loss record
+              changes only after final scores pass independent verification.</p>
+            <Link to="/results">Open official results <ArrowRight size={14} aria-hidden="true"/></Link>
+          </div>
+        </aside>
+      </div>
       <div className="bs-live-bottom">
         <p><ShieldCheck size={18} aria-hidden="true" /> Live scores can be corrected. Only verified final scores update BetSightly's official win/loss record and calibration.</p>
         <Link to="/results">View official results <ArrowRight size={15}/></Link>
