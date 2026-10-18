@@ -722,3 +722,38 @@
   .v3-rollover .editorial-rollover-progress .bs-rollover-timeline { flex-direction: column; }
   .v3-results .results-tabs button { flex: 1 0 auto; font-size: 11px; }
 }
+
+/* Supporting pages: coherent non-marketing informational layouts. */
+.editorial-secondary-page { min-width: 0; }
+.editorial-secondary-masthead {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: clamp(23px,3.3vw,39px);
+}
+.editorial-secondary-masthead h1 {
+  font: 800 clamp(29px,3.6vw,43px)/1.13 var(--font-display);
+  letter-spacing: -.04em; color: var(--text-1); margin: 12px 0 9px;
+}
+.editorial-secondary-masthead p {
+  margin: 0; color: var(--text-2); max-width: 720px;
+  font: 450 13px/1.7 var(--font-body);
+}
+.editorial-secondary-page .card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 9px; box-shadow: none;
+}
+.editorial-secondary-page h2 { letter-spacing: -.025em; color: var(--text-1); }
+.editorial-secondary-page :is(button,select,input,textarea):focus-visible { outline: 2px solid var(--brand); outline-offset: 3px; }
+.editorial-secondary-page :is(button,select,input,textarea) { accent-color: var(--brand); }
+.editorial-about > section:not(.editorial-secondary-masthead),
+.editorial-settings > div:not(.editorial-secondary-masthead) {
+  min-width: 0;
+}
+.editorial-about details.card { border-radius: 8px !important; }
+.editorial-punters .card:hover { border-color: var(--border-brand); }
+.editorial-punter-detail .card { box-shadow: none !important; }
+.editorial-settings .card { overflow: visible; }
+@media (max-width: 600px) {
+  .editorial-secondary-masthead { padding: 21px; }
+  .editorial-secondary-masthead h1 { font-size: 31px; }
+  .editorial-secondary-page .card { border-radius: 8px; }
+}
