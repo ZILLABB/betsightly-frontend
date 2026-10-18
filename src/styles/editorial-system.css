@@ -1,0 +1,225 @@
+/*
+ * BETSIGHTLY / EDITORIAL SYSTEM 2026
+ * Slate & Ivory: one disciplined visual language across every public surface.
+ * Loaded last as the transition layer while older CSS is consolidated.
+ * Presentation only; no prediction probabilities, tickets, or result states change.
+ */
+:root,
+.dark {
+  color-scheme: dark;
+  --bg: #101925;
+  --bg-mid: #162132;
+  --surface: #1b293b;
+  --surface-2: #223348;
+  --surface-3: #2c4056;
+  --surface-4: #334961;
+  --brand: #9ab8d3;
+  --brand-dim: #7296b5;
+  --brand-faint: rgba(154,184,211,.10);
+  --brand-glow: rgba(154,184,211,.08);
+  --border-brand: rgba(154,184,211,.29);
+  --accent: #c9a77b;
+  --accent-dim: #b39062;
+  --green: #77b69f;
+  --green-faint: rgba(119,182,159,.12);
+  --red: #e18b8b;
+  --red-faint: rgba(225,139,139,.1);
+  --blue: #9ab8d3;
+  --blue-faint: rgba(154,184,211,.1);
+  --gold: #c9a77b;
+  --gold-faint: rgba(201,167,123,.11);
+  --purple: #a9a4c6;
+  --purple-faint: rgba(169,164,198,.10);
+  --text-1: #f4f5f6;
+  --text-2: #bfcbd6;
+  --text-3: #9babbb;
+  --text-primary: #f4f5f6;
+  --text-secondary: #bfcbd6;
+  --text-tertiary: #9babbb;
+  --border: rgba(199,216,232,.15);
+  --border-default: rgba(199,216,232,.15);
+  --bs-outline: rgba(199,216,232,.16);
+  --bs-mint: #9ab8d3;
+  --bs-ink: #101925;
+  --bs-panel: #1b293b;
+  --bs-glass: rgba(19,31,46,.92);
+  --bs-radius: 13px;
+  --overlay-1: rgba(255,255,255,.02);
+  --overlay-2: rgba(255,255,255,.05);
+  --nav-bg-scrolled: rgba(16,25,37,.97);
+  --nav-bg-top: rgba(16,25,37,.94);
+  --nav-overlay: rgba(16,25,37,.99);
+  --nav-hover: rgba(199,216,232,.08);
+  --code-surface: #141f2e;
+  --font-display: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-body: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --v3-curve: 14px;
+  --v3-stroke: rgba(199,216,232,.17);
+  --v3-depth: 0 6px 22px rgba(6,15,27,.14);
+  --radius-xl: 14px;
+  --radius-2xl: 18px;
+  --shadow-brand: none;
+  --shadow-brand-hover: none;
+  --home-hero-bg: linear-gradient(120deg,#192b41,#152438);
+  --home-panel-bg: #17283c;
+  --home-hero-shadow: none;
+}
+.light {
+  color-scheme: light;
+  --bg: #f4f5f3;
+  --bg-mid: #eef1f2;
+  --surface: #ffffff;
+  --surface-2: #eaf0f4;
+  --surface-3: #dfe8ef;
+  --surface-4: #d8e2e9;
+  --brand: #385f82;
+  --brand-dim: #2c4b67;
+  --brand-faint: rgba(56,95,130,.08);
+  --brand-glow: rgba(56,95,130,.08);
+  --border-brand: rgba(56,95,130,.26);
+  --accent: #916b45;
+  --accent-dim: #785738;
+  --green: #2e7661;
+  --green-faint: rgba(46,118,97,.09);
+  --red: #b94c4c;
+  --red-faint: rgba(185,76,76,.08);
+  --blue: #385f82;
+  --blue-faint: rgba(56,95,130,.08);
+  --gold: #916b45;
+  --gold-faint: rgba(145,107,69,.09);
+  --purple: #766b91;
+  --purple-faint: rgba(118,107,145,.09);
+  --text-1: #172435;
+  --text-2: #4f6070;
+  --text-3: #637584;
+  --text-primary: #172435;
+  --text-secondary: #4f6070;
+  --text-tertiary: #637584;
+  --border: #dbe3e9;
+  --border-default: #dbe3e9;
+  --bs-outline: #dbe3e9;
+  --bs-glass: #ffffff;
+  --nav-bg-scrolled: rgba(244,245,243,.97);
+  --nav-bg-top: rgba(244,245,243,.94);
+  --nav-overlay: rgba(244,245,243,.99);
+  --nav-hover: rgba(56,95,130,.065);
+  --code-surface: #eaf0f4;
+  --v3-stroke: #dbe3e9;
+  --v3-depth: 0 3px 14px rgba(17,36,52,.05);
+  --home-hero-shadow: none;
+}
+html { color-scheme: inherit; }
+body { background: var(--bg); }
+.v3-page { letter-spacing: -.005em; }
+.v3-page :is(h1,h2,h3) { letter-spacing: -.035em; }
+.v3-page :is(.card,.builder-config,.builder-results,.results-section,.results-history,.record-card,.rollover-summary,.pred-card,.metric-card) {
+  box-shadow: none;
+  border-color: var(--v3-stroke);
+}
+.v3-page :is(button,a,select,input,textarea):focus-visible {
+  outline: 2px solid var(--brand); outline-offset: 3px;
+}
+.v3-page :where(.eyebrow,.builder-eyebrow,.results-kicker,.results-eyebrow,.v3-kicker) {
+  color: var(--brand); font-size: 11px; letter-spacing: .06em;
+}
+.v3-page :is(.v3-link--primary,.hero-action-primary,.builder-submit,.btn-primary) {
+  background: var(--brand); color: #101925; border: 1px solid transparent;
+  border-radius: 9px; box-shadow: none; font-weight: 750;
+}
+.light .v3-page :is(.v3-link--primary,.hero-action-primary,.builder-submit,.btn-primary) { color: #ffffff; }
+.v3-page :is(.v3-link--primary,.hero-action-primary,.builder-submit):hover {
+  filter: brightness(1.07); box-shadow: none;
+}
+.v3-page :is(.v3-link,.hero-action,.results-refresh) { border-radius: 9px; }
+.bs-brand--new .bs-brand__name { letter-spacing: -.045em; }
+.bs-brand--new .bs-brand__name span:last-child { color: var(--brand); }
+.bs-brand--new .bs-brand__tagline { letter-spacing: .095em; font-weight: 600; }
+.bs-brand--new .bs-brand__symbol path { fill: var(--brand); }
+.v3-home .home-hero {
+  min-height: 440px; border: 1px solid rgba(165,190,213,.26);
+  border-radius: 16px; box-shadow: none;
+  background: linear-gradient(125deg,#1b3049,#142338);
+}
+.v3-home .home-hero::after {
+  opacity: .62;
+  background:
+    linear-gradient(90deg,rgba(17,31,48,.97),rgba(17,31,48,.80) 57%,rgba(17,31,48,.62)),
+    url("https://thumb.wikimedia.org/wikipedia/commons/thumb/2/2f/Well_lit_soccer_stadium_%28Unsplash%29.jpg/1280px-Well_lit_soccer_stadium_%28Unsplash%29.jpg") center 62%/cover;
+}
+.v3-home .home-hero h1 { color: #f6f7f8; font-weight: 800; line-height: 1.07; font-size: clamp(38px,5vw,64px); }
+.v3-home .home-hero h1 span { color: #b9cfe3; }
+.v3-home .home-hero-copy > p { color: #d1dbe4; line-height: 1.64; font-size: 14px; }
+.v3-home .home-hero .market-status {
+  background: rgba(26,43,61,.84); border: 1px solid rgba(178,204,226,.30);
+  border-radius: 6px; color: #d3e0eb; letter-spacing: .02em;
+}
+.v3-home .home-hero .home-competition-spotlight {
+  background: rgba(25,43,62,.89); border: 1px solid rgba(175,198,217,.24);
+  border-left: 3px solid #c9a77b; border-radius: 4px 10px 10px 4px;
+}
+.v3-home .home-hero .home-competition-spotlight > strong { color: #f6f7f8; }
+.v3-home .home-hero .home-competition-spotlight > span:last-child { color: #c4d0dc; }
+.v3-home .signal-panel {
+  background: rgba(19,34,52,.96); border: 1px solid rgba(185,206,226,.24);
+  box-shadow: none; backdrop-filter: none; border-radius: 12px;
+}
+.v3-home .signal-panel :where(.signal-panel-head,.signal-list,.signal-foot) { color: #bfcfdd; }
+.v3-home .v3-feature { border: 1px solid rgba(191,208,224,.21); border-left: 2px solid #c9a77b; border-radius: 8px; background: rgba(29,48,68,.78); }
+.v3-home .v3-feature__odds, .v3-home .v3-feature__label { color: #c9a77b; }
+.v3-home .home-picks-anchor { border-radius: 13px; background: var(--surface); }
+.v3-home .metric-card { border-radius: 11px; background: var(--surface); }
+.v3-predictions .predictions-hero,
+.v3-builder .builder-hero,
+.v3-results .results-hero,
+.v3-rollover .bs-rollover-hero,
+.bs-live-hero {
+  border: 1px solid rgba(174,196,216,.24);
+  border-radius: 14px;
+  background: linear-gradient(120deg,#1c3048,#142438);
+  box-shadow: none;
+}
+.v3-predictions .predictions-hero::after { opacity: .13; }
+.v3-predictions .predictions-hero h1,
+.v3-builder .builder-hero h1,
+.v3-results .results-hero h1,
+.v3-rollover .bs-rollover-hero__copy h1,
+.bs-live-hero h1 { color: #f4f6f8; }
+.v3-predictions .predictions-hero .eyebrow,
+.v3-results .results-hero .results-eyebrow,
+.v3-rollover .bs-rollover-hero__copy .eyebrow,
+.bs-live-eyebrow, .bs-live-hero h1 span { color: #bbd0e3; }
+.v3-predictions .predictions-hero .page-intro,
+.v3-builder .builder-hero p,
+.v3-results .results-hero__copy > p:last-child,
+.v3-rollover .bs-rollover-hero__copy p,
+.bs-live-hero p { color: #c9d5e0 !important; }
+.v3-predictions .pred-card,
+.v3-predictions .slip-meta,
+.v3-results .results-section,
+.v3-results .results-history,
+.v3-rollover .rollover-summary { background: var(--surface); border-radius: 11px; box-shadow: none; }
+.v3-predictions .pred-card::before { display: none; }
+.v3-predictions .pred-card .pred-actions { background: var(--surface-2); }
+.v3-results .results-tabs button.is-active { background: var(--brand); color: #101925; }
+.light .v3-results .results-tabs button.is-active { color: #fff; }
+.v3-rollover .bs-rollover-hero__icon {
+  color: #c9a77b; border: 1px solid rgba(201,167,123,.35);
+  background: rgba(201,167,123,.09); border-radius: 12px;
+}
+.v3-rollover .bs-rollover-timeline li.is-won .bs-rollover-timeline__step { color: #101925; }
+.bs-live-hero-actions > span, .bs-live-hero-actions button {
+  border-color: rgba(181,203,223,.30); color: #d3e0eb;
+  background: rgba(37,58,80,.8); border-radius: 8px;
+}
+.bs-live-fixture { border-radius: 11px; }
+.v3-page :where(.booking-code,.builder-v2-modes > button,.builder-v2-targets > button,.results-tabs,.results-history) { border-radius: 10px; }
+@media (max-width: 767px) {
+  .v3-home .home-hero { min-height: 0; border-radius: 13px; }
+  .v3-home .home-hero h1 { font-size: clamp(35px,8.5vw,47px) !important; }
+  .v3-home .signal-panel { border-radius: 10px; }
+  .v3-home .home-hero::after { background: linear-gradient(180deg,rgba(17,31,48,.80),rgba(17,31,48,.98) 80%),url("https://thumb.wikimedia.org/wikipedia/commons/thumb/2/2f/Well_lit_soccer_stadium_%28Unsplash%29.jpg/1280px-Well_lit_soccer_stadium_%28Unsplash%29.jpg") center/cover; }
+  .v3-predictions .predictions-hero,.v3-builder .builder-hero,.v3-results .results-hero,.v3-rollover .bs-rollover-hero,.bs-live-hero { border-radius: 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .v3-page *, .v3-page *::before, .v3-page *::after { scroll-behavior: auto; }
+}
