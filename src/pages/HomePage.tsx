@@ -351,7 +351,7 @@ export function HomePage() {
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               {hasActiveBookableOdds && <div style={{
                 padding: "5px 14px", borderRadius: 8,
-                background: catMeta.faint, border: `1px solid ${catMeta.color}20`,
+                background: catMeta.faint, border: `1px solid color-mix(in srgb, ${catMeta.color} 22%, transparent)`,
                 fontFamily: "var(--font-mono)", fontSize: 14, fontWeight: 700,
                 color: catMeta.color, letterSpacing: "-0.02em",
               }}>
