@@ -101,36 +101,42 @@ export function RolloverPage() {
   return (
     <div className="page-stack rollover-page v3-page v3-rollover" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <SEO title="Rollover Challenge" description="3-day rollover challenge using evidence-backed daily picks. Every leg must land for the chain to continue." path="/rollover" />
-      <header className="bs-rollover-hero">
-        <div className="bs-rollover-hero__copy">
-          <span className="eyebrow">{targetDays}-day evidence challenge</span>
-          <h1>Rollover</h1>
-          <p>
-            Follow the verified daily selections toward a {targetDays}-day chain.
-            Missing or unverified stages are never presented as wins. Admin-curated
-            selections remain separate from model calibration.
-          </p>
-        </div>
-        <div className="bs-rollover-hero__icon" aria-hidden="true">
-          <Repeat2 size={35}/>
-        </div>
-      </header>
-      <ol className="bs-rollover-timeline" aria-label="Rollover chain progress">
-        {Array.from({ length: targetDays }, (_, index) => {
-          const day = chain.find(item => item.day_number === index + 1);
-          const state = day?.status ?? "future";
-          const active = day?.status === "pending";
-          const statusText = state === "won" ? "Won" :
-            state === "lost" ? "Lost" : state === "void" ? "Void" :
-            active ? "Awaiting final" : "Not published";
-          return (
-            <li key={index} className={`is-${state}${active ? " is-active" : ""}`}>
-              <span className="bs-rollover-timeline__step">{index + 1}</span>
-              <div><strong>Day {index + 1}</strong><small>{statusText}</small></div>
-            </li>
-          );
-        })}
-      </ol>
+      <section className="editorial-rollover-overview" aria-labelledby="rollover-title">
+        <header className="bs-rollover-hero">
+          <div className="bs-rollover-hero__copy">
+            <span className="editorial-overline">ROLLING CHALLENGE / PUBLIC DAY-BY-DAY RECORD</span>
+            <h1 id="rollover-title">{targetDays}-day rollover.</h1>
+            <p>Each stage is published and settled independently. A chain only progresses
+              after verified results, and manual selections remain outside model calibration.</p>
+            <div className="editorial-rollover-overview__rule">
+              <span>Daily target</span>
+              <strong>2×–4×</strong>
+              <span>Subject to evidence and actual bookability</span>
+            </div>
+          </div>
+        </header>
+        <aside className="editorial-rollover-progress" aria-label="Rollover day progress">
+          <span className="editorial-overline">CHAIN TRACKER</span>
+          <h2>Three stages. One record.</h2>
+          <ol className="bs-rollover-timeline" aria-label="Rollover chain progress">
+            {Array.from({ length: targetDays }, (_, index) => {
+              const day = chain.find(item => item.day_number === index + 1);
+              const state = day?.status ?? "future";
+              const active = day?.status === "pending";
+              const statusText = state === "won" ? "Won" :
+                state === "lost" ? "Lost" : state === "void" ? "Void" :
+                active ? "Awaiting final" : "Not published";
+              return (
+                <li key={index} className={`is-${state}${active ? " is-active" : ""}`}>
+                  <span className="bs-rollover-timeline__step">{index + 1}</span>
+                  <div><strong>Day {index + 1}</strong><small>{statusText}</small></div>
+                </li>
+              );
+            })}
+          </ol>
+          <p>Unverified scores never count as a completed stage.</p>
+        </aside>
+      </section>
 
       {/* Compact chain summary */}
       {chain.length > 0 && (
