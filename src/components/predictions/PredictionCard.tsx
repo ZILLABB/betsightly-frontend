@@ -173,8 +173,8 @@ export function PredictionCard({ game, score }: Props) {
       <div className="editorial-fixture__body">
         <div className="editorial-fixture__match">
           <div className="editorial-fixture__teams">
-            <div><TeamCrest team={game.home_team} logo={game.home_team_logo} national={game.team_type === "NATIONAL"} /><strong>{game.home_team}</strong></div>
-            <div><TeamCrest team={game.away_team} logo={game.away_team_logo} national={game.team_type === "NATIONAL"} /><strong>{game.away_team}</strong></div>
+            <div><TeamCrest team={game.home_team} logo={game.home_team_logo} national={game.team_type !== "CLUB"} /><strong>{game.home_team}</strong></div>
+            <div><TeamCrest team={game.away_team} logo={game.away_team_logo} national={game.team_type !== "CLUB"} /><strong>{game.away_team}</strong></div>
           </div>
           {(game.match_info?.home_form || game.match_info?.away_form) && (
             <div className="editorial-fixture__form" aria-label="Recent team form">
