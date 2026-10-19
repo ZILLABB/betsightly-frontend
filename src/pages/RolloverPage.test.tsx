@@ -1,4 +1,6 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import "@testing-library/jest-dom";
 import { usePredictions } from "../hooks/usePredictions";
 import { RolloverPage } from "./RolloverPage";
@@ -107,4 +109,46 @@ test("published day progress uses verified results and reports only actual stage
   expect(tracker.textContent).toContain("Awaiting final");
   expect(tracker.textContent).toContain("Not published");
   expect(screen.getByText("1 / 3")).toBeInTheDocument();
+});
+
+test("shows separate team crests beside the correct names without badge overlap", () => {
+  mockedPredictions.mockReturnValue({
+    data: {
+      ...emptyData,
+      accumulators: {
+        rollover: {
+          selected: true, target_days: 3,
+          chain: [{
+            day_number: 1, date: "2099-10-20", status: "pending",
+            combined_odds: 2.06, avg_confidence: .7,
+            picks: [{
+              match_id: "rodina-gazovik",
+              home_team: "Rodina Moscow",
+              away_team: "Gazovik Orenburg",
+              home_team_logo: "https://example.org/rodina.png",
+              away_team_logo: "https://example.org/gazovik.png",
+              market: "double_chance", prediction: "Rodina Moscow or Draw",
+              odds: 1.54, confidence: .66,
+            }],
+          }],
+        },
+      },
+    },
+    loading: false, error: null, usingFallback: false,
+    lastUpdated: null, refetch: jest.fn(),
+  });
+  const { container } = render(<RolloverPage />);
+  const fixture = screen.getByLabelText("Rodina Moscow versus Gazovik Orenburg");
+  const teams = fixture.querySelectorAll(".rollover-ticket__team");
+  expect(teams).toHaveLength(2);
+  expect(within(teams[0] as HTMLElement).getByText("Rodina Moscow")).toBeInTheDocument();
+  expect(within(teams[1] as HTMLElement).getByText("Gazovik Orenburg")).toBeInTheDocument();
+  expect(teams[0].querySelector("img")).toHaveAttribute("src", "https://example.org/rodina.png");
+  expect(teams[1].querySelector("img")).toHaveAttribute("src", "https://example.org/gazovik.png");
+  expect(within(fixture).getByText("vs")).toBeInTheDocument();
+  expect(container.querySelector(".rollover-ticket__crests")).toBeNull();
+
+  const css = readFileSync(resolve(process.cwd(), "src/styles/rollover-ticket-polish.css"), "utf8");
+  expect(css).toContain(".rollover-ticket__team");
+  expect(css).not.toContain("margin-left: -7px");
 });
