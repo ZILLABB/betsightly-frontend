@@ -24,6 +24,8 @@ const contrast = (a: string,b: string): number => {
 };
 
 describe.each([
+  ["Hybrid dark", ':root[data-bs-palette="hybrid"]:not(.light)', false],
+  ["Hybrid light", ':root.light[data-bs-palette="hybrid"]', true],
   ["Atlantic dark", ':root[data-bs-palette="atlantic"]:not(.light)', false],
   ["Cobalt dark", ':root[data-bs-palette="cobalt"]:not(.light)', false],
   ["Atlantic light", ':root.light[data-bs-palette="atlantic"]', true],
