@@ -32,7 +32,7 @@ test("More sheet contains Results, Live and settings without duplicating Rollove
     expect(more.querySelector("a")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: label })).toBeInTheDocument();
   }
-  expect(screen.getByRole("link", { name: "Results" })).toHaveAttribute("aria-current", "page");
+  expect(screen.getByRole("link", { name: /^Results / })).toHaveAttribute("aria-current", "page");
   expect(screen.getByRole("link", { name: "Rollover" })).toHaveAttribute("href", "/rollover");
   fireEvent.keyDown(window, { key: "Escape" });
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
