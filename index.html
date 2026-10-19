@@ -10,7 +10,7 @@
   <meta name="description" content="Football predictions, SportyBet-verified booking codes, daily picks, 2 Odds, 5 Odds, 10 Odds, Over Goals, a three-day Rollover and transparent settled results." />
   <meta name="keywords" content="football predictions, daily predictions, rollover, over goals, SportyBet booking codes, accumulator, settled results" />
   <meta name="author" content="BetSightly" />
-  <meta name="theme-color" content="#0B2238" />
+  <meta name="theme-color" content="#0C2037" />
   <!-- Set the saved palette and dark/light preference before the first paint.
        Without this, iPhone status-bar and page background briefly flash the
        retired emerald theme while React and preferences load. -->
@@ -20,8 +20,11 @@
       var choice = new URLSearchParams(window.location.search).get('palette');
       var savedPalette = null;
       try { savedPalette = sessionStorage.getItem('betsightly-preview-palette'); } catch (_) {}
-      var palette = choice === 'atlantic' || choice === 'cobalt'
-        ? choice : savedPalette === 'cobalt' ? 'cobalt' : 'atlantic';
+      var validPalette = function (name) {
+        return name === 'hybrid' || name === 'atlantic' || name === 'cobalt';
+      };
+      var palette = validPalette(choice)
+        ? choice : validPalette(savedPalette) ? savedPalette : 'hybrid';
       root.setAttribute('data-bs-palette', palette);
       try { sessionStorage.setItem('betsightly-preview-palette', palette); } catch (_) {}
       var selectedTheme = 'dark';
@@ -35,7 +38,9 @@
       root.classList.add(light ? 'light' : 'dark');
       var colors = palette === 'cobalt'
         ? { dark: '#111933', light: '#F2F5FD' }
-        : { dark: '#0B2238', light: '#F3F7FA' };
+        : palette === 'atlantic'
+          ? { dark: '#0B2238', light: '#F3F7FA' }
+          : { dark: '#0C2037', light: '#F1F5FB' };
       document.querySelector('meta[name="theme-color"]')
         .setAttribute('content', light ? colors.light : colors.dark);
     })();
