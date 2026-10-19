@@ -6,12 +6,12 @@ const PRIMARY = [
   { path: "/", label: "Home", icon: Home },
   { path: "/predictions", label: "Picks", icon: Target },
   { path: "/build-slip", label: "Build", icon: SlidersHorizontal, featured: true },
+  { path: "/rollover", label: "Rollover", icon: RefreshCw },
   { path: "/results", label: "Results", icon: BarChart3 },
 ] as const;
 
 const MORE = [
   { path: "/live", label: "Live scores", note: "Matchday scoreboard", icon: Radio },
-  { path: "/rollover", label: "Rollover", note: "Follow the daily chain", icon: RefreshCw },
   { path: "/punters", label: "Punters", note: "Community selections", icon: Users },
   { path: "/settings", label: "Settings", note: "Display preferences", icon: Settings },
   { path: "/about", label: "About BetSightly", note: "How our predictions work", icon: CircleHelp },
