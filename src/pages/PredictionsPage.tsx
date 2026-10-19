@@ -22,6 +22,8 @@ import { useActionableCard } from "../hooks/useActionableCard";
 import { firstAvailablePredictionTier } from "../utils/firstAvailablePredictionTier";
 import { preferredBookableTier } from "../utils/bookableTiers";
 import { AvailableNowOverview } from "../components/predictions/AvailableNowOverview";
+import { ManualRemainingOverview } from "../components/predictions/ManualRemainingOverview";
+import { useManualRemaining } from "../hooks/useManualRemaining";
 import { isRolloverOnlyDay } from "../utils/isRolloverOnlyDay";
 import { RecommendationBoard } from "../components/predictions/RecommendationBoard";
 import { NextAvailableNotice } from "../components/predictions/NextAvailableNotice";
@@ -78,6 +80,7 @@ export function PredictionsPage() {
 
   const published = data?.accumulators;
   const actionable = useActionableCard(published, data?.date);
+  const manualRemaining = useManualRemaining(actionable.requestedAvailable, data?.date);
   const {
     accumulators,
     bookable,
@@ -329,6 +332,8 @@ export function PredictionsPage() {
           </button>
         </div>
       )}
+
+      <ManualRemainingOverview data={manualRemaining.data} loading={manualRemaining.loading} error={manualRemaining.error} />
 
       {viewingBookable && accumulators && (
         <AvailableNowOverview accumulators={accumulators} onSelect={key => {
