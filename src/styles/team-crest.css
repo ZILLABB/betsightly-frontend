@@ -1,0 +1,36 @@
+.team-crest {
+  --team-crest-size: 34px;
+  width: var(--team-crest-size); height: var(--team-crest-size);
+  flex: 0 0 var(--team-crest-size);
+  display: inline-grid; place-items: center; overflow: hidden;
+  background: #f7f8fa; border: 1px solid #dce5eb; border-radius: 9px;
+  box-shadow: 0 1px 3px rgba(6,19,32,.07); padding: 3px;
+}
+.team-crest--sm { --team-crest-size: 25px; border-radius: 7px; padding: 2px; }
+.team-crest--lg { --team-crest-size: 42px; border-radius: 10px; padding: 4px; }
+.team-crest img { width: 100%; height: 100%; display: block; object-fit: contain; object-position: center; }
+.team-crest--fallback {
+  color: var(--brand); background: var(--brand-faint);
+  border-color: var(--border); box-shadow: none;
+}
+.team-crest__letters {
+  color: var(--text-2); font: 800 10px/1 var(--font-body); text-align: center;
+  letter-spacing: -.045em; user-select: none;
+}
+.team-crest--sm .team-crest__letters { font-size: 8px; }
+.team-crest--lg .team-crest__letters { font-size: 12px; }
+/* Standardise pairing of crests and readable team names throughout product. */
+.editorial-fixture__teams > div { align-items: center; }
+.bs-live-names__team {
+  display: flex; align-items: center; gap: 9px; min-width: 0;
+}
+.bs-live-names__team strong { overflow-wrap: anywhere; min-width: 0; }
+.builder-leg-compact__teams {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  min-width: 0;
+}
+.builder-leg-compact__side {
+  display: inline-flex; align-items: center; gap: 6px; min-width: 0;
+}
+.builder-leg-compact__side strong { color: var(--text-1); overflow-wrap: anywhere; }
+.builder-leg-compact__versus { color: var(--text-3); font-size: 10px; }
