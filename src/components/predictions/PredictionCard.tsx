@@ -1,30 +1,8 @@
 import React from "react";
 import type { GamePrediction } from "../../types";
-import { getTeamFlag, isWcNation, teamInitials, teamColor } from "../../data/wcFlags";
+import { TeamCrest } from "../common/TeamCrest";
 import { ShareButton } from "../common/ShareButton";
 import { formatCompetitionContext, formatKickoffDateTime, formatLeagueName, formatLocalTimeWithZone } from "../../utils/formatters";
-
-function TeamBadge({ team, logo }: { team: string; logo?: string | null }) {
-  if (isWcNation(team)) {
-    return (
-      <img
-        src={getTeamFlag(team, logo, 80)}
-        alt=""
-        style={{ width: 32, height: 22, objectFit: "cover", borderRadius: 3, flexShrink: 0 }}
-        onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
-      />
-    );
-  }
-  return (
-    <span style={{
-      width: 32, height: 22, borderRadius: 4, flexShrink: 0,
-      background: teamColor(team), color: "#fff",
-      fontSize: 10, fontWeight: 800, fontFamily: "var(--font-mono)",
-      display: "inline-flex", alignItems: "center", justifyContent: "center",
-      letterSpacing: "-0.04em",
-    }}>{teamInitials(team)}</span>
-  );
-}
 
 export interface LiveScore {
   stale?: boolean;
@@ -195,8 +173,8 @@ export function PredictionCard({ game, score }: Props) {
       <div className="editorial-fixture__body">
         <div className="editorial-fixture__match">
           <div className="editorial-fixture__teams">
-            <div><TeamBadge team={game.home_team} logo={game.home_team_logo}/><strong>{game.home_team}</strong></div>
-            <div><TeamBadge team={game.away_team} logo={game.away_team_logo}/><strong>{game.away_team}</strong></div>
+            <div><TeamCrest team={game.home_team} logo={game.home_team_logo} national={game.team_type === "NATIONAL"} /><strong>{game.home_team}</strong></div>
+            <div><TeamCrest team={game.away_team} logo={game.away_team_logo} national={game.team_type === "NATIONAL"} /><strong>{game.away_team}</strong></div>
           </div>
           {(game.match_info?.home_form || game.match_info?.away_form) && (
             <div className="editorial-fixture__form" aria-label="Recent team form">
