@@ -336,7 +336,7 @@ export function HomePage() {
       {/* Tabs + verified SportyBet booking code, reachable from the hero. */}
       <section id="todays-picks" className="editorial-ticket-board home-picks-anchor" aria-label="Published selections">
         <div className="editorial-section-title"><div><span className="editorial-overline">PUBLICATION DESK</span><h2>{previousEdition ? "Latest published tickets" : "Today's tickets"}</h2></div><span className="editorial-board-caption">Choose a category to inspect selections and its booking code</span></div>
-        <ManualRemainingOverview data={manualRemaining.data} loading={manualRemaining.loading} error={manualRemaining.error} />
+        <ManualRemainingOverview data={manualRemaining.data} loading={manualRemaining.loading} error={manualRemaining.error} onRefresh={manualRemaining.refetch} />
         {actionable.viewingBookable && accumulators && (
           <AvailableNowOverview accumulators={accumulators} onSelect={key => {
             setActiveKey(key);
