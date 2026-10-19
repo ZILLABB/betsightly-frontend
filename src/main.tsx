@@ -15,6 +15,7 @@ import './styles/editorial-system.css'
 import './styles/editorial-layout.css'
 import './styles/mobile-dock.css'
 import './styles/team-crest.css'
+import './styles/matchday-polish.css'
 import { analytics } from './services/analytics'
 import { applyAnalyticsPreferenceFromUrl } from './services/internalTraffic'
 
