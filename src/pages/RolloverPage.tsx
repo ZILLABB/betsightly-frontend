@@ -325,140 +325,85 @@ export function RolloverPage() {
               const isToday = todaysDay?.date === day.date;
 
               return (
-                <div
-                  key={day.day_number}
-                  className="card"
-                  style={{
-                    padding: "16px 18px",
-                    borderLeft: isToday ? `3px solid var(--blue)` : `3px solid ${status.color}`,
-                    opacity: day.status === "lost" ? 0.55 : 1,
-                  }}
-                >
-                  {/* Day header */}
-                  <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
-                    <div style={{
-                      width: 38, height: 38, borderRadius: 10,
-                      background: isToday ? "var(--blue-faint)" : status.bg,
-                      color: isToday ? "var(--blue)" : status.color,
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      fontFamily: "var(--font-mono)", fontSize: 14, fontWeight: 800,
-                      flexShrink: 0,
-                    }}>
-                      {day.day_number}
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                        <p style={{ fontFamily: "var(--font-display)", fontSize: 15, fontWeight: 700, color: "var(--text-1)" }}>
-                          Day {day.day_number}
-                        </p>
-                        {(day.editorial_manual || day.picks.some(p => p.editorial_manual)) && (
-                          <span style={{
-                            fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 700,
-                            padding: "2px 6px", borderRadius: 4,
-                            background: "var(--surface-2)", color: "var(--text-2)",
-                            textTransform: "uppercase",
-                          }}>Admin curated · Not model scored</span>
-                        )}
-                        {isToday && (
-                          <span style={{
-                            fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 700, padding: "2px 6px",
-                            background: "var(--blue-faint)", color: "var(--blue)", borderRadius: 4,
-                            textTransform: "uppercase", letterSpacing: "0.08em",
-                          }}>Today</span>
-                        )}
+                <article key={day.day_number}
+                  className={`rollover-ticket rollover-ticket--${day.status}${isToday ? " rollover-ticket--today" : ""}`}
+                  aria-label={`Day ${day.day_number} rollover ticket`}>
+                  <header className="rollover-ticket__header">
+                    <div className="rollover-ticket__heading">
+                      <span className="rollover-ticket__day-number" aria-hidden="true">{day.day_number}</span>
+                      <div>
+                        <span className="rollover-ticket__eyebrow">ROLLOVER · DAY {day.day_number}</span>
+                        <h3>Matchday selections</h3>
+                        <span className="rollover-ticket__date">
+                          <Calendar size={12} aria-hidden="true"/> {fmtDate(day.date)} · {day.picks.length} match{day.picks.length === 1 ? "" : "es"}
+                        </span>
                       </div>
-                      <p style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text-3)", marginTop: 2, display: "inline-flex", alignItems: "center", gap: 4 }}>
-                        <Calendar size={11} /> {fmtDate(day.date)} · {day.picks.length} pick{day.picks.length !== 1 ? "s" : ""}
-                      </p>
                     </div>
-                    {/* Combined odds */}
-                    <div style={{ textAlign: "right", flexShrink: 0 }}>
-                      <p style={{ fontFamily: "var(--font-mono)", fontSize: 18, fontWeight: 800, color: catMeta.color, lineHeight: 1 }}>
-                        {fmtOdds(day.combined_odds)}{oddsSuffix}
-                      </p>
-                      <p style={{ fontFamily: "var(--font-body)", fontSize: 10, color: "var(--text-3)", marginTop: 3 }}>
-                        {day.editorial_manual || day.picks.some(p => p.editorial_manual) ||
-                         day.hit_probability == null && day.avg_confidence == null
-                          ? "Not model scored"
-                          : `lands ~${Math.round((day.hit_probability ?? day.avg_confidence ?? 0) * 100)}%`}
-                      </p>
+                    <span className="rollover-ticket__status" data-state={day.status}>
+                      {status.icon}{status.label}
+                    </span>
+                  </header>
+
+                  <div className="rollover-ticket__overview">
+                    <div>
+                      <span className="rollover-ticket__metric-label">PUBLISHED SLIP ODDS</span>
+                      <strong>{fmtOdds(day.combined_odds)}<small>{oddsSuffix}</small></strong>
                     </div>
-                    <div style={{
-                      display: "flex", alignItems: "center", gap: 4,
-                      padding: "4px 8px", borderRadius: 6,
-                      background: status.bg, color: status.color,
-                      fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700,
-                      textTransform: "uppercase", letterSpacing: "0.05em", flexShrink: 0,
-                    }}>
-                      {status.icon} {status.label}
-                    </div>
+                    <p className="rollover-ticket__chance">
+                      {day.editorial_manual || day.picks.some(p => p.editorial_manual) ||
+                       (day.hit_probability == null && day.avg_confidence == null)
+                        ? "Admin-curated / not model scored"
+                        : `Estimated chance: ${Math.round((day.hit_probability ?? day.avg_confidence ?? 0) * 100)}%`}
+                      <small>Actual bookmaker odds may differ.</small>
+                    </p>
                   </div>
 
-                  {/* Picks */}
-                  <div style={{ display: "flex", flexDirection: "column", gap: 6, paddingLeft: 50 }}>
+                  <ol className="rollover-ticket__legs" aria-label={`Day ${day.day_number} selections`}>
                     {day.picks.map((pick, pi) => {
                       const mkt = MARKET_COLORS[pick.market] || { c: "var(--text-3)", l: pick.market };
                       return (
-                        <div key={pi} style={{
-                          display: "flex", alignItems: "center", gap: 8,
-                          padding: "8px 10px", borderRadius: 8,
-                          background: "var(--surface-2)",
-                        }}>
-                          {/* Flags or initials badges */}
-                          <div style={{ display: "flex", alignItems: "center", gap: 3, flexShrink: 0 }}>
-                            <TeamCrest size="sm" team={pick.home_team} logo={pick.home_team_logo} national={pick.team_type !== "CLUB"} />
-                            <TeamCrest size="sm" team={pick.away_team} logo={pick.away_team_logo} national={pick.team_type !== "CLUB"} />
+                        <li className="rollover-ticket__leg" key={pick.match_id || pi}>
+                          <div className="rollover-ticket__crests" aria-hidden="true">
+                            <TeamCrest size="sm" team={pick.home_team} logo={pick.home_team_logo} national={pick.team_type !== "CLUB"}/>
+                            <TeamCrest size="sm" team={pick.away_team} logo={pick.away_team_logo} national={pick.team_type !== "CLUB"}/>
                           </div>
-                          {/* Match */}
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <p style={{ fontFamily: "var(--font-body)", fontSize: 12, fontWeight: 600, color: "var(--text-1)" }}>
-                              {pick.home_team} <span style={{ color: "var(--text-3)" }}>vs</span> {pick.away_team}
-                            </p>
-                            <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2, flexWrap: "wrap" }}>
-                              <span style={{
-                                fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 700,
-                                padding: "1px 5px", borderRadius: 3,
-                                background: `color-mix(in srgb, ${mkt.c} 12%, transparent)`,
-                                color: mkt.c, letterSpacing: "0.08em", textTransform: "uppercase",
-                              }}>{mkt.l}</span>
-                              <span style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-2)", fontWeight: 600 }}>
-                                {pick.prediction}
-                              </span>
-                              {pick.commence_time && (
-                                <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--text-3)" }}>
-                                  ⏱ {formatLocalTimeWithZone(pick.commence_time)}
-                                </span>
-                              )}
+                          <div className="rollover-ticket__leg-content">
+                            <div className="rollover-ticket__match">
+                              <strong>{pick.home_team}</strong><span>vs</span><strong>{pick.away_team}</strong>
                             </div>
-                          </div>
-                          {/* Odds + conf */}
-                          <div style={{ textAlign: "right", flexShrink: 0 }}>
-                            <p style={{ fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 700, color: catMeta.color, lineHeight: 1 }}>
-                              {fmtOdds(pick.odds)}{oddsSuffix}
+                            <p className="rollover-ticket__selection">
+                              <span className="rollover-ticket__market" style={{ color: mkt.c }}>{mkt.l}</span>
+                              <span>{pick.prediction}</span>
                             </p>
-                            <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, color: pick.confidence != null && pick.confidence >= 0.8 ? "var(--green)" : "var(--brand)", marginTop: 2 }}>
-                              {pick.editorial_manual || pick.confidence == null
-                                ? "Unscored" : `${Math.round(pick.confidence * 100)}%`}
-                            </p>
+                            {pick.commence_time && (
+                              <span className="rollover-ticket__kickoff">
+                                {formatLocalTimeWithZone(pick.commence_time)}
+                              </span>
+                            )}
                           </div>
-                        </div>
+                          <div className="rollover-ticket__leg-odds">
+                            <strong>{fmtOdds(pick.odds)}{oddsSuffix}</strong>
+                            <small>{pick.editorial_manual || pick.confidence == null ? "Unscored" : `${Math.round(pick.confidence * 100)}% est.`}</small>
+                          </div>
+                        </li>
                       );
                     })}
-                  </div>
+                  </ol>
                   {isToday && (
-                    <BookingCode
-                      booking={rollover?.booking}
-                      category={catMeta}
-                      tracking={{
-                        source: "daily_card",
-                        tier: "rollover",
-                        legCount: rollover?.booking?.booked_leg_count ?? day.picks.length,
-                        fingerprint: rollover?.booking?.booking_variant_fingerprint,
-                      }}
-                    />
+                    <div className="rollover-ticket__booking">
+                      <BookingCode
+                        booking={rollover?.booking}
+                        category={catMeta}
+                        tracking={{
+                          source: "daily_card",
+                          tier: "rollover",
+                          legCount: rollover?.booking?.booked_leg_count ?? day.picks.length,
+                          fingerprint: rollover?.booking?.booking_variant_fingerprint,
+                        }}
+                      />
+                    </div>
                   )}
-                </div>
-              );
+                </article>
             })}
           </div>
 
