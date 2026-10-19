@@ -180,8 +180,8 @@ export function LivePage() {
             </div>
             <div className="bs-live-fixture-row">
               <div className="bs-live-names">
-                <span className="bs-live-names__team"><TeamCrest team={m.home_team} logo={m.home_team_logo} national={m.team_type === "NATIONAL"} size="sm"/><strong>{m.home_team}</strong></span>
-                <span className="bs-live-names__team"><TeamCrest team={m.away_team} logo={m.away_team_logo} national={m.team_type === "NATIONAL"} size="sm"/><strong>{m.away_team}</strong></span>
+                <span className="bs-live-names__team"><TeamCrest team={m.home_team} logo={m.home_team_logo} national={m.team_type !== "CLUB"} size="sm"/><strong>{m.home_team}</strong></span>
+                <span className="bs-live-names__team"><TeamCrest team={m.away_team} logo={m.away_team_logo} national={m.team_type !== "CLUB"} size="sm"/><strong>{m.away_team}</strong></span>
               </div>
               <div className="bs-live-score" aria-label={haveScore ? `${s?.home_score} to ${s?.away_score}` : "Score unavailable"}>
                 <span>{haveScore ? s?.home_score : "–"}</span>
