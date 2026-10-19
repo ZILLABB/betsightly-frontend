@@ -27,7 +27,7 @@
       var selectedTheme = 'dark';
       try {
         var savedPreferences = JSON.parse(localStorage.getItem('betsightly_preferences') || '{}');
-        if (savedPreferences.theme === 'dark' || savedPreferences.theme === 'light')
+        if (savedPreferences.theme === 'dark' || savedPreferences.theme === 'light' || savedPreferences.theme === 'system')
           selectedTheme = savedPreferences.theme;
       } catch (_) {}
       var light = selectedTheme === 'light' || (selectedTheme === 'system' &&
