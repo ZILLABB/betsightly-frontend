@@ -1,0 +1,49 @@
+/* BetSightly palette exploration: Atlantic Blue vs Royal Cobalt.
+   Change only ?palette=atlantic or ?palette=cobalt in a preview URL.
+   Dark/light share the same design tokens. Never recolor win/loss states. */
+:root {
+  --bs-palette-background:#0B2238;--bs-palette-surface:#1A354A;
+  --bs-palette-accent:#4D9EC9;--bs-palette-action:#E5AD70;
+}
+:root:has(body) { --bs-palette-name:"Atlantic Blue"; }
+:root[data-bs-palette="cobalt"] {
+  --bs-palette-background:#111933;--bs-palette-surface:#26355E;
+  --bs-palette-accent:#7795E5;--bs-palette-action:#EAA46E;
+  --bs-palette-name:"Royal Cobalt";
+}
+:root:not(.light) .v3-page {
+  --bg:var(--bs-palette-background);
+  --bg-mid:color-mix(in srgb,var(--bs-palette-background) 82%,var(--bs-palette-surface));
+  --surface:var(--bs-palette-surface);
+  --surface-2:color-mix(in srgb,var(--bs-palette-surface) 84%,var(--bs-palette-background));
+  --brand:var(--bs-palette-accent);
+  --accent:var(--bs-palette-action);
+  --border-brand:color-mix(in srgb,var(--bs-palette-accent) 35%,transparent);
+  --brand-faint:color-mix(in srgb,var(--bs-palette-accent) 12%,transparent);
+  --bs-refine-steel:var(--bs-palette-accent);
+  --bs-refine-gold:var(--bs-palette-action);
+}
+:root.light .v3-page {
+  --bg:#F3F7FA;--bg-mid:#E9F0F5;--surface:#FFFFFF;--surface-2:#EDF3F7;
+  --brand:#246D99;--accent:#BA783B;
+  --border-brand:rgba(36,109,153,.27);--brand-faint:rgba(36,109,153,.08);
+  --bs-refine-steel:#246D99;--bs-refine-gold:#BA783B;
+}
+:root.light[data-bs-palette="cobalt"] .v3-page {
+  --bg:#F2F5FD;--bg-mid:#E8EEFB;--surface:#FFFFFF;--surface-2:#EEF1FB;
+  --brand:#3855AF;--accent:#B96E36;
+  --border-brand:rgba(56,85,175,.27);--brand-faint:rgba(56,85,175,.08);
+  --bs-refine-steel:#3855AF;--bs-refine-gold:#B96E36;
+}
+.v3-page .editorial-rollover-overview .bs-rollover-hero {
+  background:linear-gradient(140deg,var(--surface),var(--bg-mid)) !important;
+}
+.v3-page .rollover-ticket--today {
+  box-shadow:inset 3px 0 0 var(--brand),0 8px 25px rgba(5,17,30,.08);
+}
+.v3-page .rollover-ticket__booking .booking-actions > a {
+  background:var(--bs-palette-action) !important;color:#101925 !important;
+}
+:root.light .v3-page .rollover-ticket__booking .booking-actions > a {
+  background:var(--accent) !important;color:white !important;
+}
