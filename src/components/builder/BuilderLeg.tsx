@@ -175,9 +175,9 @@ export function BuilderLeg({
               </span>
 
               <div className="builder-leg-compact__teams">
-                <span className="builder-leg-compact__side"><TeamCrest team={game.home_team} logo={game.home_team_logo} national={game.team_type === "NATIONAL"} size="sm" /><strong>{game.home_team}</strong></span>
+                <span className="builder-leg-compact__side"><TeamCrest team={game.home_team} logo={game.home_team_logo} national={game.team_type !== "CLUB"} size="sm" /><strong>{game.home_team}</strong></span>
                 <span className="builder-leg-compact__versus">vs</span>
-                <span className="builder-leg-compact__side"><TeamCrest team={game.away_team} logo={game.away_team_logo} national={game.team_type === "NATIONAL"} size="sm" /><strong>{game.away_team}</strong></span>
+                <span className="builder-leg-compact__side"><TeamCrest team={game.away_team} logo={game.away_team_logo} national={game.team_type !== "CLUB"} size="sm" /><strong>{game.away_team}</strong></span>
               </div>
 
               {kickoff && <small>{kickoff}</small>}
