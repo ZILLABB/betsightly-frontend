@@ -422,10 +422,10 @@ test("an older edit response cannot overwrite a newer revision", async () => {
   fireEvent.click(replace[0]);
   fireEvent.click(replace[1]);
   await act(async () => second(editableSlip([{ ...gameB, home_team: "Newest" }] )));
-  await screen.findByText(/Newest v Beta/i);
+  await screen.findByLabelText(/Newest v Beta/i);
   await act(async () => first(editableSlip([{ ...gameB, home_team: "Obsolete" }] )));
-  expect(screen.queryByText(/Obsolete v Beta/i)).not.toBeInTheDocument();
-  expect(screen.getByText(/Newest v Beta/i)).toBeInTheDocument();
+  expect(screen.queryByLabelText(/Obsolete v Beta/i)).not.toBeInTheDocument();
+  expect(screen.getByLabelText(/Newest v Beta/i)).toBeInTheDocument();
 });
 test("prevents duplicate builds while a request is in flight", () => {
   buildSlip.mockReturnValue(new Promise(() => undefined));
