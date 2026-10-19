@@ -3,8 +3,8 @@ import "@testing-library/jest-dom";
 import { TeamCrest } from "./TeamCrest";
 
 test("a club always uses its actual supplied team crest instead of initials", () => {
-  render(<TeamCrest team="Juventus" logo="https://a.espncdn.com/i/teamlogos/soccer/500/111.png" />);
-  expect(screen.getByRole("img", { hidden: true }))
+  const { container } = render(<TeamCrest team="Juventus" logo="https://a.espncdn.com/i/teamlogos/soccer/500/111.png" />);
+  expect(container.querySelector("img"))
     .toHaveAttribute("src", "https://a.espncdn.com/i/teamlogos/soccer/500/111.png");
   expect(screen.queryByText("JU")).not.toBeInTheDocument();
 });
