@@ -27,7 +27,7 @@ test("shows the genuine empty state only after a successful API response", () =>
     lastUpdated: Date.now(), refetch: jest.fn(),
   });
   render(<RolloverPage />);
-  expect(screen.getByText(/No rollover chain yet/i)).toBeInTheDocument();
+  expect(screen.getByText(/No active chain published/i)).toBeInTheDocument();
   expect(screen.queryByText(/couldn’t load the rollover/i)).not.toBeInTheDocument();
 });
 
@@ -39,7 +39,7 @@ test("does not claim the chain is empty when the API failed without cache", () =
   });
   render(<RolloverPage />);
   expect(screen.getByText(/We couldn’t load the rollover right now/i)).toBeInTheDocument();
-  expect(screen.queryByText(/No rollover chain yet/i)).not.toBeInTheDocument();
+  expect(screen.queryByText(/No active chain published/i)).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Retry" }));
   expect(refetch).toHaveBeenCalledTimes(1);
 });
@@ -58,17 +58,53 @@ test("renders cached rollover data with a compact reconnect warning", () => {
   expect(screen.getByText(/No rollover chain yet/i)).toBeInTheDocument();
 });
 
-test("reference-edition progress renders three unpublished days, never fictional wins", () => {
+test("an empty feed does not invent Day 1, Day 2 or Day 3 statuses", () => {
   mockedPredictions.mockReturnValue({
     data: emptyData, loading: false, error: null, usingFallback: false,
     lastUpdated: null, refetch: jest.fn(),
   });
   render(<RolloverPage />);
-  const progress = screen.getByRole("list", { name: "Rollover chain progress" });
-  expect(progress.querySelectorAll("li")).toHaveLength(3);
-  expect(progress.textContent).toContain("Day 1");
-  expect(progress.textContent).toContain("Day 2");
-  expect(progress.textContent).toContain("Day 3");
-  expect(progress.textContent).not.toContain("Won");
-  expect(progress.textContent).toMatch(/Not published/);
+  expect(screen.getByText("No active chain published")).toBeInTheDocument();
+  expect(screen.getByText(/won't invent Day 1 selections/i)).toBeInTheDocument();
+  expect(screen.queryByRole("list", { name: "Rollover chain progress" })).not.toBeInTheDocument();
+  expect(screen.queryByText("Not published")).not.toBeInTheDocument();
+});
+
+test("during initial loading the tracker has placeholders instead of false Not published statuses", () => {
+  mockedPredictions.mockReturnValue({
+    data: null, loading: true, error: null, usingFallback: false,
+    lastUpdated: null, refetch: jest.fn(),
+  });
+  const { container } = render(<RolloverPage />);
+  expect(screen.getByRole("status", { name: "Checking rollover chain" })).toBeInTheDocument();
+  expect(container.querySelectorAll(".editorial-rollover-tracker-skeleton")).toHaveLength(3);
+  expect(screen.queryByRole("list", { name: "Rollover chain progress" })).not.toBeInTheDocument();
+  expect(screen.queryByText("No active chain published")).not.toBeInTheDocument();
+  expect(screen.queryByText("Not published")).not.toBeInTheDocument();
+});
+
+test("published day progress uses verified results and reports only actual stages", () => {
+  mockedPredictions.mockReturnValue({
+    data: {
+      ...emptyData,
+      accumulators: {
+        rollover: {
+          selected: true, target_days: 3,
+          chain: [
+            { day_number: 1, date: "2026-10-18", status: "won", picks: [], combined_odds: 2.2, avg_confidence: null },
+            { day_number: 2, date: "2099-10-20", status: "pending", picks: [], combined_odds: 2.0, avg_confidence: null },
+          ],
+        },
+      },
+    },
+    loading: false, error: null, usingFallback: false,
+    lastUpdated: null, refetch: jest.fn(),
+  });
+  render(<RolloverPage />);
+  const tracker = screen.getByRole("list", { name: "Rollover chain progress" });
+  expect(tracker.querySelectorAll("li")).toHaveLength(3);
+  expect(tracker.textContent).toContain("Verified win");
+  expect(tracker.textContent).toContain("Awaiting final");
+  expect(tracker.textContent).toContain("Not published");
+  expect(screen.getByText("1 / 3")).toBeInTheDocument();
 });
