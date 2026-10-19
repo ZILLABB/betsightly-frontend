@@ -10,13 +10,42 @@
   <meta name="description" content="Football predictions, SportyBet-verified booking codes, daily picks, 2 Odds, 5 Odds, 10 Odds, Over Goals, a three-day Rollover and transparent settled results." />
   <meta name="keywords" content="football predictions, daily predictions, rollover, over goals, SportyBet booking codes, accumulator, settled results" />
   <meta name="author" content="BetSightly" />
-  <meta name="theme-color" content="#07100e" />
+  <meta name="theme-color" content="#0B2238" />
+  <!-- Set the saved palette and dark/light preference before the first paint.
+       Without this, iPhone status-bar and page background briefly flash the
+       retired emerald theme while React and preferences load. -->
+  <script>
+    (function () {
+      var root = document.documentElement;
+      var choice = new URLSearchParams(window.location.search).get('palette');
+      var savedPalette = null;
+      try { savedPalette = sessionStorage.getItem('betsightly-preview-palette'); } catch (_) {}
+      var palette = choice === 'atlantic' || choice === 'cobalt'
+        ? choice : savedPalette === 'cobalt' ? 'cobalt' : 'atlantic';
+      root.setAttribute('data-bs-palette', palette);
+      try { sessionStorage.setItem('betsightly-preview-palette', palette); } catch (_) {}
+      var selectedTheme = 'system';
+      try {
+        var savedPreferences = JSON.parse(localStorage.getItem('betsightly_preferences') || '{}');
+        if (savedPreferences.theme === 'dark' || savedPreferences.theme === 'light')
+          selectedTheme = savedPreferences.theme;
+      } catch (_) {}
+      var light = selectedTheme === 'light' || (selectedTheme === 'system' &&
+        window.matchMedia && !window.matchMedia('(prefers-color-scheme: dark)').matches);
+      root.classList.add(light ? 'light' : 'dark');
+      var colors = palette === 'cobalt'
+        ? { dark: '#111933', light: '#F2F5FD' }
+        : { dark: '#0B2238', light: '#F3F7FA' };
+      document.querySelector('meta[name="theme-color"]')
+        .setAttribute('content', light ? colors.light : colors.dark);
+    })();
+  </script>
 
-  <!-- Option B emerald identity across browser, iOS, and installed app surfaces. -->
-  <link rel="icon" type="image/svg+xml" href="/brand-icon.svg?v=4" />
+  <!-- Consistent geometric B identity across the browser and installed-app surfaces. -->
+  <link rel="icon" type="image/svg+xml" href="/brand-icon.svg?v=5" />
   <!-- Apple needs a raster icon, using the approved geometric B logo. -->
-  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-v3.png?v=4" />
-  <link rel="manifest" href="/manifest.webmanifest?v=4" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-v3.png?v=5" />
+  <link rel="manifest" href="/manifest.webmanifest?v=5" />
 
   <!-- Open Graph (WhatsApp, Telegram, Facebook) -->
   <meta property="og:type" content="website" />
