@@ -71,7 +71,7 @@ beforeEach(() => {
 
 test("editorial matchday desk shows only published fixtures and never invents a booking code", () => {
   render(<HomePage />);
-  expect(screen.getByText("TODAY'S SELECTION DESK")).toBeInTheDocument();
+  expect(screen.getByText(/(LATEST PUBLISHED SELECTIONS|TODAY.S SELECTION DESK)/i)).toBeInTheDocument();
   expect(screen.getByText(/Home 1 vs Away 1/)).toBeInTheDocument();
   expect(screen.getByText("Review booking availability")).toBeInTheDocument();
   expect(screen.queryByText("2.21x")).not.toBeInTheDocument();
@@ -105,7 +105,7 @@ test("editorial matchday desk only calls a booking verified with an active code"
 
 test("hero links directly to today's booking code section", () => {
   render(<HomePage />);
-  expect(screen.getByRole("link", {name:/explore today.s tickets/i})).toHaveAttribute("href","#todays-picks");
+  expect(screen.getByRole("link", {name:/explore published tickets/i})).toHaveAttribute("href","#todays-picks");
   expect(document.getElementById("todays-picks")).toBeInTheDocument();
 });
 
@@ -169,7 +169,7 @@ test("manual tickets show Not scored in both homepage metrics, never NaN%", () =
   render(<HomePage />);
   expect(screen.getAllByText("Not scored")).toHaveLength(1);
   expect(screen.getByText("Manual picks not model-scored")).toBeInTheDocument();
-  expect(screen.getByText("TODAY'S SELECTION DESK")).toBeInTheDocument();
+  expect(screen.getByText(/(LATEST PUBLISHED SELECTIONS|TODAY.S SELECTION DESK)/i)).toBeInTheDocument();
   expect(screen.getByText("Review booking availability")).toBeInTheDocument();
   expect(screen.queryByText("NaN%")).not.toBeInTheDocument();
   expect(screen.queryByText(/All 2 legs land about/)).not.toBeInTheDocument();
