@@ -33,9 +33,9 @@ function renderHead(search: string, savedTheme?: string, storedPalette?: string,
   return {attrs,classes,meta,session};
 }
 
-test("initial HTML has an Atlantic background, correct viewport and valid early theme script", () => {
+test("initial HTML has a hybrid background, correct viewport and valid early theme script", () => {
   expect(html).toContain('name="viewport"');
-  expect(html).toContain('content="#0B2238"');
+  expect(html).toContain('content="#0C2037"');
   expect(startupScript).toContain("betsightly-preview-palette");
   const a = renderHead("?palette=atlantic");
   expect(a.attrs["data-bs-palette"]).toBe("atlantic");
@@ -43,6 +43,15 @@ test("initial HTML has an Atlantic background, correct viewport and valid early 
   expect(a.meta.setAttribute).toHaveBeenCalledWith("content", "#0B2238");
 });
 
+test("Atlantic × Cobalt blend is the default and supports light/dark first paint", () => {
+  const dark = renderHead("");
+  expect(dark.attrs["data-bs-palette"]).toBe("hybrid");
+  expect(dark.classes).toContain("dark");
+  expect(dark.meta.setAttribute).toHaveBeenCalledWith("content", "#0C2037");
+  const light = renderHead("?palette=hybrid", "system", undefined, false);
+  expect(light.classes).toContain("light");
+  expect(light.meta.setAttribute).toHaveBeenCalledWith("content", "#F1F5FB");
+});
 test("Cobalt light sets iPhone status-bar color without waiting for React", () => {
   const a = renderHead("?palette=cobalt", "light");
   expect(a.attrs["data-bs-palette"]).toBe("cobalt");
