@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { TeamCrest } from "../common/TeamCrest";
 import { CalendarDays, ChevronDown } from "lucide-react";
 import { api, type ManualResultsResponse } from "../../api/predictions";
 
@@ -81,7 +82,11 @@ export function ManualEditorialResults({ recent = false }: { recent?: boolean })
                     <div key={`${game.kickoff || i}-${i}`}
                       className={`result-leg result-leg--${game.status}`}>
                       <div className="result-leg__fixture">
-                        <strong>{game.home_team} vs {game.away_team}</strong>
+                        <div className="result-leg__teams">
+                          <TeamCrest team={game.home_team} logo={game.home_team_logo} size="sm"/>
+                          <TeamCrest team={game.away_team} logo={game.away_team_logo} size="sm"/>
+                          <strong>{game.home_team} vs {game.away_team}</strong>
+                        </div>
                         <small>{game.settlement_evidence
                           ? `FT ${game.settlement_evidence.home_score}–${game.settlement_evidence.away_score}`
                           : game.status === "pending" && game.settlement_pending_reason
