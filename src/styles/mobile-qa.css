@@ -302,3 +302,13 @@
 .editorial-rollover-progress > p a:focus-visible {
   outline: 2px solid var(--brand); outline-offset: 3px;
 }
+
+.editorial-edition-notice {
+  max-width: 520px; width: fit-content; margin: 12px 0 0;
+  padding: 8px 11px;
+  border: 1px solid color-mix(in srgb,var(--accent) 25%,var(--border));
+  border-left: 3px solid var(--accent);
+  border-radius: 5px; background: var(--gold-faint); color: var(--text-2);
+  font: 600 11px/1.45 var(--font-body);
+}
+.light .editorial-edition-notice { color: var(--text-2); }
