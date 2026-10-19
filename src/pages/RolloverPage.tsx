@@ -363,13 +363,17 @@ export function RolloverPage() {
                       const mkt = MARKET_COLORS[pick.market] || { c: "var(--text-3)", l: pick.market };
                       return (
                         <li className="rollover-ticket__leg" key={`${pick.match_id || "fixture"}-${pi}`}>
-                          <div className="rollover-ticket__crests" aria-hidden="true">
-                            <TeamCrest size="sm" team={pick.home_team} logo={pick.home_team_logo} national={pick.team_type !== "CLUB"}/>
-                            <TeamCrest size="sm" team={pick.away_team} logo={pick.away_team_logo} national={pick.team_type !== "CLUB"}/>
-                          </div>
                           <div className="rollover-ticket__leg-content">
-                            <div className="rollover-ticket__match">
-                              <strong>{pick.home_team}</strong><span>vs</span><strong>{pick.away_team}</strong>
+                            <div className="rollover-ticket__match" aria-label={`${pick.home_team} versus ${pick.away_team}`}>
+                              <span className="rollover-ticket__team">
+                                <TeamCrest size="sm" team={pick.home_team} logo={pick.home_team_logo} national={pick.team_type !== "CLUB"}/>
+                                <strong>{pick.home_team}</strong>
+                              </span>
+                              <span className="rollover-ticket__versus" aria-hidden="true">vs</span>
+                              <span className="rollover-ticket__team">
+                                <TeamCrest size="sm" team={pick.away_team} logo={pick.away_team_logo} national={pick.team_type !== "CLUB"}/>
+                                <strong>{pick.away_team}</strong>
+                              </span>
                             </div>
                             <p className="rollover-ticket__selection">
                               <span className="rollover-ticket__market" style={{ color: mkt.c }}>{mkt.l}</span>
