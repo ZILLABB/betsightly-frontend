@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { usePredictions } from "../hooks/usePredictions";
 import { useFormatOdds } from "../hooks/useFormatOdds";
-import { PredictionCardSkeleton } from "../components/ui/Skeleton";
 import { BrandLoader } from "../components/ui/BrandLoader";
 import { CATEGORIES } from "../types";
 import { Repeat2, CheckCircle, XCircle, Clock, Circle, TrendingUp, Calendar, List, Zap } from "lucide-react";
@@ -254,7 +253,6 @@ export function RolloverPage() {
       {loading && chain.length === 0 ? (
         <div className="editorial-rollover-load-inline">
           <BrandLoader variant="compact" message="Loading the rollover chain…" />
-          <PredictionCardSkeleton />
         </div>
       ) : error && !usingFallback ? (
         <div className="card" role="alert" style={{ padding: "40px 20px", textAlign: "center" }}>
