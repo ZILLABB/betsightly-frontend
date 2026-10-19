@@ -274,6 +274,7 @@ export interface RolloverPick {
   away_team: string;
   home_team_logo?: string;
   away_team_logo?: string;
+  team_type?: "CLUB" | "NATIONAL";
   commence_time?: string;
   market: 'match_result' | 'goals' | 'btts' | 'double_chance';
   prediction: string;
