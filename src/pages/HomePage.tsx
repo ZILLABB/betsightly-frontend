@@ -7,6 +7,8 @@ import { useActionableCard } from "../hooks/useActionableCard";
 import { WelcomeBanner } from "../components/common/WelcomeBanner";
 import { JoinTelegram } from "../components/common/JoinTelegram";
 import { AccuracyBadge } from "../components/common/AccuracyBadge";
+import { AvailableNowOverview } from "../components/predictions/AvailableNowOverview";
+import { preferredBookableTier } from "../utils/bookableTiers";
 import { CategoryTabs } from "../components/predictions/CategoryTabs";
 import { PredictionCard } from "../components/predictions/PredictionCard";
 import { EmptyState } from "../components/predictions/EmptyState";
@@ -70,6 +72,12 @@ export function HomePage() {
   const published = data?.accumulators;
   const actionable = useActionableCard(published, data?.date);
   const accumulators = actionable.accumulators;
+  // Fresh live cards can carry only Banker or a different subset than the
+  // locked morning publication. Do not strand the visitor on an empty old tab.
+  useEffect(() => {
+    if (!actionable.viewingBookable || !accumulators) return;
+    setActiveKey(current => preferredBookableTier(accumulators, current));
+  }, [actionable.viewingBookable, accumulators]);
   const activeCat = accumulators?.[activeKey];
   const catMeta = CATEGORIES.find(c => c.key === activeKey)!;
   const isSingles = activeCat?.presentation === "singles";
@@ -234,7 +242,7 @@ export function HomePage() {
         </div>
       </section>
 
-      {actionable.needsReplacement && (
+      {(actionable.needsReplacement || actionable.requestedAvailable) && (
         <div className="card available-now" role="status" aria-live="polite" style={{
           padding: "12px 14px",
           display: "flex",
@@ -325,7 +333,14 @@ export function HomePage() {
       {/* Tabs + verified SportyBet booking code, reachable from the hero. */}
       <section id="todays-picks" className="editorial-ticket-board home-picks-anchor" aria-label="Published selections">
         <div className="editorial-section-title"><div><span className="editorial-overline">PUBLICATION DESK</span><h2>{previousEdition ? "Latest published tickets" : "Today's tickets"}</h2></div><span className="editorial-board-caption">Choose a category to inspect selections and its booking code</span></div>
-        <CategoryTabs active={activeKey} onChange={setActiveKey} oddsMap={oddsMap} singlesMap={singlesMap} />
+        {actionable.viewingBookable && accumulators && (
+          <AvailableNowOverview accumulators={accumulators} onSelect={key => {
+            setActiveKey(key);
+          }} />
+        )}
+        <CategoryTabs active={activeKey} onChange={setActiveKey} oddsMap={oddsMap} singlesMap={singlesMap}
+          availabilityMap={accumulators ? Object.fromEntries(CATEGORIES.map(item => [item.key,
+            Boolean(accumulators[item.key]?.selected && accumulators[item.key]?.games?.length)])) : {}} />
 
         {/* Category header */}
         {!loading && activeCat && (
