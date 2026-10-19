@@ -3,7 +3,7 @@ import { usePredictions } from "../hooks/usePredictions";
 import { useFormatOdds } from "../hooks/useFormatOdds";
 import { BrandLoader } from "../components/ui/BrandLoader";
 import { CATEGORIES } from "../types";
-import { Repeat2, CheckCircle, XCircle, Clock, Circle, TrendingUp, Calendar, List, Zap } from "lucide-react";
+import { Repeat2, CheckCircle, XCircle, Clock, Circle, Calendar, List, Zap } from "lucide-react";
 import { TeamCrest } from "../components/common/TeamCrest";
 import { SEO } from "../components/common/SEO";
 import BookingCode from "../components/predictions/BookingCode";
