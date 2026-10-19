@@ -84,8 +84,8 @@ export function RolloverPage() {
           <div className="bs-rollover-hero__copy">
             <span className="editorial-overline">ROLLING CHALLENGE / PUBLIC DAY-BY-DAY RECORD</span>
             <h1 id="rollover-title">{targetDays}-day rollover.</h1>
-            <p>Each stage is published and settled independently. A chain only progresses
-              after verified results, and manual selections remain outside model calibration.</p>
+            <p>Follow the current chain through three verified matchdays.
+              Each stage advances only after official results are confirmed.</p>
             <div className="editorial-rollover-overview__rule">
               <span>Daily target</span>
               <strong>2×–3×</strong>
@@ -94,8 +94,8 @@ export function RolloverPage() {
           </div>
         </header>
         <aside className="editorial-rollover-progress" aria-label="Rollover day progress">
-          <span className="editorial-overline">CHAIN TRACKER</span>
-          <h2>Three stages. One record.</h2>
+          <span className="editorial-overline">CURRENT CHALLENGE</span>
+          <h2>Day-by-day progress</h2>
           <ol className="bs-rollover-timeline" aria-label="Rollover chain progress">
             {Array.from({ length: targetDays }, (_, index) => {
               const day = chain.find(item => item.day_number === index + 1);
@@ -112,7 +112,7 @@ export function RolloverPage() {
               );
             })}
           </ol>
-          <p>Unverified scores never count as a completed stage.</p>
+          <p>Only verified finals advance a stage. <a href="/results">Previous rollover results →</a></p>
         </aside>
       </section>
 
