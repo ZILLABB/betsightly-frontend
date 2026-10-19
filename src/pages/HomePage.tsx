@@ -18,6 +18,7 @@ import { SEO } from "../components/common/SEO";
 import type { CategoryKey } from "../types";
 import { api, type HomeCampaign } from "../api/predictions";
 import { publishedCardCounts } from "../utils/publishedCardCounts";
+import { isEarlierPublication } from "../utils/publicationFreshness";
 import { competitionSpotlight, type CompetitionSpotlight } from "../utils/competitionSpotlight";
 
 // ── Loading State — branded logo loader + skeleton grid ──
@@ -65,6 +66,7 @@ export function HomePage() {
 
   const { formatOdds: fmtOdds, oddsSuffix } = useFormatOdds();
 
+  const previousEdition = isEarlierPublication(data?.date);
   const published = data?.accumulators;
   const actionable = useActionableCard(published, data?.date);
   const accumulators = actionable.accumulators;
@@ -160,7 +162,7 @@ export function HomePage() {
       <section className="editorial-cover" aria-labelledby="home-title">
         <div className="editorial-cover__main">
           <p className="editorial-overline">
-            MATCHDAY REPORT <span aria-hidden="true">/</span>
+            {previousEdition ? "LATEST PUBLISHED REPORT" : "MATCHDAY REPORT"} <span aria-hidden="true">/</span>
             {data?.date
               ? new Date(data.date + "T12:00:00Z").toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" })
               : "Today's edition"}
@@ -170,9 +172,14 @@ export function HomePage() {
             A verified publication desk for daily football selections, bookmaker prices and
             an accountable results record. Every selection stays visible after kickoff.
           </p>
+          {previousEdition && (
+            <p className="editorial-edition-notice" role="status">
+              Showing the latest published edition, not a new card for today.
+            </p>
+          )}
           <div className="editorial-cover__actions">
             <a href="#todays-picks" className="editorial-button editorial-button--primary">
-              Explore today's tickets <ArrowRight size={16} aria-hidden="true"/>
+              Explore published tickets <ArrowRight size={16} aria-hidden="true"/>
             </a>
             <Link to="/build-slip" className="editorial-button editorial-button--quiet">
               <Sliders size={16} aria-hidden="true"/> Build a slip
@@ -201,7 +208,7 @@ export function HomePage() {
 
       <section className="editorial-feature" aria-label="Featured published ticket">
         <div className="editorial-section-title">
-          <div><span className="editorial-overline">TODAY'S SELECTION DESK</span>
+          <div><span className="editorial-overline">{previousEdition ? "LATEST PUBLISHED SELECTIONS" : "TODAY'S SELECTION DESK"}</span>
             <h2>Featured publication</h2></div>
           <Link to="/results" className="editorial-text-link">See verified results <ArrowRight size={15} aria-hidden="true"/></Link>
         </div>
@@ -317,7 +324,7 @@ export function HomePage() {
 
       {/* Tabs + verified SportyBet booking code, reachable from the hero. */}
       <section id="todays-picks" className="editorial-ticket-board home-picks-anchor" aria-label="Published selections">
-        <div className="editorial-section-title"><div><span className="editorial-overline">PUBLICATION DESK</span><h2>Today's tickets</h2></div><span className="editorial-board-caption">Choose a category to inspect selections and its booking code</span></div>
+        <div className="editorial-section-title"><div><span className="editorial-overline">PUBLICATION DESK</span><h2>{previousEdition ? "Latest published tickets" : "Today's tickets"}</h2></div><span className="editorial-board-caption">Choose a category to inspect selections and its booking code</span></div>
         <CategoryTabs active={activeKey} onChange={setActiveKey} oddsMap={oddsMap} singlesMap={singlesMap} />
 
         {/* Category header */}
