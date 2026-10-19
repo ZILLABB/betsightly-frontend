@@ -19,6 +19,7 @@ import './styles/matchday-polish.css'
 import './styles/mobile-qa.css'
 import './styles/brand-loader.css'
 import './styles/editorial-refinement.css'
+import './styles/rollover-ticket-polish.css'
 import { analytics } from './services/analytics'
 import { applyAnalyticsPreferenceFromUrl } from './services/internalTraffic'
 
