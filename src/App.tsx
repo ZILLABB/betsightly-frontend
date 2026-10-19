@@ -9,7 +9,7 @@ import { ErrorBoundary } from "./components/common/ErrorBoundary";
 import { BuilderProvider } from "./contexts/BuilderProvider";
 import { Layout } from "./components/layout/Layout";
 import { BuilderWinNotice } from "./components/builder/BuilderWinNotice";
-import { Spinner } from "./components/ui/Spinner";
+import { BrandLoader } from "./components/ui/BrandLoader";
 
 // HomePage stays eager (always the first paint)
 import { HomePage } from "./pages/HomePage";
@@ -31,8 +31,8 @@ const SlipBuilderPage = lazy(() => import("./pages/SlipBuilderPage"));
 
 function Fallback() {
   return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "40vh" }}>
-      <Spinner size={32} />
+    <div className="brand-loader-route">
+      <BrandLoader message="Opening page…" />
     </div>
   );
 }
