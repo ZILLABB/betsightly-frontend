@@ -24,7 +24,7 @@
         ? choice : savedPalette === 'cobalt' ? 'cobalt' : 'atlantic';
       root.setAttribute('data-bs-palette', palette);
       try { sessionStorage.setItem('betsightly-preview-palette', palette); } catch (_) {}
-      var selectedTheme = 'system';
+      var selectedTheme = 'dark';
       try {
         var savedPreferences = JSON.parse(localStorage.getItem('betsightly_preferences') || '{}');
         if (savedPreferences.theme === 'dark' || savedPreferences.theme === 'light')
