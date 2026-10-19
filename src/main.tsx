@@ -21,12 +21,12 @@ import './styles/brand-loader.css'
 import './styles/editorial-refinement.css'
 import './styles/rollover-ticket-polish.css'
 import './styles/palette-comparison.css'
+import { applyPreviewPalette } from './utils/palettePreview'
 import { analytics } from './services/analytics'
 import { applyAnalyticsPreferenceFromUrl } from './services/internalTraffic'
 
-// Apply the requested design comparison palette before the page renders.
-const palette = new URLSearchParams(window.location.search).get('palette')
-document.documentElement.setAttribute('data-bs-palette', palette === 'cobalt' ? 'cobalt' : 'atlantic')
+// Apply the selected brand palette before React renders to avoid flashes.
+applyPreviewPalette()
 
 // Apply a saved per-browser opt-out before any tracker initializes.
 applyAnalyticsPreferenceFromUrl()
