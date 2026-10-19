@@ -7,10 +7,10 @@ const PRIMARY = [
   { path: "/predictions", label: "Picks", icon: Target },
   { path: "/build-slip", label: "Build", icon: SlidersHorizontal, featured: true },
   { path: "/rollover", label: "Rollover", icon: RefreshCw },
-  { path: "/results", label: "Results", icon: BarChart3 },
 ] as const;
 
 const MORE = [
+  { path: "/results", label: "Results", note: "Verified wins, losses and history", icon: BarChart3 },
   { path: "/live", label: "Live scores", note: "Matchday scoreboard", icon: Radio },
   { path: "/punters", label: "Punters", note: "Community selections", icon: Users },
   { path: "/settings", label: "Settings", note: "Display preferences", icon: Settings },
