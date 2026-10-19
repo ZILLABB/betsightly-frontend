@@ -404,6 +404,7 @@ export function RolloverPage() {
                     </div>
                   )}
                 </article>
+              );
             })}
           </div>
 
