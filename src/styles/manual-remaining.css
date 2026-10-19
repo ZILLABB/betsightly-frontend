@@ -24,3 +24,14 @@
 .manual-remaining__disclaimer{font-size:10px;color:var(--text-3)}
 .manual-remaining__status{display:flex;align-items:center;gap:8px;padding:12px;border:1px solid var(--border);border-radius:9px;color:var(--text-2);font:500 12px/1.5 var(--font-body)}
 @media(max-width:480px){.manual-remaining{padding:13px}.manual-remaining__list{grid-template-columns:minmax(0,1fr)}.manual-remaining__card{padding:12px}}
+
+.manual-remaining__status { flex-wrap:wrap; }
+.manual-remaining__status button {
+  margin-left:auto; padding:8px 12px; min-height:38px;
+  border-radius:7px; border:1px solid var(--border-brand);
+  background:var(--surface); color:var(--brand);
+  font:750 11px/1.3 var(--font-body); cursor:pointer;
+}
+.manual-remaining__status button:focus-visible {
+  outline:2px solid var(--brand); outline-offset:2px;
+}
