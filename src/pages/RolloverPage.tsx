@@ -5,33 +5,11 @@ import { PredictionCardSkeleton } from "../components/ui/Skeleton";
 import { BrandLoader } from "../components/ui/BrandLoader";
 import { CATEGORIES } from "../types";
 import { Repeat2, CheckCircle, XCircle, Clock, Circle, TrendingUp, Calendar, List, Zap } from "lucide-react";
-import { getTeamFlag, isWcNation, teamInitials, teamColor } from "../data/wcFlags";
+import { TeamCrest } from "../components/common/TeamCrest";
 import { SEO } from "../components/common/SEO";
 import BookingCode from "../components/predictions/BookingCode";
 import { formatLocalTimeWithZone } from "../utils/formatters";
 import "../styles/product-experience.css";
-
-function TeamBadge({ team, logo }: { team: string; logo?: string | null }) {
-  if (isWcNation(team)) {
-    return (
-      <img
-        src={getTeamFlag(team, logo, 40)}
-        alt=""
-        style={{ width: 18, height: 13, objectFit: "cover", borderRadius: 2, flexShrink: 0 }}
-        onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
-      />
-    );
-  }
-  return (
-    <span style={{
-      width: 18, height: 13, borderRadius: 2, flexShrink: 0,
-      background: teamColor(team), color: "#fff",
-      fontSize: 8, fontWeight: 800, fontFamily: "var(--font-mono)",
-      display: "inline-flex", alignItems: "center", justifyContent: "center",
-      letterSpacing: "-0.04em",
-    }}>{teamInitials(team)}</span>
-  );
-}
 
 const STATUS_CONFIG: Record<string, { icon: React.ReactNode; color: string; bg: string; label: string }> = {
   won: { icon: <CheckCircle size={14} />, color: "var(--green)", bg: "rgba(34,197,94,0.10)", label: "Won" },
@@ -385,8 +363,8 @@ export function RolloverPage() {
                         }}>
                           {/* Flags or initials badges */}
                           <div style={{ display: "flex", alignItems: "center", gap: 3, flexShrink: 0 }}>
-                            <TeamBadge team={pick.home_team} logo={pick.home_team_logo} />
-                            <TeamBadge team={pick.away_team} logo={pick.away_team_logo} />
+                            <TeamCrest size="sm" team={pick.home_team} logo={pick.home_team_logo} national={pick.team_type === "NATIONAL"} />
+                            <TeamCrest size="sm" team={pick.away_team} logo={pick.away_team_logo} national={pick.team_type === "NATIONAL"} />
                           </div>
                           {/* Match */}
                           <div style={{ flex: 1, minWidth: 0 }}>
