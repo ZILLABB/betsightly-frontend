@@ -362,7 +362,7 @@ export function RolloverPage() {
                     {day.picks.map((pick, pi) => {
                       const mkt = MARKET_COLORS[pick.market] || { c: "var(--text-3)", l: pick.market };
                       return (
-                        <li className="rollover-ticket__leg" key={pick.match_id || pi}>
+                        <li className="rollover-ticket__leg" key={`${pick.match_id || "fixture"}-${pi}`}>
                           <div className="rollover-ticket__crests" aria-hidden="true">
                             <TeamCrest size="sm" team={pick.home_team} logo={pick.home_team_logo} national={pick.team_type !== "CLUB"}/>
                             <TeamCrest size="sm" team={pick.away_team} logo={pick.away_team_logo} national={pick.team_type !== "CLUB"}/>
@@ -408,7 +408,7 @@ export function RolloverPage() {
           </div>
 
           {/* Footer note */}
-          <div style={{ marginTop: 18, padding: "12px 16px", background: "var(--surface-2)", borderRadius: 10, display: "flex", alignItems: "flex-start", gap: 10 }}>
+          <div className="rollover-risk-note" style={{ marginTop: 18, padding: "12px 16px", background: "var(--surface-2)", borderRadius: 10, display: "flex", alignItems: "flex-start", gap: 10 }}>
             <TrendingUp size={14} color="var(--text-3)" style={{ marginTop: 2, flexShrink: 0 }} />
             <p style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text-3)", lineHeight: 1.6 }}>
               Automated stages use supported predictions; a manual fallback is bookmaker-verified but not model scored. The daily target is 2x–3x.
