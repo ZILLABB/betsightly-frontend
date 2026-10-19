@@ -13,10 +13,13 @@ interface ThemeProviderProps {
  */
 const setThemeColorMeta = (isDark: boolean) => {
   const meta = document.querySelector('meta[name="theme-color"]');
-  const cobalt = document.documentElement.getAttribute('data-bs-palette') === 'cobalt';
-  const color = isDark
-    ? (cobalt ? '#111933' : '#0B2238')
-    : (cobalt ? '#F2F5FD' : '#F3F7FA');
+  const palette = document.documentElement.getAttribute('data-bs-palette');
+  const browserColors = palette === 'cobalt'
+    ? { dark: '#111933', light: '#F2F5FD' }
+    : palette === 'atlantic'
+      ? { dark: '#0B2238', light: '#F3F7FA' }
+      : { dark: '#0C2037', light: '#F1F5FB' };
+  const color = isDark ? browserColors.dark : browserColors.light;
   if (meta) meta.setAttribute('content', color);
 };
 
