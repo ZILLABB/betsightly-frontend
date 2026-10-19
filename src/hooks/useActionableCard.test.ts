@@ -375,3 +375,68 @@ test("no manual ticket means stale automatic picks can still be replaced", async
   await waitFor(() => expect(result.current.viewingBookable).toBe(true));
   expect(result.current.activeManualPublication).toBe(false);
 });
+
+test("an available-now response without a verified code cannot replace the published card", async () => {
+  const oldKickoff = new Date(Date.now()-7200000).toISOString();
+  const nextKickoff = new Date(Date.now()+14400000).toISOString();
+  const published = {
+    banker: empty, "2_odds": category(oldKickoff),
+    "5_odds": empty, "10_odds": empty, over_1_5: empty, rollover: empty,
+  } as any;
+  const getBookableNow = api.getBookableNow as jest.Mock;
+  getBookableNow.mockReset();
+  getBookableNow.mockResolvedValueOnce({
+    status:"success",available:true,
+    accumulators:{banker: category(nextKickoff,"unavailable"), "2_odds": empty,
+      "5_odds": empty,"10_odds": empty,over_1_5: empty},
+  });
+  const {result} = renderHook(() => useActionableCard(published,"2026-10-19"));
+  await waitFor(() => expect(result.current.bookableError).toBe(true));
+  expect(result.current.viewingBookable).toBe(false);
+  expect(result.current.accumulators).toBe(published);
+  expect(result.current.bookable?.reason).toMatch(/no validated, actionable SportyBet codes/i);
+});
+
+test("an explicit availability check runs even when published matches have not yet started", async () => {
+  const publishedKickoff = new Date(Date.now()+14400000).toISOString();
+  const replacementKickoff = new Date(Date.now()+21600000).toISOString();
+  const published = {
+    banker: empty, "2_odds": category(publishedKickoff),
+    "5_odds": empty, "10_odds": empty, over_1_5: empty, rollover: empty,
+  } as any;
+  const getBookableNow = api.getBookableNow as jest.Mock;
+  getBookableNow.mockReset();
+  getBookableNow.mockResolvedValueOnce({
+    status:"success",available:true,
+    accumulators:{banker: category(replacementKickoff), "2_odds": empty,
+      "5_odds": empty,"10_odds": empty,over_1_5: empty},
+  });
+  const {result} = renderHook(() => useActionableCard(published,"2026-10-19"));
+  expect(result.current.needsReplacement).toBe(false);
+  act(() => result.current.showAvailable());
+  await waitFor(() => expect(result.current.viewingBookable).toBe(true));
+  expect(result.current.requestedAvailable).toBe(true);
+  expect(result.current.accumulators?.banker?.games[0]?.kickoff).toBe(replacementKickoff);
+  expect(getBookableNow).toHaveBeenCalledTimes(1);
+});
+
+test("live replacement object identity remains stable across unrelated rerenders", async () => {
+  const oldKickoff = new Date(Date.now()-7200000).toISOString();
+  const nextKickoff = new Date(Date.now()+14400000).toISOString();
+  const published = {
+    banker: empty, "2_odds": category(oldKickoff),
+    "5_odds": empty, "10_odds": empty, over_1_5: empty, rollover: empty,
+  } as any;
+  const getBookableNow = api.getBookableNow as jest.Mock;
+  getBookableNow.mockReset();
+  getBookableNow.mockResolvedValueOnce({
+    status:"success",available:true,
+    accumulators:{banker: category(nextKickoff), "2_odds": empty,
+      "5_odds": empty,"10_odds": empty,over_1_5: empty},
+  });
+  const {result,rerender} = renderHook(() => useActionableCard(published,"2026-10-19"));
+  await waitFor(() => expect(result.current.viewingBookable).toBe(true));
+  const same = result.current.accumulators;
+  rerender();
+  expect(result.current.accumulators).toBe(same);
+});
