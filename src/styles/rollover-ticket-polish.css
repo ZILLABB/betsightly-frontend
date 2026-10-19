@@ -1,0 +1,282 @@
+/* BetSightly editorial QA: Builder layout and Rollover ticket v2.
+ * Loaded after the existing themed CSS, preserving booking/settlement logic.
+ */
+
+/* The builder heading was a desktop space-between flex row on mobile.
+ * A single full-width heading block is the intended information hierarchy. */
+.v3-builder .builder-v2-config .builder-v2-heading {
+  display: grid !important; grid-template-columns: minmax(0,1fr) !important;
+  width: 100%; min-width: 0;
+  justify-content: start !important; justify-items: start !important;
+  align-content: start; align-items: start !important;
+  gap: 4px !important; text-align: left !important;
+}
+.v3-builder .builder-v2-config .builder-v2-heading > div {
+  display: block; min-width: 0; width: 100%;
+  margin: 0; text-align: left !important;
+}
+.v3-builder .builder-v2-config .builder-v2-heading .builder-eyebrow {
+  display: block; margin: 0 0 5px; text-align: left;
+}
+.v3-builder .builder-v2-config .builder-v2-heading h2 {
+  width: 100%; margin: 0; text-align: left !important;
+  font: 790 clamp(21px,3vw,26px)/1.18 var(--font-display);
+  letter-spacing: -.036em;
+}
+.v3-builder .builder-v2-config .builder-v2-heading p {
+  margin: 4px 0 0; width: 100%; max-width: 620px !important;
+  color: var(--text-2); font: 450 12px/1.55 var(--font-body);
+  text-align: left !important;
+}
+@media (max-width: 767px) {
+  .v3-builder .builder-v2-config .builder-v2-heading h2 { font-size: 22px; }
+  .v3-builder .builder-v2-config .builder-v2-heading p { font-size: 11px; }
+  .v3-builder .builder-v2-number {
+    display: grid; grid-template-columns: minmax(0,1fr); gap: 10px;
+  }
+  .v3-builder .builder-v2-number > .builder-v2-label-row {
+    display: flex; flex-wrap: wrap; align-items: baseline;
+    gap: 4px 12px; justify-content: space-between;
+  }
+  .v3-builder .builder-v2-number > input {
+    width: 100%; min-width: 0; max-width: none;
+    min-height: 44px; box-sizing: border-box;
+  }
+  .v3-builder .builder-v2-number > .builder-v2-pills {
+    display: grid; grid-template-columns: repeat(4,minmax(0,1fr));
+    gap: 7px; align-items: stretch;
+  }
+  .v3-builder .builder-v2-number > .builder-v2-pills button {
+    min-width: 0; min-height: 43px;
+    border-radius: 8px; padding: 7px 5px;
+    font: 700 12px/1.2 var(--font-body);
+  }
+}
+
+/* Rollover ticket: a readable betting worksheet with a single compact
+ * header, distinct match rows and an actionable bookmaker section. */
+.v3-rollover .rollover-ticket {
+  --ticket-pad: clamp(14px,2.2vw,23px);
+  overflow: hidden; min-width: 0; border-radius: 13px;
+  background: var(--surface); border: 1px solid var(--border);
+  box-shadow: 0 6px 25px rgba(5,17,30,.08);
+}
+.v3-rollover .rollover-ticket--today {
+  border-color: var(--border-brand);
+  box-shadow: inset 3px 0 0 var(--bs-refine-steel),0 8px 25px rgba(5,17,30,.08);
+}
+.v3-rollover .rollover-ticket--won { border-left: 3px solid var(--green); }
+.v3-rollover .rollover-ticket--lost { border-left: 3px solid var(--red); }
+.rollover-ticket__header {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; padding: 15px var(--ticket-pad);
+  min-width: 0; border-bottom: 1px solid var(--border);
+}
+.rollover-ticket__heading {
+  display: flex; align-items: center; gap: 12px; min-width: 0;
+}
+.rollover-ticket__heading > div { min-width: 0; display: grid; gap: 3px; }
+.rollover-ticket__day-number {
+  display: grid; place-items: center;
+  flex: 0 0 35px; height: 35px; background: var(--brand-faint);
+  border: 1px solid var(--border-brand); border-radius: 9px;
+  color: var(--brand); font: 850 15px/1 var(--font-mono);
+}
+.rollover-ticket__eyebrow {
+  color: var(--text-3); letter-spacing: .095em;
+  font: 750 9px/1.1 var(--font-body);
+}
+.rollover-ticket__heading h3 {
+  font: 780 17px/1.16 var(--font-display); margin: 0; color: var(--text-1);
+  letter-spacing: -.04em; overflow-wrap: anywhere;
+}
+.rollover-ticket__date {
+  display: inline-flex; align-items: center; gap: 5px;
+  color: var(--text-3); font: 500 11px/1.3 var(--font-body);
+}
+.rollover-ticket__status {
+  display: inline-flex; align-items: center; gap: 5px;
+  color: var(--text-2); background: var(--surface-2);
+  padding: 7px 9px; border: 1px solid var(--border); border-radius: 7px;
+  font: 780 10px/1.2 var(--font-body); white-space: nowrap;
+}
+.rollover-ticket__status[data-state="won"] {
+  color: var(--green); background: var(--green-faint);
+  border-color: color-mix(in srgb,var(--green) 25%,var(--border));
+}
+.rollover-ticket__status[data-state="lost"] {
+  color: var(--red); background: var(--red-faint);
+  border-color: color-mix(in srgb,var(--red) 25%,var(--border));
+}
+.rollover-ticket__overview {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px 24px;
+  padding: 15px var(--ticket-pad);
+  background: linear-gradient(115deg,var(--surface-2),var(--surface));
+  border-bottom: 1px solid var(--border);
+}
+.rollover-ticket__overview > div { display: grid; gap: 4px; }
+.rollover-ticket__metric-label {
+  font: 770 9px/1.2 var(--font-body);
+  letter-spacing: .085em; color: var(--text-3);
+}
+.rollover-ticket__overview strong {
+  display: inline-flex; align-items: baseline; gap: 2px;
+  color: var(--text-1); font: 800 27px/1.1 var(--font-mono);
+  letter-spacing: -.04em;
+}
+.rollover-ticket__overview strong small { color: var(--text-3); font-size: 13px; }
+.rollover-ticket__chance {
+  max-width: 225px; margin: 0; text-align: right;
+  color: var(--text-2); font: 650 11px/1.35 var(--font-body);
+}
+.rollover-ticket__chance small {
+  display: block; margin-top: 4px; color: var(--text-3);
+  font: 450 10px/1.4 var(--font-body);
+}
+.rollover-ticket__legs {
+  display: grid; gap: 0; list-style: none;
+  margin: 0; padding: 2px var(--ticket-pad);
+  min-width: 0;
+}
+.rollover-ticket__leg {
+  display: grid; grid-template-columns: 49px minmax(0,1fr) 66px;
+  align-items: center; gap: 10px; padding: 13px 0;
+  min-width: 0; border-bottom: 1px solid var(--border);
+}
+.rollover-ticket__leg:last-child { border-bottom: 0; }
+.rollover-ticket__crests {
+  display: inline-flex; align-items: center;
+  min-width: 0; white-space: nowrap;
+}
+.rollover-ticket__crests .team-crest { flex-shrink: 0; }
+.rollover-ticket__crests .team-crest + .team-crest { margin-left: -7px; }
+.rollover-ticket__leg-content { display: grid; gap: 6px; min-width: 0; }
+.rollover-ticket__match {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 6px;
+  min-width: 0; color: var(--text-1);
+}
+.rollover-ticket__match strong {
+  min-width: 0; font: 730 12px/1.35 var(--font-body);
+  overflow-wrap: anywhere;
+}
+.rollover-ticket__match > span {
+  color: var(--text-3); font: 650 10px/1.2 var(--font-body);
+}
+.rollover-ticket__selection {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 5px 8px;
+  margin: 0; min-width: 0; font: 600 11px/1.35 var(--font-body);
+  color: var(--text-2);
+}
+.rollover-ticket__market {
+  flex-shrink: 0; border-radius: 4px; padding: 3px 5px;
+  background: var(--brand-faint); border: 1px solid var(--border);
+  font: 750 8px/1.1 var(--font-body);
+  letter-spacing: .04em; text-transform: uppercase;
+}
+.rollover-ticket__kickoff {
+  color: var(--text-3); font: 500 10px/1.3 var(--font-body);
+}
+.rollover-ticket__leg-odds {
+  display: grid; justify-items: end; gap: 4px;
+  min-width: 0; text-align: right;
+}
+.rollover-ticket__leg-odds strong {
+  color: var(--text-1); font: 800 15px/1.1 var(--font-mono);
+  white-space: nowrap;
+}
+.rollover-ticket__leg-odds small {
+  color: var(--text-3); font: 650 9px/1.2 var(--font-body);
+  white-space: nowrap;
+}
+.rollover-ticket__booking {
+  padding: 13px var(--ticket-pad) 16px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-mid);
+}
+.v3-rollover .rollover-ticket__booking .booking-code--verified {
+  display: grid !important; grid-template-columns: minmax(0,1fr);
+  gap: 10px !important; align-items: stretch !important;
+  margin-top: 0 !important; padding: 14px !important;
+  min-width: 0; border-radius: 10px !important;
+  border: 1px solid var(--border-brand) !important;
+  background: var(--surface) !important;
+}
+.rollover-ticket__booking .booking-code--verified > div:first-child {
+  display: flex; align-items: center; flex-wrap: wrap;
+  gap: 5px 10px; min-width: 0;
+}
+.rollover-ticket__booking .booking-code--verified > div:first-child > strong {
+  font-size: 12px !important;
+}
+.rollover-ticket__booking .booking-code--verified > div:first-child > span {
+  font-size: 9px !important; letter-spacing: .06em !important;
+}
+.rollover-ticket__booking .booking-code--verified > div:first-child > code {
+  display: inline-block; color: var(--accent) !important;
+  font: 800 21px/1.2 var(--font-mono) !important;
+  letter-spacing: .1em; overflow-wrap: anywhere;
+  min-width: 0;
+}
+.rollover-ticket__booking .booking-actions {
+  display: grid !important; grid-template-columns: repeat(2,minmax(0,1fr));
+  width: 100%; margin: 0 !important;
+  gap: 8px !important;
+}
+.rollover-ticket__booking .booking-actions > :is(button,a) {
+  min-width: 0; min-height: 44px !important;
+  padding: 10px 8px !important;
+  display: flex; align-items: center; justify-content: center;
+  white-space: normal !important; text-align: center;
+  font: 750 12px/1.2 var(--font-body) !important;
+  border-radius: 7px !important;
+}
+.rollover-ticket__booking .booking-actions > button {
+  border: 1px solid var(--border-brand) !important;
+  color: var(--brand) !important; background: transparent !important;
+}
+.rollover-ticket__booking .booking-actions > a {
+  border: 1px solid transparent !important;
+  background: var(--accent) !important; color: #101925 !important;
+}
+.rollover-ticket__booking .booking-code--verified > div:nth-child(3) {
+  font-size: 10px !important; line-height: 1.4;
+}
+.light .rollover-ticket__booking .booking-actions > a { color: #fff !important; }
+.light .rollover-ticket__overview {
+  background: linear-gradient(115deg,var(--bg-mid),var(--surface));
+}
+.light .rollover-ticket__booking { background: var(--bg-mid); }
+.v3-rollover .rollover-risk-note {
+  margin-top: 13px !important; padding: 12px !important;
+  background: var(--surface) !important;
+  border: 1px solid var(--border); border-radius: 9px !important;
+}
+.v3-rollover .rollover-risk-note p { font-size: 11px !important; line-height: 1.55 !important; }
+
+@media (max-width: 767px) {
+  .v3-rollover .rollover-ticket { --ticket-pad: 14px; border-radius: 11px; }
+  .rollover-ticket__header { gap: 7px; padding-top: 12px; padding-bottom: 12px; }
+  .rollover-ticket__heading { gap: 9px; }
+  .rollover-ticket__day-number { flex-basis: 30px; height: 30px; font-size: 12px; }
+  .rollover-ticket__heading h3 { font-size: 14px; }
+  .rollover-ticket__date { font-size: 10px; }
+  .rollover-ticket__status { font-size: 9px; padding: 6px 7px; }
+  .rollover-ticket__overview { padding-top: 12px; padding-bottom: 12px; }
+  .rollover-ticket__overview strong { font-size: 23px; }
+  .rollover-ticket__leg { gap: 7px; grid-template-columns: 45px minmax(0,1fr) 57px; }
+  .rollover-ticket__crests .team-crest--sm {
+    --team-crest-size: 27px;
+  }
+  .rollover-ticket__match strong { font-size: 11px; }
+  .rollover-ticket__leg-odds strong { font-size: 13px; }
+  .rollover-ticket__booking { padding-block: 10px 12px; }
+}
+@media (max-width: 355px) {
+  .v3-rollover .rollover-ticket { --ticket-pad: 11px; }
+  .rollover-ticket__leg { grid-template-columns: 39px minmax(0,1fr) 53px; gap: 5px; }
+  .rollover-ticket__crests .team-crest--sm { --team-crest-size: 24px; }
+  .rollover-ticket__match strong { font-size: 10px; }
+  .rollover-ticket__leg-odds strong { font-size: 12px; }
+  .rollover-ticket__chance { font-size: 10px; }
+}
