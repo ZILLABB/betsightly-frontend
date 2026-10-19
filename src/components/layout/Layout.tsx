@@ -5,12 +5,14 @@ import { Link } from "react-router-dom";
 import { PWAInstallPrompt } from "../common/PWAInstallPrompt";
 import { SocialLinks } from "../common/SocialLinks";
 import { BetSightlyLogo } from "../brand/BetSightlyLogo";
+import { PaletteLab } from "../brand/PaletteLab";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className="app-shell" style={{ minHeight:"100vh", display:"flex", flexDirection:"column" }}>
       <Header />
       <main style={{ flex:1, maxWidth:1200, margin:"0 auto", width:"100%", padding:"28px 20px 28px" }} className="main-area">
+        <PaletteLab />
         {children}
       </main>
 
