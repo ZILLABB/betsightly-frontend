@@ -333,9 +333,9 @@ export function RolloverPage() {
                       <span className="rollover-ticket__day-number" aria-hidden="true">{day.day_number}</span>
                       <div>
                         <span className="rollover-ticket__eyebrow">ROLLOVER · DAY {day.day_number}</span>
-                        <h3>Matchday selections</h3>
+                        <h3>{isToday ? "Today’s slip" : "Published slip"}</h3>
                         <span className="rollover-ticket__date">
-                          <Calendar size={12} aria-hidden="true"/> {fmtDate(day.date)} · {day.picks.length} match{day.picks.length === 1 ? "" : "es"}
+                          <Calendar size={12} aria-hidden="true"/> {fmtDate(day.date)} · {day.picks.length} pick{day.picks.length === 1 ? "" : "s"}
                         </span>
                       </div>
                     </div>
@@ -409,14 +409,9 @@ export function RolloverPage() {
           </div>
 
           {/* Footer note */}
-          <div className="rollover-risk-note" style={{ marginTop: 18, padding: "12px 16px", background: "var(--surface-2)", borderRadius: 10, display: "flex", alignItems: "flex-start", gap: 10 }}>
-            <TrendingUp size={14} color="var(--text-3)" style={{ marginTop: 2, flexShrink: 0 }} />
-            <p style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text-3)", lineHeight: 1.6 }}>
-              Automated stages use supported predictions; a manual fallback is bookmaker-verified but not model scored. The daily target is 2x–3x.
-              No match appears more than once. Every extra leg is another chance to lose, and one
-              losing leg ends the chain. Probabilities describe risk; they do not guarantee a return.
-            </p>
-          </div>
+          <aside className="rollover-risk-note" aria-label="Rollover risk information">
+            <p>All legs must win for the slip to win. Odds can change; check SportyBet before staking. Manual picks do not affect model calibration. 18+ · Bet responsibly.</p>
+          </aside>
         </div>
       )}
     </div>
