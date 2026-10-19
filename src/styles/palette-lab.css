@@ -1,0 +1,390 @@
+/* BETSIGHTLY COLOR STUDY / OCT 2026
+ * Real product-theme variants, scoped to Vercel preview's data-brand-palette.
+ * Neither variant changes bookmaker, odds, settlement or calibration logic.
+ * All shared UI uses these tokens, including home, picks, builder, rollover.
+ */
+
+/* ATLANTIC BLUE — richer ocean hues, airy steel-blue panels and copper CTA. */
+html[data-brand-palette="atlantic"]:not(.light) {
+  --bg: #0B2238;
+  --bg-mid: #112C44;
+  --surface: #1A354A;
+  --surface-2: #24445C;
+  --surface-3: #31516A;
+  --surface-4: #3B5D75;
+  --brand: #65B2DC;
+  --brand-dim: #4D9EC9;
+  --brand-faint: rgba(101,178,220,.14);
+  --brand-glow: rgba(77,158,201,.15);
+  --border-brand: rgba(101,178,220,.38);
+  --accent: #E5AD70;
+  --accent-dim: #CA935B;
+  --green: #70C0AD;
+  --green-faint: rgba(70,166,146,.16);
+  --red: #E49A99;
+  --red-faint: rgba(198,110,112,.14);
+  --blue: #78BCE4;
+  --blue-faint: rgba(77,158,201,.15);
+  --gold: #E5AD70;
+  --gold-faint: rgba(229,173,112,.14);
+  --purple: #B8A4CB;
+  --purple-faint: rgba(184,164,203,.12);
+  --text-1: #F4F8FC;
+  --text-2: #C7D7E4;
+  --text-3: #B0C4D5;
+  --text-primary: #F4F8FC;
+  --text-secondary: #C7D7E4;
+  --text-tertiary: #B0C4D5;
+  --border: rgba(178,208,230,.22);
+  --border-default: rgba(178,208,230,.22);
+  --bs-outline: rgba(178,208,230,.24);
+  --bs-mint: #65B2DC;
+  --bs-ink: #0B2238;
+  --bs-panel: #1A354A;
+  --bs-glass: rgba(13,35,56,.93);
+  --nav-bg-scrolled: rgba(11,34,56,.96);
+  --nav-bg-top: rgba(11,34,56,.93);
+  --nav-overlay: rgba(11,34,56,.96);
+  --nav-hover: rgba(101,178,220,.13);
+  --code-surface: #112A41;
+  --v3-stroke: rgba(178,208,230,.24);
+  --home-hero-bg: linear-gradient(120deg,#173D59,#0C2944);
+  --home-panel-bg: #173B54;
+  --palette-action-ink: #101D2B;
+  --palette-edition-bg: linear-gradient(155deg,#285877,#153853);
+  --palette-cover-bg: linear-gradient(125deg,#1C3C54,#162E44);
+  --palette-hero-glow: rgba(77,158,201,.24);
+  --palette-card-accent: #4D9EC9;
+}
+html.light[data-brand-palette="atlantic"] {
+  --bg: #F3F7FA;
+  --bg-mid: #E9F1F6;
+  --surface: #FFFFFF;
+  --surface-2: #E2EDF5;
+  --surface-3: #D2E2EF;
+  --surface-4: #C3D9E9;
+  --brand: #246D99;
+  --brand-dim: #1E5982;
+  --brand-faint: rgba(36,109,153,.10);
+  --brand-glow: rgba(36,109,153,.11);
+  --border-brand: rgba(36,109,153,.30);
+  --accent: #895A30;
+  --accent-dim: #754C27;
+  --green: #226D5D;
+  --green-faint: rgba(34,109,93,.10);
+  --red: #B14649;
+  --red-faint: rgba(177,70,73,.09);
+  --blue: #246D99;
+  --blue-faint: rgba(36,109,153,.10);
+  --gold: #895A30;
+  --gold-faint: rgba(137,90,48,.12);
+  --purple: #714D88;
+  --purple-faint: rgba(113,77,136,.09);
+  --text-1: #142B3E;
+  --text-2: #415E70;
+  --text-3: #526E7D;
+  --text-primary: #142B3E;
+  --text-secondary: #415E70;
+  --text-tertiary: #526E7D;
+  --border: #CCDEE9;
+  --border-default: #CCDEE9;
+  --bs-outline: #CCDEE9;
+  --nav-bg-scrolled: rgba(243,247,250,.97);
+  --nav-bg-top: rgba(243,247,250,.94);
+  --nav-overlay: rgba(243,247,250,.98);
+  --nav-hover: rgba(36,109,153,.09);
+  --code-surface: #E9F1F6;
+  --v3-stroke: #CCDEE9;
+  --palette-action-ink: #FFFFFF;
+  --palette-edition-bg: linear-gradient(150deg,#285775,#183B57);
+  --palette-cover-bg: linear-gradient(135deg,#FFFFFF,#EDF5FA);
+  --palette-hero-glow: rgba(77,158,201,.10);
+  --palette-card-accent: #246D99;
+}
+
+/* ROYAL COBALT — deeper indigo, electric-but-not-neon blue, warm apricot. */
+html[data-brand-palette="cobalt"]:not(.light) {
+  --bg: #111933;
+  --bg-mid: #1A2747;
+  --surface: #26355E;
+  --surface-2: #304371;
+  --surface-3: #405482;
+  --surface-4: #4C6190;
+  --brand: #97ABFF;
+  --brand-dim: #7795E5;
+  --brand-faint: rgba(119,149,229,.16);
+  --brand-glow: rgba(119,149,229,.15);
+  --border-brand: rgba(151,171,255,.37);
+  --accent: #EAA46E;
+  --accent-dim: #CE8959;
+  --green: #5BC0AF;
+  --green-faint: rgba(57,166,157,.16);
+  --red: #E6A0A1;
+  --red-faint: rgba(208,130,136,.14);
+  --blue: #97ABFF;
+  --blue-faint: rgba(151,171,255,.15);
+  --gold: #EAA46E;
+  --gold-faint: rgba(234,164,110,.15);
+  --purple: #BEA3E2;
+  --purple-faint: rgba(190,163,226,.13);
+  --text-1: #F8F9FE;
+  --text-2: #D4DDF6;
+  --text-3: #B8C7E6;
+  --text-primary: #F8F9FE;
+  --text-secondary: #D4DDF6;
+  --text-tertiary: #B8C7E6;
+  --border: rgba(193,207,255,.21);
+  --border-default: rgba(193,207,255,.21);
+  --bs-outline: rgba(193,207,255,.24);
+  --bs-mint: #97ABFF;
+  --bs-ink: #111933;
+  --bs-panel: #26355E;
+  --bs-glass: rgba(17,25,51,.94);
+  --nav-bg-scrolled: rgba(17,25,51,.96);
+  --nav-bg-top: rgba(17,25,51,.93);
+  --nav-overlay: rgba(17,25,51,.97);
+  --nav-hover: rgba(151,171,255,.14);
+  --code-surface: #1C2848;
+  --v3-stroke: rgba(193,207,255,.23);
+  --home-hero-bg: linear-gradient(120deg,#2B3F71,#19274A);
+  --home-panel-bg: #283967;
+  --palette-action-ink: #181C2D;
+  --palette-edition-bg: linear-gradient(150deg,#485D9B,#253967);
+  --palette-cover-bg: linear-gradient(128deg,#2A3B67,#1B284A);
+  --palette-hero-glow: rgba(119,149,229,.22);
+  --palette-card-accent: #97ABFF;
+}
+html.light[data-brand-palette="cobalt"] {
+  --bg: #F2F5FD;
+  --bg-mid: #E8EDFA;
+  --surface: #FFFFFF;
+  --surface-2: #E1E8F9;
+  --surface-3: #D2DCF4;
+  --surface-4: #C5D2F0;
+  --brand: #3855AF;
+  --brand-dim: #2E448D;
+  --brand-faint: rgba(56,85,175,.11);
+  --brand-glow: rgba(56,85,175,.10);
+  --border-brand: rgba(56,85,175,.31);
+  --accent: #86532D;
+  --accent-dim: #724727;
+  --green: #216E65;
+  --green-faint: rgba(33,110,101,.10);
+  --red: #B44952;
+  --red-faint: rgba(180,73,82,.10);
+  --blue: #3855AF;
+  --blue-faint: rgba(56,85,175,.10);
+  --gold: #86532D;
+  --gold-faint: rgba(134,83,45,.12);
+  --purple: #6E49A3;
+  --purple-faint: rgba(110,73,163,.11);
+  --text-1: #1C2846;
+  --text-2: #495D79;
+  --text-3: #586C88;
+  --text-primary: #1C2846;
+  --text-secondary: #495D79;
+  --text-tertiary: #586C88;
+  --border: #CEDAF2;
+  --border-default: #CEDAF2;
+  --bs-outline: #CEDAF2;
+  --nav-bg-scrolled: rgba(242,245,253,.97);
+  --nav-bg-top: rgba(242,245,253,.94);
+  --nav-overlay: rgba(242,245,253,.98);
+  --nav-hover: rgba(56,85,175,.09);
+  --code-surface: #E8EDFA;
+  --v3-stroke: #CEDAF2;
+  --palette-action-ink: #FFFFFF;
+  --palette-edition-bg: linear-gradient(150deg,#485B91,#253966);
+  --palette-cover-bg: linear-gradient(135deg,#FFFFFF,#EFF2FC);
+  --palette-hero-glow: rgba(119,149,229,.11);
+  --palette-card-accent: #3855AF;
+}
+
+/* Both color studies bring their own hierarchy to actual product components. */
+html[data-brand-palette] body { background: var(--bg); color: var(--text-1); }
+html[data-brand-palette] .v3-page {
+  --bs-refine-gold: var(--accent);
+  --bs-refine-steel: var(--brand);
+}
+html[data-brand-palette] .editorial-button--primary {
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
+  color: var(--palette-action-ink) !important;
+}
+html[data-brand-palette] .editorial-button--primary:hover { filter: brightness(1.07); }
+html[data-brand-palette] .editorial-button--primary:focus-visible,
+html[data-brand-palette] .palette-lab button:focus-visible,
+html[data-brand-palette] .palette-lab a:focus-visible {
+  outline: 2px solid var(--brand); outline-offset: 2px;
+}
+html[data-brand-palette] .bs-brand--new .bs-brand__name span:last-child,
+html[data-brand-palette] .brand-loader__identity .bs-brand__name span:last-child {
+  color: var(--brand);
+}
+html[data-brand-palette] .bs-brand--new .bs-brand__symbol path { fill: var(--brand); }
+html[data-brand-palette] .v3-home .editorial-cover {
+  background: var(--palette-cover-bg) !important;
+  border-color: var(--border-brand) !important;
+  box-shadow: 0 10px 34px rgba(4,15,31,.10);
+}
+html[data-brand-palette] .v3-home .editorial-cover__edition {
+  background: var(--palette-edition-bg) !important;
+  border-left-color: var(--border-brand) !important;
+  color: #FFFFFF !important;
+}
+html[data-brand-palette] .v3-home .editorial-cover__edition :is(strong,b) { color: #FFFFFF; }
+html[data-brand-palette] .v3-home .editorial-cover__edition :is(span,small) { color: #D4E3F5; }
+html[data-brand-palette] .v3-home .editorial-cover__main h1 span { color: var(--brand); }
+html[data-brand-palette] .v3-home .editorial-feature__body,
+html[data-brand-palette] .v3-results .editorial-results-overview,
+html[data-brand-palette] .v3-builder .builder-config,
+html[data-brand-palette] .v3-predictions .editorial-fixture.pred-card,
+html[data-brand-palette] .v3-rollover .rollover-ticket {
+  border-color: var(--border-brand) !important;
+}
+html[data-brand-palette] .v3-predictions .editorial-fixture__top {
+  background: var(--bg-mid) !important;
+}
+html[data-brand-palette] .v3-rollover .editorial-rollover-overview .bs-rollover-hero {
+  background:
+    radial-gradient(ellipse at 90% 0%,var(--palette-hero-glow),transparent 55%),
+    linear-gradient(143deg,var(--surface),var(--bg-mid)) !important;
+}
+html.light[data-brand-palette] .v3-rollover .editorial-rollover-overview .bs-rollover-hero {
+  background:
+    radial-gradient(ellipse at 92% 0%,var(--palette-hero-glow),transparent 55%),
+    linear-gradient(143deg,#FFFFFF,var(--bg-mid)) !important;
+}
+html[data-brand-palette] .v3-rollover .editorial-rollover-progress {
+  background: var(--bg-mid) !important;
+}
+html[data-brand-palette] .v3-rollover .rollover-ticket__overview {
+  background: linear-gradient(115deg,var(--surface-2),var(--surface));
+}
+html[data-brand-palette] .rollover-ticket__booking .booking-actions > a {
+  background: var(--accent) !important; color: var(--palette-action-ink) !important;
+}
+html[data-brand-palette] .mobile-dock__item--build .mobile-dock__icon {
+  background: var(--accent) !important;
+  border-color: var(--nav-overlay);
+  color: var(--palette-action-ink) !important;
+}
+html[data-brand-palette] .mobile-dock__item--build[data-active="true"] .mobile-dock__icon {
+  background: var(--accent-dim) !important;
+}
+html.light[data-brand-palette] .mobile-dock__surface,
+html.light[data-brand-palette] .mobile-dock__sheet {
+  background: color-mix(in srgb,var(--nav-overlay) 95%,transparent);
+  border-color: var(--border);
+}
+html[data-brand-palette] .mobile-dock__surface {
+  border-color: var(--border-brand);
+}
+html[data-brand-palette] .editorial-fixture__form-chip[data-result="W"] {
+  background: var(--green-faint); color: var(--green);
+}
+html[data-brand-palette] .editorial-fixture__form-chip[data-result="L"] {
+  background: var(--red-faint); color: var(--red);
+}
+
+/* Design comparison controls, deliberately integrated above the page,
+ * not another fixed overlay blocking phone actions or odds. */
+.palette-lab {
+  margin-bottom: 15px;
+  border: 1px solid var(--border-brand);
+  border-radius: 11px;
+  background: var(--surface);
+  color: var(--text-1);
+  overflow: hidden;
+  box-shadow: 0 4px 19px rgba(6,18,34,.09);
+  font-family: var(--font-body);
+}
+.palette-lab__top {
+  padding: 12px 15px;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 10px;
+}
+.palette-lab__intro { display: grid; gap: 3px; min-width: 0; }
+.palette-lab__overline {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 9px; font-weight: 780; letter-spacing: .12em;
+  color: var(--brand);
+}
+.palette-lab__intro > strong {
+  font-size: 13px; color: var(--text-1);
+  font-weight: 780; line-height: 1.25;
+}
+.palette-lab__intro > span:last-child {
+  font-size: 10px; color: var(--text-3);
+}
+.palette-lab__collapse {
+  border: 1px solid var(--border); border-radius: 7px;
+  background: var(--surface-2); color: var(--text-2);
+  padding: 8px 10px; min-height: 37px;
+  font: 700 11px/1.2 var(--font-body);
+  cursor: pointer; flex-shrink: 0;
+}
+.palette-lab__body {
+  display: flex; flex-wrap: wrap; align-items: center;
+  gap: 10px 14px; padding: 12px 15px 13px;
+  border-top: 1px solid var(--border);
+}
+.palette-lab__options {
+  display: flex; flex-wrap: wrap; gap: 7px;
+}
+.palette-lab__option {
+  min-height: 44px; border: 1px solid var(--border);
+  border-radius: 8px; background: var(--bg-mid); color: var(--text-1);
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 10px; cursor: pointer;
+  font: 720 11px/1.3 var(--font-body);
+}
+.palette-lab__option[aria-pressed="true"] {
+  border-color: var(--brand); background: var(--brand-faint);
+}
+.palette-lab__option > svg { color: var(--brand); }
+.palette-lab__swatches {
+  display: flex; width: 47px; height: 19px; gap: 2px;
+  border-radius: 4px; overflow: hidden; flex-shrink: 0;
+}
+.palette-lab__swatches i { display: block; flex: 1; }
+.palette-lab__swatches--atlantic i:nth-child(1) { background: #0B2238; }
+.palette-lab__swatches--atlantic i:nth-child(2) { background: #4D9EC9; }
+.palette-lab__swatches--atlantic i:nth-child(3) { background: #E5AD70; }
+.palette-lab__swatches--atlantic i:nth-child(4) { background: #3E9F91; }
+.palette-lab__swatches--cobalt i:nth-child(1) { background: #111933; }
+.palette-lab__swatches--cobalt i:nth-child(2) { background: #7795E5; }
+.palette-lab__swatches--cobalt i:nth-child(3) { background: #EAA46E; }
+.palette-lab__swatches--cobalt i:nth-child(4) { background: #39A69D; }
+.palette-lab__theme { display: inline-flex; border: 1px solid var(--border); padding: 3px; border-radius: 8px; }
+.palette-lab__theme button {
+  border: 0; border-radius: 6px; background: transparent;
+  color: var(--text-2); padding: 8px 10px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+  font: 700 11px/1.2 var(--font-body); cursor: pointer;
+}
+.palette-lab__theme button[aria-pressed="true"] {
+  background: var(--brand-faint); color: var(--brand);
+}
+.palette-lab__routes {
+  display: flex; flex-wrap: wrap; gap: 3px;
+  align-items: center; margin-left: auto;
+}
+.palette-lab__routes a {
+  padding: 8px; text-decoration: none; border-radius: 6px;
+  color: var(--text-2); font: 700 11px/1.3 var(--font-body);
+}
+.palette-lab__routes a[aria-current="page"] {
+  background: var(--brand-faint); color: var(--brand);
+}
+@media(max-width: 767px) {
+  .palette-lab { margin-bottom: 12px; border-radius: 9px; }
+  .palette-lab__top { padding: 10px 12px; }
+  .palette-lab__body { padding: 10px 12px 12px; gap: 9px; }
+  .palette-lab__options { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); width: 100%; }
+  .palette-lab__option { min-width: 0; justify-content: center; gap: 6px; padding-inline: 5px; font-size: 10px; }
+  .palette-lab__swatches { width: 38px; height: 17px; }
+  .palette-lab__theme { flex: 0 0 auto; }
+  .palette-lab__routes { flex: 1 1 100%; margin: 0; justify-content: space-between; }
+  .palette-lab__routes a { padding: 7px 5px; font-size: 10px; }
+}
