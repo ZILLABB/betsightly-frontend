@@ -79,40 +79,92 @@ export function RolloverPage() {
   return (
     <div className="page-stack rollover-page v3-page v3-rollover" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <SEO title="Rollover Challenge" description="3-day rollover challenge using evidence-backed daily picks. Every leg must land for the chain to continue." path="/rollover" />
-      <section className="editorial-rollover-overview" aria-labelledby="rollover-title">
+
+      <section className="editorial-rollover-overview" aria-labelledby="rollover-title" aria-busy={loading && chain.length === 0}>
         <header className="bs-rollover-hero">
           <div className="bs-rollover-hero__copy">
-            <span className="editorial-overline">ROLLING CHALLENGE / PUBLIC DAY-BY-DAY RECORD</span>
-            <h1 id="rollover-title">{targetDays}-day rollover.</h1>
-            <p>Follow the current chain through three verified matchdays.
-              Each stage advances only after official results are confirmed.</p>
-            <div className="editorial-rollover-overview__rule">
-              <span>Daily target</span>
-              <strong>2×–3×</strong>
-              <span>Subject to evidence and actual bookability</span>
+            <div className="editorial-rollover-eyebrow">
+              <span className="editorial-overline">THE DAILY CHALLENGE</span>
+              <span className="editorial-rollover-live-status" data-state={chain.length === 0 ? "idle" : chainStatus.toLowerCase()}>
+                <span aria-hidden="true" className="editorial-rollover-live-status__dot" />
+                {loading && chain.length === 0
+                  ? "Checking the board"
+                  : error && !usingFallback && chain.length === 0
+                    ? "Feed unavailable"
+                    : chain.length === 0 ? "Awaiting publication" : `Chain ${chainStatus.toLowerCase()}`}
+              </span>
+            </div>
+            <h1 id="rollover-title">{targetDays}-day rollover</h1>
+            <p>One day at a time. Follow published football selections through verified results — without skipping a loss.</p>
+            <div className="editorial-rollover-highlights" aria-label="Challenge overview">
+              <div><span>Daily target</span><strong>2.0–3.0×</strong></div>
+              <div>
+                <span>Verified days won</span>
+                <strong>{loading && chain.length === 0 ? "—" : `${wonDays} / ${targetDays}`}</strong>
+              </div>
+            </div>
+            <div className="editorial-rollover-hero-foot">
+              <span>Actual bookmaker availability determines publication.</span>
+              <a href={chain.length ? "#rollover-days" : "/results"}>
+                {chain.length ? "See published stages" : "Previous results"} <span aria-hidden="true">→</span>
+              </a>
             </div>
           </div>
         </header>
         <aside className="editorial-rollover-progress" aria-label="Rollover day progress">
-          <span className="editorial-overline">CURRENT CHALLENGE</span>
-          <h2>Day-by-day progress</h2>
-          <ol className="bs-rollover-timeline" aria-label="Rollover chain progress">
-            {Array.from({ length: targetDays }, (_, index) => {
-              const day = chain.find(item => item.day_number === index + 1);
-              const state = day?.status ?? "future";
-              const active = day?.status === "pending";
-              const statusText = state === "won" ? "Won" :
-                state === "lost" ? "Lost" : state === "void" ? "Void" :
-                active ? "Awaiting final" : "Not published";
-              return (
-                <li key={index} className={`is-${state}${active ? " is-active" : ""}`}>
-                  <span className="bs-rollover-timeline__step">{index + 1}</span>
-                  <div><strong>Day {index + 1}</strong><small>{statusText}</small></div>
-                </li>
-              );
-            })}
-          </ol>
-          <p>Only verified finals advance a stage. <a href="/results">Previous rollover results →</a></p>
+          <div className="editorial-rollover-progress__header">
+            <div>
+              <span className="editorial-overline">CHAIN TRACKER</span>
+              <h2>Matchday progress</h2>
+            </div>
+            {chain.length > 0 && <span className="editorial-rollover-progress__count">{chain.length} published</span>}
+          </div>
+          {loading && chain.length === 0 ? (
+            <div className="editorial-rollover-tracker-loading" role="status" aria-label="Checking rollover chain">
+              {Array.from({ length: targetDays }, (_, index) => (
+                <div key={index} aria-hidden="true" className="editorial-rollover-tracker-skeleton">
+                  <span/><span/>
+                </div>
+              ))}
+              <p>Checking the latest published stages…</p>
+            </div>
+          ) : error && !usingFallback && chain.length === 0 ? (
+            <div className="editorial-rollover-no-chain" role="status">
+              <strong>Stage information unavailable</strong>
+              <p>We couldn't verify the chain status. Try again below.</p>
+            </div>
+          ) : chain.length === 0 ? (
+            <div className="editorial-rollover-no-chain" role="status">
+              <strong>No active chain published</strong>
+              <p>The challenge remains open to qualifying fixtures. We won't invent Day 1 selections to fill the board.</p>
+              <a href="/results">Review previous rollover results <span aria-hidden="true">→</span></a>
+            </div>
+          ) : (
+            <ol className="bs-rollover-timeline" aria-label="Rollover chain progress">
+              {Array.from({ length: targetDays }, (_, index) => {
+                const day = chain.find(item => item.day_number === index + 1);
+                const state = day?.status ?? "future";
+                const current = day?.status === "pending";
+                const statusText = state === "won" ? "Verified win" :
+                  state === "lost" ? "Lost · chain ended" :
+                  state === "void" ? "Voided" :
+                  current ? "Awaiting final" : "Not published";
+                return (
+                  <li key={index} className={`is-${state}${current ? " is-active" : ""}`}>
+                    <span className="bs-rollover-timeline__step" aria-hidden="true">
+                      {state === "won" ? <CheckCircle size={17}/> : index + 1}
+                    </span>
+                    <div>
+                      <strong>Day {index + 1}</strong>
+                      <small>{statusText}</small>
+                      {day && <span className="editorial-rollover-timeline__date">{fmtDate(day.date)}</span>}
+                    </div>
+                  </li>
+                );
+              })}
+            </ol>
+          )}
+          {chain.length > 0 && <p>Only independently verified finals advance a stage. <a href="/results">Full history →</a></p>}
         </aside>
       </section>
 
@@ -175,7 +227,7 @@ export function RolloverPage() {
               ? lostDays > 0
                 ? `${fmtOdds(cumOdds)}${oddsSuffix} was scheduled across ${chain.length} days.`
                 : `${fmtOdds(cumOdds)}${oddsSuffix} compounded only if every scheduled day lands.`
-              : `Bookmaker-verified stages generally target 2x–4x. Daily eligibility is evidence-dependent.`}
+              : `Bookmaker-verified stages generally target 2x–3x. Daily eligibility is evidence-dependent.`}
           </p>
         </section>
       )}
@@ -199,12 +251,11 @@ export function RolloverPage() {
       )}
 
       {/* Toggle + chain */}
-      {loading ? (
-        <BrandLoader message="Loading the rollover chain...">
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {[1, 2, 3].map(i => <PredictionCardSkeleton key={i} />)}
-          </div>
-        </BrandLoader>
+      {loading && chain.length === 0 ? (
+        <div className="editorial-rollover-load-inline">
+          <BrandLoader variant="compact" message="Loading the rollover chain…" />
+          <PredictionCardSkeleton />
+        </div>
       ) : error && !usingFallback ? (
         <div className="card" role="alert" style={{ padding: "40px 20px", textAlign: "center" }}>
           <p style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text-3)" }}>
@@ -217,14 +268,8 @@ export function RolloverPage() {
             cursor: "pointer",
           }}>Retry</button>
         </div>
-      ) : chain.length === 0 ? (
-        <div className="card" style={{ padding: "40px 20px", textAlign: "center" }}>
-          <p style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text-3)" }}>
-            No rollover chain yet. A challenge begins when the upcoming board has enough evidence-backed picks.
-          </p>
-        </div>
-      ) : (
-        <div>
+      ) : chain.length === 0 ? null : (
+        <div id="rollover-days">
           {/* Header + toggle */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, flexWrap: "wrap", gap: 12 }}>
             <h2 style={{ fontFamily: "var(--font-display)", fontSize: 18, fontWeight: 700, color: "var(--text-1)" }}>
@@ -423,7 +468,7 @@ export function RolloverPage() {
           <div style={{ marginTop: 18, padding: "12px 16px", background: "var(--surface-2)", borderRadius: 10, display: "flex", alignItems: "flex-start", gap: 10 }}>
             <TrendingUp size={14} color="var(--text-3)" style={{ marginTop: 2, flexShrink: 0 }} />
             <p style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text-3)", lineHeight: 1.6 }}>
-              Automated stages use supported predictions; a manual fallback is bookmaker-verified but not model scored. The daily target is 2x–4x.
+              Automated stages use supported predictions; a manual fallback is bookmaker-verified but not model scored. The daily target is 2x–3x.
               No match appears more than once. Every extra leg is another chance to lose, and one
               losing leg ends the chain. Probabilities describe risk; they do not guarantee a return.
             </p>
