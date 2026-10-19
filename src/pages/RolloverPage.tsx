@@ -363,8 +363,8 @@ export function RolloverPage() {
                         }}>
                           {/* Flags or initials badges */}
                           <div style={{ display: "flex", alignItems: "center", gap: 3, flexShrink: 0 }}>
-                            <TeamCrest size="sm" team={pick.home_team} logo={pick.home_team_logo} national={pick.team_type === "NATIONAL"} />
-                            <TeamCrest size="sm" team={pick.away_team} logo={pick.away_team_logo} national={pick.team_type === "NATIONAL"} />
+                            <TeamCrest size="sm" team={pick.home_team} logo={pick.home_team_logo} national={pick.team_type !== "CLUB"} />
+                            <TeamCrest size="sm" team={pick.away_team} logo={pick.away_team_logo} national={pick.team_type !== "CLUB"} />
                           </div>
                           {/* Match */}
                           <div style={{ flex: 1, minWidth: 0 }}>
