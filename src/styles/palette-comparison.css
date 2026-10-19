@@ -1,9 +1,9 @@
 /*
- * BetSightly visual comparison — Atlantic Blue / Royal Cobalt
+ * BetSightly visual comparison — Atlantic Blue / Royal Cobalt / Atlantic × Cobalt
  * Scoped to the review branch. Both versions reuse the same page structures,
  * fixture content, market statuses and booking behavior. No fake results.
  *
- * URL: ?palette=atlantic or ?palette=cobalt. The HTML element has
+ * URL: ?palette=hybrid (default), ?palette=atlantic or ?palette=cobalt. The HTML element has
  * data-bs-palette set before React renders.
  */
 
@@ -178,6 +178,95 @@
   --home-panel-bg: #FFFFFF;
   --bs-refine-gold: #97582B;
   --bs-refine-steel: #3855AF;
+}
+
+
+/* Atlantic × Cobalt — one premium hybrid, not two competing themes.
+ * Atlantic grounds the canvas, cobalt guides navigation/selection,
+ * champagne signals ticket actions. Winning/loss colors stay semantic. */
+:root[data-bs-palette="hybrid"]:not(.light) {
+  color-scheme: dark;
+  --bg: #0C2037;
+  --bg-mid: #122746;
+  --surface: #1D3357;
+  --surface-2: #293F69;
+  --surface-3: #364E79;
+  --surface-4: #415E8C;
+  --brand: #A2BFFA;
+  --brand-dim: #84A5EB;
+  --brand-faint: rgba(140,176,242,.14);
+  --brand-glow: rgba(140,176,242,.09);
+  --border-brand: rgba(162,191,250,.37);
+  --accent: #E6B078;
+  --accent-dim: #D49A5D;
+  --blue: #A2BFFA;
+  --blue-faint: rgba(140,176,242,.13);
+  --gold: #E6B078;
+  --gold-faint: rgba(230,176,120,.13);
+  --text-1: #F6F8FF;
+  --text-2: #C8D6ED;
+  --text-3: #B3C4DC;
+  --text-primary: #F6F8FF;
+  --text-secondary: #C8D6ED;
+  --text-tertiary: #B3C4DC;
+  --border: rgba(195,211,242,.23);
+  --border-default: rgba(195,211,242,.23);
+  --v3-stroke: rgba(195,211,242,.23);
+  --bs-outline: rgba(195,211,242,.23);
+  --bs-ink: #0C2037;
+  --bs-panel: #1D3357;
+  --bs-glass: rgba(19,39,70,.95);
+  --nav-bg-scrolled: rgba(12,32,55,.97);
+  --nav-bg-top: rgba(12,32,55,.94);
+  --nav-overlay: rgba(12,32,55,.97);
+  --nav-hover: rgba(162,191,250,.12);
+  --code-surface: #152C4B;
+  --home-hero-bg: linear-gradient(125deg,#253D66,#0C2037);
+  --home-panel-bg: #1D3357;
+  --bs-refine-gold: #E6B078;
+  --bs-refine-steel: #A2BFFA;
+}
+:root.light[data-bs-palette="hybrid"] {
+  color-scheme: light;
+  --bg: #F1F5FB;
+  --bg-mid: #E8EFF9;
+  --surface: #FFFFFF;
+  --surface-2: #EAF0FA;
+  --surface-3: #DBE5F4;
+  --surface-4: #CBDAEF;
+  --brand: #344F9B;
+  --brand-dim: #2A4184;
+  --brand-faint: rgba(52,79,155,.10);
+  --brand-glow: rgba(52,79,155,.08);
+  --border-brand: rgba(52,79,155,.31);
+  --accent: #88552A;
+  --accent-dim: #74431E;
+  --blue: #344F9B;
+  --blue-faint: rgba(52,79,155,.09);
+  --gold: #88552A;
+  --gold-faint: rgba(136,85,42,.10);
+  --text-1: #142540;
+  --text-2: #405572;
+  --text-3: #526787;
+  --text-primary: #142540;
+  --text-secondary: #405572;
+  --text-tertiary: #526787;
+  --border: #D4DFEE;
+  --border-default: #D4DFEE;
+  --v3-stroke: #D4DFEE;
+  --bs-outline: #D4DFEE;
+  --bs-ink: #142540;
+  --bs-panel: #FFFFFF;
+  --bs-glass: rgba(255,255,255,.96);
+  --nav-bg-scrolled: rgba(241,245,251,.97);
+  --nav-bg-top: rgba(241,245,251,.94);
+  --nav-overlay: rgba(255,255,255,.96);
+  --nav-hover: rgba(52,79,155,.09);
+  --code-surface: #E7EEFA;
+  --home-hero-bg: linear-gradient(115deg,#FFFFFF,#E8EFF9);
+  --home-panel-bg: #FFFFFF;
+  --bs-refine-gold: #88552A;
+  --bs-refine-steel: #344F9B;
 }
 
 /* Shared treatment so the comparison is meaningful on each full page. */
