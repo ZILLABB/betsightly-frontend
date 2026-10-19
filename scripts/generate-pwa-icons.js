@@ -6,11 +6,11 @@ import { deflateSync } from 'node:zlib';
 
 const dir = path.resolve(import.meta.dirname, '..', 'public');
 const source = fs.readFileSync(path.join(dir, 'brand-mark.svg'), 'utf8');
-if (!source.includes('M221 18') || !source.includes('#37E58C')) {
+if (!source.includes('M221 18') || !source.includes('#69B0D6')) {
   throw new Error('Expected the approved geometric B monogram in public/brand-mark.svg');
 }
-const bg = [23, 33, 57]; // navy background in approved second reference image
-const green = [55, 229, 140];
+const bg = [11, 34, 56]; // Atlantic Blue: the default preview brand identity
+const blue = [105, 176, 214];
 function add(points,x,y){points.push([x,y]);}
 function cubic(points,p0,c1,c2,end,n=28){
   for(let i=1;i<=n;i++){
@@ -74,7 +74,7 @@ function render(size,maskable){
     for(let col=0;col<size;col++){
       const at=(row*2)*count+col*2;
       const a=(coverage[at]+coverage[at+1]+coverage[at+count]+coverage[at+count+1])/4;
-      for(let c=0;c<3;c++)pixels[off+1+col*3+c]=Math.round(bg[c]*(1-a)+green[c]*a);
+      for(let c=0;c<3;c++)pixels[off+1+col*3+c]=Math.round(bg[c]*(1-a)+blue[c]*a);
     }
   }
   const head=Buffer.alloc(13);
