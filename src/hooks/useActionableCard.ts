@@ -327,7 +327,7 @@ export function useActionableCard(
     !bookableError &&
     bookable?.available === false;
 
-  const mergedAvailable =
+  const mergedAvailable = useMemo(() =>
     viewingBookable && bookable?.accumulators
       ? ({
           ...published,
@@ -335,7 +335,8 @@ export function useActionableCard(
           // Available-now intentionally does not create a new rollover chain.
           rollover: published?.rollover,
         } as AccumulatorResponse["accumulators"])
-      : undefined;
+      : undefined,
+    [viewingBookable, bookable?.accumulators, published]);
 
   // Never replace real published data with an empty loading state.
   // While Available Now is being verified, keep the frozen publication
