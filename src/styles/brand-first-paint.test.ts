@@ -6,7 +6,7 @@ const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8"
 const html = read("index.html");
 const startupScript = html.match(/<script>([\s\S]*?)<\/script>/)?.[1] ?? "";
 
-function renderHead(search: string, savedTheme?: string, storedPalette?: string) {
+function renderHead(search: string, savedTheme?: string, storedPalette?: string, systemDark = true) {
   const attrs: Record<string, string> = {};
   const classes: string[] = [];
   const session = new Map<string,string>();
@@ -27,7 +27,7 @@ function renderHead(search: string, savedTheme?: string, storedPalette?: string)
     localStorage: { getItem: () => savedTheme ? JSON.stringify({theme:savedTheme}) : null },
     window: {
       location: {search},
-      matchMedia: () => ({matches: true}),
+      matchMedia: () => ({matches: systemDark}),
     },
   });
   return {attrs,classes,meta,session};
@@ -77,4 +77,11 @@ test("Live Scores uses semantic palette tokens instead of retired emerald hero c
   expect(live).toContain("var(--surface-2)");
   expect(live).toContain("var(--text-2)");
   expect(live).not.toMatch(/#37e58c|rgba\(56,229,140|rgba\(35,230,140|#071b14|#06130f/i);
+});
+
+test("saved system theme honors iPhone light appearance before React loads", () => {
+  const a = renderHead("?palette=cobalt","system",undefined,false);
+  expect(a.attrs["data-bs-palette"]).toBe("cobalt");
+  expect(a.classes).toContain("light");
+  expect(a.meta.setAttribute).toHaveBeenCalledWith("content", "#F2F5FD");
 });
