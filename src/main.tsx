@@ -24,6 +24,10 @@ import './styles/palette-comparison.css'
 import { analytics } from './services/analytics'
 import { applyAnalyticsPreferenceFromUrl } from './services/internalTraffic'
 
+// Apply the requested design comparison palette before the page renders.
+const palette = new URLSearchParams(window.location.search).get('palette')
+document.documentElement.setAttribute('data-bs-palette', palette === 'cobalt' ? 'cobalt' : 'atlantic')
+
 // Apply a saved per-browser opt-out before any tracker initializes.
 applyAnalyticsPreferenceFromUrl()
 
