@@ -1,17 +1,20 @@
-export type BetSightlyPalette = "atlantic" | "cobalt";
+export type BetSightlyPalette = "hybrid" | "atlantic" | "cobalt";
 
-/** Query-string selection takes priority over the user's previous comparison. */
+/** A deliberate Atlantic/Cobalt blend is the new comparison default.
+ * Query-string selection wins over remembered choice. */
 export function resolvePreviewPalette(
   search: string,
   storedPalette?: string | null,
 ): BetSightlyPalette {
   const requested = new URLSearchParams(search).get("palette");
-  if (requested === "cobalt" || requested === "atlantic") return requested;
-  if (storedPalette === "cobalt") return "cobalt";
-  return "atlantic";
+  if (requested === "hybrid" || requested === "atlantic" || requested === "cobalt")
+    return requested;
+  if (storedPalette === "atlantic" || storedPalette === "cobalt" || storedPalette === "hybrid")
+    return storedPalette;
+  return "hybrid";
 }
 
-/** Sets the theme before React is mounted so navigation does not flash Slate. */
+/** Set the correct palette before React renders (and persist the comparison). */
 export function applyPreviewPalette(): BetSightlyPalette {
   let stored: string | null = null;
   try { stored = window.sessionStorage.getItem("betsightly-preview-palette"); } catch { /* private browsing */ }
