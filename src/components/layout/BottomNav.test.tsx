@@ -13,9 +13,10 @@ test("mobile dock highlights Results and makes Build its own primary action", ()
   expect(nav).toBeInTheDocument();
   expect(screen.getByRole("link", { name: "Results" }))
     .toHaveAttribute("aria-current", "page");
-  for (const label of ["Home", "Picks", "Build", "Results"]) {
+  for (const label of ["Home", "Picks", "Build", "Rollover", "Results"]) {
     expect(screen.getByRole("link", { name: label })).toBeInTheDocument();
   }
+  expect(screen.getByRole("link", { name: "Rollover" })).toHaveAttribute("href", "/rollover");
   expect(screen.getByRole("link", { name: "Build" }))
     .toHaveAttribute("href", "/build-slip");
   expect(screen.getByRole("button", { name: "More pages" }))
@@ -23,15 +24,16 @@ test("mobile dock highlights Results and makes Build its own primary action", ()
   expect(screen.queryByRole("link", { name: /Live scores/ })).not.toBeInTheDocument();
 });
 
-test("More sheet exposes Live, Rollover and settings without crowding the dock", () => {
+test("More sheet keeps secondary pages accessible without duplicating Rollover", () => {
   render(<BottomNav />);
   fireEvent.click(screen.getByRole("button", { name: "More pages" }));
   expect(screen.getByRole("dialog", { name: "More BetSightly pages" })).toBeInTheDocument();
   const more = screen.getByRole("navigation", { name: "More navigation" });
-  for (const label of [/Live scores/, /Rollover/, /Punters/, /Settings/]) {
+  for (const label of [/Live scores/, /Punters/, /Settings/]) {
     expect(more.querySelector("a")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: label })).toBeInTheDocument();
   }
+  expect(screen.getByRole("link", { name: "Rollover" })).toHaveAttribute("href", "/rollover");
   fireEvent.keyDown(window, { key: "Escape" });
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   expect(screen.getByRole("button", { name: "More pages" }))
