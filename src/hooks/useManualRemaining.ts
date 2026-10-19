@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { api, type ManualRemainingResponse } from "../api/predictions";
 
 /** Only the visitor's explicit "Show available now" action books a reduced
@@ -7,6 +7,8 @@ export function useManualRemaining(enabled: boolean, publicationDate?: string) {
   const [data, setData] = useState<ManualRemainingResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [refreshVersion, setRefreshVersion] = useState(0);
+  const refetch = useCallback(() => setRefreshVersion(v => v + 1), []);
   useEffect(() => {
     if (!enabled || !publicationDate) {
       setData(null);
@@ -32,6 +34,6 @@ export function useManualRemaining(enabled: boolean, publicationDate?: string) {
         }
       });
     return () => { active = false; };
-  }, [enabled, publicationDate]);
-  return { data, loading, error };
+  }, [enabled, publicationDate, refreshVersion]);
+  return { data, loading, error, refetch };
 }
