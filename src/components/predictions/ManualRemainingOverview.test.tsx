@@ -23,8 +23,8 @@ const response = {
       total_odds:2.19,risk_level:"Manual remainder",
       original_leg_count:6,remaining_leg_count:2,removed_leg_count:4,
       games:[
-        {home_team:"Pafos",away_team:"APOEL",match_id:"f1",kickoff:"2026-10-19T18:00:00Z",prediction:"1X",odds:1.4},
-        {home_team:"Roma",away_team:"Parma",match_id:"f2",kickoff:"2026-10-19T19:00:00Z",prediction:"Over 1.5",odds:1.57},
+        {home_team:"Pafos",away_team:"APOEL",match_id:"f1",kickoff:"2099-10-19T18:00:00Z",prediction:"1X",odds:1.4},
+        {home_team:"Roma",away_team:"Parma",match_id:"f2",kickoff:"2099-10-19T19:00:00Z",prediction:"Over 1.5",odds:1.57},
       ],
       booking:{status:"active",booking_status:"FULL",readback_validation:"PASSED",
         share_code:"NEW424",actual_sportybet_odds:2.19,booked_leg_count:2},
@@ -33,7 +33,7 @@ const response = {
 };
 
 test("shows only rebooked manual legs, counts and the new code", () => {
-  render(<ManualRemainingOverview data={response as any} loading={false} error={null}/>);
+  render(<ManualRemainingOverview data={response as any} loading={false} error={null} onRefresh={jest.fn()}/>);
   expect(screen.getByText("Still-available manual matches")).toBeInTheDocument();
   expect(screen.getByText(/2 of 6 original games · 4 excluded/)).toBeInTheDocument();
   expect(screen.getByText(/Pafos/)).toBeInTheDocument();
@@ -45,11 +45,42 @@ test("shows only rebooked manual legs, counts and the new code", () => {
 test("hides cards if the new code is not verified", () => {
   const {container} = render(<ManualRemainingOverview data={{
     ...response, available:false, tiers:{},
-  } as any} loading={false} error={null}/>);
-  expect(container).toBeEmptyDOMElement();
+  } as any} loading={false} error={null} onRefresh={jest.fn()}/>);
+  expect(container).toHaveTextContent("No reduced manual slip is verifiably bookable right now.");
+  expect(screen.queryByText(/New code:/)).not.toBeInTheDocument();
 });
 test("displays booking verification errors without offering unverified code", () => {
-  render(<ManualRemainingOverview data={null} loading={false} error="SportyBet is unavailable."/>);
+  render(<ManualRemainingOverview data={null} loading={false} error="SportyBet is unavailable." onRefresh={jest.fn()}/>);
   expect(screen.getByRole("status")).toHaveTextContent("SportyBet is unavailable");
   expect(screen.queryByText(/New code/)).toBeNull();
+});
+
+test("does not show manual remainder before the visitor requests a check", () => {
+  const {container} = render(<ManualRemainingOverview
+    data={null} loading={false} error={null} onRefresh={jest.fn()}/>);
+  expect(container).toBeEmptyDOMElement();
+});
+
+test("hides a reduced code when a fixture is within 10 minutes and offers rechecking", () => {
+  const onRefresh = jest.fn();
+  const near = {
+    ...response,
+    tiers: {
+      "5_odds": {
+        ...response.tiers["5_odds"],
+        games: [
+          {...response.tiers["5_odds"].games[0],
+            kickoff: new Date(Date.now() + 9 * 60_000).toISOString()},
+          response.tiers["5_odds"].games[1],
+        ],
+      },
+    },
+  };
+  render(<ManualRemainingOverview data={near as any}
+    loading={false} error={null} onRefresh={onRefresh}/>);
+  expect(screen.getByRole("status")).toHaveTextContent("10-minute cutoff");
+  expect(screen.queryByText(/New code:/)).not.toBeInTheDocument();
+  const {fireEvent} = require("@testing-library/react");
+  fireEvent.click(screen.getByRole("button", {name:"Recheck remaining games"}));
+  expect(onRefresh).toHaveBeenCalledTimes(1);
 });
