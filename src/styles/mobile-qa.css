@@ -293,3 +293,12 @@
   .mobile-dock__surface, .mobile-dock__sheet { backdrop-filter: none; -webkit-backdrop-filter: none; }
   .light .mobile-dock__surface, .light .mobile-dock__sheet { background: var(--surface); }
 }
+
+.editorial-rollover-progress > p a {
+  color: var(--brand); text-decoration: none; font-weight: 750;
+  display: inline; white-space: normal;
+}
+.editorial-rollover-progress > p a:hover { text-decoration: underline; }
+.editorial-rollover-progress > p a:focus-visible {
+  outline: 2px solid var(--brand); outline-offset: 3px;
+}
