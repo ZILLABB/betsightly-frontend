@@ -20,6 +20,8 @@ import { api } from "../api/predictions";
 import { useRecommendations } from "../hooks/useRecommendations";
 import { useActionableCard } from "../hooks/useActionableCard";
 import { firstAvailablePredictionTier } from "../utils/firstAvailablePredictionTier";
+import { preferredBookableTier } from "../utils/bookableTiers";
+import { AvailableNowOverview } from "../components/predictions/AvailableNowOverview";
 import { isRolloverOnlyDay } from "../utils/isRolloverOnlyDay";
 import { RecommendationBoard } from "../components/predictions/RecommendationBoard";
 import { NextAvailableNotice } from "../components/predictions/NextAvailableNotice";
@@ -36,6 +38,7 @@ export function PredictionsPage() {
   const recommendations = useRecommendations();
   const [activeKey, setActiveKey] = useState<CategoryKey>(initialKey);
   const manuallyChosenTier = React.useRef(false);
+  const previousViewingBookable = React.useRef(false);
   const { formatOdds: fmtOdds, oddsSuffix } = useFormatOdds();
 
   // The original daily card remains frozen for the public record, but it is
@@ -82,6 +85,7 @@ export function PredictionsPage() {
     bookableNotice,
     bookableError,
     viewingBookable,
+    requestedAvailable,
     viewingPublishedRecord,
     unavailable: bookableUnavailable,
     affectedSelections: startedCount,
@@ -98,6 +102,20 @@ export function PredictionsPage() {
     if (!accumulators || manuallyChosenTier.current) return;
     setActiveKey(current => firstAvailablePredictionTier(accumulators, current));
   }, [accumulators, category]);
+
+  // An explicit switch to a new replacement portfolio resets the old tab
+  // choice; that category may not have any verified code this time.
+  React.useEffect(() => {
+    if (previousViewingBookable.current === viewingBookable) return;
+    previousViewingBookable.current = viewingBookable;
+    manuallyChosenTier.current = false;
+    setLeagueFilter(null);
+    if (accumulators) {
+      setActiveKey(current => viewingBookable
+        ? preferredBookableTier(accumulators, current)
+        : firstAvailablePredictionTier(accumulators, current));
+    }
+  }, [viewingBookable, accumulators]);
 
   const activeCat = accumulators?.[activeKey];
   const catMeta = CATEGORIES.find(c => c.key === activeKey)!;
@@ -219,7 +237,7 @@ export function PredictionsPage() {
 
       {/* Preserve the locked publication for auditability, but default late
           visitors to the exact-bookable card they can still act on. */}
-      {actionable.needsReplacement && (
+      {(actionable.needsReplacement || requestedAvailable) && (
         <div className="card available-now" role="status" aria-live="polite" style={{
           padding: "16px 18px", display: "flex", alignItems: "center",
           justifyContent: "space-between", gap: 16, flexWrap: "wrap",
@@ -310,6 +328,15 @@ export function PredictionsPage() {
                 : <>{bookableError || bookableUnavailable ? "Try again" : "Show available now"} <ArrowRight size={15} /></>}
           </button>
         </div>
+      )}
+
+      {viewingBookable && accumulators && (
+        <AvailableNowOverview accumulators={accumulators} onSelect={key => {
+          manuallyChosenTier.current = true;
+          setActiveKey(key);
+          setShowAll(false);
+          document.getElementById("published-tiers")?.scrollIntoView?.({ behavior: "smooth", block: "start" });
+        }} />
       )}
 
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
