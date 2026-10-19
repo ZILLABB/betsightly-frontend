@@ -40,7 +40,7 @@ test("shows only rebooked manual legs, counts and the new code", () => {
   expect(screen.getByText(/Roma/)).toBeInTheDocument();
   expect(screen.getByText("New code: NEW424")).toBeInTheDocument();
   expect(screen.queryByText("Old code: ORIGINAL")).not.toBeInTheDocument();
-  expect(screen.getByText(/new tickets/i)).toBeInTheDocument();
+  expect(screen.getByText(/these new tickets/i)).toBeInTheDocument();
 });
 test("hides cards if the new code is not verified", () => {
   const {container} = render(<ManualRemainingOverview data={{
