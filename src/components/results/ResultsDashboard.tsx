@@ -1,4 +1,5 @@
 import React from "react";
+import { TeamCrest } from "../common/TeamCrest";
 import {
   BarChart3,
   CalendarDays,
@@ -346,7 +347,14 @@ function ResultLeg({ leg, formatOdds, oddsSuffix }: { leg: SettledLeg; formatOdd
   const Icon = status.icon;
   return (
     <div className={`result-leg result-leg--${leg.status}`} aria-label={`${leg.home_team} vs ${leg.away_team}: ${leg.prediction}, ${status.label}`}>
-      <div className="result-leg__fixture"><strong>{leg.home_team} <span>vs</span> {leg.away_team}</strong>{leg.league && <small>{leg.league}</small>}</div>
+      <div className="result-leg__fixture">
+        <div className="result-leg__teams">
+          <TeamCrest team={leg.home_team} logo={leg.home_team_logo} size="sm"/>
+          <TeamCrest team={leg.away_team} logo={leg.away_team_logo} size="sm"/>
+          <strong>{leg.home_team} <span>vs</span> {leg.away_team}</strong>
+        </div>
+        {leg.league && <small>{leg.league}</small>}
+      </div>
       <div className="result-leg__market"><span>{leg.prediction}</span>{leg.odds != null && <small>{formatOdds(leg.odds)}{oddsSuffix}</small>}</div>
       <span className="result-leg__outcome"><Icon size={15} aria-hidden="true" /> {status.label}</span>
     </div>
