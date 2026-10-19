@@ -69,3 +69,12 @@ test("the retired neon-green brand is removed from icon, installed app and shari
   expect(read("public/site.webmanifest")).toContain('"theme_color": "#0B2238"');
   expect(read("vite.config.ts")).toContain("theme_color: '#0B2238'");
 });
+
+test("Live Scores uses semantic palette tokens instead of retired emerald hero colors", () => {
+  const live = read("src/pages/live-scores.css");
+  expect(live).toContain(".bs-live-hero");
+  expect(live).toContain("var(--border-brand)");
+  expect(live).toContain("var(--surface-2)");
+  expect(live).toContain("var(--text-2)");
+  expect(live).not.toMatch(/#37e58c|rgba\(56,229,140|rgba\(35,230,140|#071b14|#06130f/i);
+});
