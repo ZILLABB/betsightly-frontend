@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { SEO } from "../components/common/SEO";
 import { api, type LiveScoresResponse } from "../api/predictions";
 import { usePredictions } from "../hooks/usePredictions";
+import { TeamCrest } from "../components/common/TeamCrest";
 import "./live-scores.css";
 
 type CardMatch = {
@@ -12,6 +13,9 @@ type CardMatch = {
   away_team: string;
   kickoff: string;
   league: string;
+  home_team_logo?: string | null;
+  away_team_logo?: string | null;
+  team_type?: "CLUB" | "NATIONAL";
 };
 const isValid = (value: unknown): value is string => typeof value === "string" && value.length > 0;
 
@@ -60,12 +64,23 @@ export function LivePage() {
       const product = category as { games?: CardMatch[]; chain?: { picks?: CardMatch[] }[] };
       const selections = [...(product.games ?? []), ...(product.chain ?? []).flatMap(d => d.picks ?? [])];
       for (const game of selections) {
-        if (!isValid(game.match_id) || unique.has(game.match_id)) continue;
+        if (!isValid(game.match_id)) continue;
+        const existing = unique.get(game.match_id);
+        if (existing) {
+          // A fixture may appear in several products. Prefer whichever
+          // publication supplies the crest without modifying the match itself.
+          if (!existing.home_team_logo && game.home_team_logo) existing.home_team_logo = game.home_team_logo;
+          if (!existing.away_team_logo && game.away_team_logo) existing.away_team_logo = game.away_team_logo;
+          continue;
+        }
         unique.set(game.match_id, {
           match_id: game.match_id, home_team: game.home_team,
           away_team: game.away_team,
           kickoff: (game as CardMatch).kickoff || (game as unknown as {date:string}).date || "",
           league: game.league || "Football",
+          home_team_logo: game.home_team_logo,
+          away_team_logo: game.away_team_logo,
+          team_type: game.team_type,
         });
       }
     }
@@ -164,7 +179,10 @@ export function LivePage() {
               <span className={s?.live && !s?.stale ? "bs-live-indicator" : ""}>{s?.live && !s?.stale ? "● " : ""}{phase}{s?.live && !s?.stale && s?.clock ? ` · ${s.clock}` : ""}</span>
             </div>
             <div className="bs-live-fixture-row">
-              <div className="bs-live-names"><strong>{m.home_team}</strong><strong>{m.away_team}</strong></div>
+              <div className="bs-live-names">
+                <span className="bs-live-names__team"><TeamCrest team={m.home_team} logo={m.home_team_logo} national={m.team_type === "NATIONAL"} size="sm"/><strong>{m.home_team}</strong></span>
+                <span className="bs-live-names__team"><TeamCrest team={m.away_team} logo={m.away_team_logo} national={m.team_type === "NATIONAL"} size="sm"/><strong>{m.away_team}</strong></span>
+              </div>
               <div className="bs-live-score" aria-label={haveScore ? `${s?.home_score} to ${s?.away_score}` : "Score unavailable"}>
                 <span>{haveScore ? s?.home_score : "–"}</span>
                 <span>{haveScore ? s?.away_score : "–"}</span>
