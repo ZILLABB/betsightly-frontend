@@ -55,7 +55,7 @@ test("renders cached rollover data with a compact reconnect warning", () => {
   expect(screen.getByText(/Showing the last available data while we reconnect/i))
     .toBeInTheDocument();
   expect(screen.getByText(/Last updated/i)).toBeInTheDocument();
-  expect(screen.getByText(/No rollover chain yet/i)).toBeInTheDocument();
+  expect(screen.getByText(/No active chain published/i)).toBeInTheDocument();
 });
 
 test("an empty feed does not invent Day 1, Day 2 or Day 3 statuses", () => {
