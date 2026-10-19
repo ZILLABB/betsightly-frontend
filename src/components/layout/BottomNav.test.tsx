@@ -7,13 +7,12 @@ jest.mock("react-router-dom", () => ({
   Link: ({ children, to, ...props }: any) => <a href={to} {...props}>{children}</a>,
 }));
 
-test("mobile dock highlights Results and makes Build its own primary action", () => {
+test("mobile dock keeps five actions with Build emphasized and Results in More", () => {
   render(<BottomNav />);
   const nav = screen.getByRole("navigation", { name: "Quick navigation" });
   expect(nav).toBeInTheDocument();
-  expect(screen.getByRole("link", { name: "Results" }))
-    .toHaveAttribute("aria-current", "page");
-  for (const label of ["Home", "Picks", "Build", "Rollover", "Results"]) {
+  expect(screen.queryByRole("link", { name: "Results" })).not.toBeInTheDocument();
+  for (const label of ["Home", "Picks", "Build", "Rollover"]) {
     expect(screen.getByRole("link", { name: label })).toBeInTheDocument();
   }
   expect(screen.getByRole("link", { name: "Rollover" })).toHaveAttribute("href", "/rollover");
@@ -24,15 +23,16 @@ test("mobile dock highlights Results and makes Build its own primary action", ()
   expect(screen.queryByRole("link", { name: /Live scores/ })).not.toBeInTheDocument();
 });
 
-test("More sheet keeps secondary pages accessible without duplicating Rollover", () => {
+test("More sheet contains Results, Live and settings without duplicating Rollover", () => {
   render(<BottomNav />);
   fireEvent.click(screen.getByRole("button", { name: "More pages" }));
   expect(screen.getByRole("dialog", { name: "More BetSightly pages" })).toBeInTheDocument();
   const more = screen.getByRole("navigation", { name: "More navigation" });
-  for (const label of [/Live scores/, /Punters/, /Settings/]) {
+  for (const label of [/Results/, /Live scores/, /Punters/, /Settings/]) {
     expect(more.querySelector("a")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: label })).toBeInTheDocument();
   }
+  expect(screen.getByRole("link", { name: "Results" })).toHaveAttribute("aria-current", "page");
   expect(screen.getByRole("link", { name: "Rollover" })).toHaveAttribute("href", "/rollover");
   fireEvent.keyDown(window, { key: "Escape" });
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
