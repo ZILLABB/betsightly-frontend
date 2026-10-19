@@ -55,7 +55,7 @@ beforeEach(() => {
 
 test("mobile Builder prioritizes mode selection and keeps privacy details accessible", () => {
   renderBuilder();
-  expect(screen.getByRole("heading", { name: "Build your slip." })).toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: "Build to your criteria." })).toBeInTheDocument();
   expect(screen.getByText("Configure your slip")).toBeInTheDocument();
   expect(screen.queryByText("Builder V2")).not.toBeInTheDocument();
   expect(screen.getByRole("group", { name: "Builder mode" })).toBeInTheDocument();
@@ -335,8 +335,8 @@ test("Replace keeps the slip visible then swaps exactly one different fixture", 
   fireEvent.click(screen.getByRole("button", { name: /build my 10x slip/i }));
   const replace = await screen.findAllByRole("button", { name: /^replace$/i });
   fireEvent.click(replace[0]);
-  expect(screen.getByText("Alpha v Beta")).toBeInTheDocument();
-  expect(screen.getByText("Gamma v Delta")).toBeInTheDocument();
+  expect(screen.getByLabelText("Alpha v Beta")).toBeInTheDocument();
+  expect(screen.getByLabelText("Gamma v Delta")).toBeInTheDocument();
   expect(screen.getByText(/Finding a different game/i)).toBeInTheDocument();
   expect(reviseSlip).toHaveBeenCalledWith(expect.objectContaining({
     action: "replace_selection", selectionId: "leg-a", fixtureId: "match-a",
@@ -348,11 +348,11 @@ test("Replace keeps the slip visible then swaps exactly one different fixture", 
     booking: { status: "active", share_code: "NEW789",
       booking_status: "FULL", readback_validation: "PASSED" },
   }));
-  await screen.findByText("Roma v Torino");
+  await screen.findByLabelText("Roma v Torino");
   await waitFor(() =>
-    expect(screen.queryByText("Alpha v Beta")).not.toBeInTheDocument(),
+    expect(screen.queryByLabelText("Alpha v Beta")).not.toBeInTheDocument(),
   );
-  expect(screen.getByText("Gamma v Delta")).toBeInTheDocument();
+  expect(screen.getByLabelText("Gamma v Delta")).toBeInTheDocument();
   expect(screen.getByText(/Game replaced/i)).toBeInTheDocument();
   expect(screen.getAllByText(/Leg 0[12]/i)).toHaveLength(2);
 });
@@ -373,7 +373,7 @@ test("rejects a same-fixture market response and keeps the old card", async () =
   fireEvent.click(await screen.findByRole("button", { name: /^replace$/i }));
   expect(await screen.findByText(/No suitable replacement found/i))
     .toBeInTheDocument();
-  expect(screen.getByText("Alpha v Beta")).toBeInTheDocument();
+  expect(screen.getByLabelText("Alpha v Beta")).toBeInTheDocument();
 });
 
 test("failed Replace keeps both cards and reports local no-change", async () => {
@@ -391,8 +391,8 @@ test("failed Replace keeps both cards and reports local no-change", async () => 
   fireEvent.click((await screen.findAllByRole("button", { name: /^replace$/i }))[0]);
   expect(await screen.findByText(/No suitable replacement found/i))
     .toBeInTheDocument();
-  expect(screen.getByText("Alpha v Beta")).toBeInTheDocument();
-  expect(screen.getByText("Gamma v Delta")).toBeInTheDocument();
+  expect(screen.getByLabelText("Alpha v Beta")).toBeInTheDocument();
+  expect(screen.getByLabelText("Gamma v Delta")).toBeInTheDocument();
 });
 
 test("lock state persists in the atomically returned revision", async () => {
@@ -422,10 +422,10 @@ test("an older edit response cannot overwrite a newer revision", async () => {
   fireEvent.click(replace[0]);
   fireEvent.click(replace[1]);
   await act(async () => second(editableSlip([{ ...gameB, home_team: "Newest" }] )));
-  await screen.findByText(/Newest v Beta/i);
+  await screen.findByLabelText(/Newest v Beta/i);
   await act(async () => first(editableSlip([{ ...gameB, home_team: "Obsolete" }] )));
-  expect(screen.queryByText(/Obsolete v Beta/i)).not.toBeInTheDocument();
-  expect(screen.getByText(/Newest v Beta/i)).toBeInTheDocument();
+  expect(screen.queryByLabelText(/Obsolete v Beta/i)).not.toBeInTheDocument();
+  expect(screen.getByLabelText(/Newest v Beta/i)).toBeInTheDocument();
 });
 test("prevents duplicate builds while a request is in flight", () => {
   buildSlip.mockReturnValue(new Promise(() => undefined));

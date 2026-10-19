@@ -274,6 +274,7 @@ export interface RolloverPick {
   away_team: string;
   home_team_logo?: string;
   away_team_logo?: string;
+  team_type?: "CLUB" | "NATIONAL";
   commence_time?: string;
   market: 'match_result' | 'goals' | 'btts' | 'double_chance';
   prediction: string;
@@ -529,8 +530,8 @@ export const CATEGORIES: CategoryMeta[] = [
     label: 'Banker',
     shortLabel: 'Bank',
     description: 'One or two picks · highest reliability',
-    color: '#34d399',
-    faint: 'rgba(52,211,153,0.09)',
+    color: 'var(--green)',
+    faint: 'var(--green-faint)',
     riskLabel: 'Most Reliable',
   },
   {
@@ -538,17 +539,17 @@ export const CATEGORIES: CategoryMeta[] = [
     label: 'Over Goals',
     shortLabel: 'Overs',
     description: 'Bookmaker-verified goal totals · single matches or an admin-curated accumulator',
-    color: '#10b981',
-    faint: 'rgba(16,185,129,0.08)',
-    riskLabel: 'Very Safe',
+    color: 'var(--brand)',
+    faint: 'var(--brand-faint)',
+    riskLabel: 'Goal selections',
   },
   {
     key: '2_odds',
     label: '2 Odds',
     shortLabel: '2x',
     description: 'Safe picks · high confidence',
-    color: '#059669',
-    faint: 'rgba(5,150,105,0.10)',
+    color: 'var(--brand)',
+    faint: 'var(--brand-faint)',
     riskLabel: 'Conservative',
   },
   {
@@ -556,8 +557,8 @@ export const CATEGORIES: CategoryMeta[] = [
     label: '5 Odds',
     shortLabel: '5x',
     description: 'Balanced risk & reward',
-    color: '#fbbf24',
-    faint: 'rgba(251,191,36,0.08)',
+    color: 'var(--accent)',
+    faint: 'var(--gold-faint)',
     riskLabel: 'Balanced',
   },
   {
@@ -565,8 +566,8 @@ export const CATEGORIES: CategoryMeta[] = [
     label: '10 Odds',
     shortLabel: '10x',
     description: 'Long shot · rarely lands',
-    color: '#f59e0b',
-    faint: 'rgba(245,158,11,0.08)',
+    color: 'var(--accent)',
+    faint: 'var(--gold-faint)',
     riskLabel: 'Aggressive',
   },
   {
@@ -574,8 +575,8 @@ export const CATEGORIES: CategoryMeta[] = [
     label: 'Rollover',
     shortLabel: 'Roll',
     description: 'Multi-day challenge',
-    color: '#fb923c',
-    faint: 'rgba(251,146,60,0.08)',
+    color: 'var(--purple)',
+    faint: 'var(--purple-faint)',
     riskLabel: 'Challenge',
   },
 ];

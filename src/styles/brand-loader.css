@@ -1,0 +1,78 @@
+/*
+ * BetSightly loading system / Editorial 2026
+ * Uses the identical SVG markup as the header/footer via BetSightlyLogo.
+ * No legacy bitmap, mix-blend-mode, false progress percentage or neon styling.
+ */
+.brand-loader-layout { width: 100%; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.brand-loader.brand-loader--editorial {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 13px; padding: clamp(25px,5vw,45px) 14px;
+  min-width: 0; width: 100%; box-sizing: border-box;
+  color: var(--text-1); background: transparent;
+}
+.brand-loader__identity {
+  display: block; max-width: 100%;
+  animation: bs-loader-breathe 2s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+.brand-loader__identity .bs-brand {
+  display: inline-flex; flex-wrap: nowrap; align-items: center;
+  max-width: 100%; gap: 10px; color: var(--brand);
+}
+.brand-loader__identity .bs-brand__symbol {
+  flex: 0 0 29px; width: 29px; height: 41px;
+  overflow: visible; filter: none;
+}
+.brand-loader__identity .bs-brand__words { display: grid; gap: 4px; }
+.brand-loader__identity .bs-brand__name {
+  font: 800 clamp(18px,5vw,22px)/1 var(--font-body);
+  letter-spacing: -.05em; white-space: nowrap;
+}
+.brand-loader__identity .bs-brand__tagline {
+  display: block; white-space: nowrap; color: var(--text-3);
+  font: 700 7px/1.2 var(--font-body); letter-spacing: .09em;
+}
+.brand-loader--editorial .brand-loader-track {
+  display: block; position: relative; width: 152px; max-width: 65vw; height: 3px;
+  overflow: hidden; border-radius: 99px; background: var(--surface-3);
+  box-shadow: none;
+}
+.brand-loader--editorial .brand-loader-track::after { content: none !important; }
+.brand-loader-track__indicator {
+  display: block; width: 40%; height: 100%;
+  border-radius: inherit; background: var(--accent);
+  animation: bs-loader-progress 1.35s cubic-bezier(.5,0,.5,1) infinite alternate;
+}
+.brand-loader--editorial .brand-loader-msg {
+  color: var(--text-3); font: 600 11px/1.45 var(--font-body);
+  letter-spacing: .01em; text-align: center; max-width: 30ch;
+}
+.brand-loader-route {
+  display: grid; place-items: center; min-height: min(44vh,320px);
+  width: 100%; background: transparent;
+}
+@keyframes bs-loader-breathe {
+  0%,100% { opacity: .88; transform: translateY(0); }
+  50% { opacity: 1; transform: translateY(-2px); }
+}
+@keyframes bs-loader-progress {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(250%); }
+}
+.light .brand-loader--editorial .brand-loader-track {
+  background: #dbe3e9;
+}
+.light .brand-loader__identity .bs-brand__name span:first-child {
+  color: var(--text-1);
+}
+@media (max-width: 400px) {
+  .brand-loader.brand-loader--editorial { padding: 27px 8px; gap: 11px; }
+  .brand-loader__identity .bs-brand__symbol {
+    width: 27px; height: 38px; flex-basis: 27px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .brand-loader__identity,
+  .brand-loader-track__indicator { animation: none !important; will-change: auto; }
+  .brand-loader-track__indicator { width: 40%; transform: translateX(75%); }
+}

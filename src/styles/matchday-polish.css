@@ -1,0 +1,209 @@
+/*
+ * Matchday detail v2 — mobile-first readable fixtures.
+ * Selective glass is limited to the navigation and metadata surface.
+ * Match data remains on solid opaque surfaces for legibility.
+ */
+.editorial-fixture.pred-card {
+  border-radius: 13px !important;
+  overflow: hidden;
+  box-shadow: 0 6px 22px rgba(8,18,30,.07) !important;
+}
+.editorial-fixture__top {
+  min-height: 43px !important;
+  padding: 11px 17px !important;
+  background: linear-gradient(120deg,
+    color-mix(in srgb, var(--surface-2) 65%, var(--surface)),
+    var(--surface)) !important;
+}
+.editorial-fixture__league { letter-spacing: .075em; }
+.editorial-fixture__body {
+  grid-template-columns: minmax(0,1.4fr) minmax(175px,.94fr) minmax(110px,.46fr) !important;
+  align-items: stretch !important;
+  min-height: 0 !important;
+}
+.editorial-fixture__body > div { padding: 17px 20px !important; }
+.editorial-fixture__match { min-width: 0; }
+.editorial-fixture__teams {
+  display: grid !important;
+  grid-template-columns: minmax(0,1fr) 30px minmax(0,1fr) !important;
+  align-items: start !important;
+  gap: 8px !important;
+}
+.editorial-fixture__teams > .editorial-fixture__team {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: start;
+  gap: 5px !important;
+  text-align: center; min-width: 0;
+}
+.editorial-fixture__team .team-crest { flex-shrink: 0; }
+.editorial-fixture__teams > .editorial-fixture__team strong {
+  color: var(--text-1);
+  font: 750 13px/1.25 var(--font-body);
+  min-height: 31px;
+  text-align: center;
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: auto;
+}
+.editorial-fixture__team-role {
+  color: var(--text-3); font: 700 9px/1.2 var(--font-body);
+  letter-spacing: .095em;
+}
+.editorial-fixture__versus {
+  display: grid; place-items: center; align-self: center;
+  width: 30px; height: 30px; margin-top: -9px;
+  color: var(--text-3); border: 1px solid var(--border);
+  border-radius: 50%; background: var(--bg-mid);
+  font: 850 9px/1 var(--font-body); letter-spacing: .02em;
+}
+.editorial-fixture__form {
+  display: grid !important; grid-template-columns: repeat(2,minmax(0,1fr)) !important;
+  max-width: none !important; gap: 16px !important;
+  padding-top: 11px; margin-top: 12px !important;
+  border-top: 1px solid var(--border);
+}
+.editorial-fixture__form-side {
+  min-width: 0; display: flex; flex-direction: column; align-items: center;
+  justify-content: start; gap: 6px;
+}
+.editorial-fixture__form-side > span:first-child {
+  color: var(--text-3); text-transform: uppercase;
+  font: 750 8px/1.3 var(--font-body); letter-spacing: .09em; white-space: nowrap;
+}
+.editorial-fixture__form-run {
+  display: flex; flex-wrap: nowrap; align-items: center;
+  justify-content: center; gap: 3px; min-width: 0;
+}
+.editorial-fixture__form-chip {
+  display: grid; place-items: center; width: 16px; height: 18px;
+  border-radius: 4px;
+  font: 800 9px/1 var(--font-body);
+  color: var(--text-1); background: var(--surface-2); border: 1px solid var(--border);
+}
+.editorial-fixture__form-chip[data-result="W"] {
+  color: var(--green); background: var(--green-faint);
+  border-color: color-mix(in srgb,var(--green) 21%,var(--border));
+}
+.editorial-fixture__form-chip[data-result="L"] {
+  color: var(--red); background: color-mix(in srgb,var(--red) 9%,var(--surface));
+  border-color: color-mix(in srgb,var(--red) 21%,var(--border));
+}
+.editorial-fixture__form-chip[data-result="D"] {
+  color: var(--text-2); background: var(--surface-2);
+}
+.editorial-fixture__form-unavailable {
+  font: 500 10px/1.3 var(--font-body); color: var(--text-3);
+}
+.editorial-fixture__selection, .editorial-fixture__price {
+  display: flex; flex-direction: column; justify-content: center;
+}
+.editorial-fixture__selection > strong {
+  font: 760 16px/1.25 var(--font-body);
+  letter-spacing: -.02em;
+}
+.editorial-fixture__price > strong {
+  font: 800 clamp(24px,2.6vw,32px)/1.04 var(--font-mono);
+  letter-spacing: -.03em;
+}
+.editorial-fixture__price-suffix {
+  color: var(--text-3); font-size: .48em; margin-left: 2px; vertical-align: 4px;
+}
+.editorial-fixture__label {
+  color: var(--text-3); font: 760 9px/1.4 var(--font-body);
+  letter-spacing: .095em; margin-bottom: 7px;
+}
+.editorial-fixture__selection small,
+.editorial-fixture__price small {
+  color: var(--text-3);
+  font: 500 11px/1.45 var(--font-body);
+  margin-top: 5px;
+}
+.editorial-fixture__footer {
+  min-height: 44px; padding: 5px 17px !important;
+  background: color-mix(in srgb,var(--surface) 94%,var(--surface-2));
+}
+.editorial-fixture__evidence > summary { padding: 9px 0 !important; }
+
+/* Mobile: matchup gets its own full row; one compact selection + odds row. */
+@media (max-width: 760px) {
+  .editorial-fixture__body {
+    grid-template-columns: minmax(0,1fr) minmax(102px,.39fr) !important;
+  }
+  .editorial-fixture__match {
+    grid-column: 1/-1 !important;
+    padding: 16px 15px 13px !important;
+  }
+  .editorial-fixture__teams {
+    grid-template-columns: minmax(0,1fr) 40px minmax(0,1fr) !important;
+    gap: 10px !important; align-items: center !important;
+  }
+  .editorial-fixture__versus { width: 34px; height: 34px; margin-top: -12px; }
+  .editorial-fixture__teams > .editorial-fixture__team strong {
+    min-height: 0; font-size: 13px; max-width: 100%;
+  }
+  .editorial-fixture__team-role { font-size: 8px; }
+  .editorial-fixture__form { padding-top: 10px; margin-top: 11px !important; gap: 10px !important; }
+  .editorial-fixture__form-chip { width: 17px; height: 18px; }
+  .editorial-fixture__body > .editorial-fixture__selection {
+    grid-column: 1; border-left: 0 !important;
+    border-top: 1px solid var(--border);
+    padding: 14px 15px 15px !important;
+  }
+  .editorial-fixture__body > .editorial-fixture__price {
+    grid-column: 2; border-left: 1px solid var(--border) !important;
+    border-top: 1px solid var(--border);
+    padding: 14px 13px 15px !important;
+    align-items: start;
+  }
+  .editorial-fixture__selection > strong { font-size: 15px; }
+  .editorial-fixture__price > strong { font-size: 24px; white-space: nowrap; }
+  .editorial-fixture__selection small, .editorial-fixture__price small { font-size: 10px; }
+  .editorial-fixture__footer { gap: 7px !important; }
+}
+@media (max-width: 365px) {
+  .editorial-fixture__match { padding: 13px 10px 11px !important; }
+  .editorial-fixture__teams { gap: 6px !important; grid-template-columns: minmax(0,1fr) 32px minmax(0,1fr) !important; }
+  .editorial-fixture__teams > .editorial-fixture__team strong { font-size: 12px; }
+  .editorial-fixture__form-chip { width: 15px; height: 17px; font-size: 8px; }
+  .editorial-fixture__form-side > span:first-child { letter-spacing: 0; font-size: 7px; }
+  .editorial-fixture__body { grid-template-columns: minmax(0,1fr) 100px !important; }
+  .editorial-fixture__body > .editorial-fixture__selection { padding-inline: 12px !important; }
+  .editorial-fixture__body > .editorial-fixture__price { padding-inline: 10px !important; }
+}
+
+/* 6 direct destinations. Use light glass ONLY in chrome, not betting content. */
+@media (max-width: 767px) {
+  .mobile-dock { padding-inline: 9px; }
+  .mobile-dock__surface {
+    grid-template-columns: repeat(6,minmax(0,1fr));
+    background: color-mix(in srgb,var(--nav-overlay) 93%,transparent);
+    border-color: color-mix(in srgb,var(--border) 83%,transparent);
+    box-shadow: 0 15px 45px rgba(4,13,23,.24), 0 2px 8px rgba(4,13,23,.08);
+    backdrop-filter: blur(20px) saturate(126%);
+    -webkit-backdrop-filter: blur(20px) saturate(126%);
+    padding-inline: 4px; border-radius: 18px;
+  }
+  .mobile-dock__item { min-height: 52px; }
+  .mobile-dock__label { font-size: 9px; letter-spacing: -.015em; }
+  .mobile-dock__icon { width: 32px; }
+  .mobile-dock__sheet {
+    background: color-mix(in srgb,var(--surface) 96%,transparent);
+    backdrop-filter: blur(16px) saturate(115%);
+    -webkit-backdrop-filter: blur(16px) saturate(115%);
+  }
+}
+@media (max-width: 375px) {
+  .mobile-dock { padding-inline: 6px; }
+  .mobile-dock__surface { padding-inline: 2px; }
+  .mobile-dock__item { padding-inline: 0; }
+  .mobile-dock__label { font-size: 8.5px; }
+  .mobile-dock__item--build .mobile-dock__icon { width: 43px; height: 43px; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .mobile-dock__surface, .mobile-dock__sheet {
+    background: var(--surface);
+    backdrop-filter: none; -webkit-backdrop-filter: none;
+  }
+}

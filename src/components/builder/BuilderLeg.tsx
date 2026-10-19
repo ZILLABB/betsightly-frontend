@@ -10,6 +10,7 @@ import {
   Trash2,
 } from "lucide-react";
 
+import { TeamCrest } from "../common/TeamCrest";
 import type { BuilderAction } from "../../api/builderRevisions";
 import type { CategoryMeta, GamePrediction } from "../../types";
 import { formatKickoffDateTime } from "../../utils/formatters";
@@ -173,9 +174,11 @@ export function BuilderLeg({
                 {context ? ` · ${context}` : ""}
               </span>
 
-              <strong>
-                {`${game.home_team} v ${game.away_team}`}
-              </strong>
+              <div className="builder-leg-compact__teams" aria-label={`${game.home_team} v ${game.away_team}`}>
+                <span className="builder-leg-compact__side"><TeamCrest team={game.home_team} logo={game.home_team_logo} national={game.team_type !== "CLUB"} size="sm" /><strong>{game.home_team}</strong></span>
+                <span className="builder-leg-compact__versus">vs</span>
+                <span className="builder-leg-compact__side"><TeamCrest team={game.away_team} logo={game.away_team_logo} national={game.team_type !== "CLUB"} size="sm" /><strong>{game.away_team}</strong></span>
+              </div>
 
               {kickoff && <small>{kickoff}</small>}
             </div>

@@ -190,16 +190,16 @@ export function SettingsPage() {
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 28, maxWidth: 560, margin: "0 auto" }}>
+    <div className="editorial-secondary-page editorial-settings" style={{ display: "flex", flexDirection: "column", gap: 23, maxWidth: 760, margin: "0 auto", width: "100%" }}>
 
       <SEO title="Settings" description="Customize your BetSightly experience — theme, odds format, currency, and notifications." path="/settings" />
-      {/* Header */}
-      <div>
-        <div className="eyebrow" style={{ marginBottom: 6 }}>Preferences</div>
-        <h1 style={{ fontFamily: "var(--font-display)", fontSize: 30, fontWeight: 800, color: "var(--text-1)" }}>
-          Settings
-        </h1>
-      </div>
+      <header className="editorial-secondary-masthead">
+        <div>
+          <span className="editorial-overline">YOUR EXPERIENCE</span>
+          <h1>Preferences.</h1>
+          <p>Choose how scores, odds and notifications appear. These settings do not change published predictions.</p>
+        </div>
+      </header>
 
       {/* Appearance */}
       <Section title="Appearance">

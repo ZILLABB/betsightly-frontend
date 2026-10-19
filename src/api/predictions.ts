@@ -674,6 +674,8 @@ export interface PerformanceResponse {
 export interface ManualResultLeg {
   home_team: string;
   away_team: string;
+  home_team_logo?: string | null;
+  away_team_logo?: string | null;
   market: string;
   odds?: number;
   kickoff?: string;

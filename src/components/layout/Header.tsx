@@ -1,149 +1,91 @@
-import React, { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, Home, Target, BarChart2, RefreshCw, Settings, Users, Sliders, Radio } from "lucide-react";
+import { ArrowRight, ChevronDown, Menu, X, Home, Target, BarChart2, RefreshCw, Settings, Users, Sliders, Radio } from "lucide-react";
 import { BetSightlyLogo } from "../brand/BetSightlyLogo";
 
-/* The navigation is competition-neutral, reflecting the current fixture calendar. */
-
-const NAV = [
-  { path:"/", label:"Home", icon:Home },
-  { path:"/predictions", label:"Predictions", icon:Target },
-  { path:"/build-slip", label:"Build Slip", icon:Sliders },
-  { path:"/results", label:"Results", icon:BarChart2 },
-  { path:"/live", label:"Live", icon:Radio },
-  { path:"/rollover", label:"Rollover", icon:RefreshCw },
-  { path:"/punters", label:"Punters", icon:Users },
-  { path:"/settings", label:"Settings", icon:Settings },
+const PRIMARY = [
+  { path: "/", label: "Home", icon: Home },
+  { path: "/predictions", label: "Predictions", icon: Target },
+  { path: "/results", label: "Results", icon: BarChart2 },
+  { path: "/live", label: "Live Scores", icon: Radio },
+];
+const SECONDARY = [
+  { path: "/rollover", label: "Rollover", icon: RefreshCw },
+  { path: "/punters", label: "Punters", icon: Users },
+  { path: "/settings", label: "Settings", icon: Settings },
 ];
 
 export function Header() {
   const location = useLocation();
-  const [open, setOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-
-  useEffect(() => {
-    let ticking = false;
-    const fn = () => {
-      if (!ticking) {
-        ticking = true;
-        requestAnimationFrame(() => {
-          const isScrolled = window.scrollY > 8;
-          setScrolled(prev => prev === isScrolled ? prev : isScrolled);
-          ticking = false;
-        });
-      }
-    };
-    window.addEventListener("scroll", fn, { passive:true });
-    return () => window.removeEventListener("scroll", fn);
-  }, []);
-
-  useEffect(() => {
-    document.body.style.overflow = open ? "hidden" : "";
-    return () => { document.body.style.overflow = ""; };
-  }, [open]);
-
-  const isActive = (p: string) => p === "/"
+  const [menuOpen, setMenuOpen] = useState(false);
+  const isActive = (path: string) => path === "/"
     ? location.pathname === "/"
-    : location.pathname === p || location.pathname.startsWith(`${p}/`);
+    : location.pathname === path || location.pathname.startsWith(`${path}/`);
+
+  useEffect(() => { setMenuOpen(false); }, [location.pathname]);
+  useEffect(() => {
+    document.body.style.overflow = menuOpen ? "hidden" : "";
+    const escape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMenuOpen(false);
+    };
+    window.addEventListener("keydown", escape);
+    return () => {
+      document.body.style.overflow = "";
+      window.removeEventListener("keydown", escape);
+    };
+  }, [menuOpen]);
 
   return (
     <>
-      <header style={{
-        position:"sticky", top:0, zIndex:50,
-        borderBottom: scrolled ? "1px solid var(--border)" : "1px solid transparent",
-        background: scrolled ? "var(--nav-bg-scrolled)" : "var(--nav-bg-top)",
-        backdropFilter:"blur(20px)",
-        transition:"all 250ms ease",
-      }}>
-        <div style={{ maxWidth:1200, margin:"0 auto", padding:"0 20px", height:70, display:"flex", alignItems:"center", justifyContent:"space-between", gap:20 }}>
-          
-          {/* Logo */}
-          <Link to="/" className="brand-lockup bs-brand-link" aria-label="BetSightly home">
-            <BetSightlyLogo />
+      <header className="editorial-header">
+        <div className="editorial-header__utility">
+          <span>FOOTBALL INTELLIGENCE / DAILY PUBLICATION</span>
+          <Link to="/results">Every result on record <ArrowRight size={12} aria-hidden="true"/></Link>
+        </div>
+        <div className="editorial-header__main">
+          <Link to="/" className="editorial-header__brand brand-lockup bs-brand-link" aria-label="BetSightly home">
+            <BetSightlyLogo/>
           </Link>
-
-          {/* Desktop Nav */}
-          <nav aria-label="Main navigation" style={{ display:"flex", alignItems:"center", gap:2, flex:1, justifyContent:"center" }} className="hidden-mobile">
-            {NAV.map(({ path, label }) => {
-              const active = isActive(path);
-              const activeColor = "var(--brand)";
-              const activeBg = "var(--brand-faint)";
-              return (
-                <Link key={path} to={path} aria-current={active ? "page" : undefined} style={{
-                  padding:"7px 14px", borderRadius:8,
-                  fontFamily:"var(--font-body)", fontSize:14, fontWeight:500,
-                  textDecoration:"none", transition:"all 180ms ease",
-                  color: active ? activeColor : "var(--text-2)",
-                  background: active ? activeBg : "transparent",
-                }}
-                onMouseEnter={e => { if(!active) { (e.currentTarget as HTMLElement).style.color="var(--text-1)"; (e.currentTarget as HTMLElement).style.background="var(--nav-hover)"; }}}
-                onMouseLeave={e => { if(!active) { (e.currentTarget as HTMLElement).style.color="var(--text-2)"; (e.currentTarget as HTMLElement).style.background="transparent"; }}}
-                >
-                  {label}
-                </Link>
-              );
-            })}
+          <nav className="editorial-header__nav" aria-label="Primary navigation">
+            {PRIMARY.map(({ path, label }) => (
+              <Link key={path} to={path} aria-current={isActive(path) ? "page" : undefined}
+                className="editorial-header__link" data-active={isActive(path)}>
+                {label}
+              </Link>
+            ))}
+            <details className="editorial-header__more">
+              <summary>More <ChevronDown size={14} aria-hidden="true"/></summary>
+              <div className="editorial-header__dropdown">
+                {SECONDARY.map(({ path, label }) => (
+                  <Link key={path} to={path} aria-current={isActive(path) ? "page" : undefined}
+                    data-active={isActive(path)}>{label}</Link>
+                ))}
+              </div>
+            </details>
           </nav>
-
-          <div className="hidden-mobile header-live-pill" aria-label="Matchday navigation">
-            <Radio size={13} /> Matchday
-          </div>
-
-          {/* Mobile toggle */}
-          <button
-            onClick={() => setOpen(!open)}
-            className="show-mobile"
-            style={{ background:"none", border:"none", cursor:"pointer", color:"var(--text-1)", padding:6, borderRadius:8 }}
-            aria-label="Menu"
-          >
-            {open ? <X size={22} /> : <Menu size={22} />}
+          <Link to="/build-slip" className="editorial-header__cta" aria-current={isActive("/build-slip") ? "page" : undefined}>
+            <Sliders size={15} aria-hidden="true"/> Build a slip <ArrowRight size={14} aria-hidden="true"/>
+          </Link>
+          <button type="button" className="editorial-header__mobile-toggle"
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={menuOpen} aria-controls="editorial-mobile-navigation"
+            onClick={() => setMenuOpen(v => !v)}>
+            {menuOpen ? <X size={23}/> : <Menu size={23}/>}
           </button>
         </div>
       </header>
-
-      {/* Mobile overlay */}
-      <nav
-        aria-label="Mobile navigation"
-        role="dialog"
-        aria-modal={open}
-        aria-hidden={!open}
-        style={{
-        position:"fixed", inset:0, zIndex:49,
-        background:"var(--nav-overlay)", backdropFilter:"blur(20px)",
-        display:"flex", flexDirection:"column", paddingTop:80, paddingLeft:24, paddingRight:24,
-        transition:"opacity 250ms ease, transform 250ms ease",
-        opacity: open ? 1 : 0,
-        transform: open ? "translateY(0)" : "translateY(-8px)",
-        pointerEvents: open ? "auto" : "none",
-        visibility: open ? "visible" : "hidden",
-      }}>
-        {NAV.map(({ path, label, icon: Icon }) => {
-          const active = isActive(path);
-          const isWC = false;
-          const c = isWC ? "#f59e0b" : "var(--brand)";
-          const bg = isWC ? "rgba(245,158,11,0.08)" : "var(--brand-faint)";
-          return (
-            <Link key={path} to={path} onClick={() => setOpen(false)} style={{
-              display:"flex", alignItems:"center", gap:14,
-              padding:"14px 16px", borderRadius:12, textDecoration:"none",
-              fontFamily:"var(--font-body)", fontSize:17, fontWeight:500,
-              color: active ? c : "var(--text-2)",
-              background: active ? bg : "transparent",
-              borderLeft: active ? `2px solid ${c}` : "2px solid transparent",
-              marginBottom:4,
-            }}>
-              <Icon size={20} />
-              {label}
-            </Link>
-          );
-        })}
+      <nav id="editorial-mobile-navigation" aria-label="Mobile menu" className="editorial-mobile-menu"
+        data-open={menuOpen} aria-hidden={!menuOpen} inert={!menuOpen}>
+        <span className="editorial-overline">EXPLORE BETSIGHTLY</span>
+        {[...PRIMARY, { path: "/build-slip", label: "Build Slip", icon: Sliders }, ...SECONDARY].map(({ path, label, icon: Icon }) => (
+          <Link key={path} to={path} aria-current={isActive(path) ? "page" : undefined}
+            className="editorial-mobile-menu__link" data-active={isActive(path)}
+            onClick={() => setMenuOpen(false)}>
+            <Icon size={19} aria-hidden="true"/>{label}<ArrowRight size={16} aria-hidden="true"/>
+          </Link>
+        ))}
+        <p>18+ only. All predictions are informational. Past results do not guarantee future outcomes.</p>
       </nav>
-
-      <style>{`
-        @media (min-width: 901px) { .hidden-mobile { display:flex !important; } .show-mobile { display:none !important; } }
-        @media (max-width: 900px) { .hidden-mobile { display:none !important; } .show-mobile { display:flex !important; } }
-        @keyframes spin { to { transform:rotate(360deg); } }
-      `}</style>
     </>
   );
 }
