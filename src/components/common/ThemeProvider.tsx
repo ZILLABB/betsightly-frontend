@@ -13,7 +13,11 @@ interface ThemeProviderProps {
  */
 const setThemeColorMeta = (isDark: boolean) => {
   const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.setAttribute('content', isDark ? '#101925' : '#f4f5f3');
+  const cobalt = document.documentElement.getAttribute('data-bs-palette') === 'cobalt';
+  const color = isDark
+    ? (cobalt ? '#111933' : '#0B2238')
+    : (cobalt ? '#F2F5FD' : '#F3F7FA');
+  if (meta) meta.setAttribute('content', color);
 };
 
 /**
