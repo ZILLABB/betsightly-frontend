@@ -10,6 +10,6 @@ export function lagosDayKey(now: Date = new Date()): string {
 
 /** True when the last available public card is older than today in Lagos. */
 export function isEarlierPublication(publishDate: string | null | undefined, now: Date = new Date()): boolean {
-  if (!publishDate || !/^\\d{4}-\\d{2}-\\d{2}/.test(publishDate)) return false;
+  if (!publishDate || !/^\d{4}-\d{2}-\d{2}/.test(publishDate)) return false;
   return publishDate.slice(0, 10) < lagosDayKey(now);
 }
