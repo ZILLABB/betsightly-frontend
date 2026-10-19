@@ -1,8 +1,14 @@
 import { resolvePreviewPalette } from "./palettePreview";
 
 describe("preview palette selection", () => {
-  it("uses Atlantic by default", () => {
-    expect(resolvePreviewPalette("", null)).toBe("atlantic");
+  it("uses Atlantic × Cobalt hybrid by default", () => {
+    expect(resolvePreviewPalette("", null)).toBe("hybrid");
+  });
+  it("lets readers explicitly compare the new blend to both originals", () => {
+    expect(resolvePreviewPalette("?palette=hybrid", "cobalt")).toBe("hybrid");
+    expect(resolvePreviewPalette("?palette=atlantic", "hybrid")).toBe("atlantic");
+    expect(resolvePreviewPalette("?palette=cobalt", "hybrid")).toBe("cobalt");
+    expect(resolvePreviewPalette("", "hybrid")).toBe("hybrid");
   });
   it("chooses Royal Cobalt when explicitly requested", () => {
     expect(resolvePreviewPalette("?palette=cobalt", null)).toBe("cobalt");
@@ -14,6 +20,6 @@ describe("preview palette selection", () => {
     expect(resolvePreviewPalette("", "cobalt")).toBe("cobalt");
   });
   it("does not accept arbitrary or malformed palette names", () => {
-    expect(resolvePreviewPalette("?palette=neon", null)).toBe("atlantic");
+    expect(resolvePreviewPalette("?palette=neon", null)).toBe("hybrid");
   });
 });
