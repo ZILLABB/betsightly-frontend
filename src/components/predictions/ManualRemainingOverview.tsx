@@ -27,7 +27,10 @@ export function ManualRemainingOverview({
     return <p className="manual-remaining__status" role="status"><Clock3 size={14}/> Checking remaining manual games and revalidating new SportyBet codes…</p>;
   }
   if (error) return <p className="manual-remaining__status" role="status">{error}</p>;
-  if (!data?.available) return <div className="manual-remaining__status" role="status">
+  // This is an opt-in feature: before the visitor requests it there is no
+  // result to show, not an empty/failed SportyBet response.
+  if (!data) return null;
+  if (!data.available) return <div className="manual-remaining__status" role="status">
     No reduced manual slip is verifiably bookable right now.
     <button type="button" onClick={onRefresh}>Check again</button>
   </div>;
