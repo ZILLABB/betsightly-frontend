@@ -8,6 +8,8 @@ import { WelcomeBanner } from "../components/common/WelcomeBanner";
 import { JoinTelegram } from "../components/common/JoinTelegram";
 import { AccuracyBadge } from "../components/common/AccuracyBadge";
 import { AvailableNowOverview } from "../components/predictions/AvailableNowOverview";
+import { ManualRemainingOverview } from "../components/predictions/ManualRemainingOverview";
+import { useManualRemaining } from "../hooks/useManualRemaining";
 import { preferredBookableTier } from "../utils/bookableTiers";
 import { CategoryTabs } from "../components/predictions/CategoryTabs";
 import { PredictionCard } from "../components/predictions/PredictionCard";
@@ -71,6 +73,7 @@ export function HomePage() {
   const previousEdition = isEarlierPublication(data?.date);
   const published = data?.accumulators;
   const actionable = useActionableCard(published, data?.date);
+  const manualRemaining = useManualRemaining(actionable.requestedAvailable, data?.date);
   const accumulators = actionable.accumulators;
   // Fresh live cards can carry only Banker or a different subset than the
   // locked morning publication. Do not strand the visitor on an empty old tab.
@@ -333,6 +336,7 @@ export function HomePage() {
       {/* Tabs + verified SportyBet booking code, reachable from the hero. */}
       <section id="todays-picks" className="editorial-ticket-board home-picks-anchor" aria-label="Published selections">
         <div className="editorial-section-title"><div><span className="editorial-overline">PUBLICATION DESK</span><h2>{previousEdition ? "Latest published tickets" : "Today's tickets"}</h2></div><span className="editorial-board-caption">Choose a category to inspect selections and its booking code</span></div>
+        <ManualRemainingOverview data={manualRemaining.data} loading={manualRemaining.loading} error={manualRemaining.error} />
         {actionable.viewingBookable && accumulators && (
           <AvailableNowOverview accumulators={accumulators} onSelect={key => {
             setActiveKey(key);
