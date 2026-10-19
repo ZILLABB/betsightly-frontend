@@ -28,32 +28,23 @@ interface Props {
   score?: LiveScore;
 }
 
-const FORM_COLORS: Record<string, string> = {
-  W: "var(--green)",
-  D: "var(--text-3)",
-  L: "var(--red)",
+const FORM_LABELS: Record<string, string> = {
+  W: "win", D: "draw", L: "loss",
 };
 
-function FormRun({ form, align = "flex-start" }: { form?: string | null; align?: string }) {
-  if (!form) return <span style={{ flex: 1 }} />;
+function FormRun({ form, team }: { form?: string | null; team: string }) {
+  const results = (form || "").toUpperCase().split("").filter(value => value in FORM_LABELS).slice(-5);
+  if (!results.length) {
+    return <span className="editorial-fixture__form-unavailable" aria-label={`${team}: recent form unavailable`}>Not available</span>;
+  }
   return (
-    <div style={{ flex: 1, display: "flex", gap: 3, justifyContent: align }}>
-      {form.split("").slice(-5).map((r, i) => (
-        <span
-          key={i}
-          title={r === "W" ? "Win" : r === "L" ? "Loss" : "Draw"}
-          style={{
-            width: 14, height: 14, borderRadius: 3,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 700,
-            color: "#fff", background: FORM_COLORS[r] ?? "var(--text-3)",
-            opacity: 0.85,
-          }}
-        >
-          {r}
-        </span>
+    <span className="editorial-fixture__form-run"
+      aria-label={`${team} last ${results.length} games: ${results.map(value => FORM_LABELS[value]).join(", ")}`}>
+      {results.map((result, index) => (
+        <span key={index} className="editorial-fixture__form-chip"
+          data-result={result} title={FORM_LABELS[result]} aria-hidden="true">{result}</span>
       ))}
-    </div>
+    </span>
   );
 }
 
@@ -172,27 +163,41 @@ export function PredictionCard({ game, score }: Props) {
 
       <div className="editorial-fixture__body">
         <div className="editorial-fixture__match">
-          <div className="editorial-fixture__teams">
-            <div><TeamCrest team={game.home_team} logo={game.home_team_logo} national={game.team_type !== "CLUB"} /><strong>{game.home_team}</strong></div>
-            <div><TeamCrest team={game.away_team} logo={game.away_team_logo} national={game.team_type !== "CLUB"} /><strong>{game.away_team}</strong></div>
+          <div className="editorial-fixture__teams" aria-label={`${game.home_team} versus ${game.away_team}`}>
+            <div className="editorial-fixture__team" aria-label={`Home team: ${game.home_team}`}>
+              <TeamCrest team={game.home_team} logo={game.home_team_logo} national={game.team_type !== "CLUB"} size="lg" />
+              <strong>{game.home_team}</strong>
+              <span className="editorial-fixture__team-role">HOME</span>
+            </div>
+            <span className="editorial-fixture__versus" aria-hidden="true">VS</span>
+            <div className="editorial-fixture__team" aria-label={`Away team: ${game.away_team}`}>
+              <TeamCrest team={game.away_team} logo={game.away_team_logo} national={game.team_type !== "CLUB"} size="lg" />
+              <strong>{game.away_team}</strong>
+              <span className="editorial-fixture__team-role">AWAY</span>
+            </div>
           </div>
           {(game.match_info?.home_form || game.match_info?.away_form) && (
-            <div className="editorial-fixture__form" aria-label="Recent team form">
-              <FormRun form={game.match_info?.home_form}/>
-              <span>FORM</span>
-              <FormRun form={game.match_info?.away_form} align="flex-end"/>
+            <div className="editorial-fixture__form" aria-label="Last five results for each team">
+              <div className="editorial-fixture__form-side">
+                <span>HOME · LAST 5</span>
+                <FormRun form={game.match_info?.home_form} team={game.home_team}/>
+              </div>
+              <div className="editorial-fixture__form-side editorial-fixture__form-side--away">
+                <span>AWAY · LAST 5</span>
+                <FormRun form={game.match_info?.away_form} team={game.away_team}/>
+              </div>
             </div>
           )}
         </div>
         <div className="editorial-fixture__selection">
-          <span className="editorial-fixture__label">SELECTION</span>
+          <span className="editorial-fixture__label">OUR SELECTION</span>
           <strong>{selection}</strong>
-          <small>{editorial ? "Admin curated · not model-scored" : pct !== null ? `${pct}% estimated confidence` : "Confidence unavailable"}</small>
+          <small>{editorial ? "Admin-curated · not model-scored" : pct !== null ? `Model estimate · ${pct}%` : "Model estimate unavailable"}</small>
         </div>
         <div className="editorial-fixture__price">
-          <span className="editorial-fixture__label">DECIMAL ODDS</span>
-          <strong>{displayOdds}</strong>
-          <small>{game.odds_are_real ? game.odds_provider ?? "Bookmaker price" : "Estimated price"}</small>
+          <span className="editorial-fixture__label">{game.odds_are_real ? "BOOKMAKER ODDS" : "ESTIMATED ODDS"}</span>
+          <strong>{displayOdds}<span className="editorial-fixture__price-suffix">×</span></strong>
+          <small>{game.odds_are_real ? game.odds_provider ?? "Bookmaker price" : "Price not verified"}</small>
         </div>
       </div>
 
