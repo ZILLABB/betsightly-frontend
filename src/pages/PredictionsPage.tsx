@@ -333,7 +333,7 @@ export function PredictionsPage() {
         </div>
       )}
 
-      <ManualRemainingOverview data={manualRemaining.data} loading={manualRemaining.loading} error={manualRemaining.error} />
+      <ManualRemainingOverview data={manualRemaining.data} loading={manualRemaining.loading} error={manualRemaining.error} onRefresh={manualRemaining.refetch} />
 
       {viewingBookable && accumulators && (
         <AvailableNowOverview accumulators={accumulators} onSelect={key => {
