@@ -259,10 +259,16 @@
   border-left-color: var(--green);
 }
 .light .v3-results .results-manual .manual-history-item .results-status {
+  background: var(--surface-2); color: var(--text-2);
+}
+.light .v3-results .results-manual .manual-history-item .results-status--lost {
   background: var(--red-faint); color: var(--red);
 }
 .light .v3-results .results-manual .manual-history-item .results-status--won {
   background: var(--green-faint); color: var(--green);
+}
+.light .v3-results .results-manual .manual-history-item .results-status--pending {
+  background: var(--gold-faint); color: var(--gold);
 }
 .light .v3-home .editorial-cover__edition {
   /* dark data-plaque deliberately retained in the ivory layout */
