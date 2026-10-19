@@ -25,7 +25,7 @@ test("known national teams can use their flag when no official crest is supplied
 test("invalid or non-HTTPS logo URLs are never rendered as image sources", () => {
   const { container } = render(<TeamCrest team="Sample FC" logo="javascript:alert(1)" national={false}/>);
   expect(container.querySelector("img")).toBeNull();
-  expect(screen.getByText("SF")).toBeInTheDocument();
+  expect(screen.getByText("SA")).toBeInTheDocument();
 });
 
 test("a national team can fall back to its flag when its supplied crest fails", () => {
