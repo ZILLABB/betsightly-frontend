@@ -3,6 +3,8 @@ import { BetSightlyLogo } from "../brand/BetSightlyLogo";
 
 interface Props {
   message?: string;
+  /** Compact variant for loading inside an existing page, not a full-screen splash. */
+  variant?: "standard" | "compact";
   /** Optional skeleton content below the branded loading indicator. */
   children?: ReactNode;
 }
@@ -13,10 +15,10 @@ interface Props {
  *
  * The indicator is indeterminate, not a fabricated completion percentage.
  */
-export function BrandLoader({ message = "Loading…", children }: Props) {
+export function BrandLoader({ message = "Loading…", variant = "standard", children }: Props) {
   return (
     <div className="brand-loader-layout">
-      <div className="brand-loader brand-loader--editorial" role="status" aria-live="polite" aria-atomic="true">
+      <div className={`brand-loader brand-loader--editorial${variant === "compact" ? " brand-loader--compact" : ""}`} role="status" aria-live="polite" aria-atomic="true">
         <span className="brand-loader__identity">
           <BetSightlyLogo compact />
         </span>
