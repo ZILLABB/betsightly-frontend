@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { ManualRemainingOverview } from "./ManualRemainingOverview";
 
@@ -80,7 +80,6 @@ test("hides a reduced code when a fixture is within 10 minutes and offers rechec
     loading={false} error={null} onRefresh={onRefresh}/>);
   expect(screen.getByRole("status")).toHaveTextContent("10-minute cutoff");
   expect(screen.queryByText(/New code:/)).not.toBeInTheDocument();
-  const {fireEvent} = require("@testing-library/react");
   fireEvent.click(screen.getByRole("button", {name:"Recheck remaining games"}));
   expect(onRefresh).toHaveBeenCalledTimes(1);
 });
