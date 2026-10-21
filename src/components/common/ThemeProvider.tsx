@@ -13,13 +13,8 @@ interface ThemeProviderProps {
  */
 const setThemeColorMeta = (isDark: boolean) => {
   const meta = document.querySelector('meta[name="theme-color"]');
-  const palette = document.documentElement.getAttribute('data-bs-palette');
-  const browserColors = palette === 'cobalt'
-    ? { dark: '#111933', light: '#F2F5FD' }
-    : palette === 'atlantic'
-      ? { dark: '#0B2238', light: '#F3F7FA' }
-      : { dark: '#0C2037', light: '#F1F5FB' };
-  const color = isDark ? browserColors.dark : browserColors.light;
+  // Single official palette; only light/dark appearance varies.
+  const color = isDark ? '#0B2238' : '#F3F7FA';
   if (meta) meta.setAttribute('content', color);
 };
 
