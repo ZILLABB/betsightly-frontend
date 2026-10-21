@@ -13,7 +13,9 @@ interface ThemeProviderProps {
  */
 const setThemeColorMeta = (isDark: boolean) => {
   const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.setAttribute('content', isDark ? '#0a0a0f' : '#f5f5f7');
+  // Single official palette; only light/dark appearance varies.
+  const color = isDark ? '#0B2238' : '#F3F7FA';
+  if (meta) meta.setAttribute('content', color);
 };
 
 /**
@@ -37,8 +39,8 @@ const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
           setThemeColorMeta(false);
           // Force a small delay to ensure styles are properly applied
           setTimeout(() => {
-            document.body.style.backgroundColor = 'var(--background)';
-            document.body.style.color = 'var(--foreground)';
+            document.body.style.backgroundColor = 'var(--bg)';
+            document.body.style.color = 'var(--text-1)';
           }, 10);
         } else if (theme === 'dark') {
           document.documentElement.classList.add('dark');
@@ -53,8 +55,8 @@ const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
             document.documentElement.classList.add('light');
             // Force a small delay to ensure styles are properly applied
             setTimeout(() => {
-              document.body.style.backgroundColor = 'var(--background)';
-              document.body.style.color = 'var(--foreground)';
+              document.body.style.backgroundColor = 'var(--bg)';
+              document.body.style.color = 'var(--text-1)';
             }, 10);
           }
 
@@ -68,8 +70,8 @@ const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
             // Force a small delay to ensure styles are properly applied
             if (!e.matches) {
               setTimeout(() => {
-                document.body.style.backgroundColor = 'var(--background)';
-                document.body.style.color = 'var(--foreground)';
+                document.body.style.backgroundColor = 'var(--bg)';
+                document.body.style.color = 'var(--text-1)';
               }, 10);
             }
           };

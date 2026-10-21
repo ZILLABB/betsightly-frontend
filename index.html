@@ -10,13 +10,32 @@
   <meta name="description" content="Football predictions, SportyBet-verified booking codes, daily picks, 2 Odds, 5 Odds, 10 Odds, Over Goals, a three-day Rollover and transparent settled results." />
   <meta name="keywords" content="football predictions, daily predictions, rollover, over goals, SportyBet booking codes, accumulator, settled results" />
   <meta name="author" content="BetSightly" />
-  <meta name="theme-color" content="#07100e" />
+  <meta name="theme-color" content="#0B2238" />
+  <!-- Apply Atlantic and saved appearance before CSS/React. -->
+  <script>
+    (function () {
+      var root = document.documentElement;
+      root.setAttribute('data-bs-palette', 'atlantic');
+      try { sessionStorage.removeItem('betsightly-preview-palette'); } catch (_) {}
+      var selectedTheme = 'dark';
+      try {
+        var preferences = JSON.parse(localStorage.getItem('betsightly_preferences') || '{}');
+        if (preferences.theme === 'dark' || preferences.theme === 'light' ||
+            preferences.theme === 'system') selectedTheme = preferences.theme;
+      } catch (_) {}
+      var light = selectedTheme === 'light' || (selectedTheme === 'system' &&
+        window.matchMedia && !window.matchMedia('(prefers-color-scheme: dark)').matches);
+      root.classList.add(light ? 'light' : 'dark');
+      document.querySelector('meta[name="theme-color"]')
+        .setAttribute('content', light ? '#F3F7FA' : '#0B2238');
+    })();
+  </script>
 
-  <!-- Option B emerald identity across browser, iOS, and installed app surfaces. -->
-  <link rel="icon" type="image/svg+xml" href="/brand-icon.svg?v=4" />
+  <!-- Consistent geometric B identity across the browser and installed-app surfaces. -->
+  <link rel="icon" type="image/svg+xml" href="/brand-icon.svg?v=5" />
   <!-- Apple needs a raster icon, using the approved geometric B logo. -->
-  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-v3.png?v=4" />
-  <link rel="manifest" href="/manifest.webmanifest?v=4" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-v3.png?v=5" />
+  <link rel="manifest" href="/manifest.webmanifest?v=5" />
 
   <!-- Open Graph (WhatsApp, Telegram, Facebook) -->
   <meta property="og:type" content="website" />

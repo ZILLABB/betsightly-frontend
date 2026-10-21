@@ -278,6 +278,12 @@ export const api = {
   getBookableNow: () =>
     request<BookableNowResponse>('/leagues/bookable-now'),
 
+  /** Distinct, explicitly requested readback of remaining manual selections.
+   * Started legs are removed and a NEW validated code is returned. No changes
+   * are made to the immutable manual publication or official results. */
+  getManualBookableNow: () =>
+    request<ManualRemainingResponse>('/leagues/manual-bookable-now'),
+
   /** Live scores for today's fixtures, keyed by match_id. Fetched apart from
    *  the card because the card is frozen at 08:00 and a score is not. */
   getLiveScores: () =>
@@ -500,6 +506,22 @@ export interface SlipTargets {
   note: string;
 }
 
+export interface ManualRemainingResponse {
+  status: "success";
+  date: string;
+  available: boolean;
+  official_publication_unchanged: true;
+  record_is_separate?: boolean;
+  tiers: Partial<Record<CategoryKey, CategoryData & {
+    manual_remainder: true;
+    original_leg_count: number;
+    remaining_leg_count: number;
+    removed_leg_count: number;
+    official_publication: false;
+    result_scored: false;
+  }>>;
+}
+
 export interface BookableNowResponse {
   status: string;
   available: boolean;
@@ -674,6 +696,8 @@ export interface PerformanceResponse {
 export interface ManualResultLeg {
   home_team: string;
   away_team: string;
+  home_team_logo?: string | null;
+  away_team_logo?: string | null;
   market: string;
   odds?: number;
   kickoff?: string;

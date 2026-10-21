@@ -1,37 +1,14 @@
 import React, { useState } from "react";
 import { usePredictions } from "../hooks/usePredictions";
 import { useFormatOdds } from "../hooks/useFormatOdds";
-import { PredictionCardSkeleton } from "../components/ui/Skeleton";
 import { BrandLoader } from "../components/ui/BrandLoader";
 import { CATEGORIES } from "../types";
-import { Repeat2, CheckCircle, XCircle, Clock, Circle, TrendingUp, Calendar, List, Zap } from "lucide-react";
-import { getTeamFlag, isWcNation, teamInitials, teamColor } from "../data/wcFlags";
+import { Repeat2, CheckCircle, XCircle, Clock, Circle, Calendar, List, Zap } from "lucide-react";
+import { TeamCrest } from "../components/common/TeamCrest";
 import { SEO } from "../components/common/SEO";
 import BookingCode from "../components/predictions/BookingCode";
 import { formatLocalTimeWithZone } from "../utils/formatters";
 import "../styles/product-experience.css";
-
-function TeamBadge({ team, logo }: { team: string; logo?: string | null }) {
-  if (isWcNation(team)) {
-    return (
-      <img
-        src={getTeamFlag(team, logo, 40)}
-        alt=""
-        style={{ width: 18, height: 13, objectFit: "cover", borderRadius: 2, flexShrink: 0 }}
-        onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
-      />
-    );
-  }
-  return (
-    <span style={{
-      width: 18, height: 13, borderRadius: 2, flexShrink: 0,
-      background: teamColor(team), color: "#fff",
-      fontSize: 8, fontWeight: 800, fontFamily: "var(--font-mono)",
-      display: "inline-flex", alignItems: "center", justifyContent: "center",
-      letterSpacing: "-0.04em",
-    }}>{teamInitials(team)}</span>
-  );
-}
 
 const STATUS_CONFIG: Record<string, { icon: React.ReactNode; color: string; bg: string; label: string }> = {
   won: { icon: <CheckCircle size={14} />, color: "var(--green)", bg: "rgba(34,197,94,0.10)", label: "Won" },
@@ -101,36 +78,94 @@ export function RolloverPage() {
   return (
     <div className="page-stack rollover-page v3-page v3-rollover" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <SEO title="Rollover Challenge" description="3-day rollover challenge using evidence-backed daily picks. Every leg must land for the chain to continue." path="/rollover" />
-      <header className="bs-rollover-hero">
-        <div className="bs-rollover-hero__copy">
-          <span className="eyebrow">{targetDays}-day evidence challenge</span>
-          <h1>Rollover</h1>
-          <p>
-            Follow the verified daily selections toward a {targetDays}-day chain.
-            Missing or unverified stages are never presented as wins. Admin-curated
-            selections remain separate from model calibration.
-          </p>
-        </div>
-        <div className="bs-rollover-hero__icon" aria-hidden="true">
-          <Repeat2 size={35}/>
-        </div>
-      </header>
-      <ol className="bs-rollover-timeline" aria-label="Rollover chain progress">
-        {Array.from({ length: targetDays }, (_, index) => {
-          const day = chain.find(item => item.day_number === index + 1);
-          const state = day?.status ?? "future";
-          const active = day?.status === "pending";
-          const statusText = state === "won" ? "Won" :
-            state === "lost" ? "Lost" : state === "void" ? "Void" :
-            active ? "Awaiting final" : "Not published";
-          return (
-            <li key={index} className={`is-${state}${active ? " is-active" : ""}`}>
-              <span className="bs-rollover-timeline__step">{index + 1}</span>
-              <div><strong>Day {index + 1}</strong><small>{statusText}</small></div>
-            </li>
-          );
-        })}
-      </ol>
+
+      <section className="editorial-rollover-overview" aria-labelledby="rollover-title" aria-busy={loading && chain.length === 0}>
+        <header className="bs-rollover-hero">
+          <div className="bs-rollover-hero__copy">
+            <div className="editorial-rollover-eyebrow">
+              <span className="editorial-overline">THE DAILY CHALLENGE</span>
+              <span className="editorial-rollover-live-status" data-state={chain.length === 0 ? "idle" : chainStatus.toLowerCase()}>
+                <span aria-hidden="true" className="editorial-rollover-live-status__dot" />
+                {loading && chain.length === 0
+                  ? "Checking the board"
+                  : error && !usingFallback && chain.length === 0
+                    ? "Feed unavailable"
+                    : chain.length === 0 ? "Awaiting publication" : `Chain ${chainStatus.toLowerCase()}`}
+              </span>
+            </div>
+            <h1 id="rollover-title">{targetDays}-day rollover</h1>
+            <p>One day at a time. Follow published football selections through verified results — without skipping a loss.</p>
+            <div className="editorial-rollover-highlights" aria-label="Challenge overview">
+              <div><span>Daily target</span><strong>2.0–3.0×</strong></div>
+              <div>
+                <span>Verified days won</span>
+                <strong>{loading && chain.length === 0 ? "—" : `${wonDays} / ${targetDays}`}</strong>
+              </div>
+            </div>
+            <div className="editorial-rollover-hero-foot">
+              <span>Actual bookmaker availability determines publication.</span>
+              <a href={chain.length ? "#rollover-days" : "/results"}>
+                {chain.length ? "See published stages" : "Previous results"} <span aria-hidden="true">→</span>
+              </a>
+            </div>
+          </div>
+        </header>
+        <aside className="editorial-rollover-progress" aria-label="Rollover day progress">
+          <div className="editorial-rollover-progress__header">
+            <div>
+              <span className="editorial-overline">CHAIN TRACKER</span>
+              <h2>Matchday progress</h2>
+            </div>
+            {chain.length > 0 && <span className="editorial-rollover-progress__count">{chain.length} published</span>}
+          </div>
+          {loading && chain.length === 0 ? (
+            <div className="editorial-rollover-tracker-loading" role="status" aria-label="Checking rollover chain">
+              {Array.from({ length: targetDays }, (_, index) => (
+                <div key={index} aria-hidden="true" className="editorial-rollover-tracker-skeleton">
+                  <span/><span/>
+                </div>
+              ))}
+              <p>Checking the latest published stages…</p>
+            </div>
+          ) : error && !usingFallback && chain.length === 0 ? (
+            <div className="editorial-rollover-no-chain" role="status">
+              <strong>Stage information unavailable</strong>
+              <p>We couldn't verify the chain status. Try again below.</p>
+            </div>
+          ) : chain.length === 0 ? (
+            <div className="editorial-rollover-no-chain" role="status">
+              <strong>No active chain published</strong>
+              <p>The challenge remains open to qualifying fixtures. We won't invent Day 1 selections to fill the board.</p>
+              <a href="/results">Review previous rollover results <span aria-hidden="true">→</span></a>
+            </div>
+          ) : (
+            <ol className="bs-rollover-timeline" aria-label="Rollover chain progress">
+              {Array.from({ length: targetDays }, (_, index) => {
+                const day = chain.find(item => item.day_number === index + 1);
+                const state = day?.status ?? "future";
+                const current = day?.status === "pending";
+                const statusText = state === "won" ? "Verified win" :
+                  state === "lost" ? "Lost · chain ended" :
+                  state === "void" ? "Voided" :
+                  current ? "Awaiting final" : "Not published";
+                return (
+                  <li key={index} className={`is-${state}${current ? " is-active" : ""}`}>
+                    <span className="bs-rollover-timeline__step" aria-hidden="true">
+                      {state === "won" ? <CheckCircle size={17}/> : index + 1}
+                    </span>
+                    <div>
+                      <strong>Day {index + 1}</strong>
+                      <small>{statusText}</small>
+                      {day && <span className="editorial-rollover-timeline__date">{fmtDate(day.date)}</span>}
+                    </div>
+                  </li>
+                );
+              })}
+            </ol>
+          )}
+          {chain.length > 0 && <p>Only independently verified finals advance a stage. <a href="/results">Full history →</a></p>}
+        </aside>
+      </section>
 
       {/* Compact chain summary */}
       {chain.length > 0 && (
@@ -191,7 +226,7 @@ export function RolloverPage() {
               ? lostDays > 0
                 ? `${fmtOdds(cumOdds)}${oddsSuffix} was scheduled across ${chain.length} days.`
                 : `${fmtOdds(cumOdds)}${oddsSuffix} compounded only if every scheduled day lands.`
-              : `Bookmaker-verified stages generally target 2x–4x. Daily eligibility is evidence-dependent.`}
+              : `Bookmaker-verified stages generally target 2x–3x. Daily eligibility is evidence-dependent.`}
           </p>
         </section>
       )}
@@ -215,12 +250,10 @@ export function RolloverPage() {
       )}
 
       {/* Toggle + chain */}
-      {loading ? (
-        <BrandLoader message="Loading the rollover chain...">
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {[1, 2, 3].map(i => <PredictionCardSkeleton key={i} />)}
-          </div>
-        </BrandLoader>
+      {loading && chain.length === 0 ? (
+        <div className="editorial-rollover-load-inline">
+          <BrandLoader variant="compact" message="Loading the rollover chain…" />
+        </div>
       ) : error && !usingFallback ? (
         <div className="card" role="alert" style={{ padding: "40px 20px", textAlign: "center" }}>
           <p style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text-3)" }}>
@@ -233,14 +266,8 @@ export function RolloverPage() {
             cursor: "pointer",
           }}>Retry</button>
         </div>
-      ) : chain.length === 0 ? (
-        <div className="card" style={{ padding: "40px 20px", textAlign: "center" }}>
-          <p style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text-3)" }}>
-            No rollover chain yet. A challenge begins when the upcoming board has enough evidence-backed picks.
-          </p>
-        </div>
-      ) : (
-        <div>
+      ) : chain.length === 0 ? null : (
+        <div id="rollover-days">
           {/* Header + toggle */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, flexWrap: "wrap", gap: 12 }}>
             <h2 style={{ fontFamily: "var(--font-display)", fontSize: 18, fontWeight: 700, color: "var(--text-1)" }}>
@@ -298,152 +325,97 @@ export function RolloverPage() {
               const isToday = todaysDay?.date === day.date;
 
               return (
-                <div
-                  key={day.day_number}
-                  className="card"
-                  style={{
-                    padding: "16px 18px",
-                    borderLeft: isToday ? `3px solid var(--blue)` : `3px solid ${status.color}`,
-                    opacity: day.status === "lost" ? 0.55 : 1,
-                  }}
-                >
-                  {/* Day header */}
-                  <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
-                    <div style={{
-                      width: 38, height: 38, borderRadius: 10,
-                      background: isToday ? "var(--blue-faint)" : status.bg,
-                      color: isToday ? "var(--blue)" : status.color,
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      fontFamily: "var(--font-mono)", fontSize: 14, fontWeight: 800,
-                      flexShrink: 0,
-                    }}>
-                      {day.day_number}
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                        <p style={{ fontFamily: "var(--font-display)", fontSize: 15, fontWeight: 700, color: "var(--text-1)" }}>
-                          Day {day.day_number}
-                        </p>
-                        {(day.editorial_manual || day.picks.some(p => p.editorial_manual)) && (
-                          <span style={{
-                            fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 700,
-                            padding: "2px 6px", borderRadius: 4,
-                            background: "var(--surface-2)", color: "var(--text-2)",
-                            textTransform: "uppercase",
-                          }}>Admin curated · Not model scored</span>
-                        )}
-                        {isToday && (
-                          <span style={{
-                            fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 700, padding: "2px 6px",
-                            background: "var(--blue-faint)", color: "var(--blue)", borderRadius: 4,
-                            textTransform: "uppercase", letterSpacing: "0.08em",
-                          }}>Today</span>
-                        )}
+                <article key={day.day_number}
+                  className={`rollover-ticket rollover-ticket--${day.status}${isToday ? " rollover-ticket--today" : ""}`}
+                  aria-label={`Day ${day.day_number} rollover ticket`}>
+                  <header className="rollover-ticket__header">
+                    <div className="rollover-ticket__heading">
+                      <span className="rollover-ticket__day-number" aria-hidden="true">{day.day_number}</span>
+                      <div>
+                        <span className="rollover-ticket__eyebrow">ROLLOVER · DAY {day.day_number}</span>
+                        <h3>{isToday ? "Today’s slip" : "Published slip"}</h3>
+                        <span className="rollover-ticket__date">
+                          <Calendar size={12} aria-hidden="true"/> {fmtDate(day.date)} · {day.picks.length} pick{day.picks.length === 1 ? "" : "s"}
+                        </span>
                       </div>
-                      <p style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text-3)", marginTop: 2, display: "inline-flex", alignItems: "center", gap: 4 }}>
-                        <Calendar size={11} /> {fmtDate(day.date)} · {day.picks.length} pick{day.picks.length !== 1 ? "s" : ""}
-                      </p>
                     </div>
-                    {/* Combined odds */}
-                    <div style={{ textAlign: "right", flexShrink: 0 }}>
-                      <p style={{ fontFamily: "var(--font-mono)", fontSize: 18, fontWeight: 800, color: catMeta.color, lineHeight: 1 }}>
-                        {fmtOdds(day.combined_odds)}{oddsSuffix}
-                      </p>
-                      <p style={{ fontFamily: "var(--font-body)", fontSize: 10, color: "var(--text-3)", marginTop: 3 }}>
-                        {day.editorial_manual || day.picks.some(p => p.editorial_manual) ||
-                         day.hit_probability == null && day.avg_confidence == null
-                          ? "Not model scored"
-                          : `lands ~${Math.round((day.hit_probability ?? day.avg_confidence ?? 0) * 100)}%`}
-                      </p>
+                    <span className="rollover-ticket__status" data-state={day.status}>
+                      {status.icon}{status.label}
+                    </span>
+                  </header>
+
+                  <div className="rollover-ticket__overview">
+                    <div>
+                      <span className="rollover-ticket__metric-label">PUBLISHED SLIP ODDS</span>
+                      <strong>{fmtOdds(day.combined_odds)}<small>{oddsSuffix}</small></strong>
                     </div>
-                    <div style={{
-                      display: "flex", alignItems: "center", gap: 4,
-                      padding: "4px 8px", borderRadius: 6,
-                      background: status.bg, color: status.color,
-                      fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700,
-                      textTransform: "uppercase", letterSpacing: "0.05em", flexShrink: 0,
-                    }}>
-                      {status.icon} {status.label}
-                    </div>
+                    <p className="rollover-ticket__chance">
+                      {day.editorial_manual || day.picks.some(p => p.editorial_manual) ||
+                       (day.hit_probability == null && day.avg_confidence == null)
+                        ? "Admin-curated / not model scored"
+                        : `Estimated chance: ${Math.round((day.hit_probability ?? day.avg_confidence ?? 0) * 100)}%`}
+                      <small>Actual bookmaker odds may differ.</small>
+                    </p>
                   </div>
 
-                  {/* Picks */}
-                  <div style={{ display: "flex", flexDirection: "column", gap: 6, paddingLeft: 50 }}>
+                  <ol className="rollover-ticket__legs" aria-label={`Day ${day.day_number} selections`}>
                     {day.picks.map((pick, pi) => {
                       const mkt = MARKET_COLORS[pick.market] || { c: "var(--text-3)", l: pick.market };
                       return (
-                        <div key={pi} style={{
-                          display: "flex", alignItems: "center", gap: 8,
-                          padding: "8px 10px", borderRadius: 8,
-                          background: "var(--surface-2)",
-                        }}>
-                          {/* Flags or initials badges */}
-                          <div style={{ display: "flex", alignItems: "center", gap: 3, flexShrink: 0 }}>
-                            <TeamBadge team={pick.home_team} logo={pick.home_team_logo} />
-                            <TeamBadge team={pick.away_team} logo={pick.away_team_logo} />
-                          </div>
-                          {/* Match */}
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <p style={{ fontFamily: "var(--font-body)", fontSize: 12, fontWeight: 600, color: "var(--text-1)" }}>
-                              {pick.home_team} <span style={{ color: "var(--text-3)" }}>vs</span> {pick.away_team}
-                            </p>
-                            <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2, flexWrap: "wrap" }}>
-                              <span style={{
-                                fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 700,
-                                padding: "1px 5px", borderRadius: 3,
-                                background: `color-mix(in srgb, ${mkt.c} 12%, transparent)`,
-                                color: mkt.c, letterSpacing: "0.08em", textTransform: "uppercase",
-                              }}>{mkt.l}</span>
-                              <span style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-2)", fontWeight: 600 }}>
-                                {pick.prediction}
+                        <li className="rollover-ticket__leg" key={`${pick.match_id || "fixture"}-${pi}`}>
+                          <div className="rollover-ticket__leg-content">
+                            <div className="rollover-ticket__match" aria-label={`${pick.home_team} versus ${pick.away_team}`}>
+                              <span className="rollover-ticket__team">
+                                <TeamCrest size="sm" team={pick.home_team} logo={pick.home_team_logo} national={pick.team_type !== "CLUB"}/>
+                                <strong>{pick.home_team}</strong>
                               </span>
-                              {pick.commence_time && (
-                                <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--text-3)" }}>
-                                  ⏱ {formatLocalTimeWithZone(pick.commence_time)}
-                                </span>
-                              )}
+                              <span className="rollover-ticket__versus" aria-hidden="true">vs</span>
+                              <span className="rollover-ticket__team">
+                                <TeamCrest size="sm" team={pick.away_team} logo={pick.away_team_logo} national={pick.team_type !== "CLUB"}/>
+                                <strong>{pick.away_team}</strong>
+                              </span>
                             </div>
-                          </div>
-                          {/* Odds + conf */}
-                          <div style={{ textAlign: "right", flexShrink: 0 }}>
-                            <p style={{ fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 700, color: catMeta.color, lineHeight: 1 }}>
-                              {fmtOdds(pick.odds)}{oddsSuffix}
+                            <p className="rollover-ticket__selection">
+                              <span className="rollover-ticket__market" style={{ color: mkt.c }}>{mkt.l}</span>
+                              <span>{pick.prediction}</span>
                             </p>
-                            <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, color: pick.confidence != null && pick.confidence >= 0.8 ? "var(--green)" : "var(--brand)", marginTop: 2 }}>
-                              {pick.editorial_manual || pick.confidence == null
-                                ? "Unscored" : `${Math.round(pick.confidence * 100)}%`}
-                            </p>
+                            {pick.commence_time && (
+                              <span className="rollover-ticket__kickoff">
+                                {formatLocalTimeWithZone(pick.commence_time)}
+                              </span>
+                            )}
                           </div>
-                        </div>
+                          <div className="rollover-ticket__leg-odds">
+                            <strong>{fmtOdds(pick.odds)}{oddsSuffix}</strong>
+                            <small>{pick.editorial_manual || pick.confidence == null ? "Unscored" : `${Math.round(pick.confidence * 100)}% est.`}</small>
+                          </div>
+                        </li>
                       );
                     })}
-                  </div>
+                  </ol>
                   {isToday && (
-                    <BookingCode
-                      booking={rollover?.booking}
-                      category={catMeta}
-                      tracking={{
-                        source: "daily_card",
-                        tier: "rollover",
-                        legCount: rollover?.booking?.booked_leg_count ?? day.picks.length,
-                        fingerprint: rollover?.booking?.booking_variant_fingerprint,
-                      }}
-                    />
+                    <div className="rollover-ticket__booking">
+                      <BookingCode
+                        booking={rollover?.booking}
+                        category={catMeta}
+                        tracking={{
+                          source: "daily_card",
+                          tier: "rollover",
+                          legCount: rollover?.booking?.booked_leg_count ?? day.picks.length,
+                          fingerprint: rollover?.booking?.booking_variant_fingerprint,
+                        }}
+                      />
+                    </div>
                   )}
-                </div>
+                </article>
               );
             })}
           </div>
 
           {/* Footer note */}
-          <div style={{ marginTop: 18, padding: "12px 16px", background: "var(--surface-2)", borderRadius: 10, display: "flex", alignItems: "flex-start", gap: 10 }}>
-            <TrendingUp size={14} color="var(--text-3)" style={{ marginTop: 2, flexShrink: 0 }} />
-            <p style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text-3)", lineHeight: 1.6 }}>
-              Automated stages use supported predictions; a manual fallback is bookmaker-verified but not model scored. The daily target is 2x–4x.
-              No match appears more than once. Every extra leg is another chance to lose, and one
-              losing leg ends the chain. Probabilities describe risk; they do not guarantee a return.
-            </p>
-          </div>
+          <aside className="rollover-risk-note" aria-label="Rollover risk information">
+            <p>All legs must win for the slip to win. Odds can change; check SportyBet before staking. Manual picks do not affect model calibration. 18+ · Bet responsibly.</p>
+          </aside>
         </div>
       )}
     </div>

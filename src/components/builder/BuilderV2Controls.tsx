@@ -10,6 +10,7 @@ import {
   Sparkles,
   Target,
 } from "lucide-react";
+import { TeamCrest } from "../common/TeamCrest";
 import { useMemo, useState } from "react";
 
 import { api } from "../../api/predictions";
@@ -1156,7 +1157,11 @@ export function BuilderV2Controls() {
                     >
                       <div className="builder-v2-fixture-header">
                         <div>
-                          <strong>{lead?.home_team} v {lead?.away_team}</strong>
+                          <span className="builder-v2-fixture-name">
+                            <TeamCrest team={lead?.home_team || ""} logo={lead?.home_team_logo} size="sm"/>
+                            <TeamCrest team={lead?.away_team || ""} logo={lead?.away_team_logo} size="sm"/>
+                            <strong>{lead?.home_team} v {lead?.away_team}</strong>
+                          </span>
                           <small>{lead?.league}</small>
                         </div>
                         {selectedCandidate && (

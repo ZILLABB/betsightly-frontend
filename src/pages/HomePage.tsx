@@ -1,12 +1,16 @@
-import React, { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Activity, ArrowRight, CircleCheck, RefreshCw, Shield, Sliders, Target, TrendingUp } from "lucide-react";
+import { ArrowRight, RefreshCw, Sliders } from "lucide-react";
 import { usePredictions } from "../hooks/usePredictions";
 import { useFormatOdds } from "../hooks/useFormatOdds";
 import { useActionableCard } from "../hooks/useActionableCard";
 import { WelcomeBanner } from "../components/common/WelcomeBanner";
 import { JoinTelegram } from "../components/common/JoinTelegram";
 import { AccuracyBadge } from "../components/common/AccuracyBadge";
+import { AvailableNowOverview } from "../components/predictions/AvailableNowOverview";
+import { ManualRemainingOverview } from "../components/predictions/ManualRemainingOverview";
+import { useManualRemaining } from "../hooks/useManualRemaining";
+import { preferredBookableTier } from "../utils/bookableTiers";
 import { CategoryTabs } from "../components/predictions/CategoryTabs";
 import { PredictionCard } from "../components/predictions/PredictionCard";
 import { EmptyState } from "../components/predictions/EmptyState";
@@ -18,34 +22,8 @@ import { SEO } from "../components/common/SEO";
 import type { CategoryKey } from "../types";
 import { api, type HomeCampaign } from "../api/predictions";
 import { publishedCardCounts } from "../utils/publishedCardCounts";
+import { isEarlierPublication } from "../utils/publicationFreshness";
 import { competitionSpotlight, type CompetitionSpotlight } from "../utils/competitionSpotlight";
-
-function StatBubble({ label, value, icon, color }: { label: string; value: string; icon: React.ReactNode; color: string }) {
-  return (
-    <div className="card metric-card" style={{
-      "--card-accent": color,
-      padding: "16px 18px",
-      display: "flex",
-      alignItems: "center",
-      gap: 12,
-      flex: 1,
-      minWidth: 140,
-    } as React.CSSProperties}>
-      <div style={{
-        width: 38, height: 38, borderRadius: 10,
-        background: `${color}10`,
-        display: "flex", alignItems: "center", justifyContent: "center",
-        flexShrink: 0,
-      }}>
-        {icon}
-      </div>
-      <div>
-        <p className="stat-num" style={{ fontSize: 22, lineHeight: 1.1 }}>{value}</p>
-        <p style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-3)", marginTop: 2 }}>{label}</p>
-      </div>
-    </div>
-  );
-}
 
 // ── Loading State — branded logo loader + skeleton grid ──
 function LoadingState() {
@@ -92,9 +70,17 @@ export function HomePage() {
 
   const { formatOdds: fmtOdds, oddsSuffix } = useFormatOdds();
 
+  const previousEdition = isEarlierPublication(data?.date);
   const published = data?.accumulators;
   const actionable = useActionableCard(published, data?.date);
+  const manualRemaining = useManualRemaining(actionable.requestedAvailable, data?.date);
   const accumulators = actionable.accumulators;
+  // Fresh live cards can carry only Banker or a different subset than the
+  // locked morning publication. Do not strand the visitor on an empty old tab.
+  useEffect(() => {
+    if (!actionable.viewingBookable || !accumulators) return;
+    setActiveKey(current => preferredBookableTier(accumulators, current));
+  }, [actionable.viewingBookable, accumulators]);
   const activeCat = accumulators?.[activeKey];
   const catMeta = CATEGORIES.find(c => c.key === activeKey)!;
   const isSingles = activeCat?.presentation === "singles";
@@ -183,131 +169,83 @@ export function HomePage() {
         : undefined} />
       <WelcomeBanner />
 
-      {/* Product hero */}
-      <section className="home-hero" aria-labelledby="home-title">
-        <div className="home-hero-copy">
-          <div className="market-status">
-            <span className="market-status-dot" />
-            Published card
-            <span aria-hidden="true">·</span>
+      {/* Editorial matchday cover: actionable information, not a promotional billboard. */}
+      <section className="editorial-cover" aria-labelledby="home-title">
+        <div className="editorial-cover__main">
+          <p className="editorial-overline">
+            {previousEdition ? "LATEST PUBLISHED REPORT" : "MATCHDAY REPORT"} <span aria-hidden="true">/</span>
             {data?.date
-              ? new Date(data.date + "T12:00:00Z").toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" })
-              : new Date().toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })}
-          </div>
-          <h1 id="home-title">
-            Today&apos;s<br />
-            <span>Smart Picks.</span>
-          </h1>
-          <p>
-            Evidence-backed football picks, genuine bookmaker prices, and every
-            published result tracked transparently.
+              ? new Date(data.date + "T12:00:00Z").toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" })
+              : "Today's edition"}
           </p>
-          {(campaign || spotlight) && (
-            <div className="home-competition-spotlight" role="status" aria-live="polite">
-              <span className="home-competition-spotlight__label">{campaign?.eyebrow || spotlight?.label}</span>
-              <strong>{campaign?.headline || spotlight?.headline}</strong>
-              <span>{campaign?.description || spotlight?.description} Picks are published only when they meet our usual verification checks.</span>
-              {campaign && <Link className="home-competition-spotlight__cta"
-                to={campaign.cta_path}>{campaign.cta_text || "View predictions"} <ArrowRight size={13} aria-hidden="true" /></Link>}
-            </div>
+          <h1 id="home-title">Football intelligence.<span>Clearer decisions.</span></h1>
+          <p className="editorial-cover__intro">
+            A verified publication desk for daily football selections, bookmaker prices and
+            an accountable results record. Every selection stays visible after kickoff.
+          </p>
+          {previousEdition && (
+            <p className="editorial-edition-notice" role="status">
+              Showing the latest published edition, not a new card for today.
+            </p>
           )}
-          <div className="home-hero-actions">
-            <a href="#todays-picks" className="hero-action hero-action-primary">
-              View picks &amp; codes <ArrowRight size={16} />
+          <div className="editorial-cover__actions">
+            <a href="#todays-picks" className="editorial-button editorial-button--primary">
+              Explore published tickets <ArrowRight size={16} aria-hidden="true"/>
             </a>
-            <Link to="/build-slip" className="hero-action hero-action-secondary">
-              <Sliders size={16} /> Build slip
+            <Link to="/build-slip" className="editorial-button editorial-button--quiet">
+              <Sliders size={16} aria-hidden="true"/> Build a slip
             </Link>
           </div>
-          <div className="trust-row" aria-label="Product principles">
-            <span><CircleCheck size={14} /> Real odds</span>
-            <span><CircleCheck size={14} /> {activeCat?.editorial_manual ? "Bookmaker-verified selections" : "Calibrated confidence"}</span>
-            <span><CircleCheck size={14} /> Results tracked</span>
-          </div>
         </div>
-
-        <aside className="signal-panel" aria-label="Featured matchday slip and selection process">
-          <div className="v3-feature">
-            <div className="v3-feature__top">
-              <span className="v3-feature__label">Today's matchday desk</span>
-              <span className="v3-feature__state">
-                {featuredBookable ? "Bookmaker-verified code" :
-                  featuredTier ? "Review availability" : "Awaiting qualifying picks"}
-              </span>
-            </div>
-            <h2 className="v3-feature__name">
-              {featuredTier ? `${featuredMeta?.label ?? "Published"} ${featuredTier.presentation === "singles" ? "singles" : "slip"}`
-                : "No qualifying ticket yet"}
-            </h2>
-            <p className="v3-feature__fixture">
-              {featuredTier?.games?.length
-                ? `${featuredTier.games[0].home_team} vs ${featuredTier.games[0].away_team}${featuredTier.games.length > 1 ? ` · +${featuredTier.games.length - 1} more` : ""}`
-                : "Only verified, evidence-supported selections are published. No bet is guaranteed."}
-            </p>
-            <div className="v3-feature__foot">
-              {featuredOdds !== null && (
-                <span className="v3-feature__odds"><small>Verified ticket odds</small>
-                  {fmtOdds(featuredOdds)}{oddsSuffix}
-                </span>
-              )}
-              {featuredTier && featuredKey ? (
-                <a href="#todays-picks" className="v3-link v3-link--primary"
-                   onClick={() => setActiveKey(featuredKey)}>
-                  Review slip and code <ArrowRight size={15} aria-hidden="true" />
-                </a>
-              ) : (
-                <Link to="/build-slip" className="v3-link">Explore available fixtures
-                  <ArrowRight size={15} aria-hidden="true" />
-                </Link>
-              )}
-            </div>
-          </div>
-          <div className="signal-panel-head">
-            <div>
-              <span>Selection engine</span>
-              <strong>Signal quality</strong>
-            </div>
-            <Activity size={18} />
-          </div>
-          <div className="signal-score">
-            <strong>{loading ? "—" : confidenceLabel}</strong>
-            <span>{confidenceExplanation}</span>
-          </div>
-          <div className="signal-list">
-            <div><span>Probability model</span><b>{avgConf === null ? "Not evaluated" : "Calibrated"}</b></div>
-            <div><span>Market scan</span><b>Daily snapshot</b></div>
-            <div><span>Risk filter</span><b>Applied</b></div>
-          </div>
-          <div className="signal-foot">
-            <Shield size={14} /> No result is guaranteed. Stake responsibly.
-          </div>
+        <aside className="editorial-cover__edition" aria-label="Today's verified publication summary">
+          <div className="editorial-cover__edition-label">THE DAILY BOARD</div>
+          <strong>{loading ? "—" : uniqueFixtures}</strong>
+          <span>Unique published fixtures</span>
+          <div className="editorial-cover__edition-divider"/>
+          <div><b>{loading ? "—" : totalGames}</b><span>Selections across tiers</span></div>
+          <div><b>{loading ? "—" : confidenceLabel}</b><span>{activeCat?.editorial_manual ? "Manual picks not model-scored" : "Selected tier model estimate"}</span></div>
+          <small>Predictions are probabilities, never guarantees.</small>
         </aside>
       </section>
 
-      {/* Live track record + Telegram CTA */}
-      <div className="home-support-grid">
-        <AccuracyBadge />
-        <JoinTelegram variant="card" />
-      </div>
+      {(campaign || spotlight) && (
+        <aside className="editorial-spotlight" aria-label="Competition focus">
+          <span>{campaign?.eyebrow || spotlight?.label || "COMPETITION WATCH"}</span>
+          <div><strong>{campaign?.headline || spotlight?.headline}</strong>
+            <p>{campaign?.description || spotlight?.description}</p></div>
+          {campaign && <Link to={campaign.cta_path}>{campaign.cta_text || "View predictions"} <ArrowRight size={14} aria-hidden="true"/></Link>}
+        </aside>
+      )}
 
-      {/* Stats row */}
-      <div className="metric-grid">
-        <StatBubble label="Selections across tiers" value={loading ? "—" : String(totalGames)} icon={<Target size={17} color="var(--brand)" />} color="var(--brand)" />
-        <StatBubble label="Confidence" value={loading ? "—" : confidenceLabel} icon={<Shield size={17} color="var(--green)" />} color="var(--green)" />
-        <StatBubble
-          label={isSingles ? "Independent picks" : "Top odds"}
-          value={loading ? "—" : isSingles
-            ? String(activeCat?.games?.length ?? 0)
-            : hasActiveBookableOdds
-              ? `${fmtOdds(activeOdds!)}${oddsSuffix}`
-              : "—"}
-          icon={<TrendingUp size={17} color="var(--blue)" />}
-          color="var(--blue)"
-        />
-        <StatBubble label="Unique matches" value={loading ? "—" : String(uniqueFixtures)} icon={<Target size={17} color="var(--gold)" />} color="var(--gold)" />
-      </div>
+      <section className="editorial-feature" aria-label="Featured published ticket">
+        <div className="editorial-section-title">
+          <div><span className="editorial-overline">{previousEdition ? "LATEST PUBLISHED SELECTIONS" : "TODAY'S SELECTION DESK"}</span>
+            <h2>Featured publication</h2></div>
+          <Link to="/results" className="editorial-text-link">See verified results <ArrowRight size={15} aria-hidden="true"/></Link>
+        </div>
+        <div className="editorial-feature__body">
+          <div className="editorial-feature__primary">
+            <span className="editorial-feature__status">{featuredBookable ? "Verified booking code" : featuredTier ? "Review booking availability" : "No verified ticket"}</span>
+            <h3>{featuredTier ? `${featuredMeta?.label ?? "Published"} ${featuredTier.presentation === "singles" ? "singles" : "slip"}` : "No qualifying ticket yet"}</h3>
+            <p>{featuredTier?.games?.length
+              ? `${featuredTier.games[0].home_team} vs ${featuredTier.games[0].away_team}${featuredTier.games.length > 1 ? ` and ${featuredTier.games.length - 1} more` : ""}`
+              : "Selections only appear after our usual publication checks."}</p>
+          </div>
+          <div className="editorial-feature__action">
+            <span>Actual bookmaker odds</span>
+            <strong>{featuredOdds !== null ? `${fmtOdds(featuredOdds)}${oddsSuffix}` : "—"}</strong>
+            {featuredTier && featuredKey
+              ? <a href="#todays-picks" className="editorial-button editorial-button--primary" onClick={() => setActiveKey(featuredKey)}>
+                  Open ticket <ArrowRight size={16} aria-hidden="true"/>
+                </a>
+              : <Link to="/build-slip" className="editorial-button editorial-button--quiet">
+                  Browse available fixtures <ArrowRight size={16} aria-hidden="true"/>
+                </Link>}
+          </div>
+        </div>
+      </section>
 
-      {actionable.needsReplacement && (
+      {(actionable.needsReplacement || actionable.requestedAvailable) && (
         <div className="card available-now" role="status" aria-live="polite" style={{
           padding: "12px 14px",
           display: "flex",
@@ -396,8 +334,17 @@ export function HomePage() {
       )}
 
       {/* Tabs + verified SportyBet booking code, reachable from the hero. */}
-      <div id="todays-picks" className="home-picks-anchor" style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-        <CategoryTabs active={activeKey} onChange={setActiveKey} oddsMap={oddsMap} singlesMap={singlesMap} />
+      <section id="todays-picks" className="editorial-ticket-board home-picks-anchor" aria-label="Published selections">
+        <div className="editorial-section-title"><div><span className="editorial-overline">PUBLICATION DESK</span><h2>{previousEdition ? "Latest published tickets" : "Today's tickets"}</h2></div><span className="editorial-board-caption">Choose a category to inspect selections and its booking code</span></div>
+        <ManualRemainingOverview data={manualRemaining.data} loading={manualRemaining.loading} error={manualRemaining.error} onRefresh={manualRemaining.refetch} />
+        {actionable.viewingBookable && accumulators && (
+          <AvailableNowOverview accumulators={accumulators} onSelect={key => {
+            setActiveKey(key);
+          }} />
+        )}
+        <CategoryTabs active={activeKey} onChange={setActiveKey} oddsMap={oddsMap} singlesMap={singlesMap}
+          availabilityMap={accumulators ? Object.fromEntries(CATEGORIES.map(item => [item.key,
+            Boolean(accumulators[item.key]?.selected && accumulators[item.key]?.games?.length)])) : {}} />
 
         {/* Category header */}
         {!loading && activeCat && (
@@ -430,7 +377,7 @@ export function HomePage() {
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               {hasActiveBookableOdds && <div style={{
                 padding: "5px 14px", borderRadius: 8,
-                background: catMeta.faint, border: `1px solid ${catMeta.color}20`,
+                background: catMeta.faint, border: `1px solid color-mix(in srgb, ${catMeta.color} 22%, transparent)`,
                 fontFamily: "var(--font-mono)", fontSize: 14, fontWeight: 700,
                 color: catMeta.color, letterSpacing: "-0.02em",
               }}>
@@ -490,7 +437,14 @@ export function HomePage() {
             ))}
           </div>
         )}
-      </div>
+      </section>
+      <section className="editorial-community" aria-label="Published performance and community">
+        <div className="editorial-section-title"><div><span className="editorial-overline">THE PUBLIC RECORD</span><h2>Independent verification</h2></div></div>
+        <div className="home-support-grid">
+          <AccuracyBadge />
+          <JoinTelegram variant="card" />
+        </div>
+      </section>
     </div>
   );
 }

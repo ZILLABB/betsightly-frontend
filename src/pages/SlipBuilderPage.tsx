@@ -478,41 +478,44 @@ export default function SlipBuilderPage() {
         title="Build a slip · BetSightly"
         description="Choose your odds and get a qualifying slip with a SportyBet booking code."
       />
-      <section className="builder-hero">
-        <div className="builder-hero__copy">
-          <span className="builder-eyebrow">
-            <Sparkles size={14} /> Smart slip builder
-          </span>
-          <h1>Build your slip.</h1>
-          <p>
-            Choose a target and the markets you prefer. We check qualified picks
-            and confirm SportyBet availability before showing a booking code.
-          </p>
-          <div className="builder-proof">
-            <span>
-              <ShieldCheck size={16} /> Evidence screened
-            </span>
-            <span>
-              <CheckCircle2 size={16} /> Bookability checked
-            </span>
-          </div>
+      <section className="editorial-builder-intro" aria-labelledby="builder-title">
+        <div>
+          <p className="editorial-overline">THE TICKET STUDIO / BETSIGHTLY</p>
+          <h1 id="builder-title">Build to your criteria.</h1>
+          <p>Choose your target, markets and fixtures. Your final selections are checked
+            against the live bookmaker board before a booking code can be shown.</p>
+        </div>
+        <div className="editorial-builder-intro__proof">
+          <span><ShieldCheck size={15} aria-hidden="true"/> Evidence screened</span>
+          <span><CheckCircle2 size={15} aria-hidden="true"/> Exact price verification</span>
+          <small>Unavailable selections are excluded rather than replaced with lower-quality picks.</small>
         </div>
       </section>
-
-      <ol className="v3-steps" aria-label="Build Slip progress">
-        <li className={slip ? "is-complete" : "is-active"}>
-          <span className="v3-steps__number">01</span>
-          <div><strong>Choose</strong><small>Target and markets</small></div>
-        </li>
-        <li className={!slip ? "" : displayedBooking?.status === "active" && displayedBooking.actionable !== false && !!displayedBooking.share_code ? "is-complete" : "is-active"}>
-          <span className="v3-steps__number">02</span>
-          <div><strong>Build</strong><small>Review qualifying picks</small></div>
-        </li>
-        <li className={displayedBooking?.status === "active" && displayedBooking.actionable !== false && !!displayedBooking.share_code ? "is-active" : ""}>
-          <span className="v3-steps__number">03</span>
-          <div><strong>Verify</strong><small>Check SportyBet code</small></div>
-        </li>
-      </ol>
+      <div className="editorial-builder-workspace">
+        <aside className="editorial-builder-guide" aria-label="Builder workflow">
+          <span className="editorial-overline">HOW IT WORKS</span>
+          <h2>Three clear steps.</h2>
+          <ol className="v3-steps" aria-label="Build Slip progress">
+            <li className={slip ? "is-complete" : "is-active"}>
+              <span className="v3-steps__number">01</span>
+              <div><strong>Configure</strong><small>Target, markets and horizon</small></div>
+            </li>
+            <li className={!slip ? "" : displayedBooking?.status === "active" && displayedBooking.actionable !== false && !!displayedBooking.share_code ? "is-complete" : "is-active"}>
+              <span className="v3-steps__number">02</span>
+              <div><strong>Review</strong><small>Check selected fixtures and odds</small></div>
+            </li>
+            <li className={displayedBooking?.status === "active" && displayedBooking.actionable !== false && !!displayedBooking.share_code ? "is-active" : ""}>
+              <span className="v3-steps__number">03</span>
+              <div><strong>Verify</strong><small>Confirm an exact booking code</small></div>
+            </li>
+          </ol>
+          <div className="editorial-builder-guide__note">
+            <ShieldCheck size={18} aria-hidden="true"/>
+            <p>We do not guarantee any result. A full ticket can be unavailable when market evidence or prices are insufficient.</p>
+          </div>
+          <a href="/results">Review the public record <span aria-hidden="true">→</span></a>
+        </aside>
+        <div className="editorial-builder-workspace__main">
       <section id="builder-controls" aria-label="Choose slip settings">
         <BuilderV2Controls />
       </section>
@@ -526,8 +529,8 @@ export default function SlipBuilderPage() {
           placed a bet. Clearing this site's browser storage resets that link.
         </p>
       </details>
-
-
+        </div>
+      </div>
 
       {error && (
         <div className="builder-message builder-message--error" role="alert">

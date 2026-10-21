@@ -751,22 +751,17 @@ export default function PuntersPage() {
   const hasActiveFilters = search || showFavsOnly || bookmakerFilter || statusFilter;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+    <div className="editorial-secondary-page editorial-punters" style={{ display: "flex", flexDirection: "column", gap: 24 }}>
       <SEO title="Expert Punters" description="Follow top Nigerian betting experts. Copy their codes for Sportybet, Bet9ja, 1xBet, and more." path="/punters" />
 
-      {/* Page header */}
-      <div>
-        <div className="eyebrow" style={{ marginBottom: 10, display: "flex", alignItems: "center", gap: 8 }}>
-          <Users size={14} color="var(--brand)" />
-          Expert Network
+      <header className="editorial-secondary-masthead">
+        <div>
+          <span className="editorial-overline">COMMUNITY / PUBLIC PROFILES</span>
+          <h1>Community punters.</h1>
+          <p>Explore community-submitted bookmaker selections and their recorded outcomes.
+            Results are separate from BetSightly's automated prediction performance.</p>
         </div>
-        <h1 style={{ fontSize: "clamp(26px, 5vw, 40px)", fontWeight: 800, lineHeight: 1.1, marginBottom: 10 }}>
-          Expert <span className="text-brand-gradient">Punters</span>
-        </h1>
-        <p style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text-3)", maxWidth: 480, lineHeight: 1.7 }}>
-          Discover and follow verified betting experts. Codes refresh every 60 seconds.
-        </p>
-      </div>
+      </header>
 
       {/* Today's codes */}
       {!loading && <TodaysCodes punters={punters} />}

@@ -209,7 +209,7 @@ export default function PunterDetailPage() {
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+    <div className="editorial-secondary-page editorial-punter-detail" style={{ display: "flex", flexDirection: "column", gap: 24 }}>
       <SEO title={punter.name || "Punter"} description={`${punter.name}'s betting codes and performance stats on BetSightly.`} path={`/punters/${id}`} />
 
       {/* Back button */}

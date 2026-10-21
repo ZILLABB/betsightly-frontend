@@ -118,20 +118,24 @@ export function ResultsPage() {
         path="/results"
       />
 
-      <ResultsHero range={range} onRangeChange={setRange} refreshing={refreshing} onRefresh={refresh} lastUpdated={lastUpdated} />
-
-      <div className="bs-live-results-link">
-        <span><Radio size={16} aria-hidden="true" /> Following today's football scores?</span>
-        <a href="/live">See live matchday scores →</a>
-      </div>
-
-      <dl className="v3-results-overview" aria-label="Official settled accumulator record">
-        <div><dt>Won</dt><dd className="is-positive">{results?.totals?.slips?.won ?? "—"}</dd></div>
-        <div><dt>Lost</dt><dd className="is-negative">{results?.totals?.slips?.lost ?? "—"}</dd></div>
-        <div><dt>Settled</dt><dd>{results?.totals?.slips?.settled ?? "—"}</dd></div>
-        <div><dt>Slip win rate</dt><dd>{results?.totals?.slips?.win_rate != null
-          ? `${Math.round(results.totals.slips.win_rate * 100)}%` : "—"}</dd></div>
-      </dl>
+      <section className="editorial-results-overview" aria-label="Verified performance overview">
+        <div className="editorial-results-overview__masthead">
+          <span className="editorial-overline">PUBLIC PERFORMANCE / NO HIDDEN LOSSES</span>
+          <ResultsHero range={range} onRangeChange={setRange} refreshing={refreshing} onRefresh={refresh} lastUpdated={lastUpdated} />
+          <p className="editorial-results-overview__context">These are settled accumulator slips, not individual match accuracy.
+            Manual selections remain separately tracked and do not affect the model's calibration.</p>
+          <a className="editorial-text-link" href="/live">
+            <Radio size={15} aria-hidden="true"/> See matchday scores <span aria-hidden="true">→</span>
+          </a>
+        </div>
+        <dl className="v3-results-overview editorial-results-overview__metrics" aria-label="Official settled accumulator record">
+          <div><dt>Won</dt><dd className="is-positive">{results?.totals?.slips?.won ?? "—"}</dd></div>
+          <div><dt>Lost</dt><dd className="is-negative">{results?.totals?.slips?.lost ?? "—"}</dd></div>
+          <div><dt>Settled</dt><dd>{results?.totals?.slips?.settled ?? "—"}</dd></div>
+          <div><dt>Slip win rate</dt><dd>{results?.totals?.slips?.win_rate != null
+            ? `${Math.round(results.totals.slips.win_rate * 100)}%` : "—"}</dd></div>
+        </dl>
+      </section>
 
       <div className="v3-source-note" role="note">
         <div><strong>Two transparent result records</strong>
@@ -139,7 +143,7 @@ export function ResultsPage() {
         </div>
         <button type="button" className="v3-source-action" onClick={() => setTab("manual")}>View manual results</button>
       </div>
-            <nav className="results-tabs" aria-label="Results sections">
+      <nav className="results-tabs" aria-label="Results sections">
         <button type="button" className={tab === "products" ? "is-active" : ""} aria-pressed={tab === "products"} onClick={() => setTab("products")}>Product results</button>
         <button type="button" className={tab === "rollover" ? "is-active" : ""} aria-pressed={tab === "rollover"} onClick={() => setTab("rollover")}>Rollover chains</button>
         <button type="button" className={tab === "manual" ? "is-active" : ""} aria-pressed={tab === "manual"} onClick={() => setTab("manual")}>Manual picks</button>

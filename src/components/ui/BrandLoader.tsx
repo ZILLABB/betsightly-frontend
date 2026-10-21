@@ -1,18 +1,30 @@
-import React from "react";
+import type { ReactNode } from "react";
+import { BetSightlyLogo } from "../brand/BetSightlyLogo";
 
 interface Props {
   message?: string;
-  /** Optional skeleton content rendered below the loader (e.g. card grid placeholders) */
-  children?: React.ReactNode;
+  /** Compact variant for loading inside an existing page, not a full-screen splash. */
+  variant?: "standard" | "compact";
+  /** Optional skeleton content below the branded loading indicator. */
+  children?: ReactNode;
 }
 
-/** Branded loading state — pulsing BetSightly logo + indeterminate progress track. */
-export function BrandLoader({ message = "Loading...", children }: Props) {
+/**
+ * One source of truth for the loading logo: exactly the same vector component
+ * used in the Header and Footer, instead of legacy /logo.png.
+ *
+ * The indicator is indeterminate, not a fabricated completion percentage.
+ */
+export function BrandLoader({ message = "Loading…", variant = "standard", children }: Props) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-      <div className="brand-loader" role="status" aria-live="polite">
-        <img src="/logo.png" alt="" aria-hidden="true" />
-        <div className="brand-loader-track" />
+    <div className="brand-loader-layout">
+      <div className={`brand-loader brand-loader--editorial${variant === "compact" ? " brand-loader--compact" : ""}`} role="status" aria-live="polite" aria-atomic="true">
+        <span className="brand-loader__identity">
+          <BetSightlyLogo compact />
+        </span>
+        <span className="brand-loader-track" aria-hidden="true">
+          <span className="brand-loader-track__indicator"/>
+        </span>
         <span className="brand-loader-msg">{message}</span>
       </div>
       {children}

@@ -39,18 +39,16 @@ function FAQ({ q, a }: { q: string; a: React.ReactNode }) {
 
 export function AboutPage() {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 36, maxWidth: 760 }}>
+    <div className="editorial-secondary-page editorial-about" style={{ display: "flex", flexDirection: "column", gap: 28, maxWidth: 900, margin: "0 auto", width: "100%" }}>
       <SEO title="About" description="How BetSightly works — our methodology, data sources, and the team behind the predictions." path="/about" />
-      <div>
-        <div className="eyebrow" style={{ marginBottom: 8 }}>About</div>
-        <h1 style={{ fontSize: "clamp(28px, 5vw, 40px)", fontWeight: 800, lineHeight: 1.1 }}>
-          How <span className="text-brand-gradient">BetSightly</span> works
-        </h1>
-        <p style={{ fontFamily: "var(--font-body)", fontSize: 15, color: "var(--text-3)", marginTop: 12, lineHeight: 1.7 }}>
-          Every pick on the site is generated from real bookmaker odds and statistical models —
-          no guesswork, no gut feel. Here's exactly what's under the hood.
-        </p>
-      </div>
+      <header className="editorial-secondary-masthead">
+        <div>
+          <span className="editorial-overline">METHODOLOGY / TRANSPARENCY</span>
+          <h1>How BetSightly works.</h1>
+          <p>Learn how football selections, bookmaker prices, confidence estimates and final results
+            are handled. Automated predictions and administrator-curated picks are labeled separately.</p>
+        </div>
+      </header>
 
       <Section icon={<Database size={18} />} title="Data sources">
         <p>We use two independent data feeds:</p>

@@ -20,6 +20,10 @@ import { api } from "../api/predictions";
 import { useRecommendations } from "../hooks/useRecommendations";
 import { useActionableCard } from "../hooks/useActionableCard";
 import { firstAvailablePredictionTier } from "../utils/firstAvailablePredictionTier";
+import { preferredBookableTier } from "../utils/bookableTiers";
+import { AvailableNowOverview } from "../components/predictions/AvailableNowOverview";
+import { ManualRemainingOverview } from "../components/predictions/ManualRemainingOverview";
+import { useManualRemaining } from "../hooks/useManualRemaining";
 import { isRolloverOnlyDay } from "../utils/isRolloverOnlyDay";
 import { RecommendationBoard } from "../components/predictions/RecommendationBoard";
 import { NextAvailableNotice } from "../components/predictions/NextAvailableNotice";
@@ -36,6 +40,7 @@ export function PredictionsPage() {
   const recommendations = useRecommendations();
   const [activeKey, setActiveKey] = useState<CategoryKey>(initialKey);
   const manuallyChosenTier = React.useRef(false);
+  const previousViewingBookable = React.useRef(false);
   const { formatOdds: fmtOdds, oddsSuffix } = useFormatOdds();
 
   // The original daily card remains frozen for the public record, but it is
@@ -75,6 +80,7 @@ export function PredictionsPage() {
 
   const published = data?.accumulators;
   const actionable = useActionableCard(published, data?.date);
+  const manualRemaining = useManualRemaining(actionable.requestedAvailable, data?.date);
   const {
     accumulators,
     bookable,
@@ -82,6 +88,7 @@ export function PredictionsPage() {
     bookableNotice,
     bookableError,
     viewingBookable,
+    requestedAvailable,
     viewingPublishedRecord,
     unavailable: bookableUnavailable,
     affectedSelections: startedCount,
@@ -98,6 +105,20 @@ export function PredictionsPage() {
     if (!accumulators || manuallyChosenTier.current) return;
     setActiveKey(current => firstAvailablePredictionTier(accumulators, current));
   }, [accumulators, category]);
+
+  // An explicit switch to a new replacement portfolio resets the old tab
+  // choice; that category may not have any verified code this time.
+  React.useEffect(() => {
+    if (previousViewingBookable.current === viewingBookable) return;
+    previousViewingBookable.current = viewingBookable;
+    manuallyChosenTier.current = false;
+    setLeagueFilter(null);
+    if (accumulators) {
+      setActiveKey(current => viewingBookable
+        ? preferredBookableTier(accumulators, current)
+        : firstAvailablePredictionTier(accumulators, current));
+    }
+  }, [viewingBookable, accumulators]);
 
   const activeCat = accumulators?.[activeKey];
   const catMeta = CATEGORIES.find(c => c.key === activeKey)!;
@@ -136,25 +157,26 @@ export function PredictionsPage() {
   return (
     <div className="page-stack predictions-page v3-page v3-predictions" style={{ display: "flex", flexDirection: "column", gap: 32 }}>
       <SEO title="Predictions" description="Today's best football predictions — 2 Odds, 5 Odds, 10 Odds, and Over Goals picks backed by real bookmaker odds." path="/predictions" />
-      <header className="predictions-hero">
-        <div className="eyebrow" style={{ marginBottom: 8 }}>Today&apos;s Picks</div>
-        <h1 style={{ fontSize: 32, fontWeight: 800 }}>Today&apos;s football intelligence</h1>
-        <p className="page-intro" style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text-3)", marginTop: 6 }}>
-          Curated products and one best prediction for each analysed fixture on {data?.date
-            ? new Date(data.date + "T12:00:00Z").toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" })
-            : "today"} — pick a tier that matches your risk appetite.
-        </p>
-        <div className="v3-hero-tools">
-          <a className="v3-link v3-link--primary" href="#published-tiers">
-            Explore published tickets <ArrowRight size={16} aria-hidden="true" />
-          </a>
-          <Link className="v3-link" to="/build-slip">
-            Build your own slip <ArrowRight size={16} aria-hidden="true" />
-          </Link>
-          <Link className="v3-link" to="/results">
-            See settled results
-          </Link>
+      <header className="editorial-page-intro" aria-label="Today's football publication">
+        <div className="editorial-page-intro__copy">
+          <span className="editorial-overline">MATCHDAY / OFFICIAL PUBLICATION</span>
+          <h1>Today's football board</h1>
+          <p>All published tiers and their underlying selections, organized in one place.
+            Review the bookmaker code alongside the evidence before making a decision.
+            {data?.date ? ` Published ${new Date(data.date + "T12:00:00Z").toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" })}.` : ""}
+          </p>
         </div>
+        <nav className="editorial-page-intro__actions" aria-label="Prediction actions">
+          <a className="editorial-button editorial-button--primary" href="#published-tiers">
+            See published tickets <ArrowRight size={15} aria-hidden="true"/>
+          </a>
+          <Link className="editorial-button editorial-button--quiet" to="/build-slip">
+            Build custom slip
+          </Link>
+          <Link className="editorial-text-link" to="/results">
+            Official results <ArrowRight size={14} aria-hidden="true"/>
+          </Link>
+        </nav>
       </header>
 
       {!loading && rolloverOnlyDay && (
@@ -218,7 +240,7 @@ export function PredictionsPage() {
 
       {/* Preserve the locked publication for auditability, but default late
           visitors to the exact-bookable card they can still act on. */}
-      {actionable.needsReplacement && (
+      {(actionable.needsReplacement || requestedAvailable) && (
         <div className="card available-now" role="status" aria-live="polite" style={{
           padding: "16px 18px", display: "flex", alignItems: "center",
           justifyContent: "space-between", gap: 16, flexWrap: "wrap",
@@ -309,6 +331,17 @@ export function PredictionsPage() {
                 : <>{bookableError || bookableUnavailable ? "Try again" : "Show available now"} <ArrowRight size={15} /></>}
           </button>
         </div>
+      )}
+
+      <ManualRemainingOverview data={manualRemaining.data} loading={manualRemaining.loading} error={manualRemaining.error} onRefresh={manualRemaining.refetch} />
+
+      {viewingBookable && accumulators && (
+        <AvailableNowOverview accumulators={accumulators} onSelect={key => {
+          manuallyChosenTier.current = true;
+          setActiveKey(key);
+          setShowAll(false);
+          document.getElementById("published-tiers")?.scrollIntoView?.({ behavior: "smooth", block: "start" });
+        }} />
       )}
 
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>

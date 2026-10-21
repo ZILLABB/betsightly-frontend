@@ -1,63 +1,89 @@
-import React from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Home, Target, BarChart2, RefreshCw, Sliders } from "lucide-react";
+import { BarChart3, ChevronRight, CircleHelp, Home, Menu, Radio, RefreshCw, Settings, SlidersHorizontal, Target, Users, X } from "lucide-react";
 
-const NAV = [
-  { path:"/", label:"Home", icon:Home },
-  { path:"/predictions", label:"Picks", icon:Target },
-  { path:"/build-slip", label:"Build", icon:Sliders },
-  { path:"/results", label:"Results", icon:BarChart2 },
-  { path:"/rollover", label:"Rollover", icon:RefreshCw },
-];
+const PRIMARY = [
+  { path: "/", label: "Home", icon: Home },
+  { path: "/predictions", label: "Picks", icon: Target },
+  { path: "/build-slip", label: "Build", icon: SlidersHorizontal, featured: true },
+  { path: "/rollover", label: "Rollover", icon: RefreshCw },
+] as const;
+
+const MORE = [
+  { path: "/results", label: "Results", note: "Verified wins, losses and history", icon: BarChart3 },
+  { path: "/live", label: "Live scores", note: "Matchday scoreboard", icon: Radio },
+  { path: "/punters", label: "Punters", note: "Community selections", icon: Users },
+  { path: "/settings", label: "Settings", note: "Display preferences", icon: Settings },
+  { path: "/about", label: "About BetSightly", note: "How our predictions work", icon: CircleHelp },
+] as const;
 
 export function BottomNav() {
   const location = useLocation();
-  const isActive = (p: string) => p === "/"
+  const [moreOpen, setMoreOpen] = useState(false);
+  const isActive = (path: string) => path === "/"
     ? location.pathname === "/"
-    : location.pathname === p || location.pathname.startsWith(`${p}/`);
+    : location.pathname === path || location.pathname.startsWith(`${path}/`);
+  const secondaryActive = MORE.some(({ path }) => isActive(path));
+
+  useEffect(() => { setMoreOpen(false); }, [location.pathname]);
+  useEffect(() => {
+    if (!moreOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMoreOpen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [moreOpen]);
 
   return (
     <>
-      <nav style={{
-        position:"fixed", bottom:0, left:0, right:0, zIndex:50,
-        background:"var(--nav-overlay)", backdropFilter:"blur(20px)",
-        borderTop:"1px solid var(--border)",
-        display:"flex", alignItems:"center",
-        padding:"8px 0 max(8px, env(safe-area-inset-bottom))",
-      }} className="bottom-nav bottom-nav--v3" aria-label="Quick navigation">
-        {NAV.map(({ path, label, icon: Icon }) => {
-          const active = isActive(path);
-          const isWC = false;
-          const activeColor = isWC ? "#f59e0b" : "var(--brand)";
-          const activeBg = isWC ? "rgba(245,158,11,0.12)" : "var(--brand-faint)";
-          return (
-            <Link key={path} to={path} aria-current={active ? "page" : undefined} style={{
-              flex:1, display:"flex", flexDirection:"column", alignItems:"center", gap:4,
-              textDecoration:"none", padding:"4px 0", transition:"all 180ms ease",
-            }}>
-              <div style={{
-                width:44, height:28, borderRadius:14,
-                display:"flex", alignItems:"center", justifyContent:"center",
-                background: active ? activeBg : "transparent",
-                transition:"all 200ms ease",
-              }}>
-                <Icon size={20} style={{ color: active ? activeColor : "var(--text-3)", transition:"color 200ms ease" }} />
-              </div>
-              <span style={{
-                fontFamily:"var(--font-body)", fontSize:10, fontWeight:600,
-                color: active ? activeColor : "var(--text-3)",
-                letterSpacing:"0.03em",
-                transition:"color 200ms ease",
-              }}>
-                {label}
-              </span>
+      {moreOpen && (
+        <div className="mobile-dock__scrim" onClick={() => setMoreOpen(false)}
+          aria-hidden="true" data-testid="mobile-more-backdrop" />
+      )}
+      <section id="mobile-dock-more" className="mobile-dock__sheet"
+        role="dialog" aria-modal={moreOpen ? "true" : undefined}
+        aria-label="More BetSightly pages" hidden={!moreOpen}>
+        <div className="mobile-dock__sheet-head">
+          <div><span>EXPLORE</span><h2>More from BetSightly</h2></div>
+          <button type="button" onClick={() => setMoreOpen(false)} aria-label="Close more menu"><X size={20}/></button>
+        </div>
+        <nav aria-label="More navigation">
+          {MORE.map(({ path, label, note, icon: Icon }) => (
+            <Link key={path} to={path} onClick={() => setMoreOpen(false)}
+              aria-current={isActive(path) ? "page" : undefined}
+              className="mobile-dock__sheet-link">
+              <span className="mobile-dock__sheet-icon"><Icon size={20} aria-hidden="true"/></span>
+              <span><strong>{label}</strong><small>{note}</small></span>
+              <ChevronRight size={17} aria-hidden="true"/>
             </Link>
-          );
-        })}
+          ))}
+        </nav>
+      </section>
+      <nav className="mobile-dock" aria-label="Quick navigation">
+        <div className="mobile-dock__surface">
+          {PRIMARY.map(({ path, label, icon: Icon }) => {
+            const active = isActive(path);
+            const featured = path === "/build-slip";
+            return (
+              <Link key={path} to={path}
+                className={`mobile-dock__item${featured ? " mobile-dock__item--build" : ""}`}
+                aria-current={active ? "page" : undefined} data-active={active}>
+                <span className="mobile-dock__icon"><Icon size={featured ? 22 : 20} strokeWidth={active ? 2.4 : 1.9} aria-hidden="true"/></span>
+                <span className="mobile-dock__label">{label}</span>
+              </Link>
+            );
+          })}
+          <button type="button" className="mobile-dock__item mobile-dock__more"
+            aria-label={moreOpen ? "Close more pages" : "More pages"}
+            aria-expanded={moreOpen} aria-controls="mobile-dock-more"
+            data-active={secondaryActive || moreOpen}
+            onClick={() => setMoreOpen(v => !v)}>
+            <span className="mobile-dock__icon">{moreOpen ? <X size={20}/> : <Menu size={20}/>}</span>
+            <span className="mobile-dock__label">More</span>
+          </button>
+        </div>
       </nav>
-      <style>{`
-        @media (min-width: 768px) { .bottom-nav { display:none !important; } }
-      `}</style>
     </>
   );
 }

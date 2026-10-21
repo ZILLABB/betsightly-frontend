@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api, type BookableNowResponse } from "../api/predictions";
+import { verifiedBookableTierKeys } from "../utils/bookableTiers";
 import type {
   AccumulatorResponse,
   CategoryData,
@@ -182,7 +183,7 @@ export function useActionableCard(
   const preservePublishedManual = activeManualPublication && mode === "auto";
 
   useEffect(() => {
-    if (!actionability.needsReplacement ||
+    if (!(actionability.needsReplacement || mode === "available") ||
         mode === "published" || preservePublishedManual) return;
 
     const freshEnough =
@@ -206,14 +207,18 @@ export function useActionableCard(
 
         // A modern live response that carries integrity metadata must have
         // passed it. Keep the immutable published card on screen otherwise.
-        if (!result.available || !result.accumulators || !availableNowIsPortfolioSafe(result)) {
+        if (!result.available || !result.accumulators ||
+            !availableNowIsPortfolioSafe(result) ||
+            verifiedBookableTierKeys(result.accumulators).length === 0) {
           setBookable({
             ...result,
             status: "error",
             available: false,
             reason: !availableNowIsPortfolioSafe(result)
               ? "The live replacement card did not pass portfolio validation."
-              : (result.reason || "No verified bookable slip remains right now."),
+              : verifiedBookableTierKeys(result.accumulators).length === 0
+                ? "The replacement had no validated, actionable SportyBet codes. The original publication is still available."
+                : (result.reason || "No verified bookable slip remains right now."),
           });
         } else {
           setBookable(result);
@@ -298,11 +303,12 @@ export function useActionableCard(
 
   const viewingBookable =
     mode !== "published" &&
-    actionability.needsReplacement &&
+    (actionability.needsReplacement || mode === "available") &&
     !preservePublishedManual &&
     bookable?.available === true &&
     !!bookable.accumulators &&
-    availableNowIsPortfolioSafe(bookable);
+    availableNowIsPortfolioSafe(bookable) &&
+    verifiedBookableTierKeys(bookable.accumulators).length > 0;
 
   const viewingPublishedRecord =
     (mode === "published" || preservePublishedManual) &&
@@ -310,18 +316,18 @@ export function useActionableCard(
 
   const bookableError =
     mode !== "published" &&
-    actionability.needsReplacement &&
+    (actionability.needsReplacement || mode === "available") &&
     !bookableLoading &&
     bookable?.status === "error";
 
   const unavailable =
     mode !== "published" &&
-    actionability.needsReplacement &&
+    (actionability.needsReplacement || mode === "available") &&
     !bookableLoading &&
     !bookableError &&
     bookable?.available === false;
 
-  const mergedAvailable =
+  const mergedAvailable = useMemo(() =>
     viewingBookable && bookable?.accumulators
       ? ({
           ...published,
@@ -329,7 +335,8 @@ export function useActionableCard(
           // Available-now intentionally does not create a new rollover chain.
           rollover: published?.rollover,
         } as AccumulatorResponse["accumulators"])
-      : undefined;
+      : undefined,
+    [viewingBookable, bookable?.accumulators, published]);
 
   // Never replace real published data with an empty loading state.
   // While Available Now is being verified, keep the frozen publication
@@ -354,6 +361,7 @@ export function useActionableCard(
     timingAffected: actionability.timingAffected,
     portfolioIntegrityInvalid: actionability.portfolioIntegrityInvalid,
     activeManualPublication,
+    requestedAvailable: mode === "available",
     showAvailable,
     showPublished,
   };
