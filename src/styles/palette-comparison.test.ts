@@ -24,13 +24,9 @@ const contrast = (a: string,b: string): number => {
 };
 
 describe.each([
-  ["Hybrid dark", ':root[data-bs-palette="hybrid"]:not(.light)', false],
-  ["Hybrid light", ':root.light[data-bs-palette="hybrid"]', true],
   ["Atlantic dark", ':root[data-bs-palette="atlantic"]:not(.light)', false],
-  ["Cobalt dark", ':root[data-bs-palette="cobalt"]:not(.light)', false],
   ["Atlantic light", ':root.light[data-bs-palette="atlantic"]', true],
-  ["Cobalt light", ':root.light[data-bs-palette="cobalt"]', true],
-] as const)("%s comparison palette", (_label, selector, light) => {
+] as const)("%s approved palette", (_label, selector, light) => {
   const tokens = getTokens(selector);
   test("has meaningful and distinct background, brand and action tokens", () => {
     for(const variable of ["--bg","--surface","--surface-2","--brand","--accent","--text-1","--text-2","--text-3"]) {
@@ -56,4 +52,9 @@ test("both themes keep success and loss colors semantic rather than mixing them 
   expect(css).toContain(".v3-rollover");
   expect(css).toContain(".v3-predictions");
   expect(css).toContain(".mobile-dock");
+});
+
+test("retired hybrid and Cobalt palettes are no longer in release styles", () => {
+  expect(css).not.toContain('data-bs-palette="hybrid"');
+  expect(css).not.toContain('data-bs-palette="cobalt"');
 });
