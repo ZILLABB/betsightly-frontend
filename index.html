@@ -10,39 +10,24 @@
   <meta name="description" content="Football predictions, SportyBet-verified booking codes, daily picks, 2 Odds, 5 Odds, 10 Odds, Over Goals, a three-day Rollover and transparent settled results." />
   <meta name="keywords" content="football predictions, daily predictions, rollover, over goals, SportyBet booking codes, accumulator, settled results" />
   <meta name="author" content="BetSightly" />
-  <meta name="theme-color" content="#0C2037" />
-  <!-- Set the saved palette and dark/light preference before the first paint.
-       Without this, iPhone status-bar and page background briefly flash the
-       retired emerald theme while React and preferences load. -->
+  <meta name="theme-color" content="#0B2238" />
+  <!-- Apply Atlantic and saved appearance before CSS/React. -->
   <script>
     (function () {
       var root = document.documentElement;
-      var choice = new URLSearchParams(window.location.search).get('palette');
-      var savedPalette = null;
-      try { savedPalette = sessionStorage.getItem('betsightly-preview-palette'); } catch (_) {}
-      var validPalette = function (name) {
-        return name === 'hybrid' || name === 'atlantic' || name === 'cobalt';
-      };
-      var palette = validPalette(choice)
-        ? choice : validPalette(savedPalette) ? savedPalette : 'hybrid';
-      root.setAttribute('data-bs-palette', palette);
-      try { sessionStorage.setItem('betsightly-preview-palette', palette); } catch (_) {}
+      root.setAttribute('data-bs-palette', 'atlantic');
+      try { sessionStorage.removeItem('betsightly-preview-palette'); } catch (_) {}
       var selectedTheme = 'dark';
       try {
-        var savedPreferences = JSON.parse(localStorage.getItem('betsightly_preferences') || '{}');
-        if (savedPreferences.theme === 'dark' || savedPreferences.theme === 'light' || savedPreferences.theme === 'system')
-          selectedTheme = savedPreferences.theme;
+        var preferences = JSON.parse(localStorage.getItem('betsightly_preferences') || '{}');
+        if (preferences.theme === 'dark' || preferences.theme === 'light' ||
+            preferences.theme === 'system') selectedTheme = preferences.theme;
       } catch (_) {}
       var light = selectedTheme === 'light' || (selectedTheme === 'system' &&
         window.matchMedia && !window.matchMedia('(prefers-color-scheme: dark)').matches);
       root.classList.add(light ? 'light' : 'dark');
-      var colors = palette === 'cobalt'
-        ? { dark: '#111933', light: '#F2F5FD' }
-        : palette === 'atlantic'
-          ? { dark: '#0B2238', light: '#F3F7FA' }
-          : { dark: '#0C2037', light: '#F1F5FB' };
       document.querySelector('meta[name="theme-color"]')
-        .setAttribute('content', light ? colors.light : colors.dark);
+        .setAttribute('content', light ? '#F3F7FA' : '#0B2238');
     })();
   </script>
 
