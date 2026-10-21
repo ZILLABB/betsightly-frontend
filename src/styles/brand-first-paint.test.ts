@@ -33,36 +33,19 @@ function renderHead(search: string, savedTheme?: string, storedPalette?: string,
   return {attrs,classes,meta,session};
 }
 
-test("initial HTML has a hybrid background, correct viewport and valid early theme script", () => {
+test("browser starts in Atlantic even with old comparison links", () => {
   expect(html).toContain('name="viewport"');
-  expect(html).toContain('content="#0C2037"');
-  expect(startupScript).toContain("betsightly-preview-palette");
-  const a = renderHead("?palette=atlantic");
-  expect(a.attrs["data-bs-palette"]).toBe("atlantic");
-  expect(a.classes).toContain("dark");
-  expect(a.meta.setAttribute).toHaveBeenCalledWith("content", "#0B2238");
+  expect(html).toContain('content="#0B2238"');
+  const dark = renderHead("?palette=hybrid", "dark", "cobalt");
+  expect(dark.attrs["data-bs-palette"]).toBe("atlantic");
+  expect(dark.classes).toContain("dark");
+  expect(dark.meta.setAttribute).toHaveBeenCalledWith("content", "#0B2238");
+  const light = renderHead("?palette=cobalt", "light", "hybrid");
+  expect(light.attrs["data-bs-palette"]).toBe("atlantic");
+  expect(light.classes).toContain("light");
+  expect(light.meta.setAttribute).toHaveBeenCalledWith("content", "#F3F7FA");
 });
 
-test("Atlantic × Cobalt blend is the default and supports light/dark first paint", () => {
-  const dark = renderHead("");
-  expect(dark.attrs["data-bs-palette"]).toBe("hybrid");
-  expect(dark.classes).toContain("dark");
-  expect(dark.meta.setAttribute).toHaveBeenCalledWith("content", "#0C2037");
-  const light = renderHead("?palette=hybrid", "system", undefined, false);
-  expect(light.classes).toContain("light");
-  expect(light.meta.setAttribute).toHaveBeenCalledWith("content", "#F1F5FB");
-});
-test("Cobalt light sets iPhone status-bar color without waiting for React", () => {
-  const a = renderHead("?palette=cobalt", "light");
-  expect(a.attrs["data-bs-palette"]).toBe("cobalt");
-  expect(a.classes).toContain("light");
-  expect(a.meta.setAttribute).toHaveBeenCalledWith("content", "#F2F5FD");
-});
-test("palette can be changed explicitly, and a previous choice persists on navigation", () => {
-  expect(renderHead("?palette=atlantic","dark","cobalt").attrs["data-bs-palette"]).toBe("atlantic");
-  expect(renderHead("","dark","cobalt").attrs["data-bs-palette"]).toBe("cobalt");
-  expect(renderHead("?palette=unexpected","dark","cobalt").attrs["data-bs-palette"]).toBe("cobalt");
-});
 test("the retired neon-green brand is removed from icon, installed app and sharing assets", () => {
   const assets = [
     "public/brand-mark.svg","public/brand-icon.svg",
@@ -88,9 +71,9 @@ test("Live Scores uses semantic palette tokens instead of retired emerald hero c
   expect(live).not.toMatch(/#37e58c|rgba\(56,229,140|rgba\(35,230,140|#071b14|#06130f/i);
 });
 
-test("saved system theme honors iPhone light appearance before React loads", () => {
-  const a = renderHead("?palette=cobalt","system",undefined,false);
-  expect(a.attrs["data-bs-palette"]).toBe("cobalt");
+test("saved system theme keeps Atlantic on an iPhone in light mode", () => {
+  const a = renderHead("?palette=cobalt", "system", "hybrid", false);
+  expect(a.attrs["data-bs-palette"]).toBe("atlantic");
   expect(a.classes).toContain("light");
-  expect(a.meta.setAttribute).toHaveBeenCalledWith("content", "#F2F5FD");
+  expect(a.meta.setAttribute).toHaveBeenCalledWith("content", "#F3F7FA");
 });
