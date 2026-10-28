@@ -510,6 +510,8 @@ export interface ManualRemainingResponse {
   status: "success";
   date: string;
   available: boolean;
+  reason?: string;
+  tier_reasons?: Record<string, string>;
   official_publication_unchanged: true;
   record_is_separate?: boolean;
   tiers: Partial<Record<CategoryKey, CategoryData & {
