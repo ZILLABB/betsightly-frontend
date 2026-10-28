@@ -9,6 +9,7 @@ interface Props {
   category: CategoryMeta;
   totalOdds: number;
   date: string;
+  disabled?: boolean;
 }
 
 /**
@@ -44,11 +45,12 @@ function generateSlipText(
   return lines.join("\n");
 }
 
-export function AccumulatorSlip({ games, category, totalOdds, date }: Props) {
+export function AccumulatorSlip({ games, category, totalOdds, date, disabled = false }: Props) {
   const [copied, setCopied] = useState(false);
   const { formatOdds: fmtOdds, oddsSuffix } = useFormatOdds();
 
   const handleCopy = async () => {
+    if (disabled) return;
     const text = generateSlipText(games, category, totalOdds, date, fmtOdds, oddsSuffix);
     try {
       await navigator.clipboard.writeText(text);
@@ -70,6 +72,7 @@ export function AccumulatorSlip({ games, category, totalOdds, date }: Props) {
   };
 
   const handleShare = async () => {
+    if (disabled) return;
     const text = generateSlipText(games, category, totalOdds, date, fmtOdds, oddsSuffix);
     if (navigator.share) {
       try {
@@ -86,8 +89,11 @@ export function AccumulatorSlip({ games, category, totalOdds, date }: Props) {
   };
 
   return (
-    <div style={{ display: "flex", gap: 8 }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
       <button
+        type="button"
+        disabled={disabled}
+        title={disabled ? "Ticket details need verification before copying" : "Copy text selections; this is not a SportyBet code"}
         onClick={handleCopy}
         style={{
           display: "flex",
@@ -106,11 +112,14 @@ export function AccumulatorSlip({ games, category, totalOdds, date }: Props) {
         }}
       >
         {copied ? <Check size={15} /> : <Copy size={15} />}
-        {copied ? "Copied!" : "Copy Slip"}
+        {copied ? "Copied!" : "Copy selections"}
       </button>
 
       {typeof navigator !== "undefined" && "share" in navigator && (
         <button
+          type="button"
+          disabled={disabled}
+          title={disabled ? "Ticket details need verification before sharing" : "Share text selections; this is not a SportyBet code"}
           onClick={handleShare}
           style={{
             display: "flex",
@@ -132,6 +141,9 @@ export function AccumulatorSlip({ games, category, totalOdds, date }: Props) {
           Share
         </button>
       )}
+      <span style={{ color: "var(--text-3)", fontSize: 11, lineHeight: 1.4 }}>
+        {disabled ? "Selection export paused until ticket verification." : "Text picks only · not a booking code"}
+      </span>
     </div>
   );
 }

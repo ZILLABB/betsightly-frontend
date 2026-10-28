@@ -55,12 +55,15 @@ export default function BookingCode({
   tracking,
   onShowBookable,
   fallbackActionLabel = "Show what I can still bet",
+  blockedReason,
 }: {
   booking?: TierBooking;
   category: CategoryMeta;
   tracking?: BookingEventContext;
   onShowBookable?: () => void;
   fallbackActionLabel?: string;
+  /** A contradictory ticket snapshot must never expose a placeable code. */
+  blockedReason?: string;
 }) {
   const [copied, setCopied] = useState(false);
   // Homepage and embedded cards may not supply an explicit tracking context.
@@ -69,7 +72,7 @@ export default function BookingCode({
     legCount: booking?.booked_leg_count ?? booking?.legs,
     fingerprint: booking?.booking_variant_fingerprint ?? booking?.sportybet_selection_fingerprint,
   };
-  const actionable = booking?.status === "active" &&
+  const actionable = !blockedReason && booking?.status === "active" &&
     booking.actionable !== false &&
     (!booking.lifecycle_status || booking.lifecycle_status === "active") &&
     !!booking.share_code;
@@ -92,13 +95,22 @@ export default function BookingCode({
       tracking?.legCount, tracking?.fingerprint]);
 
   if (!booking) return (
-    <div role="status" style={{ marginTop: 12, padding: "10px 14px", borderRadius: 8,
+    <div role="status" style={{ marginTop: 12, padding: "12px 14px", borderRadius: 8,
       border: "1px dashed var(--border)", fontFamily: "var(--font-body)",
       fontSize: 13, color: "var(--text-3)" }}>
       <strong style={{ display: "block", color: "var(--text-1)", marginBottom: 4 }}>
-        Creating SportyBet code…
+        No verified SportyBet code for this tier
       </strong>
-      Your predictions are ready. This will update automatically without a refresh.
+      The published selections are not themselves a bookmaker ticket.
+      We cannot confirm a share code from the current publication.
+      {onShowBookable && (
+        <button type="button" onClick={onShowBookable}
+          style={{ display: "block", marginTop: 10, minHeight: 40,
+            padding: "8px 12px", background: category.color, color: "var(--bg)",
+            border: 0, borderRadius: 7, fontWeight: 700, cursor: "pointer" }}>
+          {fallbackActionLabel}
+        </button>
+      )}
     </div>
   );
 
@@ -137,12 +149,23 @@ export default function BookingCode({
         }}
       >
         <strong style={{ display: "block", color: "var(--text-1)", marginBottom: 4 }}>
-          {booking.status === "started" || booking.status === "kickoff_buffer" ||
+          {blockedReason ? "Ticket needs verification" :
+            booking.status === "started" || booking.status === "kickoff_buffer" ||
             booking.status === "expired" ? "Published code no longer placeable" :
-            booking.status === "stale" ? "Code outdated — revalidating booking" :
+            booking.status === "stale" ? "Code outdated — check a fresh ticket" :
             "Slip ready, code unavailable"}
         </strong>
-        {actualFailure || booking.reason || label[booking.status] || "No valid SportyBet ticket could be created for this tier."}
+        {blockedReason || actualFailure || booking.reason || label[booking.status] || "No valid SportyBet ticket could be created for this tier."}
+        {!!booking.share_code &&
+          ["started", "kickoff_buffer", "expired"].includes(booking.status) &&
+          booking.readback_validation !== "FAILED" && (
+            <p style={{ margin: "9px 0 0", color: "var(--text-2)", lineHeight: 1.6 }}>
+              Historical code (reference only; not placeable):{" "}
+              <code style={{ color: "var(--text-1)", fontWeight: 700, wordBreak: "break-all" }}>
+                {booking.share_code}
+              </code>
+            </p>
+          )}
         {!!booking.excluded_legs?.length && (
           <details style={{
             marginTop: 8,

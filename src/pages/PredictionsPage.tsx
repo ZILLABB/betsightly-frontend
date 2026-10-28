@@ -25,6 +25,7 @@ import { AvailableNowOverview } from "../components/predictions/AvailableNowOver
 import { ManualRemainingOverview } from "../components/predictions/ManualRemainingOverview";
 import { useManualRemaining } from "../hooks/useManualRemaining";
 import { isRolloverOnlyDay } from "../utils/isRolloverOnlyDay";
+import { auditTicketPresentation } from "../utils/auditTicketPresentation";
 import { RecommendationBoard } from "../components/predictions/RecommendationBoard";
 import { NextAvailableNotice } from "../components/predictions/NextAvailableNotice";
 import "../styles/product-experience.css";
@@ -126,6 +127,8 @@ export function PredictionsPage() {
   // admin-curated manual replacement is explicitly an accumulator instead.
   // Always obey the response presentation, not the category key.
   const isSingles = activeCat?.presentation === "singles";
+  const ticketAudit = auditTicketPresentation(activeCat);
+  const ticketIntegrityWarning = ticketAudit.valid ? undefined : ticketAudit.reasons.join(" ");
 
   const oddsMap = accumulators
     ? (Object.fromEntries(CATEGORIES.map(c => [c.key, accumulators[c.key]?.total_odds])) as Partial<Record<CategoryKey, number>>)
@@ -427,6 +430,7 @@ export function PredictionsPage() {
                 category={catMeta}
                 totalOdds={activeCat.total_odds}
                 date={data?.date ?? new Date().toISOString().slice(0, 10)}
+                disabled={!ticketAudit.valid}
               />
             )}
           </div>
@@ -445,7 +449,20 @@ export function PredictionsPage() {
               Shown for singles too. The predictions remain independent
               singles, but one SportyBet share code containing several of them
               is explicitly labelled as an accumulator ticket. */}
+          {!ticketAudit.valid && (
+            <div role="alert" style={{
+              padding: "12px 16px", border: "1px solid var(--gold)",
+              background: "var(--surface-2)", borderRadius: 10,
+              fontSize: 13, color: "var(--text-1)", lineHeight: 1.6,
+            }}>
+              <strong>Ticket details need verification.</strong>{" "}
+              {ticketAudit.reasons.join(" ")} The saved publication is preserved,
+              but copying its selections or advertising the ticket as placeable is
+              paused until the displayed legs and total agree.
+            </div>
+          )}
           <BookingCode
+            blockedReason={ticketIntegrityWarning}
             booking={activeCat.booking}
             category={catMeta}
             tracking={{
@@ -456,7 +473,7 @@ export function PredictionsPage() {
             }}
             onShowBookable={viewingBookable ? undefined : requestBookableSlip}
           />
-          {!isSingles && (
+          {!isSingles && ticketAudit.valid && (
             <div className="tool-panel">
             <StakeCalculator
               totalOdds={activeCat.total_odds}
@@ -489,11 +506,17 @@ export function PredictionsPage() {
               toward the automated engine's prediction record.
             </div>
           )}
-          <div className="cards-grid picks-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}>
+          <div key={`${activeKey}:${viewingBookable ? "available" : "published"}:${activeCat.revision ?? 0}`}
+            className="cards-grid picks-grid"
+            style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}>
             {activeCat.games
               .filter(g => !leagueFilter || g.league === leagueFilter)
               .map((game, i) => (
-                <PredictionCard key={game.fixture_id} game={game} color={catMeta.color} faint={catMeta.faint} index={i} score={scores[game.match_id]} />
+                <PredictionCard
+                  key={`${activeKey}:${game.match_id ?? game.fixture_id ?? "manual"}:${game.market ?? game.prediction}:${i}`}
+                  game={game} color={catMeta.color} faint={catMeta.faint}
+                  index={i} score={scores[game.match_id]}
+                />
               ))}
           </div>
         </div>
