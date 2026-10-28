@@ -100,6 +100,17 @@ export function ManualEditorialResults({ recent = false }: { recent?: boolean })
                       <span className="result-leg__outcome">{statusLabel(game.status)}</span>
                     </div>
                   ))}
+                  {slip.games.some(game => game.settlement_evidence?.provider === "openligadb") && (
+                    <p style={{ fontSize: 12, margin: "8px 12px", opacity: 0.8 }}>
+                      Result data:{" "}
+                      <a href="https://www.openligadb.de/" target="_blank"
+                        rel="noopener noreferrer" style={{ textDecoration: "underline" }}>
+                        OpenLigaDB
+                      </a>{" "}
+                      (Open Database License 1.0). Official manual-pick grades remain
+                      separate from BetSightly model performance.
+                    </p>
+                  )}
                 </div>
               </details>
             );
