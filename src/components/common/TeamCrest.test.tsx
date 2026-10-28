@@ -33,3 +33,48 @@ test("a national team can fall back to its flag when its supplied crest fails", 
   fireEvent.error(container.querySelector("img")!);
   expect(container.querySelector("img")?.getAttribute("src")).toContain("flagcdn.com");
 });
+
+
+describe("verified club crest recovery for manually published fixtures", () => {
+  test.each([
+    ["CD Covadonga", "cdcovadonga.com/wp-content/uploads/2023/06/escudo-cd-covadonga-ok.webp"],
+    ["Valladolid", "a.espncdn.com/i/teamlogos/soccer/500/95.png"],
+    ["Dynamo Dresden", "a.espncdn.com/i/teamlogos/soccer/500/7017.png"],
+    ["Schalke", "a.espncdn.com/i/teamlogos/soccer/500/133.png"],
+  ])("%s uses the source-verified crest when no publication logo was saved", (team, expected) => {
+    const { container } = render(<TeamCrest team={team} national={false}/>);
+    expect(container.querySelector("img")?.getAttribute("src")).toContain(expected);
+  });
+
+  test("the original fixture's supplied crest always takes priority", () => {
+    const { container } = render(
+      <TeamCrest team="Schalke" logo="https://fixtures.example.org/schalke.png" national={false}/>
+    );
+    expect(container.querySelector("img")).toHaveAttribute(
+      "src", "https://fixtures.example.org/schalke.png",
+    );
+  });
+
+  test("a failed supplied crest falls back to the independently verified club source", () => {
+    const { container } = render(
+      <TeamCrest team="Dynamo Dresden" logo="https://fixtures.example.org/outdated.png" national={false}/>
+    );
+    fireEvent.error(container.querySelector("img")!);
+    expect(container.querySelector("img")?.getAttribute("src")).toContain(
+      "a.espncdn.com/i/teamlogos/soccer/500/7017.png",
+    );
+  });
+
+  test("failed known sources still resolve to neutral initials, never to a guessed crest", () => {
+    const { container } = render(<TeamCrest team="Schalke" national={false}/>);
+    fireEvent.error(container.querySelector("img")!);
+    expect(container.querySelector("img")).toBeNull();
+    expect(screen.getByText("SC")).toBeInTheDocument();
+  });
+
+  test("an unknown club never receives an unverified logo", () => {
+    const { container } = render(<TeamCrest team="Another Local FC" national={false}/>);
+    expect(container.querySelector("img")).toBeNull();
+    expect(screen.getByText("AL")).toBeInTheDocument();
+  });
+});
