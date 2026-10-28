@@ -8,6 +8,10 @@ jest.mock("../hooks/usePredictions", () => ({ usePredictions: jest.fn() }));
 jest.mock("../api/predictions", () => ({
   api: {
     getBookableNow: jest.fn(),
+    getManualBookableNow: jest.fn().mockResolvedValue({
+      status: "success", available: false, date: "2026-10-28",
+      tiers: {}, official_publication_unchanged: true,
+    }),
     getHomeCampaign: jest.fn().mockResolvedValue({status:"success",campaign:null}),
     getFixtureCompetitionSchedule: jest.fn().mockResolvedValue({
       status: "success", total: 0, leagues: [],
