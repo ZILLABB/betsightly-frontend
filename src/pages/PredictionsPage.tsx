@@ -81,7 +81,8 @@ export function PredictionsPage() {
 
   const published = data?.accumulators;
   const actionable = useActionableCard(published, data?.date);
-  const manualRemaining = useManualRemaining(actionable.requestedAvailable, data?.date);
+  const manualRemaining = useManualRemaining(
+    actionable.requestedAvailable || actionable.manualRecoveryNeeded, data?.date);
   const {
     accumulators,
     bookable,
@@ -336,7 +337,14 @@ export function PredictionsPage() {
         </div>
       )}
 
-      <ManualRemainingOverview data={manualRemaining.data} loading={manualRemaining.loading} error={manualRemaining.error} onRefresh={manualRemaining.refetch} />
+      <ManualRemainingOverview
+        data={manualRemaining.data}
+        loading={manualRemaining.loading}
+        error={manualRemaining.error}
+        onRefresh={manualRemaining.refetch}
+        onFindNearTarget={manualRemaining.findNearTarget}
+        targetTierLoading={manualRemaining.loading ? manualRemaining.targetTier : null}
+      />
 
       {viewingBookable && accumulators && (
         <AvailableNowOverview accumulators={accumulators} onSelect={key => {
