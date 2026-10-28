@@ -156,16 +156,19 @@ export default function BookingCode({
             "Slip ready, code unavailable"}
         </strong>
         {blockedReason || actualFailure || booking.reason || label[booking.status] || "No valid SportyBet ticket could be created for this tier."}
-        {!!booking.share_code &&
-          ["started", "kickoff_buffer", "expired"].includes(booking.status) &&
-          booking.readback_validation !== "FAILED" && (
-            <p style={{ margin: "9px 0 0", color: "var(--text-2)", lineHeight: 1.6 }}>
-              Historical code (reference only; not placeable):{" "}
-              <code style={{ color: "var(--text-1)", fontWeight: 700, wordBreak: "break-all" }}>
-                {booking.share_code}
-              </code>
-            </p>
-          )}
+        {(() => {
+          const historicalCode = booking.historical_share_code ||
+            (booking.readback_validation === "PASSED" && ["started", "kickoff_buffer", "expired"].includes(booking.status)
+              ? booking.share_code : null);
+          return historicalCode && !blockedReason && ["started", "kickoff_buffer", "expired"].includes(booking.status)
+            ? <p style={{ margin: "9px 0 0", color: "var(--text-2)", lineHeight: 1.6 }}>
+                Historical code (reference only; not placeable):{" "}
+                <code style={{ color: "var(--text-1)", fontWeight: 700, wordBreak: "break-all" }}>
+                  {historicalCode}
+                </code>
+              </p>
+            : null;
+        })()}
         {!!booking.excluded_legs?.length && (
           <details style={{
             marginTop: 8,
