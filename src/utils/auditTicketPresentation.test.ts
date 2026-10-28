@@ -29,6 +29,9 @@ test("accepts a consistent published manual slip", () => {
 
 test("detects saved 10-pick booking displayed with 13 fixture cards", () => {
   const tier = makeTier(13, 10.51);
+  // Reproduce the observed 28 Oct book odds from thirteen rendered rows.
+  const prices = [1.24, 1.21, 1.05, 1.49, 1.47, 1.21, 1.19, 1.32, 1.14, 1.29, 1.31, 1.14, 1.15];
+  tier.games = tier.games.map((game, index) => ({ ...game, odds: prices[index] }));
   tier.booking = { status: "started", booking_status: "FULL",
     original_leg_count: 10, booked_leg_count: 10 };
   const result = auditTicketPresentation(tier);
