@@ -1,4 +1,5 @@
 import React from "react";
+import { Trophy } from "lucide-react";
 import type { GamePrediction } from "../../types";
 import { TeamCrest } from "../common/TeamCrest";
 import { ShareButton } from "../common/ShareButton";
@@ -130,6 +131,18 @@ function ScoreStamp({ score }: { score: LiveScore }) {
   );
 }
 
+/** This is a decorative generic cup icon, not a substitute club/league logo. */
+function CompetitionMark({ logo }: { logo?: string | null }) {
+  const [failedLogo, setFailedLogo] = React.useState<string | null>(null);
+  const src = typeof logo === "string" && /^https:\/\//i.test(logo.trim())
+    ? logo.trim() : null;
+
+  return src && failedLogo !== src
+    ? <img src={src} alt="" width={17} height={17} loading="lazy"
+        onError={() => setFailedLogo(src)}/>
+    : <Trophy size={17} strokeWidth={1.8} aria-hidden="true"/>;
+}
+
 export function PredictionCard({ game, score }: Props) {
   const editorial = game.editorial_manual === true || game.model_probability_available === false;
   const hasConfidence = !editorial && typeof game.confidence === "number" &&
@@ -149,8 +162,7 @@ export function PredictionCard({ game, score }: Props) {
     <article className="editorial-fixture pred-card" data-source={editorial ? "manual" : "model"}>
       <header className="editorial-fixture__top">
         <div className="editorial-fixture__league">
-          {game.league_logo && <img src={game.league_logo} alt="" width={17} height={17}
-            onError={event => { (event.currentTarget as HTMLImageElement).style.display = "none"; }}/>}
+          <CompetitionMark logo={game.league_logo}/>
           <span>{formatLeagueName(game.league)}</span>
           {game.competition_context_label && <span className="editorial-fixture__context">
             / {formatCompetitionContext(game.competition_context_label)}
@@ -211,6 +223,8 @@ export function PredictionCard({ game, score }: Props) {
               <div><dt>Expected goals</dt><dd>{game.expected_goals != null ? game.expected_goals.toFixed(2) : "Not available"}</dd></div>
               <div><dt>Calibration sample</dt><dd>{game.calibration_sample != null ? `${game.calibration_sample} picks` : "Not recorded"}</dd></div>
             </dl>
+            {!game.match_info?.home_form && !game.match_info?.away_form &&
+              <p>Recent team form was not supplied for this fixture.</p>}
             {game.added_later && game.added_at && <p>Added after initial publication at {formatLocalTimeWithZone(game.added_at)}.</p>}
             {(game.match_info?.venue || game.match_info?.city) && <p>
               Venue: {[game.match_info.venue, game.match_info.city].filter(Boolean).join(" · ")}

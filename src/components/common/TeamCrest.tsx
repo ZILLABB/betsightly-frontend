@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
 import { getTeamFlag, isWcNation, teamInitials } from "../../data/wcFlags";
+import { verifiedClubCrest } from "../../data/verifiedClubCrests";
 
 type Size = "sm" | "md" | "lg";
 
 /**
- * Displays the verified fixture/team crest already delivered by our feed.
- * Club names are not unique worldwide, so NEVER guess an ESPN/CDN team ID
- * from a string. Missing/failed assets fall back to a flag only for a known
- * national side, then a neutral monogram.
+ * Prefer the image supplied by the verified fixture feed. Manual publication
+ * sometimes loses that field; a small exact-identity registry can recover
+ * genuinely verified crests without guessing a provider ID from a team name.
+ * The source is tried only once per team/URL. Broken images fall through to
+ * the next verified source, then a national flag or a readable monogram.
  */
 export function TeamCrest({
   team, logo, national, size = "md",
@@ -24,16 +26,16 @@ export function TeamCrest({
   const supplied = typeof logo === "string" && /^https:\/\//i.test(logo.trim())
     ? logo.trim()
     : null;
+  const verified = verifiedClubCrest(team);
   const flag = national !== false && isWcNation(team)
     ? getTeamFlag(team, null, size === "sm" ? 40 : 80)
     : null;
 
-  const source = supplied && !failedSources.includes(supplied)
-    ? supplied
-    : flag && !failedSources.includes(flag)
-      ? flag
-      : null;
-  const initials = teamInitials(team);
+  // Deduplicate identical URLs so an image that fails does not keep retrying.
+  const candidates = [...new Set([supplied, verified, flag].filter(
+    (url): url is string => typeof url === "string" && /^https:\/\//i.test(url),
+  ))];
+  const source = candidates.find(url => !failedSources.includes(url)) ?? null;
 
   return (
     <span className={`team-crest team-crest--${size}${source ? " team-crest--image" : " team-crest--fallback"}`}
@@ -42,7 +44,7 @@ export function TeamCrest({
         ? <img src={source} alt="" loading="lazy" decoding="async"
             onError={() => setFailedSources(previous => previous.includes(source)
               ? previous : [...previous, source])}/>
-        : <span className="team-crest__letters">{initials}</span>}
+        : <span className="team-crest__letters">{teamInitials(team)}</span>}
     </span>
   );
 }

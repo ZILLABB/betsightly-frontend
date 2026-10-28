@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { PredictionCard } from './PredictionCard';
 import type { GamePrediction } from '../../types';
 
@@ -92,5 +92,53 @@ describe("Matchday fixture readability", () => {
     expect(screen.getByText("Admin-curated · not model-scored")).toBeTruthy();
     expect(screen.getByText("ESTIMATED ODDS")).toBeTruthy();
     expect(screen.getByText("Price not verified")).toBeTruthy();
+  });
+});
+
+describe("fixture artwork and missing evidence transparency", () => {
+  const bareGame: GamePrediction = {
+    fixture_id: 7001,
+    home_team: "CD Covadonga",
+    away_team: "Valladolid",
+    league: "Copa del Rey",
+    kickoff: "2099-10-28T19:00:00Z",
+    date: "2099-10-28T19:00:00Z",
+    prediction: "Over 1.5 Goals",
+    prediction_type: "goals",
+    confidence: 0,
+    editorial_manual: true,
+    odds: 1.16,
+    odds_are_real: true,
+    odds_provider: "SportyBet",
+  };
+
+  it("renders verified club crests for exact known teams in admin-curated cards", () => {
+    const { container } = render(<PredictionCard game={bareGame} color="#ccc" faint="transparent"/>);
+    const crests = [...container.querySelectorAll(".team-crest img")];
+    expect(crests).toHaveLength(2);
+    expect(crests[0].getAttribute("src")).toContain("cdcovadonga.com");
+    expect(crests[1].getAttribute("src")).toContain("/95.png");
+  });
+
+  it("shows a generic cup mark, never a misleading fabricated league crest", () => {
+    const { container } = render(<PredictionCard game={bareGame} color="#ccc" faint="transparent"/>);
+    expect(container.querySelector(".editorial-fixture__league svg")).toBeTruthy();
+    expect(container.querySelector(".editorial-fixture__league img")).toBeNull();
+  });
+
+  it("recovers from a failed league image while keeping its competition label", () => {
+    const { container } = render(
+      <PredictionCard game={{ ...bareGame, league_logo: "https://example.invalid/cup.png" }} color="#ccc" faint="transparent"/>
+    );
+    fireEvent.error(container.querySelector(".editorial-fixture__league img")!);
+    expect(container.querySelector(".editorial-fixture__league svg")).toBeTruthy();
+    expect(screen.getByText("Copa del Rey")).toBeTruthy();
+  });
+
+  it("labels absent form data without fabricating recent results or model confidence", () => {
+    render(<PredictionCard game={bareGame} color="#ccc" faint="transparent"/>);
+    expect(screen.getByText("Recent team form was not supplied for this fixture.")).toBeTruthy();
+    expect(screen.getByText("Admin-curated · not model-scored")).toBeTruthy();
+    expect(screen.queryByText("HOME · LAST 5")).toBeNull();
   });
 });
