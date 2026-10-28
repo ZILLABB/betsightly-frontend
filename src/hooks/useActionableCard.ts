@@ -182,6 +182,25 @@ export function useActionableCard(
   );
   const preservePublishedManual = activeManualPublication && mode === "auto";
 
+  // On every minute boundary detect a stale manual ticket independently of
+  // unrelated automatic tiers. Preserve the original card; a separately
+  // verified reduced code is offered alongside it, never substituted.
+  const manualRecoveryNeeded = useMemo(
+    () => REPLACEABLE_KEYS.some(key => {
+      const category = published?.[key];
+      if (category?.editorial_manual !== true ||
+          category.selected !== true || !(category.games?.length)) return false;
+      const code = category.booking;
+      if (!code || !bookingIsActionable(category)) return true;
+      return category.games.some(game => {
+        const kickoff = Date.parse(game.kickoff || game.date || "");
+        return Number.isFinite(kickoff) &&
+          kickoff <= now + 10 * 60_000;
+      });
+    }),
+    [published, now],
+  );
+
   useEffect(() => {
     if (!(actionability.needsReplacement || mode === "available") ||
         mode === "published" || preservePublishedManual) return;
@@ -361,6 +380,7 @@ export function useActionableCard(
     timingAffected: actionability.timingAffected,
     portfolioIntegrityInvalid: actionability.portfolioIntegrityInvalid,
     activeManualPublication,
+    manualRecoveryNeeded,
     requestedAvailable: mode === "available",
     showAvailable,
     showPublished,
