@@ -30,8 +30,17 @@ export function ManualRemainingOverview({
   // This is an opt-in feature: before the visitor requests it there is no
   // result to show, not an empty/failed SportyBet response.
   if (!data) return null;
-  if (!data.available) return <div className="manual-remaining__status" role="status">
-    No reduced manual slip is verifiably bookable right now.
+  if (!data.available) return <div className="manual-remaining__status" role="status"
+    style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 7 }}>
+    <strong>No reduced manual slip is verifiably bookable right now.</strong>
+    {data.reason && <span>{data.reason}</span>}
+    {!!Object.keys(data.tier_reasons ?? {}).length && (
+      <ul style={{ margin: 0, paddingLeft: 20 }}>
+        {Object.entries(data.tier_reasons ?? {}).map(([tier, reason]) => (
+          <li key={tier}>{CATEGORIES.find(item => item.key === tier)?.label ?? tier}: {reason}</li>
+        ))}
+      </ul>
+    )}
     <button type="button" onClick={onRefresh}>Check again</button>
   </div>;
 
