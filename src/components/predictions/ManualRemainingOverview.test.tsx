@@ -83,3 +83,25 @@ test("hides a reduced code when a fixture is within 10 minutes and offers rechec
   fireEvent.click(screen.getByRole("button", {name:"Recheck remaining games"}));
   expect(onRefresh).toHaveBeenCalledTimes(1);
 });
+
+test("explains why each manual tier could not be safely rebooked", () => {
+  const onRefresh = jest.fn();
+  render(<ManualRemainingOverview data={{
+    status: "success",
+    date: "2026-10-28",
+    available: false,
+    official_publication_unchanged: true,
+    tiers: {},
+    reason: "No remaining manual selection set passed live bookmaker verification.",
+    tier_reasons: {
+      "5_odds": "Too few unstarted manual selections remain.",
+      "10_odds": "A new exact SportyBet code could not be verified.",
+    },
+  }} loading={false} error={null} onRefresh={onRefresh}/>);
+  expect(screen.getByText(/No reduced manual slip is verifiably bookable right now/)).toBeInTheDocument();
+  expect(screen.getByText(/Too few unstarted manual selections remain/)).toBeInTheDocument();
+  expect(screen.getByText(/A new exact SportyBet code could not be verified/)).toBeInTheDocument();
+  expect(screen.queryByText(/New code:/)).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: /check again/i }));
+  expect(onRefresh).toHaveBeenCalledTimes(1);
+});
