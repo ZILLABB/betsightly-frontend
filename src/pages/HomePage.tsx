@@ -73,7 +73,8 @@ export function HomePage() {
   const previousEdition = isEarlierPublication(data?.date);
   const published = data?.accumulators;
   const actionable = useActionableCard(published, data?.date);
-  const manualRemaining = useManualRemaining(actionable.requestedAvailable, data?.date);
+  const manualRemaining = useManualRemaining(
+    actionable.requestedAvailable || actionable.manualRecoveryNeeded, data?.date);
   const accumulators = actionable.accumulators;
   // Fresh live cards can carry only Banker or a different subset than the
   // locked morning publication. Do not strand the visitor on an empty old tab.
@@ -336,7 +337,11 @@ export function HomePage() {
       {/* Tabs + verified SportyBet booking code, reachable from the hero. */}
       <section id="todays-picks" className="editorial-ticket-board home-picks-anchor" aria-label="Published selections">
         <div className="editorial-section-title"><div><span className="editorial-overline">PUBLICATION DESK</span><h2>{previousEdition ? "Latest published tickets" : "Today's tickets"}</h2></div><span className="editorial-board-caption">Choose a category to inspect selections and its booking code</span></div>
-        <ManualRemainingOverview data={manualRemaining.data} loading={manualRemaining.loading} error={manualRemaining.error} onRefresh={manualRemaining.refetch} />
+        <ManualRemainingOverview data={manualRemaining.data}
+          loading={manualRemaining.loading} error={manualRemaining.error}
+          onRefresh={manualRemaining.refetch}
+          onFindNearTarget={manualRemaining.findNearTarget}
+          targetTierLoading={manualRemaining.loading ? manualRemaining.targetTier : null} />
         {actionable.viewingBookable && accumulators && (
           <AvailableNowOverview accumulators={accumulators} onSelect={key => {
             setActiveKey(key);

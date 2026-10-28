@@ -281,8 +281,11 @@ export const api = {
   /** Distinct, explicitly requested readback of remaining manual selections.
    * Started legs are removed and a NEW validated code is returned. No changes
    * are made to the immutable manual publication or official results. */
-  getManualBookableNow: () =>
-    request<ManualRemainingResponse>('/leagues/manual-bookable-now'),
+  getManualBookableNow: (nearTarget = false, tier?: CategoryKey) =>
+    request<ManualRemainingResponse>(
+      '/leagues/manual-bookable-now' +
+      (nearTarget ? `?near_target=true${tier ? `&tier=${encodeURIComponent(tier)}` : ""}` : "")
+    ),
 
   /** Live scores for today's fixtures, keyed by match_id. Fetched apart from
    *  the card because the card is frozen at 08:00 and a score is not. */
@@ -516,9 +519,18 @@ export interface ManualRemainingResponse {
   record_is_separate?: boolean;
   tiers: Partial<Record<CategoryKey, CategoryData & {
     manual_remainder: true;
+    single_remainder?: boolean;
     original_leg_count: number;
     remaining_leg_count: number;
     removed_leg_count: number;
+    official_publication: false;
+    result_scored: false;
+  }>>;
+  near_target_alternatives?: Partial<Record<CategoryKey, CategoryData & {
+    near_target_alternative: true;
+    target_original_odds: number;
+    supplemental_leg_count: number;
+    remaining_original_leg_count: number;
     official_publication: false;
     result_scored: false;
   }>>;

@@ -123,6 +123,8 @@ export interface Game {
 export interface GamePrediction {
   /** Human editorial selection; no statistically evaluated model confidence. */
   editorial_manual?: boolean;
+  /** Separately model-qualified future fixture added to an opt-in alternative. */
+  supplemental_model_selection?: boolean;
   /** True only for a manual Over Goals card replacing public display;
    * the original engine publication and settlement remain preserved. */
   replaces_official_display?: boolean;

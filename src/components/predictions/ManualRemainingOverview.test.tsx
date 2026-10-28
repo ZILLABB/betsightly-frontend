@@ -105,3 +105,58 @@ test("explains why each manual tier could not be safely rebooked", () => {
   fireEvent.click(screen.getByRole("button", { name: /check again/i }));
   expect(onRefresh).toHaveBeenCalledTimes(1);
 });
+
+test("remaining single is clearly not advertised as the original 10 Odds", () => {
+  const one = {
+    ...response,
+    tiers: {
+      "10_odds": {
+        ...response.tiers["5_odds"],
+        single_remainder: true,
+        original_leg_count: 10, remaining_leg_count: 1,
+        removed_leg_count: 9,
+        games: [response.tiers["5_odds"].games[0]],
+      },
+    },
+  };
+  render(<ManualRemainingOverview data={one as any} loading={false}
+    error={null} onRefresh={jest.fn()} />);
+  expect(screen.getByText(/remaining single \(not original tier odds\)/i)).toBeInTheDocument();
+  expect(screen.getByText(/1 of 10 original games/)).toBeInTheDocument();
+});
+
+test("closer-odds alternative must disclose supplementary fixtures and use its own code", () => {
+  const expanded = {
+    ...response,
+    near_target_alternatives: {
+      "5_odds": {
+        selected: true, near_target_alternative: true,
+        total_odds: 4.97, target_original_odds: 5.10,
+        remaining_original_leg_count: 2, supplemental_leg_count: 1,
+        games: [
+          ...response.tiers["5_odds"].games,
+          { home_team: "Extra", away_team: "Fixture", match_id: "f3",
+            kickoff: "2099-10-19T20:00:00Z", prediction: "Over 1.5",
+            odds: 2.26, supplemental_model_selection: true },
+        ],
+        booking: { status: "active", share_code: "OPTION505",
+          booking_status: "FULL", readback_validation: "PASSED",
+          booked_leg_count: 3, actual_sportybet_odds: 4.97 },
+      },
+    },
+  };
+  render(<ManualRemainingOverview data={expanded as any}
+    loading={false} error={null} onRefresh={jest.fn()}/>);
+  expect(screen.getByText(/Separate alternative · closer to original odds/i)).toBeInTheDocument();
+  expect(screen.getByText(/Additional model-qualified selection/i)).toBeInTheDocument();
+  expect(screen.getByText("New code: OPTION505")).toBeInTheDocument();
+  expect(screen.getByText("New code: NEW424")).toBeInTheDocument();
+});
+
+test("alternative search is explicit and requests the displayed tier only", () => {
+  const onFindNearTarget = jest.fn();
+  render(<ManualRemainingOverview data={response as any} loading={false}
+    error={null} onRefresh={jest.fn()} onFindNearTarget={onFindNearTarget}/>);
+  fireEvent.click(screen.getByRole("button", { name: /Try closer to original odds/ }));
+  expect(onFindNearTarget).toHaveBeenCalledWith("5_odds");
+});

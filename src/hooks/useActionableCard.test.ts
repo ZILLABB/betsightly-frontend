@@ -440,3 +440,43 @@ test("live replacement object identity remains stable across unrelated rerenders
   rerender();
   expect(result.current.accumulators).toBe(same);
 });
+
+test("manually published ticket automatically requests recovery only after a leg becomes unplaceable", () => {
+  const future = new Date(Date.now() + 4 * 60 * 60_000).toISOString();
+  const started = new Date(Date.now() - 60 * 60_000).toISOString();
+  const liveManual = { ...category(future), editorial_manual: true };
+  const published = {
+    banker: empty,
+    "2_odds": liveManual,
+    "5_odds": empty, "10_odds": empty, over_1_5: empty, rollover: empty,
+  } as any;
+
+  const { result, rerender } = renderHook(
+    ({ cards }) => useActionableCard(cards, "2026-10-28"),
+    { initialProps: { cards: published } },
+  );
+  expect(result.current.manualRecoveryNeeded).toBe(false);
+  expect(result.current.viewingBookable).toBe(false);
+
+  rerender({ cards: {
+    ...published,
+    "2_odds": {
+      ...liveManual,
+      games: [{ ...liveManual.games[0], kickoff: started, date: started }],
+    },
+  } });
+  expect(result.current.manualRecoveryNeeded).toBe(true);
+  expect(result.current.accumulators?.["2_odds"].editorial_manual).toBe(true);
+  expect(result.current.viewingBookable).toBe(false);
+});
+
+test("stale automatic-only tickets do not start a manual recovery request", () => {
+  const old = new Date(Date.now() - 60 * 60_000).toISOString();
+  const published = {
+    banker: empty,
+    "2_odds": category(old),
+    "5_odds": empty, "10_odds": empty, over_1_5: empty, rollover: empty,
+  } as any;
+  const { result } = renderHook(() => useActionableCard(published, "2026-10-28"));
+  expect(result.current.manualRecoveryNeeded).toBe(false);
+});
