@@ -135,3 +135,24 @@ test("a contradictory saved booking cannot display a placeable share code", () =
   expect(screen.queryByText("WRONG1")).toBeNull();
   expect(screen.queryByRole("button", { name: /copy code/i })).toBeNull();
 });
+
+test("the backend may retain only a historical reference after clearing actionable code", () => {
+  render(<BookingCode category={category} booking={{
+    status: "started", lifecycle_status: "started", actionable: false,
+    share_code: null, historical_share_code: "ARCH28",
+    readback_validation: "PASSED",
+  }}/>);
+  expect(screen.getByText("ARCH28")).toBeInTheDocument();
+  expect(screen.getByText(/reference only; not placeable/i)).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: /copy code/i })).toBeNull();
+  expect(screen.queryByRole("link", { name: /open sportybet/i })).toBeNull();
+});
+
+test("archive reference is hidden if ticket-leg integrity is blocked", () => {
+  render(<BookingCode category={category}
+    blockedReason="Ticket identity mismatch"
+    booking={{ status: "started", actionable: false, share_code: null,
+      historical_share_code: "WRONG999", readback_validation: "PASSED" }}/>);
+  expect(screen.queryByText("WRONG999")).toBeNull();
+  expect(screen.getByText("Ticket identity mismatch")).toBeInTheDocument();
+});
