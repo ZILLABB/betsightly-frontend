@@ -12,10 +12,13 @@ jest.mock("../../services/bookingTracking", () => ({
 const category = CATEGORIES.find((item) => item.key === "5_odds")!;
 const singlesCategory = CATEGORIES.find((item) => item.key === "over_1_5")!;
 
-test("genuine pending booking announces automatic creation", () => {
-  render(<BookingCode category={category} />);
-  expect(screen.getByRole("status")).toHaveTextContent("Creating SportyBet code");
-  expect(screen.getByText(/update automatically/i)).toBeInTheDocument();
+test("missing booking never promises an automatic code that may not be running", () => {
+  const onShowBookable = jest.fn();
+  render(<BookingCode category={category} onShowBookable={onShowBookable}/>);
+  expect(screen.getByRole("status")).toHaveTextContent("No verified SportyBet code");
+  expect(screen.queryByText(/creating sportybet code|update automatically/i)).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: /show what i can still bet/i }));
+  expect(onShowBookable).toHaveBeenCalledTimes(1);
 });
 
 test("permanent unavailability does not remain pending", () => {
@@ -108,4 +111,27 @@ test("homepage booking without explicit tracking counts successful copy and Spor
   expect(tracker).toHaveBeenCalledWith("sportybet_opened", expect.objectContaining({
     source: "daily_card", tier: category.key, bookingStatus: "FULL",
   }));
+});
+
+test("shows an archived verified code for reference but not for bookmaker booking", () => {
+  render(<BookingCode category={category} booking={{
+    status: "started", lifecycle_status: "started", actionable: false,
+    share_code: "OLDXYZ", readback_validation: "PASSED",
+    reason: "At least one fixture has started.",
+  }}/>);
+  expect(screen.getByText("OLDXYZ")).toBeInTheDocument();
+  expect(screen.getByText(/reference only; not placeable/i)).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: /copy code/i })).toBeNull();
+  expect(screen.queryByRole("link", { name: /open sportybet/i })).toBeNull();
+});
+
+test("a contradictory saved booking cannot display a placeable share code", () => {
+  render(<BookingCode category={category} blockedReason="Ticket leg mismatch" booking={{
+    status: "active", lifecycle_status: "active", actionable: true,
+    share_code: "WRONG1", readback_validation: "PASSED",
+  }}/>);
+  expect(screen.getByText("Ticket needs verification")).toBeInTheDocument();
+  expect(screen.getByText("Ticket leg mismatch")).toBeInTheDocument();
+  expect(screen.queryByText("WRONG1")).toBeNull();
+  expect(screen.queryByRole("button", { name: /copy code/i })).toBeNull();
 });
