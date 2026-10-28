@@ -325,6 +325,8 @@ export interface TierBooking {
   booking_status?: "FULL" | "REBUILT_FULL" | "PARTIAL" | "UNAVAILABLE" |
     "BOOKING_FAILED" | "VALIDATION_FAILED";
   share_code?: string | null;
+  /** Prior readback-verified code for the exact same frozen legs; never placeable. */
+  historical_share_code?: string | null;
   share_url?: string;
   legs?: number;
   /** True when a singles tier booked only the picks that were available.
