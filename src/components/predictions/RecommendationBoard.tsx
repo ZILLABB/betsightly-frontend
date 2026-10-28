@@ -1,5 +1,6 @@
 import React from "react";
 import { Filter, RefreshCw } from "lucide-react";
+import { TeamCrest } from "../common/TeamCrest";
 import type {
   GamePrediction,
   RecommendationBoardResponse,
@@ -144,7 +145,7 @@ export function RecommendationBoard({
       {data && (
         <div className="recommendation-summary" aria-label="Recommendation summary">
           <span><strong>{data.summary.fixtures_analysed}</strong> analysed</span>
-          <span><strong>{data.summary.sportybet_bookable}</strong> bookable</span>
+          <span title="Market offered by SportyBet; a separate verified booking code is still required"><strong>{data.summary.sportybet_bookable}</strong> bookmaker markets</span>
           <span className="is-strong"><strong>{data.summary.strong}</strong> strong</span>
           <span className="is-supported"><strong>{data.summary.supported}</strong> supported</span>
           <span className="is-lean"><strong>{data.summary.lean}</strong> lean</span>
@@ -256,9 +257,17 @@ export function RecommendationBoard({
 
                 <div className="recommendation-row__main">
                   <div className="recommendation-row__fixture">
-                    <strong>{pick.home_team}</strong>
+                    <span className="recommendation-row__team">
+                      <TeamCrest team={pick.home_team} logo={pick.home_team_logo}
+                        national={pick.team_type !== "CLUB"} size="sm"/>
+                      <strong>{pick.home_team}</strong>
+                    </span>
                     <span>vs</span>
-                    <strong>{pick.away_team}</strong>
+                    <span className="recommendation-row__team">
+                      <TeamCrest team={pick.away_team} logo={pick.away_team_logo}
+                        national={pick.team_type !== "CLUB"} size="sm"/>
+                      <strong>{pick.away_team}</strong>
+                    </span>
                   </div>
 
                   <div className="recommendation-row__pick">
